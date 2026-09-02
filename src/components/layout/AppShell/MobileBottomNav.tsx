@@ -58,6 +58,7 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
   return (
     <nav
       aria-hidden={isKeyboardOpen || undefined}
+      inert={isKeyboardOpen || undefined}
       className={cn(
         'fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-[28px] border border-white/10 transition-opacity duration-200 lg:hidden',
         'ix-island',

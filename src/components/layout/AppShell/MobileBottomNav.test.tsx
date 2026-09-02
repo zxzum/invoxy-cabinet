@@ -52,6 +52,9 @@ describe('MobileBottomNav', () => {
         </PlatformProvider>
       </MemoryRouter>,
     );
-    expect((container.firstChild as HTMLElement).getAttribute('aria-hidden')).toBe('true');
+    const nav = container.firstChild as HTMLElement;
+    expect(nav.getAttribute('aria-hidden')).toBe('true');
+    // inert убирает ссылки из tab-order — aria-hidden сам по себе этого не делает
+    expect(nav.getAttribute('inert')).not.toBeNull();
   });
 });

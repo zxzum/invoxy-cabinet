@@ -2036,7 +2036,6 @@ html.light .ix-island {
     rgba(var(--ix-accent-rgb), 0.06)
   );
   color: #fff;
-  box-shadow: inset 3px 0 0 rgb(var(--color-accent-400));
 }
 
 .ix-balance-card {
@@ -2117,17 +2116,7 @@ html.light .ix-island {
   color: white;
   background: linear-gradient(135deg, rgb(var(--color-accent-400)), rgb(var(--color-accent-700)));
   box-shadow: 0 12px 30px var(--ix-glow);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.ix-fab:hover {
-  transform: translateY(-2px) scale(1.03);
-}
-
-.ix-fab:active {
-  transform: scale(0.96);
+  transition: box-shadow 0.2s ease;
 }
 
 @media (max-width: 1023px) {

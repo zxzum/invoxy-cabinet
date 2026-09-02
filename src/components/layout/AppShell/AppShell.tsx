@@ -275,6 +275,7 @@ export function AppShell({ children }: AppShellProps) {
         animate={
           isKeyboardOpen ? { opacity: 0, scale: 0.8, y: 16 } : { opacity: 1, scale: 1, y: 0 }
         }
+        whileTap={{ scale: 0.92 }}
         transition={{
           type: 'spring',
           stiffness: 500,
