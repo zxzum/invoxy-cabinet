@@ -7,7 +7,6 @@ import { initDataUser } from '@telegram-apps/sdk-react';
 import { useAuthStore } from '@/store/auth';
 import { displayName } from '@/utils/displayName';
 import { useShallow } from 'zustand/shallow';
-import { useTheme } from '@/hooks/useTheme';
 import { usePlatform } from '@/platform';
 import {
   brandingApi,
@@ -16,7 +15,6 @@ import {
   preloadLogo,
   isLogoPreloaded,
 } from '@/api/branding';
-import { themeColorsApi } from '@/api/themeColors';
 import { cn } from '@/lib/utils';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -40,8 +38,6 @@ import {
   GiftIcon,
   MenuIcon,
   CloseIcon,
-  SunIcon,
-  MoonIcon,
   SearchIcon,
 } from './icons';
 
@@ -86,7 +82,6 @@ export function AppHeader({
   const { user, logout, isAdmin } = useAuthStore(
     useShallow((state) => ({ user: state.user, logout: state.logout, isAdmin: state.isAdmin })),
   );
-  const { toggleTheme, isDark } = useTheme();
   const { haptic, platform } = usePlatform();
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
   const [logoLoaded, setLogoLoaded] = useState(() => isLogoPreloaded());
@@ -111,14 +106,6 @@ export function AppHeader({
   const logoLetter = branding?.logo_letter || FALLBACK_LOGO;
   const hasCustomLogo = branding?.has_custom_logo || false;
   const logoUrl = branding ? brandingApi.getLogoUrl(branding) : null;
-
-  // Theme toggle visibility
-  const { data: enabledThemes } = useQuery({
-    queryKey: ['enabled-themes'],
-    queryFn: themeColorsApi.getEnabledThemes,
-    staleTime: 1000 * 60 * 5,
-  });
-  const canToggle = enabledThemes?.dark && enabledThemes?.light;
 
   // Get user photo from Telegram
   useEffect(() => {
@@ -240,38 +227,6 @@ export function AppHeader({
               )}
 
               <PaletteSwitcher compact />
-
-              {/* Theme toggle */}
-              {canToggle && (
-                <button
-                  onClick={() => {
-                    haptic.impact('light');
-                    toggleTheme();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="relative rounded-linear-lg border border-dark-700/50 bg-dark-800/50 p-2 text-dark-400 transition-all duration-200 hover:bg-dark-700 hover:text-accent-400"
-                  title={isDark ? t('theme.light') || 'Light mode' : t('theme.dark') || 'Dark mode'}
-                >
-                  <div className="relative h-5 w-5">
-                    <div
-                      className={cn(
-                        'absolute inset-0 transition-all duration-300',
-                        isDark ? 'rotate-0 opacity-100' : 'rotate-90 opacity-0',
-                      )}
-                    >
-                      <MoonIcon className="h-5 w-5" />
-                    </div>
-                    <div
-                      className={cn(
-                        'absolute inset-0 transition-all duration-300',
-                        isDark ? '-rotate-90 opacity-0' : 'rotate-0 opacity-100',
-                      )}
-                    >
-                      <SunIcon className="h-5 w-5" />
-                    </div>
-                  </div>
-                </button>
-              )}
 
               <div onClick={() => setMobileMenuOpen(false)}>
                 <TicketNotificationBell isAdmin={isAdminActive()} />

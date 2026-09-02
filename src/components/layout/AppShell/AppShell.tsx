@@ -13,7 +13,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useBranding } from '@/hooks/useBranding';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
-import { themeColorsApi } from '@/api/themeColors';
 import { balanceApi } from '@/api/balance';
 import { displayName } from '@/utils/displayName';
 import { cn } from '@/lib/utils';
@@ -24,15 +23,7 @@ import CampaignBonusNotifier from '@/components/CampaignBonusNotifier';
 import SuccessNotificationModal from '@/components/SuccessNotificationModal';
 import { PromptDialogHost } from '@/components/PromptDialogHost';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
-import {
-  SubscriptionIcon,
-  HomeIcon,
-  UserIcon,
-  ShieldIcon,
-  LogoutIcon,
-  SunIcon,
-  MoonIcon,
-} from '@/components/icons';
+import { SubscriptionIcon, HomeIcon, UserIcon, ShieldIcon, LogoutIcon } from '@/components/icons';
 
 import { MobileBottomNav } from './MobileBottomNav';
 import { AppHeader } from './AppHeader';
@@ -54,20 +45,13 @@ export function AppShell({ children }: AppShellProps) {
     useTelegramSDK();
   const { mobile: headerHeight } = useHeaderHeight();
   const haptic = useHaptic();
-  const { toggleTheme, isDark } = useTheme();
+  useTheme();
   usePalette();
 
   const { appName, logoLetter, hasCustomLogo, logoUrl } = useBranding();
   const { referralEnabled, wheelEnabled, hasContests, hasPolls, giftEnabled } = useFeatureFlags();
   useScrollRestoration();
   useBackgroundConsumer();
-
-  const { data: enabledThemes } = useQuery({
-    queryKey: ['enabled-themes'],
-    queryFn: themeColorsApi.getEnabledThemes,
-    staleTime: 1000 * 60 * 5,
-  });
-  const canToggleTheme = enabledThemes?.dark && enabledThemes?.light;
 
   const { data: balanceData } = useQuery({
     queryKey: ['balance'],
@@ -247,16 +231,6 @@ export function AppShell({ children }: AppShellProps) {
           </Link>
           <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
           <PaletteSwitcher />
-          <button
-            onClick={() => {
-              haptic.impact('light');
-              toggleTheme();
-            }}
-            className={cn('ix-icon-btn', !canToggleTheme && 'hidden')}
-            aria-label={isDark ? 'Светлая тема' : 'Тёмная тема'}
-          >
-            {isDark ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
-          </button>
         </div>
 
         <div className="lg:hidden" style={{ height: headerHeight }} />
