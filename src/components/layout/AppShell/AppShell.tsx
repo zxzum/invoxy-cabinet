@@ -274,15 +274,22 @@ export function AppShell({ children }: AppShellProps) {
         onClick={handleNavClick}
         initial={{ opacity: 0, scale: 0.6, y: 16 }}
         animate={
-          isKeyboardOpen ? { opacity: 0, scale: 0.8, y: 16 } : { opacity: 1, scale: 1, y: 0 }
+          isKeyboardOpen
+            ? {
+                opacity: 0,
+                scale: 0.8,
+                y: 16,
+                transition: { type: 'spring', stiffness: 500, damping: 40 },
+              }
+            : {
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                transition: { type: 'spring', stiffness: 500, damping: 40, delay: 0.35 },
+              }
         }
         whileTap={{ scale: 0.92, transition: pressSpring }}
-        transition={{
-          type: 'spring',
-          stiffness: 500,
-          damping: 40,
-          delay: isKeyboardOpen ? 0 : 0.35,
-        }}
+        transition={pressSpring}
       >
         <PiChatCircle className="h-6 w-6" />
       </MotionFabLink>
