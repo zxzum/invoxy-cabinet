@@ -24,6 +24,7 @@ import SuccessNotificationModal from '@/components/SuccessNotificationModal';
 import { PromptDialogHost } from '@/components/PromptDialogHost';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
 import { SubscriptionIcon, HomeIcon, UserIcon, ShieldIcon, LogoutIcon } from '@/components/icons';
+import { pressSpring } from '@/components/motion';
 
 import { MobileBottomNav } from './MobileBottomNav';
 import { AppHeader } from './AppHeader';
@@ -275,7 +276,7 @@ export function AppShell({ children }: AppShellProps) {
         animate={
           isKeyboardOpen ? { opacity: 0, scale: 0.8, y: 16 } : { opacity: 1, scale: 1, y: 0 }
         }
-        whileTap={{ scale: 0.92 }}
+        whileTap={{ scale: 0.92, transition: pressSpring }}
         transition={{
           type: 'spring',
           stiffness: 500,
