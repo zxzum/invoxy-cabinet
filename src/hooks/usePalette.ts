@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { applyThemeColors } from './useThemeColors';
-import {
-  DEFAULT_PALETTE_ID,
-  PALETTES,
-  isPaletteId,
-  type PaletteId,
-} from '../config/palettes';
+import { DEFAULT_PALETTE_ID, PALETTES, isPaletteId, type PaletteId } from '../config/palettes';
 import { hexToRgb } from '../utils/colorConversion';
 import { safeLocal } from '../utils/safeStorage';
 import { STORAGE_KEYS } from '../config/constants';
@@ -17,10 +12,23 @@ function loadPaletteId(): PaletteId {
   return isPaletteId(stored) ? stored : DEFAULT_PALETTE_ID;
 }
 
-export function applyPaletteVars(id: PaletteId): void {
+let paletteFadeTimer: number | undefined;
+
+export function applyPaletteVars(id: PaletteId, animate = false): void {
+  const root = document.documentElement;
+  if (animate) {
+    // Кроссфейд цветов: класс вешаем на переход, снимаем по таймеру
+    // (см. html.palette-fade в globals.css). Повторный выбор до истечения
+    // таймера сбрасывает его, чтобы класс не «залип».
+    root.classList.add('palette-fade');
+    if (paletteFadeTimer !== undefined) window.clearTimeout(paletteFadeTimer);
+    paletteFadeTimer = window.setTimeout(() => {
+      root.classList.remove('palette-fade');
+      paletteFadeTimer = undefined;
+    }, 500);
+  }
   const palette = PALETTES[id];
   applyThemeColors(palette.colors);
-  const root = document.documentElement;
   root.dataset.palette = id;
   const accent = hexToRgb(palette.colors.accent);
   root.style.setProperty('--ix-accent-rgb', `${accent.r}, ${accent.g}, ${accent.b}`);
@@ -55,7 +63,7 @@ export function usePalette() {
   const setPalette = useCallback((id: PaletteId) => {
     safeLocal.setItem(STORAGE_KEYS.PALETTE, id);
     setPaletteId(id);
-    applyPaletteVars(id);
+    applyPaletteVars(id, true);
     window.dispatchEvent(new CustomEvent(PALETTE_CHANGED, { detail: id }));
   }, []);
 

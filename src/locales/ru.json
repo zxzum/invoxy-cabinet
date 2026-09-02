@@ -5928,7 +5928,8 @@
     "previewSecondary": "Вторичная кнопка",
     "light": "Светлая тема",
     "dark": "Тёмная тема",
-    "palette": "Палитра"
+    "palette": "Палитра",
+    "paletteTitle": "Цветовая схема"
   },
   "languages": {
     "ru": "Русский",

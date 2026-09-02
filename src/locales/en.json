@@ -5383,7 +5383,8 @@
     "previewSecondary": "Secondary Button",
     "light": "Light Theme",
     "dark": "Dark Theme",
-    "palette": "Palette"
+    "palette": "Palette",
+    "paletteTitle": "Color scheme"
   },
   "languages": {
     "ru": "Русский",
