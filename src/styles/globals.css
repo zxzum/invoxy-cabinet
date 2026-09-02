@@ -2132,7 +2132,8 @@ html.light .ix-island {
 
 @media (max-width: 1023px) {
   .ix-fab {
-    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
   }
 }
 

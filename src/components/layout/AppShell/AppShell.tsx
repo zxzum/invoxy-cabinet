@@ -35,6 +35,8 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
+const MotionFabLink = motion.create(Link);
+
 export function AppShell({ children }: AppShellProps) {
   const { t } = useTranslation();
   const location = useLocation();
@@ -139,8 +141,20 @@ export function AppShell({ children }: AppShellProps) {
         key={path}
         to={path}
         onClick={handleNavClick}
-        className={cn('ix-side-link', active && 'ix-side-link-active')}
+        className={cn('ix-side-link relative', active && 'ix-side-link-active')}
       >
+        {/* Пилл активного пункта: layoutId ровно один в дереве — только у активного */}
+        {active && (
+          <motion.span
+            layoutId="ix-side-pill"
+            aria-hidden="true"
+            className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full"
+            style={{
+              background: 'rgb(var(--color-accent-400))',
+              boxShadow: '0 0 12px var(--ix-glow)',
+            }}
+          />
+        )}
         <Icon className="h-5 w-5 shrink-0" />
         <span>{label}</span>
       </Link>
@@ -250,15 +264,26 @@ export function AppShell({ children }: AppShellProps) {
         </main>
       </div>
 
-      <MobileBottomNav
-        isKeyboardOpen={isKeyboardOpen}
-        referralEnabled={referralEnabled}
-        wheelEnabled={wheelEnabled}
-      />
+      <MobileBottomNav isKeyboardOpen={isKeyboardOpen} />
 
-      <Link to="/support" className="ix-fab" aria-label="Поддержка" onClick={handleNavClick}>
+      <MotionFabLink
+        to="/support"
+        className="ix-fab"
+        aria-label="Поддержка"
+        onClick={handleNavClick}
+        initial={{ opacity: 0, scale: 0.6, y: 16 }}
+        animate={
+          isKeyboardOpen ? { opacity: 0, scale: 0.8, y: 16 } : { opacity: 1, scale: 1, y: 0 }
+        }
+        transition={{
+          type: 'spring',
+          stiffness: 500,
+          damping: 40,
+          delay: isKeyboardOpen ? 0 : 0.35,
+        }}
+      >
         <PiChatCircle className="h-6 w-6" />
-      </Link>
+      </MotionFabLink>
     </div>
   );
 }
