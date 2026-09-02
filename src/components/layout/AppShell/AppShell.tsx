@@ -24,7 +24,7 @@ import SuccessNotificationModal from '@/components/SuccessNotificationModal';
 import { PromptDialogHost } from '@/components/PromptDialogHost';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
 import { SubscriptionIcon, HomeIcon, UserIcon, ShieldIcon, LogoutIcon } from '@/components/icons';
-import { pressSpring } from '@/components/motion';
+import { pillSpring, pressSpring } from '@/components/motion';
 
 import { MobileBottomNav } from './MobileBottomNav';
 import { AppHeader } from './AppHeader';
@@ -65,6 +65,15 @@ export function AppShell({ children }: AppShellProps) {
   const isMobileFullscreen = isFullscreen && isMobile;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  // Задержка входа FAB сделана гейтом монтирования, а не delay в transition:
+  // framer-motion 12 при gesture-end берёт transition из animate-таргета, и
+  // delay там «залипал» бы на отпускании жеста (scale 0.92 держится ~350 мс).
+  const [fabReady, setFabReady] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setFabReady(true), 350);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     setIsKeyboardOpen(false);
@@ -267,32 +276,23 @@ export function AppShell({ children }: AppShellProps) {
 
       <MobileBottomNav isKeyboardOpen={isKeyboardOpen} />
 
-      <MotionFabLink
-        to="/support"
-        className="ix-fab"
-        aria-label="Поддержка"
-        onClick={handleNavClick}
-        initial={{ opacity: 0, scale: 0.6, y: 16 }}
-        animate={
-          isKeyboardOpen
-            ? {
-                opacity: 0,
-                scale: 0.8,
-                y: 16,
-                transition: { type: 'spring', stiffness: 500, damping: 40 },
-              }
-            : {
-                opacity: 1,
-                scale: 1,
-                y: 0,
-                transition: { type: 'spring', stiffness: 500, damping: 40, delay: 0.35 },
-              }
-        }
-        whileTap={{ scale: 0.92, transition: pressSpring }}
-        transition={pressSpring}
-      >
-        <PiChatCircle className="h-6 w-6" />
-      </MotionFabLink>
+      {fabReady && (
+        <MotionFabLink
+          to="/support"
+          className="ix-fab"
+          aria-label="Поддержка"
+          onClick={handleNavClick}
+          initial={{ opacity: 0, scale: 0.6, y: 16 }}
+          animate={
+            isKeyboardOpen
+              ? { opacity: 0, scale: 0.8, y: 16, transition: pillSpring }
+              : { opacity: 1, scale: 1, y: 0, transition: pillSpring }
+          }
+          whileTap={{ scale: 0.92, transition: pressSpring }}
+        >
+          <PiChatCircle className="h-6 w-6" />
+        </MotionFabLink>
+      )}
     </div>
   );
 }
