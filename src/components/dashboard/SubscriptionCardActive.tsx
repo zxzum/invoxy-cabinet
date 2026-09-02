@@ -12,6 +12,7 @@ import { useTrafficZone } from '../../hooks/useTrafficZone';
 import { formatTraffic } from '../../utils/formatTraffic';
 import { getGlassColors } from '../../utils/glassTheme';
 import { CalendarIcon, RefreshIcon } from '@/components/icons';
+import { AnimatedNumber } from '@/components/motion';
 import type { Subscription } from '../../types';
 
 interface SubscriptionCardActiveProps {
@@ -214,11 +215,13 @@ export default function SubscriptionCardActive({
             {t('dashboard.remaining')}
           </div>
           <div className="flex items-baseline gap-1">
+            {/* Счётчик дней «перетекает» между значениями (spring из motion-kit);
+                цвет по-прежнему краснеет на последних трёх днях. */}
             <span
               className="text-[22px] font-bold tracking-tight transition-colors duration-300"
               style={{ color: daysLeft <= 3 ? 'rgb(var(--color-warning-400))' : g.text }}
             >
-              {daysLeft}
+              <AnimatedNumber value={daysLeft} />
             </span>
             <span className="text-xs font-medium text-dark-50/25">
               {t('subscription.daysShort')}

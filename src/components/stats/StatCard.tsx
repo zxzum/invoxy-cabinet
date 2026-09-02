@@ -21,7 +21,8 @@ const TONE = {
 interface StatCardProps {
   /** Необязателен в режиме загрузки: тогда вместо подписи рисуется заглушка. */
   label?: string;
-  value?: string | number;
+  /** ReactNode — чтобы вызывающая сторона могла отдать AnimatedNumber вместо строки. */
+  value?: ReactNode;
   icon?: ReactNode;
   /** Tints the icon chip and (unless valueClassName is set) the value colour. */
   tone?: keyof typeof TONE;

@@ -3,6 +3,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { getGlassColors } from '../../utils/glassTheme';
 import { useHaptic } from '../../platform';
 import { CalendarIcon, CheckIcon, ChevronRightIcon, DevicesIcon } from '@/components/icons';
+import { AnimatedProgress } from '@/components/motion';
 import type { SubscriptionListItem } from '../../types';
 import { connectFooterState } from './connectFooterState';
 import { SubscriptionConnectFooter } from './SubscriptionConnectFooter';
@@ -178,10 +179,14 @@ export default function SubscriptionListCard({
               </span>
             </div>
             {!isUnlimited && (
+              // Трек оставлен снаружи: цвет зависит от темы (g.innerBg считается
+              // в рантайме, в className его не унести). Внутри — AnimatedProgress
+              // на scaleX: рост 0 → значение без layout-reflow, обновления — spring'ом.
               <div className="h-1.5 overflow-hidden rounded-full" style={{ background: g.innerBg }}>
-                <div
-                  className={`h-full rounded-full transition-all ${trafficColor}`}
-                  style={{ width: `${Math.max(1, trafficPercent)}%` }}
+                <AnimatedProgress
+                  percent={Math.max(1, trafficPercent)}
+                  className="h-full w-full"
+                  barClassName={`h-full rounded-full ${trafficColor}`}
                 />
               </div>
             )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQueries, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth';
 import { displayName } from '../utils/displayName';
@@ -24,6 +25,7 @@ import { DeviceLimitSheet } from '../components/subscription/DeviceLimitSheet';
 import { API } from '../config/constants';
 import { ChevronRightIcon, StarIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { staggerEntrance } from '@/components/motion';
 import { safeLocal } from '../utils/safeStorage';
 
 export default function Dashboard() {
@@ -285,10 +287,15 @@ export default function Dashboard() {
 
   const userName = displayName(user);
 
+  // Stagger-вход секций дашборда: фиксированные индексы (задержка = база + индекс*шаг),
+  // взаимоисключающие ветки получают одинаковый индекс. Exit не задаём — уход страницы
+  // уже анимирован AnimatePresence в AppShell, второй exit дал бы мигание.
+  const section = (index: number) => staggerEntrance(index, 0.05, 0.07);
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div data-onboarding="welcome">
+      <motion.div data-onboarding="welcome" {...section(0)}>
         <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Кабинет</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <p className="text-white/50">
@@ -308,16 +315,20 @@ export default function Dashboard() {
             </span>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Pending Gift Activations */}
-      {pendingGifts && pendingGifts.length > 0 && <PendingGiftCard gifts={pendingGifts} />}
+      {pendingGifts && pendingGifts.length > 0 && (
+        <motion.div {...section(1)}>
+          <PendingGiftCard gifts={pendingGifts} />
+        </motion.div>
+      )}
 
       {/* Multi-tariff: show subscription cards (max 3) — только когда подписки
           реально есть. Пустой случай (нет подписок) ведёт блок ниже (триал/покупка),
           иначе кнопка покупки дублировалась. */}
       {isMultiTariff && multiSubData?.subscriptions && multiSubData.subscriptions.length > 0 && (
-        <div className="space-y-3">
+        <motion.div {...section(1)} className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <span className="text-sm font-medium opacity-60">
               {t('dashboard.subscriptions', 'Подписки')}
@@ -363,41 +374,44 @@ export default function Dashboard() {
               {t('subscriptions.browsePlans', 'Посмотреть тарифы и купить подписку')}
             </Link>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Subscription Status Card — hidden in multi-tariff (managed via /subscriptions) */}
-      {!isMultiTariff &&
-        (subLoading ? (
-          <SkeletonGroup className="bento-card">
-            <div className="mb-4 flex items-center justify-between">
-              <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-6 w-16 rounded-full" />
-            </div>
-            <Skeleton className="mb-3 h-10 w-32" />
-            <Skeleton className="mb-3 h-4 w-40" />
-            <Skeleton className="h-3 w-full rounded-full" />
-            <div className="mt-5">
-              <Skeleton className="h-12 w-full rounded-xl" />
-            </div>
-          </SkeletonGroup>
-        ) : subscription?.is_expired ||
-          subscription?.status === 'disabled' ||
-          subscription?.is_limited ? (
-          <SubscriptionCardExpired
-            subscription={subscription}
-            balanceKopeks={balanceData?.balance_kopeks ?? 0}
-            balanceRubles={balanceData?.balance_rubles ?? 0}
-          />
-        ) : subscription ? (
-          <SubscriptionCardActive
-            subscription={subscription}
-            trafficData={trafficData}
-            refreshTrafficMutation={refreshTrafficMutation}
-            trafficRefreshCooldown={trafficRefreshCooldown}
-            connectedDevices={devicesData?.total ?? 0}
-          />
-        ) : null)}
+      {!isMultiTariff && (
+        <motion.div {...section(1)}>
+          {subLoading ? (
+            <SkeletonGroup className="bento-card">
+              <div className="mb-4 flex items-center justify-between">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+              <Skeleton className="mb-3 h-10 w-32" />
+              <Skeleton className="mb-3 h-4 w-40" />
+              <Skeleton className="h-3 w-full rounded-full" />
+              <div className="mt-5">
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </div>
+            </SkeletonGroup>
+          ) : subscription?.is_expired ||
+            subscription?.status === 'disabled' ||
+            subscription?.is_limited ? (
+            <SubscriptionCardExpired
+              subscription={subscription}
+              balanceKopeks={balanceData?.balance_kopeks ?? 0}
+              balanceRubles={balanceData?.balance_rubles ?? 0}
+            />
+          ) : subscription ? (
+            <SubscriptionCardActive
+              subscription={subscription}
+              trafficData={trafficData}
+              refreshTrafficMutation={refreshTrafficMutation}
+              trafficRefreshCooldown={trafficRefreshCooldown}
+              connectedDevices={devicesData?.total ?? 0}
+            />
+          ) : null}
+        </motion.div>
+      )}
 
       {/* Нет подписок: показываем триал (если доступен) и ВСЕГДА одну явную
           кнопку покупки. Триал не обязателен, чтобы попасть в витрину — раньше
@@ -405,7 +419,7 @@ export default function Dashboard() {
           (Telegram-баг #605056/#605063). Единственная кнопка тут (вместо дубля
           с мульти-тариф блоком). */}
       {hasNoSubscription && !trialLoading && (
-        <div className="space-y-3">
+        <motion.div {...section(2)} className="space-y-3">
           {trialInfo?.is_available && (
             <TrialOfferCard
               trialInfo={trialInfo}
@@ -422,38 +436,52 @@ export default function Dashboard() {
             <span className="text-base">+</span>{' '}
             {t('subscriptions.browsePlans', 'Посмотреть тарифы и купить подписку')}
           </Link>
-        </div>
+        </motion.div>
       )}
 
       {/* Promo Offers */}
-      <PromoOffersSection />
+      <motion.div {...section(3)}>
+        <PromoOffersSection />
+      </motion.div>
 
       {/* Stats Grid */}
-      <StatsGrid
-        balanceRubles={balanceData?.balance_rubles || 0}
-        referralCount={referralInfo?.total_referrals || 0}
-        earningsRubles={referralInfo?.available_balance_rubles || 0}
-        refLoading={refLoading}
-      />
+      <motion.div {...section(4)}>
+        <StatsGrid
+          balanceRubles={balanceData?.balance_rubles || 0}
+          referralCount={referralInfo?.total_referrals || 0}
+          earningsRubles={referralInfo?.available_balance_rubles || 0}
+          refLoading={refLoading}
+        />
+      </motion.div>
 
       {/* Fortune Wheel Banner */}
       {wheelConfig?.is_enabled && (
-        <Link to="/wheel" className="bento-card-hover group flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-3xl">🎰</span>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-dark-100">{t('wheel.banner.title')}</h3>
-              <p className="text-sm text-dark-400">{t('wheel.banner.description')}</p>
+        <motion.div {...section(5)}>
+          {/* bento-card-hover несёт собственный CSS-вход (bentoFadeIn); вместе со
+              stagger-обёрткой получилось бы двойное движение (до 32px по Y) —
+              поэтому CSS-анимацию здесь гасим, вход делает stagger. */}
+          <Link
+            to="/wheel"
+            className="bento-card-hover group flex animate-none items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <span className="text-3xl">🎰</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-semibold text-dark-100">{t('wheel.banner.title')}</h3>
+                <p className="text-sm text-dark-400">{t('wheel.banner.description')}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex-shrink-0 text-dark-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-accent-400">
-            <ChevronRightIcon />
-          </div>
-        </Link>
+            <div className="flex-shrink-0 text-dark-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-accent-400">
+              <ChevronRightIcon />
+            </div>
+          </Link>
+        </motion.div>
       )}
 
       {/* News Section */}
-      <NewsSection />
+      <motion.div {...section(6)}>
+        <NewsSection />
+      </motion.div>
 
       {/* Onboarding Tutorial */}
       {showOnboarding && (

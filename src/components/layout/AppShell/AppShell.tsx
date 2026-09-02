@@ -24,7 +24,7 @@ import SuccessNotificationModal from '@/components/SuccessNotificationModal';
 import { PromptDialogHost } from '@/components/PromptDialogHost';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
 import { SubscriptionIcon, HomeIcon, UserIcon, ShieldIcon, LogoutIcon } from '@/components/icons';
-import { pillSpring, pressSpring } from '@/components/motion';
+import { AnimatedNumber, pillSpring, pressSpring } from '@/components/motion';
 
 import { MobileBottomNav } from './MobileBottomNav';
 import { AppHeader } from './AppHeader';
@@ -134,10 +134,6 @@ export function AppShell({ children }: AppShellProps) {
     .slice(0, 2)
     .toUpperCase();
   const balanceRubles = balanceData?.balance_rubles ?? (balanceData?.balance_kopeks ?? 0) / 100;
-  const balanceLabel = balanceRubles.toLocaleString('ru-RU', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
   const renderSideLink = (
     path: string,
@@ -197,7 +193,15 @@ export function AppShell({ children }: AppShellProps) {
         <div className="mt-auto space-y-3">
           <div className="ix-balance-card">
             <div className="text-[11px] uppercase tracking-wide text-white/40">Баланс</div>
-            <div className="mt-1 text-xl font-semibold text-white">{balanceLabel} ₽</div>
+            {/* Счётчик вместо строки: при пополнении баланс «докручивается» до
+                нового значения. Формат — тот же ru-RU с двумя знаками. */}
+            <AnimatedNumber
+              className="mt-1 block text-xl font-semibold text-white"
+              value={balanceRubles}
+              format={(v) =>
+                `${v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`
+              }
+            />
             <Link to="/balance" onClick={handleNavClick} className="ix-balance-topup">
               Пополнить
             </Link>

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { useCurrency } from '../../hooks/useCurrency';
+import { AnimatedNumber } from '@/components/motion';
 import { StatCard } from '@/components/stats';
 import { CardIcon, ChevronRightIcon, UsersIcon } from '@/components/icons';
 
@@ -18,16 +19,18 @@ export default function StatsGrid({
   refLoading,
 }: StatsGridProps) {
   const { t } = useTranslation();
-  const { formatAmount, currencySymbol } = useCurrency();
+  const { formatAmount, formatWithCurrency, currencySymbol } = useCurrency();
 
   const chevron = <ChevronRightIcon className="h-4 w-4 shrink-0 text-dark-500" />;
 
   return (
     <div className="grid grid-cols-2 gap-2.5">
       <Link to="/balance" className="block h-full" data-onboarding="balance">
+        {/* Счётчик вместо строки: формат — formatWithCurrency, он же конвертирует
+            валюту для не-ru локалей (toFixed из брифа сломал бы конвертацию). */}
         <StatCard
           label={t('dashboard.stats.balance')}
-          value={`${formatAmount(balanceRubles)} ${currencySymbol}`}
+          value={<AnimatedNumber value={balanceRubles} format={formatWithCurrency} />}
           icon={<CardIcon className="h-5 w-5" />}
           tone="accent"
           trailing={chevron}
@@ -36,7 +39,7 @@ export default function StatsGrid({
       <Link to="/referral" className="block h-full">
         <StatCard
           label={t('dashboard.stats.referrals')}
-          value={`${referralCount}`}
+          value={<AnimatedNumber value={referralCount} />}
           subValue={`+${formatAmount(earningsRubles)} ${currencySymbol}`}
           icon={<UsersIcon className="h-5 w-5" />}
           tone="neutral"
