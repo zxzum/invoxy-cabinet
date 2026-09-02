@@ -901,6 +901,10 @@
     "selectPaymentMethod": "Select payment method",
     "insufficientFunds": "Insufficient funds",
     "topUpToComplete": "Top up your balance to complete the purchase",
+    "payTariffDirect": "Pay for the plan",
+    "payNow": "Pay {{amount}}",
+    "topUpLater": "Top up balance separately",
+    "directPayHint": "Pay the plan now. It activates after payment — no extra top-up step.",
     "missing": "Missing",
     "noPaymentMethods": "No payment methods available",
     "pendingPayments": {
@@ -5378,7 +5382,8 @@
     "previewButton": "Primary Button",
     "previewSecondary": "Secondary Button",
     "light": "Light Theme",
-    "dark": "Dark Theme"
+    "dark": "Dark Theme",
+    "palette": "Palette"
   },
   "languages": {
     "ru": "Русский",

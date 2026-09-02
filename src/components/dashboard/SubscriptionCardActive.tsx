@@ -5,6 +5,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import TrafficProgressBar from './TrafficProgressBar';
 import Sparkline from './Sparkline';
 import ConnectDeviceTile from './ConnectDeviceTile';
+import { Island } from '../motion/Island';
 import { useAnimatedNumber } from '../../hooks/useAnimatedNumber';
 import { useTheme } from '../../hooks/useTheme';
 import { useTrafficZone } from '../../hooks/useTrafficZone';
@@ -49,20 +50,16 @@ export default function SubscriptionCardActive({
   const dailyUsage: number[] = [];
 
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl lg:backdrop-blur-xl"
-      style={{
-        background: g.cardBg,
-        border: subscription.is_trial
-          ? '1px solid rgba(var(--color-accent-400), 0.15)'
-          : isDark
-            ? `1px solid ${g.cardBorder}`
-            : `1px solid rgba(${zone.mainVarRaw}, 0.14)`,
-        padding: '28px 28px 24px',
-        boxShadow: isDark
-          ? g.shadow
-          : `0 2px 16px rgba(${zone.mainVarRaw}, 0.07), 0 0 0 1px rgba(${zone.mainVarRaw}, 0.03)`,
-      }}
+    <Island
+      hover={false}
+      className="p-6 sm:p-7"
+      style={
+        subscription.is_trial
+          ? { borderColor: 'rgba(var(--color-accent-400), 0.22)' }
+          : !isDark
+            ? { borderColor: `rgba(${zone.mainVarRaw}, 0.14)` }
+            : undefined
+      }
     >
       {/* Decorative trial-shimmer border + ambient background glow removed.
           Trial state is conveyed by the badge in the header; ambient glow
@@ -268,6 +265,6 @@ export default function SubscriptionCardActive({
           <Sparkline data={dailyUsage} width={440} height={44} color={zone.mainVar} />
         </div>
       )}
-    </div>
+    </Island>
   );
 }

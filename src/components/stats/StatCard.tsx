@@ -52,7 +52,7 @@ export function StatCard({
   const trendStyle = delta ? (TREND_STYLES[delta.trend] ?? TREND_STYLES.stable) : null;
 
   return (
-    <div className="h-full rounded-xl bg-dark-800/30 p-3 transition-colors hover:bg-dark-800/50">
+    <div className="ix-island h-full p-3.5 transition-colors hover:border-white/15">
       <div className="flex items-center justify-between gap-2">
         {loading && !label ? (
           // Карточка сама себе скелетон: страницам не нужно угадывать её высоту.

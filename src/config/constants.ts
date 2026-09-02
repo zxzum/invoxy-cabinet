@@ -2,6 +2,7 @@ export const STORAGE_KEYS = {
   THEME: 'cabinet-theme',
   ENABLED_THEMES: 'cabinet-enabled-themes',
   FAVORITE_SETTINGS: 'admin_favorite_settings',
+  PALETTE: 'invoxy-palette',
 } as const;
 
 // WebSocket

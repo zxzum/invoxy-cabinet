@@ -920,6 +920,10 @@
     "selectPaymentMethod": "Выберите способ оплаты",
     "insufficientFunds": "Недостаточно средств",
     "topUpToComplete": "Пополните баланс для завершения покупки",
+    "payTariffDirect": "Оплатить тариф",
+    "payNow": "Оплатить {{amount}}",
+    "topUpLater": "Пополнить баланс отдельно",
+    "directPayHint": "Оплата сразу. Тариф включится после платежа, без промежуточного пополнения.",
     "missing": "Не хватает",
     "noPaymentMethods": "Способы оплаты недоступны",
     "pendingPayments": {
@@ -2428,6 +2432,7 @@
         "sys_other": "Прочие настройки"
       },
       "presets": {
+        "signal": "Сигнал",
         "standard": "Стандарт",
         "ocean": "Океан",
         "forest": "Лес",
@@ -5922,7 +5927,8 @@
     "previewButton": "Основная кнопка",
     "previewSecondary": "Вторичная кнопка",
     "light": "Светлая тема",
-    "dark": "Тёмная тема"
+    "dark": "Тёмная тема",
+    "palette": "Палитра"
   },
   "languages": {
     "ru": "Русский",

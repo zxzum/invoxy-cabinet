@@ -7,6 +7,8 @@ import { InfoIcon, WalletIcon, PlusIcon } from '@/components/icons';
 interface InsufficientBalancePromptProps {
   /** Amount missing in kopeks */
   missingAmountKopeks: number;
+  /** Full tariff price in kopeks — charged in one payment, not a balance top-up */
+  totalPriceKopeks?: number;
   /** Optional custom message */
   message?: string;
   /** Compact mode for inline use */
@@ -19,6 +21,7 @@ interface InsufficientBalancePromptProps {
 
 export default function InsufficientBalancePrompt({
   missingAmountKopeks,
+  totalPriceKopeks,
   message,
   compact = false,
   className = '',
@@ -30,25 +33,29 @@ export default function InsufficientBalancePrompt({
   const { formatAmount, currencySymbol } = useCurrency();
   const [isPreparingTopUp, setIsPreparingTopUp] = useState(false);
 
-  const missingRubles = missingAmountKopeks / 100;
-  const displayAmount = formatAmount(missingRubles);
+  const chargeKopeks = totalPriceKopeks && totalPriceKopeks > 0 ? totalPriceKopeks : missingAmountKopeks;
+  const chargeRubles = chargeKopeks / 100;
+  const displayAmount = formatAmount(chargeRubles);
 
-  const handleTopUpClick = async () => {
+  const goToPayment = async (amountRubles: number) => {
     if (onBeforeTopUp) {
       setIsPreparingTopUp(true);
       try {
         await onBeforeTopUp();
       } catch {
-        // Silently ignore errors - still navigate
+        // Still navigate — cart may already be saved by the 402 handler.
       } finally {
         setIsPreparingTopUp(false);
       }
     }
     const params = new URLSearchParams();
-    params.set('amount', String(Math.ceil(missingRubles)));
+    params.set('amount', String(Math.ceil(amountRubles)));
     params.set('returnTo', location.pathname);
+    params.set('direct', '1');
     navigate(`/balance/top-up?${params.toString()}`);
   };
+
+  const handlePayDirect = () => goToPayment(chargeRubles);
 
   if (compact) {
     return (
@@ -65,14 +72,14 @@ export default function InsufficientBalancePrompt({
           </span>
         </div>
         <button
-          onClick={handleTopUpClick}
+          onClick={handlePayDirect}
           disabled={isPreparingTopUp}
           className="btn-primary whitespace-nowrap px-3 py-1.5 text-xs"
         >
           {isPreparingTopUp ? (
             <span className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
           ) : (
-            t('balance.topUp')
+            t('balance.payTariffDirect')
           )}
         </button>
       </div>
@@ -89,7 +96,7 @@ export default function InsufficientBalancePrompt({
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 font-medium text-error-400">{t('balance.insufficientFunds')}</div>
-          <div className="text-sm text-dark-300">{message || t('balance.topUpToComplete')}</div>
+          <div className="text-sm text-dark-300">{message || t('balance.directPayHint')}</div>
           <div className="mt-3 flex items-center gap-3">
             <div className="text-lg font-bold text-dark-100">
               {t('balance.missing')}:{' '}
@@ -101,7 +108,7 @@ export default function InsufficientBalancePrompt({
         </div>
       </div>
       <button
-        onClick={handleTopUpClick}
+        onClick={handlePayDirect}
         disabled={isPreparingTopUp}
         className="btn-primary mt-4 flex w-full items-center justify-center gap-2 py-2.5"
       >
@@ -110,9 +117,16 @@ export default function InsufficientBalancePrompt({
         ) : (
           <>
             <PlusIcon className="h-5 w-5" />
-            {t('balance.topUpBalance')}
+            {t('balance.payNow', { amount: `${displayAmount} ${currencySymbol}` })}
           </>
         )}
+      </button>
+      <button
+        type="button"
+        onClick={() => navigate('/balance')}
+        className="mt-2 w-full py-2 text-center text-sm text-dark-400 transition-colors hover:text-dark-200"
+      >
+        {t('balance.topUpLater')}
       </button>
     </div>
   );

@@ -6,6 +6,7 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useSuccessNotification } from '../store/successNotification';
@@ -118,15 +119,15 @@ export default function SuccessNotificationModal() {
     } else if (data.type === 'subscription_activated') {
       title = t('successNotification.subscriptionActivated.title', 'Subscription activated!');
       icon = <RocketIcon className="h-8 w-8" />;
-      gradientClass = 'from-accent-500 to-purple-600';
+      gradientClass = 'from-accent-500 to-accent-700';
     } else if (data.type === 'subscription_renewed') {
       title = t('successNotification.subscriptionRenewed.title', 'Subscription renewed!');
       icon = <RocketIcon className="h-8 w-8" />;
-      gradientClass = 'from-accent-500 to-purple-600';
+      gradientClass = 'from-accent-500 to-accent-700';
     } else if (data.type === 'subscription_purchased') {
       title = t('successNotification.subscriptionPurchased.title', 'Subscription purchased!');
       icon = <RocketIcon className="h-8 w-8" />;
-      gradientClass = 'from-accent-500 to-purple-600';
+      gradientClass = 'from-accent-500 to-accent-700';
     } else if (data.type === 'devices_purchased') {
       title = t('successNotification.devicesPurchased.title', 'Devices added!');
       icon = <DevicesIcon className="h-8 w-8" />;
@@ -150,17 +151,23 @@ export default function SuccessNotificationModal() {
 
   const modalContent = (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-dark-950/80 backdrop-blur-sm" onClick={handleClose} />
+      <motion.div
+        className="absolute inset-0 bg-dark-950/80 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        onClick={handleClose}
+      />
 
-      {/* Modal */}
-      <div
+      <motion.div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="success-modal-title"
         tabIndex={-1}
-        className="relative mx-4 w-full max-w-sm overflow-hidden rounded-3xl border border-dark-700/50 bg-dark-900 shadow-2xl"
+        className="ix-island relative mx-4 w-full max-w-sm overflow-hidden"
+        initial={{ opacity: 0, y: 40, scale: 0.94 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
         style={{
           marginBottom: safeBottom ? `${safeBottom}px` : undefined,
         }}
@@ -327,7 +334,7 @@ export default function SuccessNotificationModal() {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 

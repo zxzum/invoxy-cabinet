@@ -189,6 +189,7 @@ export interface ThemePreset {
 
 // Theme presets
 export const THEME_PRESETS: ThemePreset[] = [
+  { id: 'signal', colors: DEFAULT_THEME_COLORS },
   { id: 'standard', colors: DEFAULT_THEME_COLORS },
   {
     id: 'ocean',

@@ -289,11 +289,11 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div data-onboarding="welcome">
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {userName ? t('dashboard.welcome', { name: userName }) : t('dashboard.welcomeNoName')}
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Кабинет</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <p className="text-dark-400">{t('dashboard.yourSubscription')}</p>
+          <p className="text-white/50">
+            {userName ? `Добро пожаловать, ${userName}` : 'Ваша подписка и подключённые устройства'}
+          </p>
           {promoGroupData?.group_name && (
             <span
               className="inline-flex max-w-[160px] items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"

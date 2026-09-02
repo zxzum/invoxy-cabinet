@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
+import { PaletteSwitcher } from '@/components/PaletteSwitcher';
 
 // Icons
 import {
@@ -237,6 +238,8 @@ export function AppHeader({
                   <SearchIcon className="h-5 w-5" />
                 </button>
               )}
+
+              <PaletteSwitcher compact />
 
               {/* Theme toggle */}
               {canToggle && (

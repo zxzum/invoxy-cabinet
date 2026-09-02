@@ -28,7 +28,8 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
   const [scriptFailed, setScriptFailed] = useState(false);
   // Lets the user opt into deep-link auth manually, without waiting for the
   // Telegram widget script to fail. See #<issue-number>.
-  const [manualDeepLink, setManualDeepLink] = useState(false);
+  // Widget requires BotFather /setdomain. Deep-link login works without it.
+  const [manualDeepLink, setManualDeepLink] = useState(true);
   const showDeepLinkUI = scriptFailed || manualDeepLink;
   const loginWithTelegramOIDC = useAuthStore((s) => s.loginWithTelegramOIDC);
 

@@ -23,6 +23,7 @@ ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_TELEGRAM_BOT_USERNAME=$VITE_TELEGRAM_BOT_USERNAME
 ENV VITE_APP_NAME=$VITE_APP_NAME
 ENV VITE_APP_LOGO=$VITE_APP_LOGO
+ENV NODE_OPTIONS=--max-old-space-size=1536
 
 # Build the application. Type-check намеренно пропущен: tsc --noEmit уже
 # гоняется CI на каждый PR (lint.yml), образ собирается из проверенного

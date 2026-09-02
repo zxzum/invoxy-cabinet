@@ -262,6 +262,7 @@ export function TariffPurchaseForm({
                 {balanceKopeks !== undefined && !hasEnoughBalance && (
                   <InsufficientBalancePrompt
                     missingAmountKopeks={dailyPrice - balanceKopeks}
+                    totalPriceKopeks={dailyPrice}
                     compact
                     className="mb-4"
                   />
@@ -695,8 +696,41 @@ export function TariffPurchaseForm({
                       </div>
                     </div>
 
+                    {(() => {
+                      const hasEnoughBalance =
+                        balanceKopeks !== undefined && totalPrice <= balanceKopeks;
+                      return (
+                    <>
+                    {!hasEnoughBalance && balanceKopeks !== undefined && (
+                      <InsufficientBalancePrompt
+                        missingAmountKopeks={totalPrice - balanceKopeks}
+                        totalPriceKopeks={totalPrice}
+                        className="mb-4"
+                        onBeforeTopUp={async () => {
+                          try {
+                            await purchaseMutation.mutateAsync();
+                          } catch {
+                            // 402 saves the cart; payment page completes the purchase.
+                          }
+                        }}
+                      />
+                    )}
                     <button
-                      onClick={() => purchaseMutation.mutate()}
+                      onClick={() => {
+                        if (hasEnoughBalance) {
+                          purchaseMutation.mutate();
+                          return;
+                        }
+                        purchaseMutation.mutate(undefined, {
+                          onError: () => {
+                            const params = new URLSearchParams();
+                            params.set('amount', String(Math.ceil(totalPrice / 100)));
+                            params.set('returnTo', '/subscription/purchase');
+                            params.set('direct', '1');
+                            navigate(`/balance/top-up?${params.toString()}`);
+                          },
+                        });
+                      }}
                       disabled={purchaseMutation.isPending}
                       className="btn-primary w-full py-3"
                     >
@@ -705,10 +739,15 @@ export function TariffPurchaseForm({
                           <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                           {t('common.loading')}
                         </span>
-                      ) : (
+                      ) : hasEnoughBalance ? (
                         t('subscription.purchase')
+                      ) : (
+                        t('balance.payTariffDirect')
                       )}
                     </button>
+                    </>
+                      );
+                    })()}
 
                     {sbpPurchaseButton}
                     {lavaPurchaseButton}
@@ -725,6 +764,9 @@ export function TariffPurchaseForm({
                 <div className="mt-3">
                   <InsufficientBalancePrompt
                     missingAmountKopeks={
+                      getInsufficientBalanceError(purchaseMutation.error)?.missingAmount || 0
+                    }
+                    totalPriceKopeks={
                       getInsufficientBalanceError(purchaseMutation.error)?.missingAmount || 0
                     }
                     compact
