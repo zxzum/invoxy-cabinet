@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { MotionConfig } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   init,
@@ -43,8 +44,11 @@ installEncodingSurrogateGuard();
 // See: https://github.com/Telegram-Mini-Apps/tma.js/issues/683
 if (typeof (Object as { hasOwn?: unknown }).hasOwn !== 'function') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Локальная ссылка, а не прямой вызов Object.hasOwn: это сам полифилл,
+  // рекурсивный вызов себя внутри его же guard-а сломал бы старые WebView.
+  const objectHasOwnProperty = Object.prototype.hasOwnProperty;
   (Object as any).hasOwn = (obj: object, prop: PropertyKey): boolean =>
-    Object.prototype.hasOwnProperty.call(obj, prop);
+    objectHasOwnProperty.call(obj, prop);
 }
 
 // Only initialize Telegram SDK when running inside Telegram
@@ -139,7 +143,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary level="app">
       <QueryClientProvider client={queryClient}>
-        <AppWithNavigator />
+        {/* Глобальный гейт декоративных анимаций: у пользователей с
+            prefers-reduced-motion все motion-компоненты дерева (включая
+            stagger-входы через staggerEntrance) переходят без движения.
+            Локальные гейты в motion-kit остаются как второй рубеж. */}
+        <MotionConfig reducedMotion="user">
+          <AppWithNavigator />
+        </MotionConfig>
       </QueryClientProvider>
     </ErrorBoundary>
   </React.StrictMode>,
