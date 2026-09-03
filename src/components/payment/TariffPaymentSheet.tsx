@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { AxiosError } from 'axios';
 import { balanceApi } from '@/api/balance';
 import { subscriptionApi } from '@/api/subscription';
 import type { PaymentMethod } from '@/types';
 import { ResponsiveSheet } from '@/components/ui/ResponsiveSheet';
 import { usePlatform } from '@/platform';
 import { openPaymentUrl } from '@/utils/openPaymentUrl';
+import { getErrorMessage } from '@/utils/subscriptionHelpers';
 import { AnimatedNumber, staggerEntrance, SuccessBurst } from '@/components/motion';
 import { useCurrency } from '@/hooks/useCurrency';
 
@@ -48,6 +50,14 @@ interface CreatedInvoice {
 }
 
 const POLL_INTERVAL_MS = 3000;
+
+// Бэк (purchase-tariff/invoice) на 400 кладёт в detail структурированный dict:
+// { code: 'balance_sufficient', message, price_kopeks, balance_kopeks } —
+// значит баланс уже дотянулся до цены и платить карточкой не нужно.
+const isBalanceSufficientError = (error: unknown): boolean =>
+  error instanceof AxiosError &&
+  (error.response?.data as { detail?: { code?: string } } | undefined)?.detail?.code ===
+    'balance_sufficient';
 
 export function TariffPaymentSheet({
   open,
@@ -165,8 +175,19 @@ export function TariffPaymentSheet({
       });
       setStage('waiting');
       openPaymentUrl(result.payment_url, platform, openLink);
-    } catch {
-      setError(t('payment.tariffSheet.invoiceError'));
+    } catch (error) {
+      // Бэк присылает машинно-читаемые ошибки (dict в detail: balance_sufficient,
+      // min amount, «only available through the bot») — показываем их текст юзеру,
+      // глухой fallback только если хелпер ничего не извлёк.
+      if (isBalanceSufficientError(error)) {
+        // Баланс уже покрывает цену: обновляем кэш, stage остаётся methods —
+        // после обновления balanceKopeks кнопка сама станет «Купить».
+        queryClient.invalidateQueries({ queryKey: ['balance'] });
+        queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
+        setError(t('payment.tariffSheet.balanceSufficient'));
+      } else {
+        setError(getErrorMessage(error) || t('payment.tariffSheet.invoiceError'));
+      }
       setStage('methods');
     }
   };

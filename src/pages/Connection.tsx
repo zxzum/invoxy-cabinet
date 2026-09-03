@@ -1,11 +1,13 @@
 import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { openLink as sdkOpenLink } from '@telegram-apps/sdk-react';
 import { subscriptionApi } from '../api/subscription';
 import { useTelegramSDK } from '../hooks/useTelegramSDK';
 import { useHaptic } from '@/platform';
+import { staggerEntrance } from '@/components/motion';
 import { SettingsIcon } from '@/components/icons';
 import { resolveTemplate, hasTemplates } from '../utils/templateEngine';
 import { openAppScheme } from '../utils/openAppScheme';
@@ -167,6 +169,11 @@ export default function Connection() {
     );
   }, [appConfig?.platforms]);
 
+  // Stagger-вход секций (паттерн Dashboard/Referral): задержка = база + индекс*шаг.
+  // Ветки взаимоисключающие, поэтому внутри каждой индексы идут с нуля.
+  // Exit не задаём — уход страницы уже анимирован AnimatePresence в AppShell.
+  const section = (index: number) => staggerEntrance(index, 0.05, 0.07);
+
   if (isLoading || isConnectionLinkLoading) {
     return (
       <SkeletonGroup className="space-y-6 pb-6">
@@ -184,7 +191,10 @@ export default function Connection() {
   if (error || !appConfig || !hasApps) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
+        <motion.div
+          {...section(0)}
+          className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800"
+        >
           <svg
             className="h-8 w-8 text-dark-400"
             fill="none"
@@ -198,20 +208,27 @@ export default function Connection() {
               d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
             />
           </svg>
-        </div>
-        <h3 className="mb-2 text-xl font-bold text-dark-100">
-          {t('subscription.connection.notConfigured')}
-        </h3>
-        <p className="mb-6 max-w-sm text-dark-400">
-          {isAdmin
-            ? t('subscription.connection.notConfiguredAdmin')
-            : t('subscription.connection.notConfiguredUser')}
-        </p>
+        </motion.div>
+        <motion.div {...section(1)}>
+          <h3 className="mb-2 text-xl font-bold text-dark-100">
+            {t('subscription.connection.notConfigured')}
+          </h3>
+          <p className="mb-6 max-w-sm text-dark-400">
+            {isAdmin
+              ? t('subscription.connection.notConfiguredAdmin')
+              : t('subscription.connection.notConfiguredUser')}
+          </p>
+        </motion.div>
         {isAdmin && (
-          <Link to="/admin/apps" className="btn-primary inline-flex items-center gap-2 px-6 py-2.5">
-            <SettingsIcon className="h-4 w-4" />
-            {t('subscription.connection.goToApps')}
-          </Link>
+          <motion.div {...section(2)}>
+            <Link
+              to="/admin/apps"
+              className="btn-primary inline-flex items-center gap-2 px-6 py-2.5"
+            >
+              <SettingsIcon className="h-4 w-4" />
+              {t('subscription.connection.goToApps')}
+            </Link>
+          </motion.div>
         )}
       </div>
     );
@@ -221,25 +238,31 @@ export default function Connection() {
   if (!appConfig.hasSubscription) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-        <h3 className="mb-2 text-xl font-bold text-dark-100">
-          {t('subscription.connection.title')}
-        </h3>
-        <p className="mb-4 text-dark-400">{t('subscription.connection.noSubscription')}</p>
-        <button onClick={handleGoBack} className="btn-primary px-6 py-2">
-          {t('common.close')}
-        </button>
+        <motion.div {...section(0)}>
+          <h3 className="mb-2 text-xl font-bold text-dark-100">
+            {t('subscription.connection.title')}
+          </h3>
+          <p className="mb-4 text-dark-400">{t('subscription.connection.noSubscription')}</p>
+        </motion.div>
+        <motion.div {...section(1)}>
+          <button onClick={handleGoBack} className="btn-primary px-6 py-2">
+            {t('common.close')}
+          </button>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <InstallationGuide
-      appConfig={appConfig}
-      onOpenDeepLink={openDeepLink}
-      isTelegramWebApp={isTelegramWebApp}
-      onGoBack={handleGoBack}
-      onOpenQR={handleOpenQR}
-      username={user?.username ?? undefined}
-    />
+    <motion.div {...section(0)}>
+      <InstallationGuide
+        appConfig={appConfig}
+        onOpenDeepLink={openDeepLink}
+        isTelegramWebApp={isTelegramWebApp}
+        onGoBack={handleGoBack}
+        onOpenQR={handleOpenQR}
+        username={user?.username ?? undefined}
+      />
+    </motion.div>
   );
 }

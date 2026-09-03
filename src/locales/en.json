@@ -975,6 +975,7 @@
       "waiting": "Waiting for payment…",
       "reopen": "Open payment again",
       "invoiceError": "Could not create the payment. Try another method.",
+      "balanceSufficient": "Your balance now covers the price — pay from balance",
       "methodsError": "Could not load payment methods.",
       "methodsEmpty": "No payment methods available"
     }
