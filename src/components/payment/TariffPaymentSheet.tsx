@@ -71,6 +71,9 @@ export function TariffPaymentSheet({
   const [invoice, setInvoice] = useState<CreatedInvoice | null>(null);
   const [error, setError] = useState<string | null>(null);
   const paidRef = useRef(false);
+  // «Жив» ли шит: синхронно гасится в обёртке onClose, чтобы асинхронные
+  // колбэки (await invoice) не продолжали работу после закрытия/размонтирования.
+  const aliveRef = useRef(open);
 
   const formatPrice = (kopeks: number) => `${formatAmount(kopeks / 100)} ${currencySymbol}`;
   const missing = Math.max(0, priceKopeks - balanceKopeks);
@@ -78,6 +81,7 @@ export function TariffPaymentSheet({
   // При каждом открытии — сброс состояния и свежий список методов.
   useEffect(() => {
     if (!open) return;
+    aliveRef.current = true;
     setStage('methods');
     setInvoice(null);
     setError(null);
@@ -98,8 +102,10 @@ export function TariffPaymentSheet({
 
   // Поллинг: провайдер отметил оплату ИЛИ баланс дотянулся до цены
   // (вебхук зачислил — корзина активирует тариф на бэке независимо от UI).
+  // Шит закрыт — поллинг не стартует: иначе запросы молотили бы бесконечно,
+  // а поздний onPaid увёл бы юзера со страницы без предупреждения.
   useEffect(() => {
-    if (stage !== 'waiting' || !invoice) return;
+    if (stage !== 'waiting' || !invoice || !open) return;
     let cancelled = false;
     const tick = async () => {
       try {
@@ -107,7 +113,7 @@ export function TariffPaymentSheet({
           balanceApi.getLatestPayment(invoice.method).catch(() => null),
           balanceApi.getBalance().catch(() => null),
         ]);
-        if (cancelled || paidRef.current) return;
+        if (cancelled || !aliveRef.current || paidRef.current) return;
         const paidByProvider = latest?.is_paid === true;
         const paidByBalance = balance ? balance.balance_kopeks >= invoice.priceKopeks : false;
         if (paidByProvider || paidByBalance) {
@@ -128,7 +134,7 @@ export function TariffPaymentSheet({
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [stage, invoice, queryClient]);
+  }, [stage, invoice, open, queryClient]);
 
   // Успех: короткая пауза на анимацию галки — и уходим к подписке.
   useEffect(() => {
@@ -148,7 +154,15 @@ export function TariffPaymentSheet({
         subscription_id: subscriptionId,
         payment_method: method.id,
       });
-      setInvoice({ method: method.id, paymentUrl: result.payment_url, priceKopeks });
+      // Шит могли закрыть, пока invoice создавался: инвойс на бэке уже есть
+      // (юзер оплатит из корзины/истории), но редирект без его ведома — нельзя.
+      if (!aliveRef.current) return;
+      setInvoice({
+        method: method.id,
+        paymentUrl: result.payment_url,
+        // Авторитетная цена корзины с бэка — по ней сверяем баланс в поллинге.
+        priceKopeks: result.price_kopeks,
+      });
       setStage('waiting');
       openPaymentUrl(result.payment_url, platform, openLink);
     } catch {
@@ -163,7 +177,14 @@ export function TariffPaymentSheet({
       : t('payment.tariffSheet.title', { tariff: tariffName });
 
   return (
-    <ResponsiveSheet isOpen={open} onClose={() => onOpenChange(false)} title={title}>
+    <ResponsiveSheet
+      isOpen={open}
+      onClose={() => {
+        aliveRef.current = false;
+        onOpenChange(false);
+      }}
+      title={title}
+    >
       {stage === 'success' ? (
         <div className="flex flex-col items-center gap-4 px-4 pb-10 pt-2">
           <SuccessBurst size={72} />
@@ -227,6 +248,11 @@ export function TariffPaymentSheet({
                   <div className="flex justify-center py-6">
                     <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent-500/30 border-t-accent-400" />
                   </div>
+                )}
+                {methods !== null && methods.length === 0 && (
+                  <p className="py-6 text-center text-sm text-dark-400">
+                    {t('payment.tariffSheet.methodsEmpty')}
+                  </p>
                 )}
               </div>
             </>
