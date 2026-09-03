@@ -129,13 +129,18 @@ export function Sheet({
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
+      // Растягиваем через left/right, а не width: 100% — у body в globals.css
+      // width: 100vw, и inline-100% на движках с классическим скроллбаром
+      // делал бы страницу уже на ширину скроллбара («сжатый» контент).
+      document.body.style.left = '0';
+      document.body.style.right = '0';
 
       return () => {
         document.body.style.overflow = '';
         document.body.style.position = '';
         document.body.style.top = '';
-        document.body.style.width = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
         window.scrollTo(0, scrollY);
       };
     }

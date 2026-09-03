@@ -1952,6 +1952,14 @@ html.light .ix-island {
     0 18px 40px -24px rgba(15, 23, 42, 0.18);
 }
 
+/* .ix-island выставляет position: relative (позиционирование ::before), и как
+   неуровневый авторский стиль перебивает утилиту .fixed из @layer utilities.
+   Фиксированные «островки» (MobileBottomNav) объявляют оба класса — возвращаем
+   им fixed явно, иначе навигация встаёт в поток в конце контента. */
+.ix-island.fixed {
+  position: fixed;
+}
+
 .ix-island::before {
   content: "";
   position: absolute;

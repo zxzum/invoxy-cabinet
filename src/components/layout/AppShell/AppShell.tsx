@@ -149,12 +149,15 @@ export function AppShell({ children }: AppShellProps) {
         onClick={handleNavClick}
         className={cn('ix-side-link relative', active && 'ix-side-link-active')}
       >
-        {/* Пилл активного пункта: layoutId ровно один в дереве — только у активного */}
+        {/* Пилл активного пункта: layoutId ровно один в дереве — только у активного.
+            Центрирование через top: calc(...), а не -translate-y-1/2: framer-motion
+            пишет transform inline (layout-анимация пилла) и перебивает translate
+            из класса — пилл уезжал на полвысоты ниже центра. */}
         {active && (
           <motion.span
             layoutId="ix-side-pill"
             aria-hidden="true"
-            className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full"
+            className="absolute left-0 top-[calc(50%-12px)] h-6 w-1 rounded-full"
             style={{
               background: 'rgb(var(--color-accent-400))',
               boxShadow: '0 0 12px var(--ix-glow)',

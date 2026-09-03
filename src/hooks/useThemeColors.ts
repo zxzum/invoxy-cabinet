@@ -1,7 +1,11 @@
-import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { themeColorsApi } from '../api/themeColors';
-import { ThemeColors, DEFAULT_THEME_COLORS, SHADE_LEVELS, ColorPalette } from '../types/theme';
+import {
+  type ThemeColors,
+  DEFAULT_THEME_COLORS,
+  SHADE_LEVELS,
+  type ColorPalette,
+} from '../types/theme';
 import { hexToRgb, hexToHsl, hslToRgb } from '../utils/colorConversion';
 
 // Convert RGB to string format for CSS variable
@@ -68,7 +72,7 @@ function mixRgb(rgb1: Rgb, rgb2: Rgb, factor: number): Rgb {
 function relativeLuminance({ r, g, b }: Rgb): number {
   const srgb = (v: number) => {
     const c = v / 255;
-    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
   };
   return 0.2126 * srgb(r) + 0.7152 * srgb(g) + 0.0722 * srgb(b);
 }
@@ -272,11 +276,11 @@ export function useThemeColors() {
     retry: 1,
   });
 
-  // Apply colors when loaded or changed
-  useEffect(() => {
-    const colorsToApply = colors || DEFAULT_THEME_COLORS;
-    applyThemeColors(colorsToApply);
-  }, [colors]);
+  // Применением цветов на :root занимается только ThemeColorsProvider
+  // (palette-first). Раньше здесь был свой applyThemeColors(colors) на маунт —
+  // он перезаписывал CSS-переменные выбранной палитры цветами из
+  // /branding/colors на каждой странице, где смонтирован потребитель хука
+  // (дашборд с SubscriptionCardActive и т.п.): палитра «слетала» при навигации.
 
   const invalidateColors = () => {
     queryClient.invalidateQueries({ queryKey: ['theme-colors'] });

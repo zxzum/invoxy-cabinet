@@ -88,16 +88,23 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
 
     document.addEventListener('keydown', handleKeyDown);
 
-    let prevOverflow: string | undefined;
+    // Скроллер документа — <html> (у него overflow-x: hidden, поэтому overflow
+    // body на вьюпорт не прокидывается): блокировать надо оба, иначе страница
+    // продолжает крутиться под открытым диалогом.
+    let prevBodyOverflow: string | undefined;
+    let prevHtmlOverflow: string | undefined;
     if (lockScroll) {
-      prevOverflow = document.body.style.overflow;
+      prevBodyOverflow = document.body.style.overflow;
+      prevHtmlOverflow = document.documentElement.style.overflow;
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     }
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       if (lockScroll) {
-        document.body.style.overflow = prevOverflow ?? '';
+        document.body.style.overflow = prevBodyOverflow ?? '';
+        document.documentElement.style.overflow = prevHtmlOverflow ?? '';
       }
       previouslyFocused?.focus?.();
     };
