@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
+import { staggerEntrance } from '@/components/motion';
 import { referralApi, type ReferralEarning } from '../api/referral';
 import type { ReferralDaysTargetOption, ReferralTerms } from '../types';
 import { usePlatform } from '../platform';
@@ -269,7 +271,7 @@ export function ProgrammeTerms({ terms }: { terms: ReferralTerms }) {
   const progress = tierProgressText(terms, t);
 
   return (
-    <div className="bento-card">
+    <div className="bento-card animate-none">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-dark-100">{t('referral.terms.title')}</h2>
         {/* Правило режима — одной фразой над лестницей. Без неё список
@@ -526,7 +528,7 @@ export default function Referral() {
     const gridCols = gridColsMap[cardCount] ?? 'md:grid-cols-4';
 
     return (
-      <div className="bento-card">
+      <div className="bento-card animate-none">
         <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.terms.title')}</h2>
         <div className={`grid grid-cols-2 gap-4 ${gridCols}`}>
           <StatCard
@@ -642,12 +644,20 @@ export default function Referral() {
   const showApprovedSection = partnerStatusValue === 'approved';
   const showRejectedSection = partnerStatusValue === 'rejected';
 
+  // Stagger-вход верхних секций (паттерн дашборда): задержка = база + индекс*шаг.
+  // У bento-карточек внутри гасим CSS-вход bentoFadeIn через animate-none,
+  // иначе двойная анимация. Exit не задаём — уход страницы уже анимирован
+  // AnimatePresence в AppShell.
+  const section = (index: number) => staggerEntrance(index, 0.05, 0.07);
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('referral.title')}</h1>
+      <motion.div {...section(0)}>
+        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('referral.title')}</h1>
+      </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+      <motion.div {...section(1)} className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
         <div className="col-span-2 md:col-span-1">
           <StatCard
             label={t('referral.stats.totalReferrals')}
@@ -691,10 +701,10 @@ export default function Referral() {
           icon={<PercentIcon className="h-5 w-5" />}
           tone="accent"
         />
-      </div>
+      </motion.div>
 
       {/* Referral Links */}
-      <div className="bento-card">
+      <motion.div {...section(2)} className="bento-card animate-none">
         <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
         <div className="space-y-3">
           {/* Bot link */}
@@ -765,10 +775,10 @@ export default function Referral() {
             ? t('referral.shareHintLevels')
             : t('referral.shareHint', { percent: info?.commission_percent || 0 })}
         </p>
-      </div>
+      </motion.div>
 
       {/* Program Terms */}
-      {programTerms}
+      {programTerms && <motion.div {...section(3)}>{programTerms}</motion.div>}
 
       {/* Reward Settings */}
       {terms && (
@@ -792,7 +802,7 @@ export default function Referral() {
       )}
 
       {/* Referrals List */}
-      <div className="bento-card">
+      <motion.div {...section(4)} className="bento-card animate-none">
         <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.yourReferrals')}</h2>
         {referralList?.items && referralList.items.length > 0 ? (
           <div className="space-y-3">
@@ -825,7 +835,7 @@ export default function Referral() {
             <div className="text-dark-400">{t('referral.noReferrals')}</div>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Earnings History */}
       {earnings?.items && earnings.items.length > 0 && (

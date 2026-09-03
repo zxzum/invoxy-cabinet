@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
+import { staggerEntrance } from '@/components/motion';
 import { useTheme } from '../../../hooks/useTheme';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
@@ -130,7 +132,7 @@ export function TariffPickerGrid({
             if (!aIsCurrent && bIsCurrent) return 1;
             return 0;
           })
-          .map((tariff) => {
+          .map((tariff, index) => {
             const isCurrentTariff = tariff.is_current || tariff.id === subscription?.tariff_id;
             const isSubscriptionExpired =
               isTariffsMode &&
@@ -157,161 +159,171 @@ export function TariffPickerGrid({
               subscription && !subscription.is_trial && !subscription.tariff_id;
 
             return (
-              <div
-                key={tariff.id}
-                className={`bento-card-hover p-5 text-left transition-all ${
-                  isCurrentTariff ? 'bento-card-glow border-accent-500' : ''
-                }`}
-              >
-                <div className="mb-3 flex items-start justify-between">
-                  <div>
-                    <div className="text-lg font-semibold text-dark-100">{tariff.name}</div>
-                    {tariff.description && (
-                      <div className="mt-1 whitespace-pre-line text-sm text-dark-400">
-                        {tariff.description}
+              // Stagger-вход карточек. CSS-вход bentoFadeIn на bento-card гасим
+              // (animate-none), иначе двойная анимация (прецедент: Dashboard
+              // wheel-banner). whileTap на обёртку не вешаем: у карточки уже
+              // есть свой press через .bento-card-hover:active — было бы двойное
+              // вжатие.
+              <motion.div key={tariff.id} {...staggerEntrance(index, 0.1, 0.06)}>
+                <div
+                  className={`bento-card-hover animate-none p-5 text-left transition-all ${
+                    isCurrentTariff ? 'bento-card-glow border-accent-500' : ''
+                  }`}
+                >
+                  <div className="mb-3 flex items-start justify-between">
+                    <div>
+                      <div className="text-lg font-semibold text-dark-100">{tariff.name}</div>
+                      {tariff.description && (
+                        <div className="mt-1 whitespace-pre-line text-sm text-dark-400">
+                          {tariff.description}
+                        </div>
+                      )}
+                    </div>
+                    {isCurrentTariff && (
+                      <span className="badge-success text-xs">
+                        {t('subscription.currentTariff')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <ArrowDownIcon className="h-4 w-4 text-accent-400" />
+                      <span className="font-medium text-dark-200">
+                        {tariff.traffic_limit_label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <DevicesIcon className="h-4 w-4 text-dark-400" />
+                      <span className="text-dark-300">
+                        {tariff.device_limit === 0
+                          ? '∞'
+                          : t('subscription.devices', { count: tariff.device_limit })}
+                      </span>
+                    </div>
+                    {tariff.traffic_reset_mode && tariff.traffic_reset_mode !== 'NO_RESET' && (
+                      <div className="flex items-center gap-1.5">
+                        <RestartIcon className="h-4 w-4 text-dark-400" />
+                        <span className="text-dark-300">
+                          {t(`subscription.trafficReset.${tariff.traffic_reset_mode}`)}
+                        </span>
                       </div>
                     )}
                   </div>
-                  {isCurrentTariff && (
-                    <span className="badge-success text-xs">{t('subscription.currentTariff')}</span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-1.5">
-                    <ArrowDownIcon className="h-4 w-4 text-accent-400" />
-                    <span className="font-medium text-dark-200">{tariff.traffic_limit_label}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <DevicesIcon className="h-4 w-4 text-dark-400" />
-                    <span className="text-dark-300">
-                      {tariff.device_limit === 0
-                        ? '∞'
-                        : t('subscription.devices', { count: tariff.device_limit })}
-                    </span>
-                  </div>
-                  {tariff.traffic_reset_mode && tariff.traffic_reset_mode !== 'NO_RESET' && (
-                    <div className="flex items-center gap-1.5">
-                      <RestartIcon className="h-4 w-4 text-dark-400" />
-                      <span className="text-dark-300">
-                        {t(`subscription.trafficReset.${tariff.traffic_reset_mode}`)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {/* Price info */}
-                <div className="mt-3 border-t border-dark-700/50 pt-3 text-sm text-dark-400">
-                  {(() => {
-                    const dailyPrice =
-                      tariff.daily_price_kopeks ?? tariff.price_per_day_kopeks ?? 0;
-                    const originalDailyPrice = tariff.original_daily_price_kopeks || 0;
-                    if (dailyPrice > 0 || originalDailyPrice > 0) {
-                      const promoDaily = applyPromoDiscount(
-                        dailyPrice,
-                        originalDailyPrice > dailyPrice ? originalDailyPrice : undefined,
-                      );
-                      return (
-                        <span className="flex items-center gap-2">
-                          <span className="font-medium text-accent-400">
-                            {formatPrice(promoDaily.price)}
+                  {/* Price info */}
+                  <div className="mt-3 border-t border-dark-700/50 pt-3 text-sm text-dark-400">
+                    {(() => {
+                      const dailyPrice =
+                        tariff.daily_price_kopeks ?? tariff.price_per_day_kopeks ?? 0;
+                      const originalDailyPrice = tariff.original_daily_price_kopeks || 0;
+                      if (dailyPrice > 0 || originalDailyPrice > 0) {
+                        const promoDaily = applyPromoDiscount(
+                          dailyPrice,
+                          originalDailyPrice > dailyPrice ? originalDailyPrice : undefined,
+                        );
+                        return (
+                          <span className="flex items-center gap-2">
+                            <span className="font-medium text-accent-400">
+                              {formatPrice(promoDaily.price)}
+                            </span>
+                            {promoDaily.original && promoDaily.original > promoDaily.price && (
+                              <span className="text-xs text-dark-500 line-through">
+                                {formatPrice(promoDaily.original)}
+                              </span>
+                            )}
+                            <span>{t('subscription.tariff.perDay')}</span>
+                            {promoDaily.percent && promoDaily.percent > 0 && (
+                              <span
+                                className={`rounded px-1.5 py-0.5 text-xs ${
+                                  promoDaily.isPromoGroup
+                                    ? 'bg-success-500/20 text-success-400'
+                                    : 'bg-warning-500/20 text-warning-400'
+                                }`}
+                              >
+                                -{promoDaily.percent}%
+                              </span>
+                            )}
                           </span>
-                          {promoDaily.original && promoDaily.original > promoDaily.price && (
-                            <span className="text-xs text-dark-500 line-through">
-                              {formatPrice(promoDaily.original)}
+                        );
+                      }
+                      if (tariff.periods.length > 0) {
+                        const firstPeriod = tariff.periods[0];
+                        const promoPeriod = applyPromoDiscount(
+                          firstPeriod?.price_kopeks || 0,
+                          firstPeriod?.original_price_kopeks,
+                        );
+                        return (
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span>{t('subscription.from')}</span>
+                            <span className="font-medium text-accent-400">
+                              {formatPrice(promoPeriod.price)}
                             </span>
-                          )}
-                          <span>{t('subscription.tariff.perDay')}</span>
-                          {promoDaily.percent && promoDaily.percent > 0 && (
-                            <span
-                              className={`rounded px-1.5 py-0.5 text-xs ${
-                                promoDaily.isPromoGroup
-                                  ? 'bg-success-500/20 text-success-400'
-                                  : 'bg-warning-500/20 text-warning-400'
-                              }`}
-                            >
-                              -{promoDaily.percent}%
-                            </span>
-                          )}
+                            {promoPeriod.original && promoPeriod.original > promoPeriod.price && (
+                              <span className="text-xs text-dark-500 line-through">
+                                {formatPrice(promoPeriod.original)}
+                              </span>
+                            )}
+                            {promoPeriod.percent && promoPeriod.percent > 0 && (
+                              <span
+                                className={`rounded px-1.5 py-0.5 text-xs ${
+                                  promoPeriod.isPromoGroup
+                                    ? 'bg-success-500/20 text-success-400'
+                                    : 'bg-warning-500/20 text-warning-400'
+                                }`}
+                              >
+                                -{promoPeriod.percent}%
+                              </span>
+                            )}
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="font-medium text-accent-400">
+                          {t('subscription.tariff.flexiblePayment')}
                         </span>
                       );
-                    }
-                    if (tariff.periods.length > 0) {
-                      const firstPeriod = tariff.periods[0];
-                      const promoPeriod = applyPromoDiscount(
-                        firstPeriod?.price_kopeks || 0,
-                        firstPeriod?.original_price_kopeks,
-                      );
-                      return (
-                        <span className="flex flex-wrap items-center gap-2">
-                          <span>{t('subscription.from')}</span>
-                          <span className="font-medium text-accent-400">
-                            {formatPrice(promoPeriod.price)}
-                          </span>
-                          {promoPeriod.original && promoPeriod.original > promoPeriod.price && (
-                            <span className="text-xs text-dark-500 line-through">
-                              {formatPrice(promoPeriod.original)}
-                            </span>
-                          )}
-                          {promoPeriod.percent && promoPeriod.percent > 0 && (
-                            <span
-                              className={`rounded px-1.5 py-0.5 text-xs ${
-                                promoPeriod.isPromoGroup
-                                  ? 'bg-success-500/20 text-success-400'
-                                  : 'bg-warning-500/20 text-warning-400'
-                              }`}
-                            >
-                              -{promoPeriod.percent}%
-                            </span>
-                          )}
-                        </span>
-                      );
-                    }
-                    return (
-                      <span className="font-medium text-accent-400">
-                        {t('subscription.tariff.flexiblePayment')}
-                      </span>
-                    );
-                  })()}
-                </div>
+                    })()}
+                  </div>
 
-                {/* Action Buttons */}
-                <div className="mt-4 flex gap-2">
-                  {isCurrentTariff ? (
-                    subscription?.is_daily ? (
-                      <div className="flex-1 py-2 text-center text-sm text-dark-500">
-                        {t('subscription.currentTariff')}
-                      </div>
+                  {/* Action Buttons */}
+                  <div className="mt-4 flex gap-2">
+                    {isCurrentTariff ? (
+                      subscription?.is_daily ? (
+                        <div className="flex-1 py-2 text-center text-sm text-dark-500">
+                          {t('subscription.currentTariff')}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => onSelectTariff(tariff)}
+                          className="btn-primary flex-1 py-2 text-sm"
+                        >
+                          {t('subscription.extend')}
+                        </button>
+                      )
+                    ) : isLegacySubscription ? (
+                      <button
+                        onClick={() => onSelectTariff(tariff)}
+                        className="btn-primary flex-1 py-2 text-sm"
+                      >
+                        {t('subscription.tariff.selectForRenewal')}
+                      </button>
+                    ) : canSwitch ? (
+                      <button
+                        onClick={() => onSwitchTariff(tariff.id)}
+                        className="btn-secondary flex-1 py-2 text-sm"
+                      >
+                        {t('subscription.switchTariff.switch')}
+                      </button>
                     ) : (
                       <button
                         onClick={() => onSelectTariff(tariff)}
                         className="btn-primary flex-1 py-2 text-sm"
                       >
-                        {t('subscription.extend')}
+                        {t('subscription.purchase')}
                       </button>
-                    )
-                  ) : isLegacySubscription ? (
-                    <button
-                      onClick={() => onSelectTariff(tariff)}
-                      className="btn-primary flex-1 py-2 text-sm"
-                    >
-                      {t('subscription.tariff.selectForRenewal')}
-                    </button>
-                  ) : canSwitch ? (
-                    <button
-                      onClick={() => onSwitchTariff(tariff.id)}
-                      className="btn-secondary flex-1 py-2 text-sm"
-                    >
-                      {t('subscription.switchTariff.switch')}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onSelectTariff(tariff)}
-                      className="btn-primary flex-1 py-2 text-sm"
-                    >
-                      {t('subscription.purchase')}
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
       </div>
