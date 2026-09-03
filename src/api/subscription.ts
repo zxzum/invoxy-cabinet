@@ -16,6 +16,22 @@ import type {
   LavaRecurringInfo,
 } from '../types';
 
+/**
+ * Результат создания платежа на недостающую сумму тарифа (Task 9/10):
+ * бэк вычитает баланс из цены и отдаёт invoice только на разницу.
+ */
+export interface TariffInvoiceResult {
+  payment_id: string;
+  payment_url: string;
+  /** Недостающая сумма (price − balance), которую оплачивает пользователь. */
+  amount_kopeks: number;
+  amount_rubles: number;
+  /** Полная цена тарифа — цель корзины для поллинга по балансу. */
+  price_kopeks: number;
+  balance_kopeks: number;
+  method: string;
+}
+
 /** Helper: build query params with optional subscription_id */
 const withSubId = (subscriptionId?: number, extra?: Record<string, unknown>) => ({
   params: {
@@ -515,6 +531,21 @@ export const subscriptionApi = {
       period_days: periodDays,
       traffic_gb: trafficGb,
       subscription_id: subscriptionId,
+      yandex_cid: getYandexCid() || undefined,
+    });
+    return response.data;
+  },
+
+  createTariffInvoice: async (payload: {
+    tariff_id: number;
+    period_days?: number;
+    traffic_gb?: number;
+    subscription_id?: number;
+    payment_method: string;
+    payment_option?: string;
+  }): Promise<TariffInvoiceResult> => {
+    const response = await apiClient.post('/cabinet/subscription/purchase-tariff/invoice', {
+      ...payload,
       yandex_cid: getYandexCid() || undefined,
     });
     return response.data;

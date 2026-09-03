@@ -964,6 +964,20 @@
     },
     "top_up": "Top up balance"
   },
+  "payment": {
+    "tariffSheet": {
+      "title": "Pay for {{tariff}}",
+      "successTitle": "Payment received",
+      "successText": "Your plan activates right after the payment lands — it takes a few seconds.",
+      "fromBalance": "Charged from balance",
+      "dueNow": "To pay",
+      "chooseMethod": "Payment method",
+      "waiting": "Waiting for payment…",
+      "reopen": "Open payment again",
+      "invoiceError": "Could not create the payment. Try another method.",
+      "methodsError": "Could not load payment methods."
+    }
+  },
   "referral": {
     "title": "Referral Program",
     "yourLink": "Your Referral Links",

@@ -10,6 +10,7 @@ import { usePlatform } from '../../../platform';
 import { openPaymentUrl } from '../../../utils/openPaymentUrl';
 import { getMonthlyPriceKopeks } from '../../../utils/pricing';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
+import { TariffPaymentSheet } from '../../payment/TariffPaymentSheet';
 import type { Tariff, TariffPeriod } from '../../../types';
 
 // ──────────────────────────────────────────────────────────────────
@@ -71,6 +72,7 @@ export function TariffPurchaseForm({
   const [customTrafficGb, setCustomTrafficGb] = useState<number>(50);
   const [useCustomDays, setUseCustomDays] = useState(false);
   const [useCustomTraffic, setUseCustomTraffic] = useState(false);
+  const [paySheetOpen, setPaySheetOpen] = useState(false);
 
   const purchaseMutation = useMutation({
     mutationFn: () => {
@@ -265,11 +267,14 @@ export function TariffPurchaseForm({
                     totalPriceKopeks={dailyPrice}
                     compact
                     className="mb-4"
+                    onPay={() => setPaySheetOpen(true)}
                   />
                 )}
 
                 <button
-                  onClick={() => purchaseMutation.mutate()}
+                  onClick={() =>
+                    hasEnoughBalance ? purchaseMutation.mutate() : setPaySheetOpen(true)
+                  }
                   disabled={purchaseMutation.isPending}
                   className="btn-primary w-full py-3"
                 >
@@ -278,12 +283,31 @@ export function TariffPurchaseForm({
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                       {t('common.loading')}
                     </span>
-                  ) : (
+                  ) : hasEnoughBalance ? (
                     t('subscription.dailyPurchase.activate', {
                       price: formatPrice(dailyPrice),
                     })
+                  ) : (
+                    t('balance.payTariffDirect')
                   )}
                 </button>
+
+                <TariffPaymentSheet
+                  open={paySheetOpen}
+                  onOpenChange={setPaySheetOpen}
+                  tariffId={tariff.id}
+                  tariffName={tariff.name}
+                  periodDays={1}
+                  subscriptionId={subscriptionId}
+                  priceKopeks={dailyPrice}
+                  balanceKopeks={balanceKopeks ?? 0}
+                  onPaid={() => {
+                    setPaySheetOpen(false);
+                    queryClient.invalidateQueries({ queryKey: ['subscription'] });
+                    queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+                    navigate('/subscriptions', { replace: true });
+                  }}
+                />
 
                 {sbpPurchaseButton}
                 {lavaPurchaseButton}
@@ -699,53 +723,62 @@ export function TariffPurchaseForm({
                     {(() => {
                       const hasEnoughBalance =
                         balanceKopeks !== undefined && totalPrice <= balanceKopeks;
+                      const missingKopeks = hasEnoughBalance
+                        ? 0
+                        : totalPrice - (balanceKopeks ?? 0);
+                      const effectivePeriodDays = useCustomDays
+                        ? customDays
+                        : selectedTariffPeriod?.days || 30;
+                      const effectiveTrafficGb =
+                        useCustomTraffic && tariff.custom_traffic_enabled
+                          ? customTrafficGb
+                          : undefined;
                       return (
-                    <>
-                    {!hasEnoughBalance && balanceKopeks !== undefined && (
-                      <InsufficientBalancePrompt
-                        missingAmountKopeks={totalPrice - balanceKopeks}
-                        totalPriceKopeks={totalPrice}
-                        className="mb-4"
-                        onBeforeTopUp={async () => {
-                          try {
-                            await purchaseMutation.mutateAsync();
-                          } catch {
-                            // 402 saves the cart; payment page completes the purchase.
-                          }
-                        }}
-                      />
-                    )}
-                    <button
-                      onClick={() => {
-                        if (hasEnoughBalance) {
-                          purchaseMutation.mutate();
-                          return;
-                        }
-                        purchaseMutation.mutate(undefined, {
-                          onError: () => {
-                            const params = new URLSearchParams();
-                            params.set('amount', String(Math.ceil(totalPrice / 100)));
-                            params.set('returnTo', '/subscription/purchase');
-                            params.set('direct', '1');
-                            navigate(`/balance/top-up?${params.toString()}`);
-                          },
-                        });
-                      }}
-                      disabled={purchaseMutation.isPending}
-                      className="btn-primary w-full py-3"
-                    >
-                      {purchaseMutation.isPending ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                          {t('common.loading')}
-                        </span>
-                      ) : hasEnoughBalance ? (
-                        t('subscription.purchase')
-                      ) : (
-                        t('balance.payTariffDirect')
-                      )}
-                    </button>
-                    </>
+                        <>
+                          {!hasEnoughBalance && balanceKopeks !== undefined && (
+                            <InsufficientBalancePrompt
+                              missingAmountKopeks={missingKopeks}
+                              totalPriceKopeks={totalPrice}
+                              className="mb-4"
+                              onPay={() => setPaySheetOpen(true)}
+                            />
+                          )}
+                          <button
+                            onClick={() =>
+                              hasEnoughBalance ? purchaseMutation.mutate() : setPaySheetOpen(true)
+                            }
+                            disabled={purchaseMutation.isPending}
+                            className="btn-primary w-full py-3"
+                          >
+                            {purchaseMutation.isPending ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                {t('common.loading')}
+                              </span>
+                            ) : hasEnoughBalance ? (
+                              t('subscription.purchase')
+                            ) : (
+                              t('balance.payTariffDirect')
+                            )}
+                          </button>
+                          <TariffPaymentSheet
+                            open={paySheetOpen}
+                            onOpenChange={setPaySheetOpen}
+                            tariffId={tariff.id}
+                            tariffName={tariff.name}
+                            periodDays={effectivePeriodDays}
+                            trafficGb={effectiveTrafficGb}
+                            subscriptionId={subscriptionId}
+                            priceKopeks={totalPrice}
+                            balanceKopeks={balanceKopeks ?? 0}
+                            onPaid={() => {
+                              setPaySheetOpen(false);
+                              queryClient.invalidateQueries({ queryKey: ['subscription'] });
+                              queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+                              navigate('/subscriptions', { replace: true });
+                            }}
+                          />
+                        </>
                       );
                     })()}
 

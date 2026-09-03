@@ -17,6 +17,8 @@ interface InsufficientBalancePromptProps {
   className?: string;
   /** Callback to execute before opening top-up modal (e.g., save cart) */
   onBeforeTopUp?: () => Promise<void>;
+  /** Колбэк «Оплатить» — открывает платёжный шит на месте. Без него — легаси-редирект на пополнение. */
+  onPay?: () => void;
 }
 
 export default function InsufficientBalancePrompt({
@@ -26,6 +28,7 @@ export default function InsufficientBalancePrompt({
   compact = false,
   className = '',
   onBeforeTopUp,
+  onPay,
 }: InsufficientBalancePromptProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -33,7 +36,8 @@ export default function InsufficientBalancePrompt({
   const { formatAmount, currencySymbol } = useCurrency();
   const [isPreparingTopUp, setIsPreparingTopUp] = useState(false);
 
-  const chargeKopeks = totalPriceKopeks && totalPriceKopeks > 0 ? totalPriceKopeks : missingAmountKopeks;
+  const chargeKopeks =
+    totalPriceKopeks && totalPriceKopeks > 0 ? totalPriceKopeks : missingAmountKopeks;
   const chargeRubles = chargeKopeks / 100;
   const displayAmount = formatAmount(chargeRubles);
 
@@ -55,7 +59,14 @@ export default function InsufficientBalancePrompt({
     navigate(`/balance/top-up?${params.toString()}`);
   };
 
-  const handlePayDirect = () => goToPayment(chargeRubles);
+  // onPay — прямой платёж шитом на месте; без него — легаси-редирект на пополнение.
+  const handlePay = () => {
+    if (onPay) {
+      onPay();
+      return;
+    }
+    void goToPayment(chargeRubles);
+  };
 
   if (compact) {
     return (
@@ -72,7 +83,7 @@ export default function InsufficientBalancePrompt({
           </span>
         </div>
         <button
-          onClick={handlePayDirect}
+          onClick={handlePay}
           disabled={isPreparingTopUp}
           className="btn-primary whitespace-nowrap px-3 py-1.5 text-xs"
         >
@@ -108,7 +119,7 @@ export default function InsufficientBalancePrompt({
         </div>
       </div>
       <button
-        onClick={handlePayDirect}
+        onClick={handlePay}
         disabled={isPreparingTopUp}
         className="btn-primary mt-4 flex w-full items-center justify-center gap-2 py-2.5"
       >
