@@ -12,7 +12,6 @@ import { HoverBorderGradient } from '../components/ui/hover-border-gradient';
 import { useTrafficZone } from '../hooks/useTrafficZone';
 import { formatTraffic } from '../utils/formatTraffic';
 import { getGlassColors } from '../utils/glassTheme';
-import { copyToClipboard } from '../utils/clipboard';
 import { useTheme } from '../hooks/useTheme';
 import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { useCurrency } from '../hooks/useCurrency';
@@ -20,7 +19,6 @@ import { useCloseOnSuccessNotification } from '../store/successNotification';
 import PurchaseCTAButton from '../components/subscription/PurchaseCTAButton';
 import {
   CopyIcon,
-  CheckIcon,
   PauseIcon,
   CalendarIcon,
   RefreshIcon,
@@ -28,6 +26,7 @@ import {
   DownloadIcon,
   TrashIcon,
 } from '../components/icons';
+import { AnimatedCopy } from '../components/common/AnimatedCopy';
 import { useHaptic, usePlatform } from '../platform';
 import { resolveConnectionUrlForUi } from '../utils/connectionLink';
 import {
@@ -212,7 +211,6 @@ export default function Subscription() {
   const haptic = useHaptic();
   const { openLink, platform } = usePlatform();
   const { showToast } = useToast();
-  const [copied, setCopied] = useState(false);
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const destructiveConfirm = useDestructiveConfirm();
 
@@ -638,14 +636,6 @@ export default function Subscription() {
     refreshTrafficMutation.mutate();
   }, [subscription, refreshTrafficMutation, subscriptionId]);
 
-  const copyUrl = () => {
-    if (displayedConnectionUrl) {
-      void copyToClipboard(displayedConnectionUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const handleRevoke = async () => {
     const confirmed = await destructiveConfirm(
       t('subscription.revoke.warning'),
@@ -1068,21 +1058,19 @@ export default function Subscription() {
                   >
                     {displayedConnectionUrl}
                   </code>
-                  <button
-                    onClick={copyUrl}
+                  <AnimatedCopy
+                    value={displayedConnectionUrl}
+                    label={t('subscription.copyLink')}
+                    title={t('subscription.copyLink')}
                     className="flex h-auto items-center rounded-[10px] px-3 transition-colors duration-300"
                     style={{
-                      background: copied ? 'rgba(var(--color-accent-400), 0.12)' : g.innerBorder,
-                      border: copied
-                        ? '1px solid rgba(var(--color-accent-400), 0.2)'
-                        : `1px solid ${g.trackBg}`,
-                      color: copied ? 'rgb(var(--color-accent-400))' : g.textMuted,
+                      background: g.innerBorder,
+                      border: `1px solid ${g.trackBg}`,
+                      color: g.textMuted,
                     }}
-                    aria-label={t('subscription.copyLink')}
-                    title={t('subscription.copyLink')}
                   >
-                    {copied ? <CheckIcon /> : <CopyIcon />}
-                  </button>
+                    <CopyIcon />
+                  </AnimatedCopy>
                 </div>
               )}
 

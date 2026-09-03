@@ -14,14 +14,8 @@ import { useCurrency } from '../hooks/useCurrency';
 import { useTelegramSDK } from '../hooks/useTelegramSDK';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useHaptic } from '@/platform';
-import {
-  CheckCircleIcon,
-  CloseIcon,
-  DevicesIcon,
-  RocketIcon,
-  TrafficIcon,
-  WalletIcon,
-} from '@/components/icons';
+import { CloseIcon, DevicesIcon, RocketIcon, TrafficIcon, WalletIcon } from '@/components/icons';
+import { SuccessBurst } from '@/components/motion';
 
 export default function SuccessNotificationModal() {
   const { t } = useTranslation();
@@ -108,33 +102,41 @@ export default function SuccessNotificationModal() {
   // Determine title and message
   let title = data.title;
   const message = data.message;
-  let icon = <CheckCircleIcon className="h-16 w-16" />;
+  // Дефолтный успех — анимированный берст; типовые кейсы (wallet/rocket/...) — свои иконки.
+  let icon = <SuccessBurst size={56} />;
+  let isBurst = true;
   let gradientClass = 'from-success-500 to-success-600';
 
   if (!title) {
     if (isBalanceTopup) {
       title = t('successNotification.balanceTopup.title', 'Balance topped up!');
       icon = <WalletIcon className="h-8 w-8" />;
+      isBurst = false;
       gradientClass = 'from-success-500 to-success-600';
     } else if (data.type === 'subscription_activated') {
       title = t('successNotification.subscriptionActivated.title', 'Subscription activated!');
       icon = <RocketIcon className="h-8 w-8" />;
+      isBurst = false;
       gradientClass = 'from-accent-500 to-accent-700';
     } else if (data.type === 'subscription_renewed') {
       title = t('successNotification.subscriptionRenewed.title', 'Subscription renewed!');
       icon = <RocketIcon className="h-8 w-8" />;
+      isBurst = false;
       gradientClass = 'from-accent-500 to-accent-700';
     } else if (data.type === 'subscription_purchased') {
       title = t('successNotification.subscriptionPurchased.title', 'Subscription purchased!');
       icon = <RocketIcon className="h-8 w-8" />;
+      isBurst = false;
       gradientClass = 'from-accent-500 to-accent-700';
     } else if (data.type === 'devices_purchased') {
       title = t('successNotification.devicesPurchased.title', 'Devices added!');
       icon = <DevicesIcon className="h-8 w-8" />;
+      isBurst = false;
       gradientClass = 'from-blue-500 to-cyan-600';
     } else if (data.type === 'traffic_purchased') {
       title = t('successNotification.trafficPurchased.title', 'Traffic added!');
       icon = <TrafficIcon className="h-8 w-8" />;
+      isBurst = false;
       gradientClass = 'from-success-500 to-success-600';
     }
   }
@@ -187,8 +189,9 @@ export default function SuccessNotificationModal() {
           className={`flex flex-col items-center bg-gradient-to-br ${gradientClass} px-6 pb-8 pt-10`}
         >
           {/* Use animate-pulse for celebration; bounce easing reads dated and
-              the lift is the moment, not the bounce. */}
-          <div className="mb-4 animate-pulse text-white">{icon}</div>
+              the lift is the moment, not the bounce. SuccessBurst сам себя
+              анимирует и гаснет — бесконечный pulse ему не нужен. */}
+          <div className={`mb-4 text-white ${isBurst ? '' : 'animate-pulse'}`}>{icon}</div>
           <h2 id="success-modal-title" className="text-center text-2xl font-bold text-white">
             {title}
           </h2>
