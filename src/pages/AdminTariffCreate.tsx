@@ -26,6 +26,142 @@ import {
 } from '@/components/icons';
 
 type TariffType = 'period' | 'daily' | null;
+type TrafficPackages = Record<string, number>;
+
+function TrafficPackageEditor({
+  title,
+  packages,
+  onChange,
+  defaultGb,
+  defaultPrice,
+}: {
+  title: string;
+  packages: TrafficPackages;
+  onChange: (packages: TrafficPackages) => void;
+  defaultGb: number;
+  defaultPrice: number;
+}) {
+  const { t } = useTranslation();
+  const [newPackageGb, setNewPackageGb] = useState<number | ''>(defaultGb);
+  const [newPackagePrice, setNewPackagePrice] = useState<number | ''>(defaultPrice);
+  const [editingPrices, setEditingPrices] = useState<Record<string, string>>({});
+
+  return (
+    <div className="rounded-lg border border-dark-700 bg-dark-900/40 p-3">
+      <h5 className="mb-2 text-sm font-medium text-dark-300">{title}</h5>
+      <div className="rounded-lg border border-dashed border-dark-600 bg-dark-800/50 p-3">
+        <h6 className="mb-2 text-xs font-medium text-dark-400">
+          {t('admin.tariffs.addPackageTitle')}
+        </h6>
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <label className="mb-1 block text-xs text-dark-500">{t('admin.tariffs.gbUnit')}</label>
+            <input
+              type="number"
+              value={newPackageGb}
+              onChange={createNumberInputHandler(setNewPackageGb, 1)}
+              className="input w-20"
+              placeholder="10"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-dark-500">
+              {t('admin.tariffs.priceLabel')}
+            </label>
+            <input
+              type="number"
+              value={newPackagePrice}
+              onChange={createNumberInputHandler(setNewPackagePrice, 1)}
+              className="input w-24"
+              placeholder="100"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const gb = toNumber(newPackageGb, 0);
+              const price = toNumber(newPackagePrice, 0);
+              if (gb > 0 && price >= 0 && packages[String(gb)] === undefined) {
+                onChange({ ...packages, [String(gb)]: price * 100 });
+                setNewPackageGb(defaultGb);
+                setNewPackagePrice(defaultPrice);
+              }
+            }}
+            disabled={
+              newPackageGb === '' ||
+              newPackagePrice === '' ||
+              packages[String(newPackageGb)] !== undefined
+            }
+            className="btn-primary flex items-center gap-1 px-3 py-2 text-sm"
+          >
+            <PlusIcon />
+            {t('admin.tariffs.addButton')}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <span className="text-sm text-dark-400">{t('admin.tariffs.trafficPackagesLabel')}</span>
+        {Object.keys(packages).length === 0 ? (
+          <div className="mt-2 py-4 text-center text-sm text-dark-500">
+            {t('admin.tariffs.noPackagesHint')}
+          </div>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {Object.entries(packages)
+              .sort(([a], [b]) => Number(a) - Number(b))
+              .map(([gb, priceKopeks]) => (
+                <div key={gb} className="flex items-center gap-2 rounded-lg bg-dark-800 p-2">
+                  <span className="w-16 text-sm font-medium text-dark-300">
+                    {gb} {t('admin.tariffs.gbPackageUnit')}
+                  </span>
+                  <input
+                    type="number"
+                    value={editingPrices[gb] !== undefined ? editingPrices[gb] : priceKopeks / 100}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditingPrices((prev) => ({ ...prev, [gb]: val }));
+                      if (val !== '') {
+                        const num = parseFloat(val);
+                        if (!Number.isNaN(num)) {
+                          onChange({ ...packages, [gb]: Math.max(0, num) * 100 });
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === '') onChange({ ...packages, [gb]: 0 });
+                      setEditingPrices((prev) => {
+                        const copy = { ...prev };
+                        delete copy[gb];
+                        return copy;
+                      });
+                    }}
+                    className="input w-24"
+                    step={1}
+                    placeholder="0"
+                  />
+                  <span className="text-xs text-dark-400">₽</span>
+                  <div className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const copy = { ...packages };
+                      delete copy[gb];
+                      onChange(copy);
+                    }}
+                    className="rounded-lg p-2 text-dark-400 transition-colors hover:bg-error-500/20 hover:text-error-400"
+                    aria-label={`${t('common.delete')} ${gb} ${t('admin.tariffs.gbPackageUnit')}`}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminTariffCreate() {
   const { t } = useTranslation();
@@ -57,14 +193,9 @@ export default function AdminTariffCreate() {
   // Traffic topup
   const [trafficTopupEnabled, setTrafficTopupEnabled] = useState(false);
   const [maxTopupTrafficGb, setMaxTopupTrafficGb] = useState<number | ''>(0);
-  const [trafficTopupPackages, setTrafficTopupPackages] = useState<Record<string, number>>({});
-
-  // New traffic package for adding
-  const [newPackageGb, setNewPackageGb] = useState<number | ''>(10);
-  const [newPackagePrice, setNewPackagePrice] = useState<number | ''>(100);
-
-  // Track editing state for traffic package prices
-  const [editingPackagePrices, setEditingPackagePrices] = useState<Record<string, string>>({});
+  const [trafficTopupPackages, setTrafficTopupPackages] = useState<TrafficPackages>({});
+  const [whitelistTrafficTopupPackages, setWhitelistTrafficTopupPackages] =
+    useState<TrafficPackages>({});
 
   // Traffic reset mode
   const [trafficResetMode, setTrafficResetMode] = useState<string | null>(null);
@@ -130,6 +261,7 @@ export default function AdminTariffCreate() {
       setTrafficTopupEnabled(data.traffic_topup_enabled || false);
       setMaxTopupTrafficGb(data.max_topup_traffic_gb || 0);
       setTrafficTopupPackages(data.traffic_topup_packages || {});
+      setWhitelistTrafficTopupPackages(data.whitelist_traffic_topup_packages || {});
       setTrafficResetMode(data.traffic_reset_mode || null);
       setShowInGift(data.show_in_gift ?? true);
       return data;
@@ -179,6 +311,7 @@ export default function AdminTariffCreate() {
       promo_group_ids: selectedPromoGroups,
       traffic_topup_enabled: trafficTopupEnabled,
       traffic_topup_packages: trafficTopupPackages,
+      whitelist_traffic_topup_packages: whitelistTrafficTopupPackages,
       max_topup_traffic_gb: toNumber(maxTopupTrafficGb),
       is_daily: isDaily,
       daily_price_kopeks: isDaily ? toNumber(dailyPriceKopeks) : 0,
@@ -242,18 +375,24 @@ export default function AdminTariffCreate() {
   const isTierLevelValid =
     tierLevel !== '' && toNumber(tierLevel) >= 1 && toNumber(tierLevel) <= 10;
   const hasTrafficPackages = !trafficTopupEnabled || Object.keys(trafficTopupPackages).length > 0;
+  const hasWhitelistTrafficPackages =
+    !trafficTopupEnabled ||
+    toNumber(whitelistTrafficLimitGb) <= 0 ||
+    Object.keys(whitelistTrafficTopupPackages).length > 0;
   const isValidPeriod =
     isNameValid &&
     isDeviceLimitValid &&
     isTierLevelValid &&
     periodPrices.length > 0 &&
-    hasTrafficPackages;
+    hasTrafficPackages &&
+    hasWhitelistTrafficPackages;
   const isValidDaily =
     isNameValid &&
     isDeviceLimitValid &&
     isTierLevelValid &&
     toNumber(dailyPriceKopeks) > 0 &&
-    hasTrafficPackages;
+    hasTrafficPackages &&
+    hasWhitelistTrafficPackages;
   const isValid =
     tariffType === 'period' ? isValidPeriod : tariffType === 'daily' ? isValidDaily : false;
 
@@ -276,6 +415,13 @@ export default function AdminTariffCreate() {
   }
   if (trafficTopupEnabled && Object.keys(trafficTopupPackages).length === 0) {
     validationErrors.push('trafficPackagesRequired');
+  }
+  if (
+    trafficTopupEnabled &&
+    toNumber(whitelistTrafficLimitGb) > 0 &&
+    Object.keys(whitelistTrafficTopupPackages).length === 0
+  ) {
+    validationErrors.push('whitelistTrafficPackagesRequired');
   }
 
   // Loading state
@@ -916,142 +1062,22 @@ export default function AdminTariffCreate() {
                   />
                   <span className="text-dark-400">{t('admin.tariffs.gbUnit')}</span>
                 </div>
-                {/* Add new package */}
-                <div className="rounded-lg border border-dashed border-dark-600 bg-dark-800/50 p-3">
-                  <h5 className="mb-2 text-xs font-medium text-dark-400">
-                    {t('admin.tariffs.addPackageTitle')}
-                  </h5>
-                  <div className="flex flex-wrap items-end gap-2">
-                    <div>
-                      <label className="mb-1 block text-xs text-dark-500">
-                        {t('admin.tariffs.gbUnit')}
-                      </label>
-                      <input
-                        type="number"
-                        value={newPackageGb}
-                        onChange={createNumberInputHandler(setNewPackageGb, 1)}
-                        className="input w-20"
-                        placeholder="10"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-dark-500">
-                        {t('admin.tariffs.priceLabel')}
-                      </label>
-                      <input
-                        type="number"
-                        value={newPackagePrice}
-                        onChange={createNumberInputHandler(setNewPackagePrice, 1)}
-                        className="input w-24"
-                        placeholder="100"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const gb = toNumber(newPackageGb, 0);
-                        const price = toNumber(newPackagePrice, 0);
-                        if (gb > 0 && price >= 0 && !trafficTopupPackages[String(gb)]) {
-                          setTrafficTopupPackages((prev) => ({
-                            ...prev,
-                            [String(gb)]: price * 100,
-                          }));
-                          setNewPackageGb(10);
-                          setNewPackagePrice(100);
-                        }
-                      }}
-                      disabled={
-                        newPackageGb === '' ||
-                        newPackagePrice === '' ||
-                        !!trafficTopupPackages[String(newPackageGb)]
-                      }
-                      className="btn-primary flex items-center gap-1 px-3 py-2 text-sm"
-                    >
-                      <PlusIcon />
-                      {t('admin.tariffs.addButton')}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Package list */}
-                <div>
-                  <span className="text-sm text-dark-400">
-                    {t('admin.tariffs.trafficPackagesLabel')}
-                  </span>
-                  {Object.keys(trafficTopupPackages).length === 0 ? (
-                    <div className="mt-2 py-4 text-center text-sm text-dark-500">
-                      {t('admin.tariffs.noPackagesHint')}
-                    </div>
-                  ) : (
-                    <div className="mt-2 space-y-2">
-                      {Object.entries(trafficTopupPackages)
-                        .sort(([a], [b]) => Number(a) - Number(b))
-                        .map(([gb, priceKopeks]) => (
-                          <div
-                            key={gb}
-                            className="flex items-center gap-2 rounded-lg bg-dark-800 p-2"
-                          >
-                            <span className="w-16 text-sm font-medium text-dark-300">
-                              {gb} {t('admin.tariffs.gbPackageUnit')}
-                            </span>
-                            <input
-                              type="number"
-                              value={
-                                editingPackagePrices[gb] !== undefined
-                                  ? editingPackagePrices[gb]
-                                  : priceKopeks / 100
-                              }
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setEditingPackagePrices((prev) => ({ ...prev, [gb]: val }));
-                                if (val !== '') {
-                                  const num = parseFloat(val);
-                                  if (!Number.isNaN(num)) {
-                                    setTrafficTopupPackages((prev) => ({
-                                      ...prev,
-                                      [gb]: Math.max(0, num) * 100,
-                                    }));
-                                  }
-                                }
-                              }}
-                              onBlur={(e) => {
-                                const val = e.target.value;
-                                if (val === '') {
-                                  setTrafficTopupPackages((prev) => ({
-                                    ...prev,
-                                    [gb]: 0,
-                                  }));
-                                }
-                                setEditingPackagePrices((prev) => {
-                                  const copy = { ...prev };
-                                  delete copy[gb];
-                                  return copy;
-                                });
-                              }}
-                              className="input w-24"
-                              step={1}
-                              placeholder="0"
-                            />
-                            <span className="text-xs text-dark-400">₽</span>
-                            <div className="flex-1" />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setTrafficTopupPackages((prev) => {
-                                  const copy = { ...prev };
-                                  delete copy[gb];
-                                  return copy;
-                                });
-                              }}
-                              className="rounded-lg p-2 text-dark-400 transition-colors hover:bg-error-500/20 hover:text-error-400"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
+                <TrafficPackageEditor
+                  title={t('admin.tariffs.trafficPackagesLabel')}
+                  packages={trafficTopupPackages}
+                  onChange={setTrafficTopupPackages}
+                  defaultGb={100}
+                  defaultPrice={50}
+                />
+                {toNumber(whitelistTrafficLimitGb) > 0 && (
+                  <TrafficPackageEditor
+                    title={t('admin.tariffs.whitelistTrafficPackagesTitle')}
+                    packages={whitelistTrafficTopupPackages}
+                    onChange={setWhitelistTrafficTopupPackages}
+                    defaultGb={50}
+                    defaultPrice={150}
+                  />
+                )}
               </>
             )}
           </div>

@@ -3035,6 +3035,7 @@
       "trafficMaxLimitLabel": "Max. limit:",
       "trafficLimitHint2": "(0 = no limits)",
       "trafficPackagesLabel": "Traffic packages:",
+      "whitelistTrafficPackagesTitle": "White internet top-up packages",
       "addPackageTitle": "Add package",
       "noPackagesHint": "No packages added. Add at least one package.",
       "gbPackageUnit": "GB:",
@@ -3088,7 +3089,8 @@
         "fieldsRequired": "Fill in required fields (devices, tier level)",
         "periodsRequired": "Add at least one period",
         "dailyPriceRequired": "Enter a price per day greater than 0",
-        "trafficPackagesRequired": "Add at least one traffic package (or disable traffic topup)"
+        "trafficPackagesRequired": "Add at least one traffic package (or disable traffic topup)",
+        "whitelistTrafficPackagesRequired": "Add at least one white internet package"
       },
       "lavaProductLabel": "Lava product (auto-renewal)",
       "lavaProductDesc": "Product UUID from the Lava dashboard: price and charge period are configured there. Empty — auto-renewal is unavailable for this tariff."

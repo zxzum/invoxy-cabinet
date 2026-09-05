@@ -85,6 +85,7 @@ export interface TariffDetail {
   // Докупка трафика
   traffic_topup_enabled: boolean;
   traffic_topup_packages: Record<string, number>;
+  whitelist_traffic_topup_packages: Record<string, number>;
   max_topup_traffic_gb: number;
   // Дневной тариф
   is_daily: boolean;
@@ -127,6 +128,7 @@ export interface TariffCreateRequest {
   // Докупка трафика
   traffic_topup_enabled?: boolean;
   traffic_topup_packages?: Record<string, number>;
+  whitelist_traffic_topup_packages?: Record<string, number>;
   max_topup_traffic_gb?: number;
   // Дневной тариф
   is_daily?: boolean;
@@ -174,6 +176,7 @@ export interface TariffUpdateRequest {
   // Докупка трафика
   traffic_topup_enabled?: boolean;
   traffic_topup_packages?: Record<string, number>;
+  whitelist_traffic_topup_packages?: Record<string, number>;
   max_topup_traffic_gb?: number;
   // Дневной тариф
   is_daily?: boolean;
