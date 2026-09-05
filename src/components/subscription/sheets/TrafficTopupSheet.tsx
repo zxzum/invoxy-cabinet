@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
@@ -40,6 +41,11 @@ export function TrafficTopupSheet({
 }: TrafficTopupSheetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [scope, setScope] = useState<'regular' | 'whitelist'>('regular');
+
+  useEffect(() => {
+    if ((subscription.whitelist_traffic_limit_gb ?? 0) <= 0) setScope('regular');
+  }, [subscription.id, subscription.whitelist_traffic_limit_gb]);
 
   const formatPrice = (kopeks: number) => {
     const rubles = kopeks / 100;
@@ -47,18 +53,18 @@ export function TrafficTopupSheet({
   };
 
   const { data: trafficPackages } = useQuery({
-    queryKey: ['traffic-packages', subscriptionId],
-    queryFn: () => subscriptionApi.getTrafficPackages(subscriptionId),
+    queryKey: ['traffic-packages', subscriptionId, scope],
+    queryFn: () => subscriptionApi.getTrafficPackages(subscriptionId, scope),
     enabled: open && !!subscription,
   });
 
   const purchaseMutation = useMutation({
-    mutationFn: (gb: number) => subscriptionApi.purchaseTraffic(gb, subscriptionId),
+    mutationFn: (gb: number) => subscriptionApi.purchaseTraffic(gb, subscriptionId, scope),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
-      queryClient.invalidateQueries({ queryKey: ['traffic-packages', subscriptionId] });
+      queryClient.invalidateQueries({ queryKey: ['traffic-packages', subscriptionId, scope] });
       onClose();
       onSelectedTrafficPackageChange(null);
     },
@@ -81,6 +87,13 @@ export function TrafficTopupSheet({
                 used: subscription.traffic_used_gb.toFixed(1),
               })}
             </div>
+            {(subscription.whitelist_traffic_limit_gb ?? 0) > 0 && (
+              <div className="mt-1 text-xs text-accent-400">
+                {t('subscription.whiteInternet')}:{' '}
+                {subscription.whitelist_traffic_used_gb?.toFixed(1) ?? '0.0'} /{' '}
+                {subscription.whitelist_traffic_limit_gb} {t('common.units.gb')}
+              </div>
+            )}
           </div>
           <ChevronRightIcon className="text-dark-400" />
         </div>
@@ -113,6 +126,28 @@ export function TrafficTopupSheet({
       >
         ⚠️ {t('subscription.additionalOptions.trafficWarning')}
       </div>
+
+      {(subscription.whitelist_traffic_limit_gb ?? 0) > 0 && (
+        <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl bg-dark-950/40 p-1">
+          {(['regular', 'whitelist'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                setScope(value);
+                onSelectedTrafficPackageChange(null);
+              }}
+              className={`rounded-lg px-3 py-2 text-sm transition ${
+                scope === value
+                  ? 'bg-accent-500 text-on-accent'
+                  : 'text-dark-400 hover:text-dark-100'
+              }`}
+            >
+              {value === 'regular' ? t('subscription.vpnTraffic') : t('subscription.whiteInternet')}
+            </button>
+          ))}
+        </div>
+      )}
 
       {!trafficPackages || trafficPackages.length === 0 ? (
         <div className="py-4 text-center text-sm text-dark-400">
@@ -184,6 +219,7 @@ export function TrafficTopupSheet({
                         await subscriptionApi.saveTrafficCart(
                           selectedTrafficPackage,
                           subscriptionId,
+                          scope,
                         );
                       }}
                     />
@@ -199,6 +235,10 @@ export function TrafficTopupSheet({
                       </span>
                     ) : selectedPkg?.is_unlimited ? (
                       t('subscription.additionalOptions.buyUnlimited')
+                    ) : scope === 'whitelist' ? (
+                      t('subscription.additionalOptions.buyWhitelistTrafficGb', {
+                        gb: selectedTrafficPackage,
+                      })
                     ) : (
                       t('subscription.additionalOptions.buyTrafficGb', {
                         gb: selectedTrafficPackage,

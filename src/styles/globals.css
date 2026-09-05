@@ -2024,7 +2024,7 @@ html.light .ix-island {
   padding: 11px 14px;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgb(var(--color-dark-400));
   transition:
     background 0.2s ease,
     color 0.2s ease,
@@ -2033,7 +2033,7 @@ html.light .ix-island {
 
 .ix-side-link:hover {
   background: rgba(var(--ix-accent-rgb), 0.1);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgb(var(--color-dark-100));
   transform: translateX(2px);
 }
 
@@ -2043,7 +2043,7 @@ html.light .ix-island {
     rgba(var(--ix-accent-rgb), 0.28),
     rgba(var(--ix-accent-rgb), 0.06)
   );
-  color: #fff;
+  color: rgb(var(--color-dark-50));
 }
 
 .ix-balance-card {
@@ -2062,7 +2062,7 @@ html.light .ix-island {
   padding: 8px 10px;
   text-align: center;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(var(--color-dark-200));
   transition:
     background 0.2s ease,
     border-color 0.2s ease;
@@ -2145,6 +2145,15 @@ html.light .ix-island {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 18px 48px -24px rgba(0, 0, 0, 0.55) !important;
+}
+
+html.light .bento-card,
+html.light .card {
+  border-color: rgba(var(--ix-accent-rgb), 0.18) !important;
+  background: rgba(var(--color-champagne-50), 0.94) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 16px 36px -24px rgba(15, 23, 42, 0.2) !important;
 }
 
 /* ========== Живость: кроссфейд палитры, sweep, press, reduced-motion ========== */

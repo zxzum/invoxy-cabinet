@@ -1,6 +1,6 @@
 import { safeSession } from './utils/safeStorage';
 import { lazy, Suspense, type ComponentType } from 'react';
-import { Routes, Route, Navigate, useLocation, useParams } from 'react-router';
+import { Routes, Route, Navigate, useLocation, useParams, useOutlet } from 'react-router';
 import { useAuthStore } from './store/auth';
 
 /**
@@ -26,6 +26,7 @@ function lazyWithRetry<T extends ComponentType<unknown>>(factory: () => Promise<
 }
 import { useBlockingStore } from './store/blocking';
 import Layout from './components/layout/Layout';
+import { MainPagesReady } from './components/layout/MainPagesReady';
 import PageLoader from './components/common/PageLoader';
 import {
   MaintenanceScreen,
@@ -49,6 +50,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import ResetPassword from './pages/ResetPassword';
 import PublicLegal from './pages/PublicLegal';
 import OAuthCallback from './pages/OAuthCallback';
+import Landing from './pages/Landing';
 
 // Dashboard - load eagerly (default route, LCP-critical)
 import Dashboard from './pages/Dashboard';
@@ -189,7 +191,13 @@ function ProtectedRoute({
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  return withLayout ? <Layout>{children}</Layout> : <>{children}</>;
+  return withLayout ? (
+    <MainPagesReady>
+      <Layout>{children}</Layout>
+    </MainPagesReady>
+  ) : (
+    children
+  );
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -214,6 +222,23 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <Layout>{children}</Layout>;
 }
 
+function MainTabsRoute() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const location = useLocation();
+  const outlet = useOutlet();
+
+  if (isLoading) {
+    return <PageLoader variant="dark" />;
+  }
+
+  if (!isAuthenticated && location.pathname === '/') {
+    return <Landing />;
+  }
+
+  return <ProtectedRoute>{outlet}</ProtectedRoute>;
+}
+
 // Suspense + error boundary wrapper for lazy routes. The boundary lives
 // OUTSIDE Suspense so chunk-load failures (caught by lazyWithRetry's reload
 // path) and render-time exceptions both surface in the page-level fallback
@@ -228,6 +253,10 @@ function LazyPage({ children }: { children: React.ReactNode }) {
 
 function BlockingOverlay() {
   const blockingType = useBlockingStore((state) => state.blockingType);
+  const { pathname } = useLocation();
+
+  // Public documents stay readable even when this account cannot use the service.
+  if (['/offer', '/privacy', '/recurrent-payments'].includes(pathname)) return null;
 
   if (blockingType === 'maintenance') {
     return <MaintenanceScreen />;
@@ -333,16 +362,41 @@ function App() {
         />
 
         {/* Protected routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
+        {/* One shell keeps the outgoing tab mounted throughout its exit animation. */}
+        <Route element={<MainTabsRoute />}>
+          <Route
+            path="/"
+            element={
               <LazyPage>
                 <Dashboard />
               </LazyPage>
-            </ProtectedRoute>
-          }
-        />
+            }
+          />
+          <Route
+            path="/subscription/purchase"
+            element={
+              <LazyPage>
+                <SubscriptionPurchase />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/connection"
+            element={
+              <LazyPage>
+                <Connection />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <LazyPage>
+                <Profile />
+              </LazyPage>
+            }
+          />
+        </Route>
         <Route
           path="/subscriptions"
           element={
@@ -380,16 +434,6 @@ function App() {
           element={
             <ProtectedRoute>
               <Navigate to="/subscriptions" replace />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/subscription/purchase"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <SubscriptionPurchase />
-              </LazyPage>
             </ProtectedRoute>
           }
         />
@@ -496,16 +540,6 @@ function App() {
           }
         />
         <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <Profile />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/profile/accounts"
           element={
             <ProtectedRoute>
@@ -591,16 +625,6 @@ function App() {
             <ProtectedRoute>
               <LazyPage>
                 <ConnectionQR />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/connection"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <Connection />
               </LazyPage>
             </ProtectedRoute>
           }

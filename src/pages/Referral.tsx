@@ -415,7 +415,10 @@ export default function Referral() {
   const referralLink = info?.referral_code
     ? `${window.location.origin}/login?ref=${info.referral_code}`
     : '';
-  const botReferralLink = info?.bot_referral_link || '';
+  const botReferralLink = info?.referral_code
+    ? info.bot_referral_link ||
+      `https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'invoxy_bot'}?start=${encodeURIComponent(info.referral_code)}`
+    : '';
 
   const rewardChoiceMutation = useMutation({
     mutationFn: referralApi.updateRewardChoice,

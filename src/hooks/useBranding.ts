@@ -11,8 +11,8 @@ import {
 } from '@/api/branding';
 import { setFavicon, letterFaviconDataUri, roundedFaviconDataUri } from '@/utils/favicon';
 
-const FALLBACK_NAME = import.meta.env.VITE_APP_NAME || 'Cabinet';
-const FALLBACK_LOGO = import.meta.env.VITE_APP_LOGO || 'V';
+const FALLBACK_NAME = import.meta.env.VITE_APP_NAME || 'Invoxy VPN';
+const FALLBACK_LOGO = import.meta.env.VITE_APP_LOGO || 'IX';
 
 export function useBranding() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

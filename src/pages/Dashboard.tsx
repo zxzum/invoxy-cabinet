@@ -61,7 +61,7 @@ export default function Dashboard() {
   const isMultiTariff = multiSubData?.multi_tariff_enabled ?? false;
 
   const { data: subscriptionResponse, isLoading: subLoading } = useQuery({
-    queryKey: ['subscription'],
+    queryKey: ['subscription', undefined],
     queryFn: () => subscriptionApi.getSubscription(),
     retry: false,
     staleTime: API.BALANCE_STALE_TIME_MS,
@@ -296,9 +296,9 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <motion.div data-onboarding="welcome" {...section(0)}>
-        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Кабинет</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-dark-50 sm:text-4xl">Кабинет</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <p className="text-white/50">
+          <p className="text-dark-400">
             {userName ? `Добро пожаловать, ${userName}` : 'Ваша подписка и подключённые устройства'}
           </p>
           {promoGroupData?.group_name && (

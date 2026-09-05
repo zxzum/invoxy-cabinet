@@ -139,6 +139,13 @@ const queryClient = new QueryClient({
   },
 });
 
+// INVOXY: warmed private tab data must never survive a logout/account switch.
+useAuthStore.subscribe((state, previous) => {
+  if (state.user?.id !== previous.user?.id || state.isAuthenticated !== previous.isAuthenticated) {
+    queryClient.clear();
+  }
+});
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary level="app">

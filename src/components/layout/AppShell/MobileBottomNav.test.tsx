@@ -36,6 +36,11 @@ describe('MobileBottomNav', () => {
     expect(screen.getByText('Профиль')).toBeTruthy();
   });
 
+  it('keeps referrals out of the compact bottom menu', () => {
+    renderNav('/referral');
+    expect(screen.queryByText('Рефералы')).toBeNull();
+  });
+
   it('marks the active item and renders the sliding plate', () => {
     const { container } = renderNav('/connection');
     const keyLink = screen.getByText('Ключи').closest('a');

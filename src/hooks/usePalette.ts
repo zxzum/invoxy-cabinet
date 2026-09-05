@@ -8,8 +8,9 @@ import { STORAGE_KEYS } from '../config/constants';
 const PALETTE_CHANGED = 'invoxy-palette-changed';
 
 function loadPaletteId(): PaletteId {
-  const stored = safeLocal.getItem(STORAGE_KEYS.PALETTE);
-  return isPaletteId(stored) ? stored : DEFAULT_PALETTE_ID;
+  // Signal is the single public palette. Keep the storage key for backwards
+  // compatibility, but do not restore an old picker selection.
+  return DEFAULT_PALETTE_ID;
 }
 
 let paletteFadeTimer: number | undefined;
@@ -39,18 +40,19 @@ export function usePalette() {
   const [paletteId, setPaletteId] = useState<PaletteId>(loadPaletteId);
 
   useEffect(() => {
+    safeLocal.setItem(STORAGE_KEYS.PALETTE, DEFAULT_PALETTE_ID);
     applyPaletteVars(paletteId);
   }, [paletteId]);
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEYS.PALETTE && isPaletteId(event.newValue)) {
+      if (event.key === STORAGE_KEYS.PALETTE && event.newValue === DEFAULT_PALETTE_ID) {
         setPaletteId(event.newValue);
       }
     };
     const onLocal = (event: Event) => {
       const id = (event as CustomEvent<PaletteId>).detail;
-      if (isPaletteId(id)) setPaletteId(id);
+      if (isPaletteId(id) && id === DEFAULT_PALETTE_ID) setPaletteId(id);
     };
     window.addEventListener('storage', onStorage);
     window.addEventListener(PALETTE_CHANGED, onLocal);

@@ -48,6 +48,7 @@ miniapp/
 .ai/
 CLAUDE.md
 **/CLAUDE.md
+!CLAUDE.md
 
 # Impeccable design context (local only, not for shared repo)
 PRODUCT.md

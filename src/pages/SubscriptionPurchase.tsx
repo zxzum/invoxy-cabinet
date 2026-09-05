@@ -12,6 +12,7 @@ import { SwitchTariffSheet } from '../components/subscription/sheets/SwitchTarif
 import { TariffPurchaseForm } from '../components/subscription/purchase/TariffPurchaseForm';
 import { TariffPickerGrid } from '../components/subscription/purchase/TariffPickerGrid';
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
+import { ResponsiveSheet } from '../components/ui/ResponsiveSheet';
 import { ExclamationIcon, SparklesIcon } from '@/components/icons';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 
@@ -136,9 +137,7 @@ export default function SubscriptionPurchase() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <WebBackButton
-          to={subscriptionId ? `/subscriptions/${subscriptionId}` : '/subscriptions'}
-        />
+        <WebBackButton to={subscriptionId ? '/subscription/purchase' : '/subscriptions'} />
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
           {isMultiTariff && !subscriptionId
             ? t('subscription.newTariff', 'Новый тариф')
@@ -267,45 +266,54 @@ export default function SubscriptionPurchase() {
             }}
           />
 
-          {!showTariffPurchase ? (
-            <TariffPickerGrid
-              tariffs={tariffs}
-              subscription={subscription}
-              purchaseOptions={purchaseOptions}
-              isTariffsMode={isTariffsMode}
-              isMultiTariff={isMultiTariff}
-              onSelectTariff={(tariff) => {
-                setSelectedTariff(tariff);
-                setShowTariffPurchase(true);
+          <TariffPickerGrid
+            tariffs={tariffs}
+            subscription={subscription}
+            purchaseOptions={purchaseOptions}
+            isTariffsMode={isTariffsMode}
+            isMultiTariff={isMultiTariff}
+            onSelectTariff={(tariff) => {
+              setSelectedTariff(tariff);
+              setShowTariffPurchase(true);
+            }}
+            onSwitchTariff={(tariffId) => setSwitchTariffId(tariffId)}
+          />
+
+          {selectedTariff && (
+            <ResponsiveSheet
+              isOpen={showTariffPurchase}
+              onClose={() => {
+                setShowTariffPurchase(false);
+                setSelectedTariff(null);
               }}
-              onSwitchTariff={(tariffId) => setSwitchTariffId(tariffId)}
-            />
-          ) : (
-            selectedTariff && (
-              /* Tariff Purchase Form (extracted into its own component) */
-              <TariffPurchaseForm
-                key={selectedTariff.id}
-                tariff={selectedTariff}
-                subscriptionId={subscriptionId}
-                balanceKopeks={purchaseOptions?.balance_kopeks}
-                sbpPurchaseEnabled={
-                  isTariffsMode &&
-                  purchaseOptions !== undefined &&
-                  'platega_recurrent_enabled' in purchaseOptions &&
-                  purchaseOptions.platega_recurrent_enabled === true
-                }
-                lavaPurchaseEnabled={
-                  isTariffsMode &&
-                  purchaseOptions !== undefined &&
-                  'lava_recurrent_enabled' in purchaseOptions &&
-                  purchaseOptions.lava_recurrent_enabled === true
-                }
-                onBack={() => {
-                  setShowTariffPurchase(false);
-                  setSelectedTariff(null);
-                }}
-              />
-            )
+              title={selectedTariff.name}
+            >
+              <div className="px-4 pb-4 pt-1">
+                <TariffPurchaseForm
+                  key={selectedTariff.id}
+                  tariff={selectedTariff}
+                  subscriptionId={subscriptionId}
+                  balanceKopeks={purchaseOptions?.balance_kopeks}
+                  showHeader={false}
+                  sbpPurchaseEnabled={
+                    isTariffsMode &&
+                    purchaseOptions !== undefined &&
+                    'platega_recurrent_enabled' in purchaseOptions &&
+                    purchaseOptions.platega_recurrent_enabled === true
+                  }
+                  lavaPurchaseEnabled={
+                    isTariffsMode &&
+                    purchaseOptions !== undefined &&
+                    'lava_recurrent_enabled' in purchaseOptions &&
+                    purchaseOptions.lava_recurrent_enabled === true
+                  }
+                  onBack={() => {
+                    setShowTariffPurchase(false);
+                    setSelectedTariff(null);
+                  }}
+                />
+              </div>
+            </ResponsiveSheet>
           )}
         </div>
       )}

@@ -6,6 +6,10 @@ import { safeSession } from '../utils/safeStorage';
 
 export type { AnimationConfig };
 
+// Versioned URL prevents Telegram/WebView from keeping the previous broken asset
+// for a year (nginx serves public assets with immutable-style caching).
+export const LOCAL_LOGO_URL = '/invoxy_logo.jpg?v=2c0c067a';
+
 export interface BrandingInfo {
   name: string;
   logo_url: string | null;
@@ -217,9 +221,7 @@ export const brandingApi = {
   },
 
   // Get logo URL as blob (hides backend URL from DOM)
-  getLogoUrl: (_branding: BrandingInfo): string | null => {
-    return _logoBlobUrl;
-  },
+  getLogoUrl: (_branding: BrandingInfo): string => LOCAL_LOGO_URL,
 
   // Get animation enabled (public, no auth required)
   getAnimationEnabled: async (): Promise<AnimationEnabled> => {

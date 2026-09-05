@@ -82,6 +82,10 @@ export interface Subscription {
   traffic_limit_gb: number;
   traffic_used_gb: number;
   traffic_used_percent: number;
+  whitelist_traffic_limit_gb?: number;
+  whitelist_traffic_used_gb?: number;
+  whitelist_traffic_used_percent?: number;
+  whitelist_traffic_purchases?: TrafficPurchase[];
   device_limit: number;
   connected_squads: string[];
   servers: ServerInfo[];
@@ -112,6 +116,8 @@ export interface SubscriptionStatusResponse {
 
 // Multi-tariff subscription list item (from GET /cabinet/subscriptions)
 export interface SubscriptionListItem {
+  whitelist_traffic_limit_gb?: number;
+  whitelist_traffic_used_gb?: number;
   id: number;
   status: string;
   tariff_id: number | null;
@@ -159,6 +165,7 @@ export interface RenewalOption {
 
 export interface TrafficPackage {
   gb: number;
+  scope?: 'regular' | 'whitelist';
   price_kopeks: number;
   price_rubles: number;
   is_unlimited: boolean;
@@ -279,6 +286,7 @@ export interface TariffServer {
 }
 
 export interface Tariff {
+  whitelist_traffic_limit_gb?: number;
   id: number;
   name: string;
   description: string | null;

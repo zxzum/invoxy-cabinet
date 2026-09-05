@@ -107,7 +107,7 @@ export default function RenewSubscription() {
     <div className="space-y-5">
       {/* Title */}
       <div className="flex items-center gap-3">
-        <WebBackButton to={`/subscriptions/${subId}`} />
+        <WebBackButton to="/subscription/purchase" />
         <div>
           <h1 className="text-2xl font-bold" style={{ color: g.text }}>
             {t('subscription.extend', 'Продлить подписку')}

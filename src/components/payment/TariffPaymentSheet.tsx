@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AxiosError } from 'axios';
@@ -28,6 +28,8 @@ import { useCurrency } from '@/hooks/useCurrency';
 interface TariffPaymentSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Render inside an already open ResponsiveSheet instead of stacking another modal. */
+  embedded?: boolean;
   tariffId: number;
   tariffName: string;
   periodDays: number;
@@ -62,6 +64,7 @@ const isBalanceSufficientError = (error: unknown): boolean =>
 export function TariffPaymentSheet({
   open,
   onOpenChange,
+  embedded = false,
   tariffId,
   tariffName,
   periodDays,
@@ -77,6 +80,7 @@ export function TariffPaymentSheet({
   const queryClient = useQueryClient();
 
   const [methods, setMethods] = useState<PaymentMethod[] | null>(null);
+  const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>('methods');
   const [invoice, setInvoice] = useState<CreatedInvoice | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +99,7 @@ export function TariffPaymentSheet({
     setStage('methods');
     setInvoice(null);
     setError(null);
+    setSelectedMethodId(null);
     paidRef.current = false;
     let cancelled = false;
     balanceApi
@@ -153,7 +158,7 @@ export function TariffPaymentSheet({
     return () => window.clearTimeout(timer);
   }, [stage, onPaid]);
 
-  const payWithMethod = async (method: PaymentMethod) => {
+  const payWithMethod = async (method: PaymentMethod, paymentOption?: string) => {
     setError(null);
     setStage('creating');
     try {
@@ -163,6 +168,7 @@ export function TariffPaymentSheet({
         traffic_gb: trafficGb,
         subscription_id: subscriptionId,
         payment_method: method.id,
+        ...(paymentOption ? { payment_option: paymentOption } : {}),
       });
       // Шит могли закрыть, пока invoice создавался: инвойс на бэке уже есть
       // (юзер оплатит из корзины/истории), но редирект без его ведома — нельзя.
@@ -197,34 +203,59 @@ export function TariffPaymentSheet({
       ? t('payment.tariffSheet.successTitle')
       : t('payment.tariffSheet.title', { tariff: tariffName });
 
-  return (
-    <ResponsiveSheet
-      isOpen={open}
-      onClose={() => {
-        aliveRef.current = false;
-        onOpenChange(false);
-      }}
-      title={title}
-    >
+  const close = () => {
+    aliveRef.current = false;
+    onOpenChange(false);
+  };
+
+  const content = (
+    <>
+      {embedded && stage !== 'success' && (
+        <button
+          type="button"
+          onClick={close}
+          className="mb-2 inline-flex min-h-9 items-center gap-2 rounded-xl px-2 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-800 hover:text-dark-100"
+        >
+          <span aria-hidden>←</span>
+          {t('common.back')}
+        </button>
+      )}
       {stage === 'success' ? (
         <div className="flex flex-col items-center gap-4 px-4 pb-10 pt-2">
           <SuccessBurst size={72} />
           <p className="text-sm text-dark-300">{t('payment.tariffSheet.successText')}</p>
         </div>
       ) : (
-        <div className="px-1 pb-4">
-          {/* Сводка: что спишется с баланса и что доплачиваем */}
-          <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+        <div className="pb-4">
+          <div className="mb-4 rounded-2xl border border-accent-500/20 bg-accent-500/[0.06] p-4">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-dark-500">
+              {t('payment.tariffSheet.tariff', { tariff: tariffName })}
+            </p>
             <div className="flex items-center justify-between text-sm text-dark-300">
-              <span>{t('payment.tariffSheet.fromBalance')}</span>
+              <span>{t('payment.tariffSheet.price')}</span>
               <AnimatedNumber
-                value={Math.min(balanceKopeks, priceKopeks) / 100}
+                value={priceKopeks / 100}
                 format={(v) => `${v.toFixed(2)} ${currencySymbol}`}
               />
             </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-sm text-dark-300">{t('payment.tariffSheet.dueNow')}</span>
-              <span className="text-lg font-bold text-accent-400">
+            {balanceKopeks > 0 && (
+              <div className="mt-2 flex items-center justify-between text-sm text-success-400">
+                <span>{t('payment.tariffSheet.fromBalance')}</span>
+                <AnimatedNumber
+                  value={Math.min(balanceKopeks, priceKopeks) / 100}
+                  format={(v) => `−${v.toFixed(2)} ${currencySymbol}`}
+                />
+              </div>
+            )}
+            <div className="mt-3 flex items-end justify-between border-t border-dark-700/60 pt-3">
+              <span className="text-sm text-dark-300">
+                {t(
+                  balanceKopeks > 0
+                    ? 'payment.tariffSheet.dueAfterBalance'
+                    : 'payment.tariffSheet.dueNow',
+                )}
+              </span>
+              <span className="text-2xl font-bold text-accent-400">
                 <AnimatedNumber
                   value={missing / 100}
                   format={(v) => `${v.toFixed(2)} ${currencySymbol}`}
@@ -247,24 +278,85 @@ export function TariffPaymentSheet({
             </div>
           ) : (
             <>
-              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-dark-500">
                 {t('payment.tariffSheet.chooseMethod')}
               </div>
-              <div className="flex flex-col gap-1.5">
-                {(methods ?? []).map((method, index) => (
-                  <motion.button
-                    key={method.id}
-                    type="button"
-                    disabled={stage === 'creating'}
-                    onClick={() => payWithMethod(method)}
-                    whileTap={{ scale: 0.98 }}
-                    {...staggerEntrance(index, 0.02, 0.04)}
-                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-sm text-dark-100 transition-colors hover:border-accent-500/40 hover:bg-accent-500/10 disabled:opacity-50"
-                  >
-                    <span>{method.name}</span>
-                    <span className="text-xs text-dark-500">{formatPrice(missing)}</span>
-                  </motion.button>
-                ))}
+              <div className="flex flex-col gap-2">
+                {(methods ?? []).map((method, index) => {
+                  const options = method.options ?? [];
+                  const hasOptions = options.length > 1;
+                  const isExpanded = selectedMethodId === method.id;
+
+                  return (
+                    <div
+                      key={method.id}
+                      className="overflow-hidden rounded-2xl border border-dark-700/70 bg-dark-800/60"
+                    >
+                      <motion.button
+                        type="button"
+                        disabled={stage === 'creating'}
+                        onClick={() => {
+                          if (hasOptions) {
+                            setSelectedMethodId(isExpanded ? null : method.id);
+                          } else {
+                            void payWithMethod(method, options[0]?.id);
+                          }
+                        }}
+                        whileTap={{ scale: 0.98 }}
+                        aria-expanded={hasOptions ? isExpanded : undefined}
+                        {...staggerEntrance(index, 0.02, 0.04)}
+                        className="flex min-h-14 w-full items-center justify-between rounded-2xl px-4 py-3 text-start text-sm text-dark-100 transition-colors hover:bg-accent-500/10 disabled:opacity-50"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate">{method.name}</span>
+                          {method.description && (
+                            <span className="mt-0.5 block truncate text-xs text-dark-500">
+                              {method.description}
+                            </span>
+                          )}
+                        </span>
+                        <span className="ml-3 shrink-0 text-xs text-dark-500">
+                          {formatPrice(missing)}
+                        </span>
+                      </motion.button>
+
+                      <AnimatePresence initial={false}>
+                        {hasOptions && isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                            className="overflow-hidden border-t border-dark-700/70 px-3 pb-3 pt-2"
+                          >
+                            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-dark-500">
+                              {t('payment.tariffSheet.chooseOption')}
+                            </p>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {options.map((option) => (
+                                <motion.button
+                                  key={option.id}
+                                  type="button"
+                                  disabled={stage === 'creating'}
+                                  onClick={() => void payWithMethod(method, option.id)}
+                                  whileTap={{ scale: 0.98 }}
+                                  className="rounded-xl border border-dark-700 bg-dark-900/50 px-3 py-2.5 text-start transition-colors hover:border-accent-500/40 hover:bg-accent-500/10 disabled:opacity-50"
+                                >
+                                  <span className="block text-sm text-dark-100">{option.name}</span>
+                                  {option.description && (
+                                    <span className="mt-0.5 block text-xs text-dark-500">
+                                      {option.description}
+                                    </span>
+                                  )}
+                                </motion.button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
                 {methods === null && !error && (
                   <div className="flex justify-center py-6">
                     <span className="h-6 w-6 animate-spin rounded-full border-2 border-accent-500/30 border-t-accent-400" />
@@ -282,6 +374,14 @@ export function TariffPaymentSheet({
           {error && <p className="mt-3 text-center text-sm text-error-400">{error}</p>}
         </div>
       )}
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <ResponsiveSheet isOpen={open} onClose={close} title={title}>
+      {content}
     </ResponsiveSheet>
   );
 }

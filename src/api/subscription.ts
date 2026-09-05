@@ -112,10 +112,13 @@ export const subscriptionApi = {
 
   // ── Traffic ─────────────────────────────────────────────────────────
 
-  getTrafficPackages: async (subscriptionId?: number): Promise<TrafficPackage[]> => {
+  getTrafficPackages: async (
+    subscriptionId?: number,
+    scope: 'regular' | 'whitelist' = 'regular',
+  ): Promise<TrafficPackage[]> => {
     const response = await apiClient.get<TrafficPackage[]>(
       '/cabinet/subscription/traffic-packages',
-      withSubId(subscriptionId),
+      withSubId(subscriptionId, { scope }),
     );
     return response.data;
   },
@@ -123,6 +126,7 @@ export const subscriptionApi = {
   purchaseTraffic: async (
     gb: number,
     subscriptionId?: number,
+    scope: 'regular' | 'whitelist' = 'regular',
   ): Promise<{
     message: string;
     gb_added: number;
@@ -130,7 +134,7 @@ export const subscriptionApi = {
   }> => {
     const response = await apiClient.post(
       '/cabinet/subscription/traffic',
-      ...bodyWithSubId({ gb, yandex_cid: getYandexCid() || undefined }, subscriptionId),
+      ...bodyWithSubId({ gb, scope, yandex_cid: getYandexCid() || undefined }, subscriptionId),
     );
     return response.data;
   },
@@ -154,10 +158,14 @@ export const subscriptionApi = {
     return response.data;
   },
 
-  saveTrafficCart: async (trafficGb: number, subscriptionId?: number): Promise<void> => {
+  saveTrafficCart: async (
+    trafficGb: number,
+    subscriptionId?: number,
+    scope: 'regular' | 'whitelist' = 'regular',
+  ): Promise<void> => {
     await apiClient.post(
       '/cabinet/subscription/traffic/save-cart',
-      ...bodyWithSubId({ gb: trafficGb }, subscriptionId),
+      ...bodyWithSubId({ gb: trafficGb, scope }, subscriptionId),
     );
   },
 

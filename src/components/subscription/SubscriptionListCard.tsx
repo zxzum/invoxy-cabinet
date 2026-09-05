@@ -7,6 +7,7 @@ import { AnimatedProgress } from '@/components/motion';
 import type { SubscriptionListItem } from '../../types';
 import { connectFooterState } from './connectFooterState';
 import { SubscriptionConnectFooter } from './SubscriptionConnectFooter';
+import { WhiteInternetUsage } from './WhiteInternetUsage';
 
 function formatDate(iso: string | null, locale?: string): string {
   if (!iso) return '—';
@@ -193,6 +194,7 @@ export default function SubscriptionListCard({
           </div>
         )}
 
+        <WhiteInternetUsage subscription={subscription} />
         {/* Stats row */}
         <div
           className="mt-2.5 flex items-center gap-4 text-[12px]"

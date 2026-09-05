@@ -47,6 +47,18 @@ vi.mock('@/api/balance', () => ({
         is_available: true,
       },
       {
+        id: 'platega',
+        name: 'Platega',
+        description: null,
+        min_amount_kopeks: 10000,
+        max_amount_kopeks: 50000000,
+        is_available: true,
+        options: [
+          { id: 'card', name: 'Карта', description: 'RUB · любой банк' },
+          { id: 'sbp', name: 'СБП', description: 'По QR-коду' },
+        ],
+      },
+      {
         id: 'cryptobot',
         name: 'CryptoBot',
         description: null,
@@ -126,6 +138,8 @@ describe('TariffPaymentSheet', () => {
     // Нехватка 59 ₽ видна в сводке
     await screen.findByText('Банковская карта');
     expect(screen.getAllByText(/59/).length).toBeGreaterThan(0);
+    expect(screen.getByText('Стоимость тарифа')).toBeTruthy();
+    expect(screen.getByText('Используем баланс')).toBeTruthy();
     // Недоступный метод не показан
     expect(screen.queryByText('CryptoBot')).toBeNull();
 
@@ -141,5 +155,48 @@ describe('TariffPaymentSheet', () => {
     // После создания invoice открывается платёжный URL
     const { openPaymentUrl } = await import('@/utils/openPaymentUrl');
     await waitFor(() => expect(openPaymentUrl).toHaveBeenCalled());
+  });
+
+  it('does not show a zero balance deduction', async () => {
+    renderSheet({ balanceKopeks: 0 });
+
+    await screen.findByText('Банковская карта');
+    expect(screen.queryByText('Используем баланс')).toBeNull();
+    expect(screen.getByText('К оплате')).toBeTruthy();
+  });
+
+  it('passes the selected provider option to the tariff invoice', async () => {
+    const { subscriptionApi } = await import('@/api/subscription');
+    vi.mocked(subscriptionApi.createTariffInvoice).mockClear();
+
+    renderSheet();
+    fireEvent.click(await screen.findByText('Platega'));
+    fireEvent.click(await screen.findByText('СБП'));
+
+    await waitFor(() =>
+      expect(subscriptionApi.createTariffInvoice).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_method: 'platega', payment_option: 'sbp' }),
+      ),
+    );
+  });
+
+  it('renders inline without creating a second dialog', async () => {
+    const onOpenChange = vi.fn();
+    renderSheet({ embedded: true, onOpenChange });
+
+    await screen.findByText('Банковская карта');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByText('Назад'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('plays the mobile exit before closing on backdrop press', async () => {
+    const onOpenChange = vi.fn();
+    renderSheet({ onOpenChange });
+
+    await screen.findByText('Банковская карта');
+    fireEvent.click(document.querySelector('[data-sheet-backdrop]')!);
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false), { timeout: 600 });
   });
 });

@@ -22,6 +22,7 @@
  * so the user is never left stuck.
  */
 export function getFallbackParentPath(pathname: string): string {
+  if (/^\/subscriptions\/\d+\/renew\/?$/.test(pathname)) return '/subscription/purchase';
   const segments = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
   const parent = segments.slice(0, -1);
   return parent.length ? '/' + parent.join('/') : '/';

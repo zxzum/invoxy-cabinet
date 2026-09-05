@@ -19,6 +19,8 @@ interface InsufficientBalancePromptProps {
   onBeforeTopUp?: () => Promise<void>;
   /** Колбэк «Оплатить» — открывает платёжный шит на месте. Без него — легаси-редирект на пополнение. */
   onPay?: () => void;
+  /** Show only the warning when the parent already renders the payment CTA. */
+  hideActions?: boolean;
 }
 
 export default function InsufficientBalancePrompt({
@@ -29,6 +31,7 @@ export default function InsufficientBalancePrompt({
   className = '',
   onBeforeTopUp,
   onPay,
+  hideActions = false,
 }: InsufficientBalancePromptProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -82,17 +85,19 @@ export default function InsufficientBalancePrompt({
             </span>
           </span>
         </div>
-        <button
-          onClick={handlePay}
-          disabled={isPreparingTopUp}
-          className="btn-primary whitespace-nowrap px-3 py-1.5 text-xs"
-        >
-          {isPreparingTopUp ? (
-            <span className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
-          ) : (
-            t('balance.payTariffDirect')
-          )}
-        </button>
+        {!hideActions && (
+          <button
+            onClick={handlePay}
+            disabled={isPreparingTopUp}
+            className="btn-primary whitespace-nowrap px-3 py-1.5 text-xs"
+          >
+            {isPreparingTopUp ? (
+              <span className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
+            ) : (
+              t('balance.payTariffDirect')
+            )}
+          </button>
+        )}
       </div>
     );
   }
@@ -118,27 +123,31 @@ export default function InsufficientBalancePrompt({
           </div>
         </div>
       </div>
-      <button
-        onClick={handlePay}
-        disabled={isPreparingTopUp}
-        className="btn-primary mt-4 flex w-full items-center justify-center gap-2 py-2.5"
-      >
-        {isPreparingTopUp ? (
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-        ) : (
-          <>
-            <PlusIcon className="h-5 w-5" />
-            {t('balance.payNow', { amount: `${displayAmount} ${currencySymbol}` })}
-          </>
-        )}
-      </button>
-      <button
-        type="button"
-        onClick={() => navigate('/balance')}
-        className="mt-2 w-full py-2 text-center text-sm text-dark-400 transition-colors hover:text-dark-200"
-      >
-        {t('balance.topUpLater')}
-      </button>
+      {!hideActions && (
+        <>
+          <button
+            onClick={handlePay}
+            disabled={isPreparingTopUp}
+            className="btn-primary mt-4 flex w-full items-center justify-center gap-2 py-2.5"
+          >
+            {isPreparingTopUp ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <>
+                <PlusIcon className="h-5 w-5" />
+                {t('balance.payNow', { amount: `${displayAmount} ${currencySymbol}` })}
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/balance')}
+            className="mt-2 w-full py-2 text-center text-sm text-dark-400 transition-colors hover:text-dark-200"
+          >
+            {t('balance.topUpLater')}
+          </button>
+        </>
+      )}
     </div>
   );
 }

@@ -22,4 +22,5 @@ export {
   ArrowRightIcon,
   DownloadIcon,
   PaletteIcon,
+  RemnawaveIcon,
 } from '../../icons';

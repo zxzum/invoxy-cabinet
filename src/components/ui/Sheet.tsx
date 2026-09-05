@@ -99,10 +99,31 @@ export function Sheet({
 
   const [currentSnapIndex, setCurrentSnapIndex] = useState(initialSnap);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
   const [translateY, setTranslateY] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [isMounted, setIsMounted] = useState(isOpen);
+  const closeTimerRef = useRef<number | null>(null);
 
   const haptic = useHaptic();
+
+  const closeAnimated = useCallback(() => {
+    if (closeTimerRef.current !== null) return;
+    setIsVisible(false);
+    setIsOpening(false);
+    setIsAnimating(true);
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      onClose();
+    }, ANIMATION_DURATION);
+  }, [onClose]);
+
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+    },
+    [],
+  );
 
   // Calculate current height based on snap point
   const currentHeight = `${snapPoints[currentSnapIndex] * 100}vh`;
@@ -114,13 +135,13 @@ export function Sheet({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        closeAnimated();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, closeOnEscape, onClose]);
+  }, [isOpen, closeOnEscape, closeAnimated]);
 
   // Handle body scroll lock
   useEffect(() => {
@@ -149,12 +170,28 @@ export function Sheet({
   // Animation on open/close
   useEffect(() => {
     if (isOpen) {
-      // Small delay to ensure portal is mounted
-      requestAnimationFrame(() => {
-        setIsVisible(true);
-      });
+      setIsMounted(true);
+      setIsVisible(false);
+      setIsOpening(true);
+      setIsAnimating(false);
+      setTranslateY(0);
+
+      // Small delay to ensure the portal is mounted before sliding it in.
+      const frameId = requestAnimationFrame(() => setIsVisible(true));
+      const timerId = window.setTimeout(() => setIsOpening(false), ANIMATION_DURATION);
+      return () => {
+        cancelAnimationFrame(frameId);
+        window.clearTimeout(timerId);
+      };
     } else {
       setIsVisible(false);
+      setIsOpening(false);
+      setIsAnimating(true);
+      const timerId = window.setTimeout(() => {
+        setIsMounted(false);
+        setIsAnimating(false);
+      }, ANIMATION_DURATION);
+      return () => window.clearTimeout(timerId);
     }
   }, [isOpen]);
 
@@ -317,37 +354,35 @@ export function Sheet({
   );
 
   // Backdrop click handler
-  const handleBackdropClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (closeOnBackdropClick && e.target === e.currentTarget) {
-        haptic.impact('light');
-        onClose();
-      }
-    },
-    [closeOnBackdropClick, haptic, onClose],
-  );
+  const handleBackdropClick = useCallback(() => {
+    if (closeOnBackdropClick) {
+      haptic.impact('light');
+      closeAnimated();
+    }
+  }, [closeOnBackdropClick, closeAnimated, haptic]);
 
-  if (!isOpen) return null;
+  if (!isMounted) return null;
 
   const sheet = (
     <div
       className={`fixed inset-0 z-50 flex items-end justify-center ${
         isVisible ? 'opacity-100' : 'opacity-0'
       } transition-opacity duration-300`}
-      onClick={handleBackdropClick}
     >
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-dark-950/60 backdrop-blur-sm transition-opacity duration-300 ${
+        data-sheet-backdrop
+        className={`absolute inset-0 bg-black/65 transition-[opacity,backdrop-filter] duration-300 ${
           isVisible ? 'opacity-100' : 'opacity-0'
-        }`}
+        } ${isVisible ? 'backdrop-blur-sm' : 'backdrop-blur-0'}`}
+        onClick={handleBackdropClick}
       />
 
       {/* Sheet */}
       <div
         ref={sheetRef}
         className={`relative w-full max-w-lg overflow-hidden rounded-t-3xl bg-dark-900 shadow-2xl ${
-          isAnimating ? 'transition-transform duration-300 ease-out' : ''
+          isAnimating || isOpening ? 'transition-transform duration-300 ease-out' : ''
         } ${isVisible ? 'translate-y-0' : 'translate-y-full'} ${className}`}
         style={{
           maxHeight: currentHeight,
@@ -358,7 +393,7 @@ export function Sheet({
         {/* Drag handle area */}
         {showHandle && (
           <div
-            className="flex cursor-grab touch-none items-center justify-center py-3 active:cursor-grabbing"
+            className="flex cursor-grab touch-none items-center justify-center py-1.5 active:cursor-grabbing"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -370,7 +405,7 @@ export function Sheet({
 
         {/* Title */}
         {title && (
-          <div className="border-b border-dark-700/50 px-6 pb-4">
+          <div className="border-b border-dark-700/50 px-4 pb-2">
             <h2 className="text-lg font-semibold text-dark-100">{title}</h2>
           </div>
         )}
@@ -379,7 +414,7 @@ export function Sheet({
         <div
           className={`overflow-y-auto overscroll-contain ${contentClassName}`}
           style={{
-            maxHeight: `calc(${currentHeight} - ${showHandle ? '44px' : '0px'} - ${title ? '60px' : '0px'})`,
+            maxHeight: `calc(${currentHeight} - ${showHandle ? '28px' : '0px'} - ${title ? '48px' : '0px'})`,
           }}
         >
           {children}

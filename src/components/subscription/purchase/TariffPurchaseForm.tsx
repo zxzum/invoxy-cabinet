@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage, getInsufficientBalanceError } from '../../../utils/subscriptionHelpers';
 import { useCurrency } from '../../../hooks/useCurrency';
@@ -11,7 +12,10 @@ import { openPaymentUrl } from '../../../utils/openPaymentUrl';
 import { getMonthlyPriceKopeks } from '../../../utils/pricing';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { TariffPaymentSheet } from '../../payment/TariffPaymentSheet';
+import { ArrowDownIcon } from '../../icons';
+import { FeatureBadge } from '../../ui/FeatureBadge';
 import type { Tariff, TariffPeriod } from '../../../types';
+import { getTariffCustomerFacingName, getTariffMarketingDescription } from './tariffPresentation';
 
 // ──────────────────────────────────────────────────────────────────
 // TariffPurchaseForm
@@ -39,7 +43,15 @@ export interface TariffPurchaseFormProps {
   sbpPurchaseEnabled?: boolean;
   /** Оформление привязкой Lava доступно — показать вторую CTA. */
   lavaPurchaseEnabled?: boolean;
+  /** Render the form body inside a parent sheet without a second header. */
+  showHeader?: boolean;
   onBack: () => void;
+}
+
+interface PaymentSelection {
+  periodDays: number;
+  trafficGb?: number;
+  priceKopeks: number;
 }
 
 export function TariffPurchaseForm({
@@ -48,6 +60,7 @@ export function TariffPurchaseForm({
   balanceKopeks,
   sbpPurchaseEnabled = false,
   lavaPurchaseEnabled = false,
+  showHeader = true,
   onBack,
 }: TariffPurchaseFormProps) {
   const { t } = useTranslation();
@@ -57,11 +70,25 @@ export function TariffPurchaseForm({
   const { applyPromoDiscount } = usePromoDiscount();
   const { openLink, platform } = usePlatform();
   const ref = useRef<HTMLDivElement>(null);
+  const whiteInternetLabel = t('subscription.whiteInternet');
+  const customerFacingName = getTariffCustomerFacingName(tariff.name, whiteInternetLabel);
+  const marketingDescription = getTariffMarketingDescription(
+    tariff.description,
+    whiteInternetLabel,
+  );
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
       ? t('subscription.free', 'Бесплатно')
       : `${formatAmount(kopeks / 100)} ${currencySymbol}`;
+
+  const openBalanceTopUp = (missingKopeks: number) => {
+    const params = new URLSearchParams({
+      amount: String(Math.ceil(missingKopeks / 100)),
+      returnTo: '/subscription/purchase',
+    });
+    navigate(`/balance/top-up?${params.toString()}`);
+  };
 
   // Form-internal state — seeded from the tariff prop. Resets via
   // `key={tariff.id}` on the parent's render.
@@ -72,7 +99,7 @@ export function TariffPurchaseForm({
   const [customTrafficGb, setCustomTrafficGb] = useState<number>(50);
   const [useCustomDays, setUseCustomDays] = useState(false);
   const [useCustomTraffic, setUseCustomTraffic] = useState(false);
-  const [paySheetOpen, setPaySheetOpen] = useState(false);
+  const [paymentSelection, setPaymentSelection] = useState<PaymentSelection | null>(null);
 
   const purchaseMutation = useMutation({
     mutationFn: () => {
@@ -199,17 +226,68 @@ export function TariffPurchaseForm({
     }
   }, []);
 
+  useEffect(() => {
+    if (paymentSelection) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [paymentSelection]);
+
+  if (paymentSelection) {
+    return (
+      <motion.div
+        key="payment"
+        ref={ref}
+        initial={{ opacity: 0, x: 24 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <TariffPaymentSheet
+          open
+          embedded
+          onOpenChange={(open) => !open && setPaymentSelection(null)}
+          tariffId={tariff.id}
+          tariffName={customerFacingName}
+          periodDays={paymentSelection.periodDays}
+          trafficGb={paymentSelection.trafficGb}
+          subscriptionId={subscriptionId}
+          priceKopeks={paymentSelection.priceKopeks}
+          balanceKopeks={balanceKopeks ?? 0}
+          onPaid={() => {
+            queryClient.invalidateQueries({ queryKey: ['subscription'] });
+            queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+            navigate('/subscriptions', { replace: true });
+          }}
+        />
+      </motion.div>
+    );
+  }
+
   return (
-    <div ref={ref} className="space-y-6">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="min-w-0 truncate text-lg font-medium text-dark-100">{tariff.name}</h3>
-        <button onClick={onBack} className="shrink-0 text-dark-400 hover:text-dark-200">
-          ← {t('common.back')}
-        </button>
-      </div>
+    <motion.div
+      key="details"
+      ref={ref}
+      className="space-y-4"
+      initial={{ opacity: 0, x: -18 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {showHeader && (
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="min-w-0 truncate text-lg font-medium text-dark-100">
+            {customerFacingName}
+          </h3>
+          <button onClick={onBack} className="shrink-0 text-dark-400 hover:text-dark-200">
+            ← {t('common.back')}
+          </button>
+        </div>
+      )}
+
+      {marketingDescription && (
+        <p className="whitespace-pre-line text-sm leading-5 text-dark-400">
+          {marketingDescription}
+        </p>
+      )}
 
       {/* Tariff Info */}
-      <div className="rounded-xl bg-dark-800/50 p-4">
+      <div className="rounded-xl bg-dark-800/50 p-3">
         <div className="flex flex-wrap gap-4 text-sm">
           <div>
             <span className="text-dark-500">{t('subscription.traffic')}:</span>
@@ -226,6 +304,11 @@ export function TariffPurchaseForm({
               )}
             </span>
           </div>
+          {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
+            <FeatureBadge icon={ArrowDownIcon} tone="warning">
+              {whiteInternetLabel} · {tariff.whitelist_traffic_limit_gb} {t('common.units.gb')}
+            </FeatureBadge>
+          )}
         </div>
       </div>
 
@@ -267,47 +350,47 @@ export function TariffPurchaseForm({
                     totalPriceKopeks={dailyPrice}
                     compact
                     className="mb-4"
-                    onPay={() => setPaySheetOpen(true)}
+                    hideActions
                   />
                 )}
 
-                <button
-                  onClick={() =>
-                    hasEnoughBalance ? purchaseMutation.mutate() : setPaySheetOpen(true)
-                  }
-                  disabled={purchaseMutation.isPending}
-                  className="btn-primary w-full py-3"
-                >
-                  {purchaseMutation.isPending ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      {t('common.loading')}
-                    </span>
-                  ) : hasEnoughBalance ? (
-                    t('subscription.dailyPurchase.activate', {
-                      price: formatPrice(dailyPrice),
-                    })
-                  ) : (
-                    t('balance.payTariffDirect')
-                  )}
-                </button>
-
-                <TariffPaymentSheet
-                  open={paySheetOpen}
-                  onOpenChange={setPaySheetOpen}
-                  tariffId={tariff.id}
-                  tariffName={tariff.name}
-                  periodDays={1}
-                  subscriptionId={subscriptionId}
-                  priceKopeks={dailyPrice}
-                  balanceKopeks={balanceKopeks ?? 0}
-                  onPaid={() => {
-                    setPaySheetOpen(false);
-                    queryClient.invalidateQueries({ queryKey: ['subscription'] });
-                    queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
-                    navigate('/subscriptions', { replace: true });
-                  }}
-                />
+                {hasEnoughBalance ? (
+                  <button
+                    onClick={() => purchaseMutation.mutate()}
+                    disabled={purchaseMutation.isPending}
+                    className="btn-primary w-full py-3"
+                  >
+                    {purchaseMutation.isPending ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        {t('common.loading')}
+                      </span>
+                    ) : (
+                      t('subscription.dailyPurchase.activate', {
+                        price: formatPrice(dailyPrice),
+                      })
+                    )}
+                  </button>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openBalanceTopUp(dailyPrice - (balanceKopeks ?? 0))}
+                      className="btn-secondary min-h-12 px-3 text-sm"
+                    >
+                      {t('balance.topUpFirst')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPaymentSelection({ periodDays: 1, priceKopeks: dailyPrice })
+                      }
+                      className="btn-primary min-h-12 px-3 text-sm"
+                    >
+                      {t('balance.payDirect')}
+                    </button>
+                  </div>
+                )}
 
                 {sbpPurchaseButton}
                 {lavaPurchaseButton}
@@ -327,6 +410,7 @@ export function TariffPurchaseForm({
                           dailyPrice - (balanceKopeks || 0)
                         }
                         compact
+                        hideActions
                       />
                     </div>
                   )}
@@ -341,7 +425,7 @@ export function TariffPurchaseForm({
             <div className="mb-3 text-sm text-dark-400">{t('subscription.selectPeriod')}</div>
 
             {tariff.periods.length > 0 && !useCustomDays && (
-              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {tariff.periods.map((period) => {
                   const promoPeriod = applyPromoDiscount(
                     period.price_kopeks,
@@ -359,7 +443,7 @@ export function TariffPurchaseForm({
                         setSelectedTariffPeriod(period);
                         setUseCustomDays(false);
                       }}
-                      className={`relative rounded-xl border p-4 text-left transition-all ${
+                      className={`relative min-h-[76px] rounded-xl border px-3 py-2.5 text-left transition-all ${
                         selectedTariffPeriod?.days === period.days && !useCustomDays
                           ? 'border-accent-500 bg-accent-500/10'
                           : 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600'
@@ -374,9 +458,9 @@ export function TariffPurchaseForm({
                           -{displayDiscount}%
                         </div>
                       )}
-                      <div className="text-lg font-semibold text-dark-100">{period.label}</div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-accent-400">
+                      <div className="text-sm font-semibold text-dark-100">{period.label}</div>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <span className="text-sm font-medium text-accent-400">
                           {formatPrice(displayPrice)}
                         </span>
                         {displayOriginal && displayOriginal > displayPrice && (
@@ -386,7 +470,7 @@ export function TariffPurchaseForm({
                         )}
                       </div>
                       {displayPerMonth !== null && (
-                        <div className="mt-1 text-xs text-dark-500">
+                        <div className="mt-0.5 text-[11px] text-dark-500">
                           {formatPrice(displayPerMonth)}/{t('subscription.month')}
                         </div>
                       )}
@@ -739,45 +823,50 @@ export function TariffPurchaseForm({
                             <InsufficientBalancePrompt
                               missingAmountKopeks={missingKopeks}
                               totalPriceKopeks={totalPrice}
+                              compact
                               className="mb-4"
-                              onPay={() => setPaySheetOpen(true)}
+                              hideActions
                             />
                           )}
-                          <button
-                            onClick={() =>
-                              hasEnoughBalance ? purchaseMutation.mutate() : setPaySheetOpen(true)
-                            }
-                            disabled={purchaseMutation.isPending}
-                            className="btn-primary w-full py-3"
-                          >
-                            {purchaseMutation.isPending ? (
-                              <span className="flex items-center justify-center gap-2">
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                                {t('common.loading')}
-                              </span>
-                            ) : hasEnoughBalance ? (
-                              t('subscription.purchase')
-                            ) : (
-                              t('balance.payTariffDirect')
-                            )}
-                          </button>
-                          <TariffPaymentSheet
-                            open={paySheetOpen}
-                            onOpenChange={setPaySheetOpen}
-                            tariffId={tariff.id}
-                            tariffName={tariff.name}
-                            periodDays={effectivePeriodDays}
-                            trafficGb={effectiveTrafficGb}
-                            subscriptionId={subscriptionId}
-                            priceKopeks={totalPrice}
-                            balanceKopeks={balanceKopeks ?? 0}
-                            onPaid={() => {
-                              setPaySheetOpen(false);
-                              queryClient.invalidateQueries({ queryKey: ['subscription'] });
-                              queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
-                              navigate('/subscriptions', { replace: true });
-                            }}
-                          />
+                          {hasEnoughBalance ? (
+                            <button
+                              onClick={() => purchaseMutation.mutate()}
+                              disabled={purchaseMutation.isPending}
+                              className="btn-primary w-full py-3"
+                            >
+                              {purchaseMutation.isPending ? (
+                                <span className="flex items-center justify-center gap-2">
+                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                  {t('common.loading')}
+                                </span>
+                              ) : (
+                                t('subscription.purchase')
+                              )}
+                            </button>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openBalanceTopUp(missingKopeks)}
+                                className="btn-secondary min-h-12 px-3 text-sm"
+                              >
+                                {t('balance.topUpFirst')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPaymentSelection({
+                                    periodDays: effectivePeriodDays,
+                                    trafficGb: effectiveTrafficGb,
+                                    priceKopeks: totalPrice,
+                                  })
+                                }
+                                className="btn-primary min-h-12 px-3 text-sm"
+                              >
+                                {t('balance.payDirect')}
+                              </button>
+                            </div>
+                          )}
                         </>
                       );
                     })()}
@@ -803,6 +892,7 @@ export function TariffPurchaseForm({
                       getInsufficientBalanceError(purchaseMutation.error)?.missingAmount || 0
                     }
                     compact
+                    hideActions
                   />
                 </div>
               )}
@@ -810,6 +900,6 @@ export function TariffPurchaseForm({
           )}
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

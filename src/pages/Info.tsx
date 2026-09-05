@@ -3,6 +3,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PiCaretDown } from 'react-icons/pi';
+import { Link } from 'react-router';
 import DOMPurify from 'dompurify';
 import { infoApi, type FaqPage, type InfoVisibility } from '../api/info';
 import { formatContent } from '../utils/legalContent';
@@ -746,6 +747,17 @@ export default function Info() {
       <div className="flex items-center gap-3">
         <InfoIcon className="h-6 w-6" />
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('info.title')}</h1>
+        <nav
+          aria-label={t('info.title')}
+          className="mt-3 flex flex-wrap gap-4 text-sm text-accent-400"
+        >
+          <Link to="/offer" className="underline">
+            {t('footer.offer', 'Публичная оферта')}
+          </Link>
+          <Link to="/privacy" className="underline">
+            {t('footer.privacy', 'Политика конфиденциальности')}
+          </Link>
+        </nav>
       </div>
 
       {/* Tabs */}

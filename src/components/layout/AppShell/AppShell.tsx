@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { PiKey, PiChatCircle } from 'react-icons/pi';
 
 import { useAuthStore } from '@/store/auth';
@@ -23,14 +23,21 @@ import CampaignBonusNotifier from '@/components/CampaignBonusNotifier';
 import SuccessNotificationModal from '@/components/SuccessNotificationModal';
 import { PromptDialogHost } from '@/components/PromptDialogHost';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
-import { SubscriptionIcon, HomeIcon, UserIcon, ShieldIcon, LogoutIcon } from '@/components/icons';
+import {
+  SubscriptionIcon,
+  HomeIcon,
+  UserIcon,
+  ShieldIcon,
+  LogoutIcon,
+  SunIcon,
+  MoonIcon,
+} from '@/components/icons';
+import { LOCAL_LOGO_URL } from '@/api/branding';
 import { AnimatedNumber, pillSpring, pressSpring } from '@/components/motion';
 
 import { MobileBottomNav } from './MobileBottomNav';
 import { AppHeader } from './AppHeader';
-import { PaletteSwitcher } from '@/components/PaletteSwitcher';
 import { useBackgroundConsumer } from '@/components/backgrounds/BackgroundHost';
-import { usePalette } from '@/hooks/usePalette';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -41,6 +48,23 @@ const MotionFabLink = motion.create(Link);
 export function AppShell({ children }: AppShellProps) {
   const { t } = useTranslation();
   const location = useLocation();
+  const reducedMotion = useReducedMotion();
+  const [desktop, setDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
+  const [previousPath, setPreviousPath] = useState(location.pathname);
+  const [direction, setDirection] = useState(1);
+  const tabs = ['/', '/subscription/purchase', '/connection', '/profile'];
+  if (previousPath !== location.pathname) {
+    const previousIndex = tabs.indexOf(previousPath);
+    const nextIndex = tabs.indexOf(location.pathname);
+    setDirection(previousIndex >= 0 && nextIndex >= 0 && nextIndex < previousIndex ? -1 : 1);
+    setPreviousPath(location.pathname);
+  }
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const update = () => setDesktop(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
@@ -48,10 +72,9 @@ export function AppShell({ children }: AppShellProps) {
     useTelegramSDK();
   const { mobile: headerHeight } = useHeaderHeight();
   const haptic = useHaptic();
-  useTheme();
-  usePalette();
+  const { theme, toggleTheme, canToggle } = useTheme();
 
-  const { appName, logoLetter, hasCustomLogo, logoUrl } = useBranding();
+  const { appName, logoLetter, logoUrl } = useBranding();
   const { referralEnabled, wheelEnabled, hasContests, hasPolls, giftEnabled } = useFeatureFlags();
   useScrollRestoration();
   useBackgroundConsumer();
@@ -114,10 +137,7 @@ export function AppShell({ children }: AppShellProps) {
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     if (path === '/subscription/purchase') {
-      return (
-        location.pathname.startsWith('/subscription') ||
-        location.pathname.startsWith('/subscriptions')
-      );
+      return location.pathname === path;
     }
     return location.pathname.startsWith(path);
   };
@@ -181,8 +201,8 @@ export function AppShell({ children }: AppShellProps) {
         <div className="ix-sidebar-user">
           <div className="ix-avatar">{initials || logoLetter}</div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-white">{name}</div>
-            <div className="truncate text-[11px] text-white/40">
+            <div className="truncate text-sm font-semibold text-dark-100">{name}</div>
+            <div className="truncate text-[11px] text-dark-500">
               ID: {user?.telegram_id ?? user?.id ?? '—'}
             </div>
           </div>
@@ -195,11 +215,11 @@ export function AppShell({ children }: AppShellProps) {
 
         <div className="mt-auto space-y-3">
           <div className="ix-balance-card">
-            <div className="text-[11px] uppercase tracking-wide text-white/40">Баланс</div>
+            <div className="text-[11px] uppercase tracking-wide text-dark-500">Баланс</div>
             {/* Счётчик вместо строки: при пополнении баланс «докручивается» до
                 нового значения. Формат — тот же ru-RU с двумя знаками. */}
             <AnimatedNumber
-              className="mt-1 block text-xl font-semibold text-white"
+              className="mt-1 block text-xl font-semibold text-dark-100"
               value={balanceRubles}
               format={(v) =>
                 `${v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`
@@ -246,34 +266,73 @@ export function AppShell({ children }: AppShellProps) {
         <div className="hidden lg:flex lg:items-center lg:justify-end lg:gap-2 lg:px-8 lg:pt-5">
           <Link to="/" className="mr-auto flex items-center gap-2.5" onClick={handleNavClick}>
             <div className="relative h-8 w-8 overflow-hidden rounded-xl bg-accent-500/20">
-              {hasCustomLogo && logoUrl ? (
+              {logoUrl ? (
                 <img
                   src={logoUrl}
-                  alt={appName || 'Invoxy'}
-                  className="h-full w-full object-cover"
+                  alt={appName || 'Invoxy VPN'}
+                  className="h-full w-full object-contain"
                 />
               ) : (
-                <span className="flex h-full w-full items-center justify-center text-xs font-bold text-accent-300">
-                  {logoLetter}
-                </span>
+                <img
+                  src={LOCAL_LOGO_URL}
+                  alt={appName || 'Invoxy VPN'}
+                  className="h-full w-full object-contain"
+                />
               )}
             </div>
-            <span className="text-lg font-semibold text-white">{appName || 'Invoxy VPN'}</span>
+            <span className="text-lg font-semibold text-dark-100">{appName || 'Invoxy VPN'}</span>
           </Link>
           <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
-          <PaletteSwitcher />
+          {canToggle && (
+            <button
+              type="button"
+              onClick={() => {
+                haptic.impact('light');
+                toggleTheme();
+              }}
+              className="btn-icon"
+              aria-label={
+                theme === 'dark'
+                  ? t('theme.switchToLight', 'Светлая тема')
+                  : t('theme.switchToDark', 'Тёмная тема')
+              }
+              title={
+                theme === 'dark'
+                  ? t('theme.switchToLight', 'Светлая тема')
+                  : t('theme.switchToDark', 'Тёмная тема')
+              }
+            >
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+            </button>
+          )}
         </div>
 
         <div className="lg:hidden" style={{ height: headerHeight }} />
 
-        <main className="ix-main">
-          <AnimatePresence mode="wait">
+        <main className="ix-main" style={{ position: 'relative', overflowX: 'clip' }}>
+          <AnimatePresence mode={desktop ? 'wait' : 'popLayout'} custom={direction} initial={false}>
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              custom={direction}
+              variants={{
+                enter: (value: number) =>
+                  reducedMotion
+                    ? { opacity: 1, x: 0, y: 0 }
+                    : desktop
+                      ? { opacity: 0, y: 14, x: 0 }
+                      : { opacity: 1, x: `${value * 100}%`, y: 0 },
+                visible: { opacity: 1, x: 0, y: 0 },
+                leave: (value: number) =>
+                  reducedMotion
+                    ? { opacity: 1, x: 0, y: 0 }
+                    : desktop
+                      ? { opacity: 0, y: -8, x: 0 }
+                      : { opacity: 1, x: `${value * -100}%`, y: 0 },
+              }}
+              initial="enter"
+              animate="visible"
+              exit="leave"
+              transition={{ duration: reducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
             >
               {children}
             </motion.div>

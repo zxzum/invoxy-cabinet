@@ -7,7 +7,9 @@ import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
 import { getGlassColors } from '../../../utils/glassTheme';
 import { ArrowDownIcon, DevicesIcon, RestartIcon } from '@/components/icons';
+import { FeatureBadge } from '@/components/ui/FeatureBadge';
 import type { Tariff, Subscription, PurchaseOptions } from '../../../types';
+import { getTariffCustomerFacingName, getTariffMarketingDescription } from './tariffPresentation';
 
 // ──────────────────────────────────────────────────────────────────
 // TariffPickerGrid
@@ -157,6 +159,24 @@ export function TariffPickerGrid({
               (subscription.is_active || subscription.is_limited);
             const isLegacySubscription =
               subscription && !subscription.is_trial && !subscription.tariff_id;
+            const canOpenTariff = !(isCurrentTariff && subscription?.is_daily);
+            const customerFacingName = getTariffCustomerFacingName(
+              tariff.name,
+              t('subscription.whiteInternet'),
+            );
+            const marketingDescription = getTariffMarketingDescription(
+              tariff.description,
+              t('subscription.whiteInternet'),
+            );
+
+            const openTariffAction = () => {
+              if (!canOpenTariff) return;
+              if (canSwitch) {
+                onSwitchTariff(tariff.id);
+              } else {
+                onSelectTariff(tariff);
+              }
+            };
 
             return (
               // Stagger-вход карточек. CSS-вход bentoFadeIn на bento-card гасим
@@ -166,16 +186,35 @@ export function TariffPickerGrid({
               // вжатие.
               <motion.div key={tariff.id} {...staggerEntrance(index, 0.1, 0.06)}>
                 <div
+                  role={canOpenTariff ? 'button' : undefined}
+                  tabIndex={canOpenTariff ? 0 : undefined}
+                  aria-label={canOpenTariff ? customerFacingName : undefined}
+                  onClick={canOpenTariff ? openTariffAction : undefined}
+                  onKeyDown={
+                    canOpenTariff
+                      ? (event) => {
+                          if (
+                            (event.key === 'Enter' || event.key === ' ') &&
+                            event.target === event.currentTarget
+                          ) {
+                            event.preventDefault();
+                            openTariffAction();
+                          }
+                        }
+                      : undefined
+                  }
                   className={`bento-card-hover animate-none p-5 text-left transition-all ${
                     isCurrentTariff ? 'bento-card-glow border-accent-500' : ''
                   }`}
                 >
                   <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <div className="text-lg font-semibold text-dark-100">{tariff.name}</div>
-                      {tariff.description && (
-                        <div className="mt-1 whitespace-pre-line text-sm text-dark-400">
-                          {tariff.description}
+                      <div className="text-lg font-semibold text-dark-100">
+                        {customerFacingName}
+                      </div>
+                      {marketingDescription && (
+                        <div className="mt-1 max-w-prose whitespace-pre-line text-sm leading-5 text-dark-400">
+                          {marketingDescription}
                         </div>
                       )}
                     </div>
@@ -185,28 +224,25 @@ export function TariffPickerGrid({
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <ArrowDownIcon className="h-4 w-4 text-accent-400" />
-                      <span className="font-medium text-dark-200">
-                        {tariff.traffic_limit_label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <DevicesIcon className="h-4 w-4 text-dark-400" />
-                      <span className="text-dark-300">
-                        {tariff.device_limit === 0
-                          ? '∞'
-                          : t('subscription.devices', { count: tariff.device_limit })}
-                      </span>
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
+                      <FeatureBadge icon={ArrowDownIcon} tone="warning">
+                        {t('subscription.whiteInternet')} · {tariff.whitelist_traffic_limit_gb}{' '}
+                        {t('common.units.gb')}
+                      </FeatureBadge>
+                    )}
+                    <FeatureBadge icon={ArrowDownIcon} tone="info">
+                      {tariff.traffic_limit_label}
+                    </FeatureBadge>
+                    <FeatureBadge icon={DevicesIcon} tone="success">
+                      {tariff.device_limit === 0
+                        ? '∞'
+                        : t('subscription.devices', { count: tariff.device_limit })}
+                    </FeatureBadge>
                     {tariff.traffic_reset_mode && tariff.traffic_reset_mode !== 'NO_RESET' && (
-                      <div className="flex items-center gap-1.5">
-                        <RestartIcon className="h-4 w-4 text-dark-400" />
-                        <span className="text-dark-300">
-                          {t(`subscription.trafficReset.${tariff.traffic_reset_mode}`)}
-                        </span>
-                      </div>
+                      <FeatureBadge icon={RestartIcon} tone="warning">
+                        {t(`subscription.trafficReset.${tariff.traffic_reset_mode}`)}
+                      </FeatureBadge>
                     )}
                   </div>
                   {/* Price info */}
@@ -293,7 +329,10 @@ export function TariffPickerGrid({
                         </div>
                       ) : (
                         <button
-                          onClick={() => onSelectTariff(tariff)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onSelectTariff(tariff);
+                          }}
                           className="btn-primary flex-1 py-2 text-sm"
                         >
                           {t('subscription.extend')}
@@ -301,21 +340,30 @@ export function TariffPickerGrid({
                       )
                     ) : isLegacySubscription ? (
                       <button
-                        onClick={() => onSelectTariff(tariff)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSelectTariff(tariff);
+                        }}
                         className="btn-primary flex-1 py-2 text-sm"
                       >
                         {t('subscription.tariff.selectForRenewal')}
                       </button>
                     ) : canSwitch ? (
                       <button
-                        onClick={() => onSwitchTariff(tariff.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSwitchTariff(tariff.id);
+                        }}
                         className="btn-secondary flex-1 py-2 text-sm"
                       >
                         {t('subscription.switchTariff.switch')}
                       </button>
                     ) : (
                       <button
-                        onClick={() => onSelectTariff(tariff)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSelectTariff(tariff);
+                        }}
                         className="btn-primary flex-1 py-2 text-sm"
                       >
                         {t('subscription.purchase')}

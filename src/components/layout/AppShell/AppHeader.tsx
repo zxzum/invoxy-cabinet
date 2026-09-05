@@ -2,7 +2,9 @@ import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { initDataUser } from '@telegram-apps/sdk-react';
+import { PiKey } from 'react-icons/pi';
 
 import { useAuthStore } from '@/store/auth';
 import { displayName } from '@/utils/displayName';
@@ -13,13 +15,13 @@ import {
   getCachedBranding,
   setCachedBranding,
   preloadLogo,
-  isLogoPreloaded,
+  LOCAL_LOGO_URL,
 } from '@/api/branding';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/hooks/useTheme';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
-import { PaletteSwitcher } from '@/components/PaletteSwitcher';
 
 // Icons
 import {
@@ -39,10 +41,11 @@ import {
   MenuIcon,
   CloseIcon,
   SearchIcon,
+  SunIcon,
+  MoonIcon,
 } from './icons';
 
-const FALLBACK_NAME = import.meta.env.VITE_APP_NAME || 'Cabinet';
-const FALLBACK_LOGO = import.meta.env.VITE_APP_LOGO || 'V';
+const FALLBACK_NAME = import.meta.env.VITE_APP_NAME || 'Invoxy VPN';
 
 import type { TelegramPlatform } from '@/hooks/useTelegramSDK';
 
@@ -83,8 +86,8 @@ export function AppHeader({
     useShallow((state) => ({ user: state.user, logout: state.logout, isAdmin: state.isAdmin })),
   );
   const { haptic, platform } = usePlatform();
+  const { theme, toggleTheme, canToggle } = useTheme();
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
-  const [logoLoaded, setLogoLoaded] = useState(() => isLogoPreloaded());
 
   // Branding
   const { data: branding } = useQuery({
@@ -103,9 +106,6 @@ export function AppHeader({
   });
 
   const appName = branding ? branding.name : FALLBACK_NAME;
-  const logoLetter = branding?.logo_letter || FALLBACK_LOGO;
-  const hasCustomLogo = branding?.has_custom_logo || false;
-  const logoUrl = branding ? brandingApi.getLogoUrl(branding) : null;
 
   // Get user photo from Telegram
   useEffect(() => {
@@ -143,12 +143,18 @@ export function AppHeader({
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
+    if (path === '/subscriptions' || path === '/subscription/purchase') {
+      return location.pathname === path;
+    }
     return location.pathname.startsWith(path);
   };
   const isAdminActive = () => location.pathname.startsWith('/admin');
 
   const navItems = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
+    { path: '/subscription/purchase', label: t('nav.tariffs'), icon: SubscriptionIcon },
+    { path: '/connection', label: t('nav.keys'), icon: PiKey },
+    { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     { path: '/subscriptions', label: t('nav.subscription'), icon: SubscriptionIcon },
     { path: '/balance', label: t('nav.balance'), icon: WalletIcon },
     ...(referralEnabled ? [{ path: '/referral', label: t('nav.referral'), icon: UsersIcon }] : []),
@@ -183,25 +189,11 @@ export function AppHeader({
               className={cn('flex flex-shrink-0 items-center gap-2.5', !appName && 'mr-4')}
             >
               <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-linear-lg border border-dark-700/50 bg-dark-800/80 shadow-md">
-                <span
-                  className={cn(
-                    'absolute text-lg font-bold text-accent-400 transition-opacity duration-200',
-                    hasCustomLogo && logoLoaded ? 'opacity-0' : 'opacity-100',
-                  )}
-                >
-                  {logoLetter}
-                </span>
-                {hasCustomLogo && logoUrl && (
-                  <img
-                    src={logoUrl}
-                    alt={appName || 'Logo'}
-                    className={cn(
-                      'absolute h-full w-full object-contain transition-opacity duration-200',
-                      logoLoaded ? 'opacity-100' : 'opacity-0',
-                    )}
-                    onLoad={() => setLogoLoaded(true)}
-                  />
-                )}
+                <img
+                  src={LOCAL_LOGO_URL}
+                  alt={appName || 'Invoxy VPN'}
+                  className="h-full w-full object-contain"
+                />
               </div>
               {appName && (
                 <span className="whitespace-nowrap text-base font-semibold text-dark-100">
@@ -226,7 +218,28 @@ export function AppHeader({
                 </button>
               )}
 
-              <PaletteSwitcher compact />
+              {canToggle && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.impact('light');
+                    toggleTheme();
+                  }}
+                  className="btn-icon"
+                  aria-label={
+                    theme === 'dark'
+                      ? t('theme.switchToLight', 'Светлая тема')
+                      : t('theme.switchToDark', 'Тёмная тема')
+                  }
+                  title={
+                    theme === 'dark'
+                      ? t('theme.switchToLight', 'Светлая тема')
+                      : t('theme.switchToDark', 'Тёмная тема')
+                  }
+                >
+                  {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+                </button>
+              )}
 
               <div onClick={() => setMobileMenuOpen(false)}>
                 <TicketNotificationBell isAdmin={isAdminActive()} />
@@ -262,118 +275,124 @@ export function AppHeader({
       </header>
 
       {/* Mobile menu overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 animate-fade-in lg:hidden"
-          style={{ top: headerHeight }}
-        >
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-dark-950/60"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-
-          {/* Menu content */}
-          <div
-            className="mobile-menu-content absolute inset-x-0 bottom-0 top-0 overflow-y-auto overscroll-contain border-t border-dark-800/50 bg-dark-900/95 pb-[calc(5rem+env(safe-area-inset-bottom,0px))]"
-            style={{ WebkitOverflowScrolling: 'touch' }}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            key="mobile-menu"
+            className="fixed inset-x-0 bottom-0 z-40 lg:hidden"
+            style={{ top: headerHeight }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <div className="mx-auto max-w-6xl px-4 py-4">
-              {/* User info */}
-              <div className="mb-4 flex items-center justify-between border-b border-dark-800/50 pb-4">
-                <div className="flex items-center gap-3">
-                  {userPhotoUrl ? (
-                    <img
-                      src={userPhotoUrl}
-                      alt="Avatar"
-                      className="h-10 w-10 rounded-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-full bg-dark-700',
-                      userPhotoUrl ? 'hidden' : '',
-                    )}
-                  >
-                    <UserIcon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-dark-100">
-                      {displayName(user)}
+            {/* Backdrop */}
+            <motion.div
+              className="absolute inset-0 bg-dark-950/60"
+              onClick={() => setMobileMenuOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+
+            {/* Menu content */}
+            <motion.div
+              className="mobile-menu-content absolute inset-x-0 bottom-0 max-h-full overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-dark-800/50 bg-dark-900/95 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] shadow-2xl"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 360, damping: 34 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mx-auto max-w-6xl px-4 pb-4 pt-5">
+                {/* User info */}
+                <div className="mb-4 flex items-center justify-between border-b border-dark-800/50 pb-4">
+                  <div className="flex items-center gap-3">
+                    {userPhotoUrl ? (
+                      <img
+                        src={userPhotoUrl}
+                        alt="Avatar"
+                        className="h-10 w-10 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-full bg-dark-700',
+                        userPhotoUrl ? 'hidden' : '',
+                      )}
+                    >
+                      <UserIcon className="h-5 w-5" />
                     </div>
-                    <div className="truncate text-xs text-dark-500">
-                      @{user?.username || `ID: ${user?.telegram_id}`}
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-dark-100">
+                        {displayName(user)}
+                      </div>
+                      <div className="truncate text-xs text-dark-500">
+                        @{user?.username || `ID: ${user?.telegram_id}`}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Nav items */}
-              <nav className="space-y-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={isActive(item.path) ? 'nav-item-active' : 'nav-item'}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                  </Link>
-                ))}
-
-                {isAdmin && (
-                  <>
-                    <div className="divider my-3" />
-                    <div className="px-4 py-1 text-xs font-medium uppercase tracking-wider text-dark-500">
-                      {t('admin.nav.title')}
-                    </div>
+                {/* Nav items */}
+                <nav className="space-y-2">
+                  {navItems.map((item) => (
                     <Link
-                      to="/admin"
+                      key={item.path}
+                      to={item.path}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={cn(
-                        'nav-item',
-                        isAdminActive()
-                          ? 'bg-warning-500/10 text-warning-400'
-                          : 'text-warning-500/70',
-                      )}
+                      className={isActive(item.path) ? 'nav-item-active' : 'nav-item'}
                     >
-                      <CogIcon className="h-5 w-5" />
-                      {t('admin.nav.title')}
+                      <item.icon className="h-5 w-5" />
+                      {item.label}
                     </Link>
-                  </>
-                )}
+                  ))}
 
-                <div className="divider my-3" />
+                  {isAdmin && (
+                    <>
+                      <div className="divider my-3" />
+                      <div className="px-4 py-1 text-xs font-medium uppercase tracking-wider text-dark-500">
+                        {t('admin.nav.title')}
+                      </div>
+                      <Link
+                        to="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          'nav-item',
+                          isAdminActive()
+                            ? 'bg-warning-500/10 text-warning-400'
+                            : 'text-warning-500/70',
+                        )}
+                      >
+                        <CogIcon className="h-5 w-5" />
+                        {t('admin.nav.title')}
+                      </Link>
+                    </>
+                  )}
 
-                <Link
-                  to="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={isActive('/profile') ? 'nav-item-active' : 'nav-item'}
-                >
-                  <UserIcon className="h-5 w-5" />
-                  {t('nav.profile')}
-                </Link>
+                  <div className="divider my-3" />
 
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    logout();
-                  }}
-                  className="nav-item w-full text-error-400"
-                >
-                  <LogoutIcon className="h-5 w-5" />
-                  {t('nav.logout')}
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="nav-item w-full text-error-400"
+                  >
+                    <LogoutIcon className="h-5 w-5" />
+                    {t('nav.logout')}
+                  </button>
+                </nav>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

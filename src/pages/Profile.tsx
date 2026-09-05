@@ -23,7 +23,15 @@ import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { Switch } from '@/components/primitives/Switch';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
-import { CopyIcon, CheckIcon, ShareIcon, ArrowRightIcon, PencilIcon } from '@/components/icons';
+import {
+  CopyIcon,
+  CheckIcon,
+  ShareIcon,
+  ArrowRightIcon,
+  PencilIcon,
+  TelegramIcon,
+  LinkIcon,
+} from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 export default function Profile() {
@@ -35,7 +43,7 @@ export default function Profile() {
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'bot' | 'cabinet' | null>(null);
 
   // Inline email change flow
   const [changeEmailStep, setChangeEmailStep] = useState<'email' | 'code' | 'success' | null>(null);
@@ -77,17 +85,22 @@ export default function Profile() {
   const referralLink = referralInfo?.referral_code
     ? `${window.location.origin}/login?ref=${referralInfo.referral_code}`
     : '';
+  const botReferralLink = referralInfo?.referral_code
+    ? referralInfo.bot_referral_link ||
+      `https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'invoxy_bot'}?start=${encodeURIComponent(referralInfo.referral_code)}`
+    : '';
 
-  const copyReferralLink = () => {
-    if (referralLink) {
-      void copyToClipboard(referralLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const copyReferralLink = (link: string, type: 'bot' | 'cabinet') => {
+    if (link) {
+      void copyToClipboard(link);
+      setCopied(type);
+      setTimeout(() => setCopied(null), 2000);
     }
   };
 
   const shareReferralLink = () => {
-    if (!referralLink) return;
+    const link = botReferralLink || referralLink;
+    if (!link) return;
     const shareText = t('referral.shareMessage', {
       percent: referralInfo?.commission_percent || 0,
       botName: branding?.name || import.meta.env.VITE_APP_NAME || 'Cabinet',
@@ -98,13 +111,13 @@ export default function Profile() {
         .share({
           title: t('referral.title'),
           text: shareText,
-          url: referralLink,
+          url: link,
         })
         .catch(() => {});
       return;
     }
 
-    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`;
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
     openTelegramLink(telegramUrl);
   };
 
@@ -343,24 +356,51 @@ export default function Profile() {
                 <ArrowRightIcon className="h-4 w-4" />
               </Link>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <div className="flex-1">
-                <input type="text" readOnly value={referralLink} className="input w-full text-sm" />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={copyReferralLink}
-                  variant={copied ? 'primary' : 'primary'}
-                  className={copied ? 'bg-success-500 hover:bg-success-500' : ''}
-                >
-                  {copied ? <CheckIcon /> : <CopyIcon />}
-                  <span className="ml-2">
-                    {copied ? t('referral.copied') : t('referral.copyLink')}
-                  </span>
-                </Button>
+            <div className="space-y-3">
+              {[
+                {
+                  type: 'bot' as const,
+                  label: t('referral.botLink'),
+                  link: botReferralLink,
+                  icon: TelegramIcon,
+                },
+                {
+                  type: 'cabinet' as const,
+                  label: t('referral.cabinetLink'),
+                  link: referralLink,
+                  icon: LinkIcon,
+                },
+              ].map(({ type, label, link, icon: Icon }) => (
+                <div key={type}>
+                  <div className="mb-1.5 flex items-center gap-2 text-sm font-medium text-dark-300">
+                    <Icon className="h-4 w-4 text-accent-400" />
+                    {label}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={link}
+                      className="input min-w-0 flex-1 text-sm"
+                    />
+                    <Button
+                      onClick={() => copyReferralLink(link, type)}
+                      variant="primary"
+                      className={copied === type ? 'bg-success-500 hover:bg-success-500' : ''}
+                      aria-label={t('referral.copyLink')}
+                    >
+                      {copied === type ? <CheckIcon /> : <CopyIcon />}
+                      <span className="ml-2 hidden sm:inline">
+                        {copied === type ? t('referral.copied') : t('referral.copyLink')}
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <div className="flex justify-end">
                 <Button onClick={shareReferralLink} variant="secondary">
                   <ShareIcon className="h-4 w-4" />
-                  <span className="ml-2 hidden sm:inline">{t('referral.shareButton')}</span>
+                  <span className="ml-2">{t('referral.shareButton')}</span>
                 </Button>
               </div>
             </div>

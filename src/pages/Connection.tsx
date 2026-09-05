@@ -15,6 +15,8 @@ import { isHappCryptolinkMode, resolveConnectionUrlForUi } from '../utils/connec
 import { useAuthStore } from '../store/auth';
 import type { AppConfig, RemnawavePlatformData } from '../types';
 import InstallationGuide from '../components/connection/InstallationGuide';
+import { AnimatedCopy } from '../components/common/AnimatedCopy';
+import { CopyIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 export default function Connection() {
@@ -68,6 +70,8 @@ export default function Connection() {
       connectionLink?.subscription_url,
     ],
   );
+  const subscriptionUrl = connectionLink?.subscription_url ?? appConfig?.subscriptionUrl;
+  const hideSubscriptionUrl = connectionLink?.hide_link ?? appConfig?.hideLink ?? false;
 
   const handleGoBack = useCallback(() => {
     navigate(-1);
@@ -255,6 +259,33 @@ export default function Connection() {
 
   return (
     <motion.div {...section(0)}>
+      {subscriptionUrl && !hideSubscriptionUrl && (
+        <motion.section
+          {...section(1)}
+          className="mb-5 rounded-2xl border border-dark-700/40 bg-dark-800/40 p-4"
+        >
+          <div className="text-sm font-semibold text-dark-100">
+            {t('subscription.subscriptionUrl', 'Ссылка подписки')}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <input
+              readOnly
+              value={subscriptionUrl}
+              onFocus={(event) => event.currentTarget.select()}
+              aria-label={t('subscription.subscriptionUrl', 'Ссылка подписки')}
+              className="min-w-0 flex-1 rounded-xl border border-dark-700/40 bg-dark-900/60 px-3 py-2 text-xs text-dark-300 outline-none"
+            />
+            <AnimatedCopy
+              value={subscriptionUrl}
+              label={t('subscription.copyLink', 'Скопировать ссылку')}
+              title={t('subscription.copyLink', 'Скопировать ссылку')}
+              className="min-h-11 min-w-11 rounded-xl border border-accent-500/30 bg-accent-500/10 text-accent-400 transition-colors hover:bg-accent-500/20"
+            >
+              <CopyIcon className="h-5 w-5" />
+            </AnimatedCopy>
+          </div>
+        </motion.section>
+      )}
       <InstallationGuide
         appConfig={appConfig}
         onOpenDeepLink={openDeepLink}

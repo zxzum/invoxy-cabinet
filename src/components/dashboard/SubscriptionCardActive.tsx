@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { UseMutationResult } from '@tanstack/react-query';
 import TrafficProgressBar from './TrafficProgressBar';
+import { WhiteInternetUsage } from '../subscription/WhiteInternetUsage';
 import Sparkline from './Sparkline';
 import ConnectDeviceTile from './ConnectDeviceTile';
 import { Island } from '../motion/Island';
@@ -251,6 +252,7 @@ export default function SubscriptionCardActive({
         </Link>
       </div>
 
+      <WhiteInternetUsage subscription={subscription} />
       {/* ─── Sparkline ─── */}
       {dailyUsage.length >= 2 && (
         <div

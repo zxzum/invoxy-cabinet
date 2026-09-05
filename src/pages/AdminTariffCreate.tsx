@@ -42,6 +42,7 @@ export default function AdminTariffCreate() {
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [trafficLimitGb, setTrafficLimitGb] = useState<number | ''>(100);
+  const [whitelistTrafficLimitGb, setWhitelistTrafficLimitGb] = useState<number | ''>(0);
   const [deviceLimit, setDeviceLimit] = useState<number | ''>(1);
   const [devicePriceKopeks, setDevicePriceKopeks] = useState<number | ''>(0);
   const [maxDeviceLimit, setMaxDeviceLimit] = useState<number | ''>(0);
@@ -113,6 +114,7 @@ export default function AdminTariffCreate() {
       setDescription(data.description || '');
       setIsActive(data.is_active ?? true);
       setTrafficLimitGb(data.traffic_limit_gb ?? 100);
+      setWhitelistTrafficLimitGb(data.whitelist_traffic_limit_gb ?? 0);
       setDeviceLimit(data.device_limit || 1);
       setDevicePriceKopeks(data.device_price_kopeks || 0);
       setMaxDeviceLimit(data.max_device_limit || 0);
@@ -165,6 +167,7 @@ export default function AdminTariffCreate() {
       is_active: isActive,
       show_in_gift: showInGift,
       traffic_limit_gb: toNumber(trafficLimitGb, 100),
+      whitelist_traffic_limit_gb: toNumber(whitelistTrafficLimitGb),
       device_limit: toNumber(deviceLimit, 1),
       device_price_kopeks:
         toNumber(devicePriceKopeks) >= 0 ? toNumber(devicePriceKopeks) : undefined,
@@ -192,9 +195,12 @@ export default function AdminTariffCreate() {
   };
 
   const toggleServer = (uuid: string) => {
-    setSelectedSquads((prev) =>
-      prev.includes(uuid) ? prev.filter((s) => s !== uuid) : [...prev, uuid],
-    );
+    setSelectedSquads((prev) => {
+      if (prev.length === 0) {
+        return servers.map((server) => server.squad_uuid).filter((squadUuid) => squadUuid !== uuid);
+      }
+      return prev.includes(uuid) ? prev.filter((s) => s !== uuid) : [...prev, uuid];
+    });
   };
 
   const togglePromoGroup = (groupId: number) => {
@@ -516,6 +522,37 @@ export default function AdminTariffCreate() {
             <p className="mt-1 text-xs text-dark-500">{t('admin.tariffs.trafficLimitHint')}</p>
           </div>
 
+          {/* WHITELIST traffic limit */}
+          <div>
+            <label
+              htmlFor="tariff-whitelist-traffic-limit"
+              className="mb-2 block text-sm font-medium text-dark-300"
+            >
+              {t('admin.tariffs.whitelistTrafficLimitLabel')}
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="tariff-whitelist-traffic-limit"
+                type="number"
+                value={whitelistTrafficLimitGb}
+                onChange={createNumberInputHandler(setWhitelistTrafficLimitGb, 0)}
+                className="input w-32"
+                min={0}
+                placeholder="0"
+              />
+              <span className="text-dark-400">{t('admin.tariffs.gbUnit')}</span>
+              {(whitelistTrafficLimitGb === 0 || whitelistTrafficLimitGb === '') && (
+                <span className="flex items-center gap-1 text-sm text-success-500">
+                  <InfinityIcon className="h-4 w-4" />
+                  {t('admin.tariffs.unlimited')}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-dark-500">
+              {t('admin.tariffs.whitelistTrafficLimitHint')}
+            </p>
+          </div>
+
           {/* Device Limit */}
           <div>
             <label
@@ -751,7 +788,8 @@ export default function AdminTariffCreate() {
             ) : (
               <div className="space-y-2">
                 {servers.map((server: ServerInfo) => {
-                  const isSelected = selectedSquads.includes(server.squad_uuid);
+                  const isSelected =
+                    selectedSquads.length === 0 || selectedSquads.includes(server.squad_uuid);
                   return (
                     <button
                       key={server.id}

@@ -38,6 +38,7 @@ export interface TariffListItem {
   /** UUID продукта Lava для рекуррентных подписок (цена/период заданы в кабинете Lava) */
   lava_product_id?: string | null;
   traffic_limit_gb: number;
+  whitelist_traffic_limit_gb: number;
   device_limit: number;
   tier_level: number;
   display_order: number;
@@ -59,6 +60,7 @@ export interface TariffDetail {
   is_trial_available: boolean;
   show_in_gift: boolean;
   traffic_limit_gb: number;
+  whitelist_traffic_limit_gb: number;
   device_limit: number;
   device_price_kopeks: number | null;
   max_device_limit: number | null;
@@ -103,6 +105,7 @@ export interface TariffCreateRequest {
   is_active?: boolean;
   show_in_gift?: boolean;
   traffic_limit_gb?: number;
+  whitelist_traffic_limit_gb?: number;
   device_limit?: number;
   device_price_kopeks?: number;
   max_device_limit?: number;
@@ -148,6 +151,7 @@ export interface TariffUpdateRequest {
   is_active?: boolean;
   show_in_gift?: boolean;
   traffic_limit_gb?: number;
+  whitelist_traffic_limit_gb?: number;
   device_limit?: number;
   device_price_kopeks?: number;
   max_device_limit?: number;
