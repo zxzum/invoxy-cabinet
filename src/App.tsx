@@ -55,22 +55,26 @@ import Landing from './pages/Landing';
 // Dashboard - load eagerly (default route, LCP-critical)
 import Dashboard from './pages/Dashboard';
 
-// User pages - lazy load
+// Primary authenticated pages are part of the shell bundle. Their data is
+// warmed by MainPagesReady, so switching the main tabs never shows a second
+// viewport loader while a route chunk is being fetched.
+import SubscriptionPurchase from './pages/SubscriptionPurchase';
+import Connection from './pages/Connection';
+import Profile from './pages/Profile';
+
+// Secondary user pages - lazy load
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'));
 const Subscription = lazyWithRetry(() => import('./pages/Subscription'));
-const SubscriptionPurchase = lazyWithRetry(() => import('./pages/SubscriptionPurchase'));
 const Balance = lazyWithRetry(() => import('./pages/Balance'));
 const SavedCards = lazyWithRetry(() => import('./pages/SavedCards'));
 const Referral = lazyWithRetry(() => import('./pages/Referral'));
 const Support = lazyWithRetry(() => import('./pages/Support'));
-const Profile = lazyWithRetry(() => import('./pages/Profile'));
 const Contests = lazyWithRetry(() => import('./pages/Contests'));
 const Polls = lazyWithRetry(() => import('./pages/Polls'));
 const Info = lazyWithRetry(() => import('./pages/Info'));
 const Wheel = lazyWithRetry(() => import('./pages/Wheel'));
 const GiftSubscription = lazyWithRetry(() => import('./pages/GiftSubscription'));
 const GiftResult = lazyWithRetry(() => import('./pages/GiftResult'));
-const Connection = lazyWithRetry(() => import('./pages/Connection'));
 const ConnectionQR = lazyWithRetry(() => import('./pages/ConnectionQR'));
 const QuickPurchase = lazyWithRetry(() => import('./pages/QuickPurchase'));
 const PurchaseSuccess = lazyWithRetry(() => import('./pages/PurchaseSuccess'));
@@ -242,11 +246,13 @@ function MainTabsRoute() {
 // Suspense + error boundary wrapper for lazy routes. The boundary lives
 // OUTSIDE Suspense so chunk-load failures (caught by lazyWithRetry's reload
 // path) and render-time exceptions both surface in the page-level fallback
-// instead of crashing the entire shell via the top-level boundary.
-function LazyPage({ children }: { children: React.ReactNode }) {
+// instead of crashing the entire shell via the top-level boundary. Once the
+// authenticated shell is ready, a pending route must not replace it with a
+// second viewport loader.
+export function LazyPage({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary level="page">
-      <Suspense fallback={<PageLoader variant="dark" />}>{children}</Suspense>
+      <Suspense fallback={null}>{children}</Suspense>
     </ErrorBoundary>
   );
 }

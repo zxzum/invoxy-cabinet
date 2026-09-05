@@ -12,8 +12,6 @@ import { openPaymentUrl } from '../../../utils/openPaymentUrl';
 import { getMonthlyPriceKopeks } from '../../../utils/pricing';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { TariffPaymentSheet } from '../../payment/TariffPaymentSheet';
-import { ArrowDownIcon } from '../../icons';
-import { FeatureBadge } from '../../ui/FeatureBadge';
 import type { Tariff, TariffPeriod } from '../../../types';
 import { getTariffCustomerFacingName, getTariffMarketingDescription } from './tariffPresentation';
 
@@ -71,6 +69,16 @@ export function TariffPurchaseForm({
   const { openLink, platform } = usePlatform();
   const ref = useRef<HTMLDivElement>(null);
   const whiteInternetLabel = t('subscription.whiteInternet');
+  const primaryTrafficLabel = t('subscription.primaryTraffic', 'Основной трафик');
+  const primaryTrafficDescription = t(
+    'subscription.primaryTrafficDescription',
+    'общий интернет через VPN',
+  );
+  const whiteInternetDescription = t(
+    'subscription.whiteInternetDescription',
+    'отдельная квота для Белого интернета',
+  );
+  const additionalDeviceLabel = t('subscription.additionalDevice', 'Доп. устройство');
   const customerFacingName = getTariffCustomerFacingName(tariff.name, whiteInternetLabel);
   const marketingDescription = getTariffMarketingDescription(
     tariff.description,
@@ -81,6 +89,17 @@ export function TariffPurchaseForm({
     kopeks === 0
       ? t('subscription.free', 'Бесплатно')
       : `${formatAmount(kopeks / 100)} ${currencySymbol}`;
+  const deviceUnit =
+    tariff.device_limit > 0
+      ? t('subscription.devices', { count: tariff.device_limit })
+          .replace(String(tariff.device_limit), '')
+          .trim()
+      : '';
+  const maxDeviceLimit = tariff.max_device_limit ?? tariff.device_limit;
+  const deviceAddonLabel =
+    tariff.device_price_kopeks != null && tariff.device_price_kopeks > 0
+      ? `${additionalDeviceLabel} ${t('subscription.from', 'от')} ${formatPrice(tariff.device_price_kopeks)}${t('subscription.perMonth', '/мес')}${maxDeviceLimit > 0 ? `, ${t('subscription.additionalOptions.maxDevices', { count: maxDeviceLimit })} ${deviceUnit}` : ''}`
+      : null;
 
   const openBalanceTopUp = (missingKopeks: number) => {
     const params = new URLSearchParams({
@@ -288,26 +307,21 @@ export function TariffPurchaseForm({
 
       {/* Tariff Info */}
       <div className="rounded-xl bg-dark-800/50 p-3">
-        <div className="flex flex-wrap gap-4 text-sm">
-          <div>
-            <span className="text-dark-500">{t('subscription.traffic')}:</span>
-            <span className="ml-2 text-dark-200">{tariff.traffic_limit_label}</span>
+        <div className="flex flex-wrap gap-3 text-sm">
+          <div className="text-dark-200">
+            {`${primaryTrafficLabel} ${tariff.traffic_limit_label} — ${primaryTrafficDescription}`}
           </div>
-          <div>
-            <span className="text-dark-500">{t('subscription.devices')}:</span>
-            <span className="ml-2 text-dark-200">
-              {tariff.device_limit === 0 ? '∞' : tariff.device_limit}
-              {tariff.extra_devices_count > 0 && (
-                <span className="ml-1 text-xs text-accent-400">
-                  (+{tariff.extra_devices_count})
-                </span>
-              )}
-            </span>
+          <div className="text-dark-200">
+            {`${t('subscription.devices')}: ${tariff.device_limit === 0 ? '∞' : tariff.device_limit}`}
+            {tariff.extra_devices_count > 0 && (
+              <span className="ml-1 text-xs text-accent-400">(+{tariff.extra_devices_count})</span>
+            )}
           </div>
+          {deviceAddonLabel && <div className="text-dark-200">{deviceAddonLabel}</div>}
           {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
-            <FeatureBadge icon={ArrowDownIcon} tone="warning">
-              {whiteInternetLabel} · {tariff.whitelist_traffic_limit_gb} {t('common.units.gb')}
-            </FeatureBadge>
+            <div className="text-dark-200">
+              {`${whiteInternetLabel} ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')} — ${whiteInternetDescription}`}
+            </div>
           )}
         </div>
       </div>

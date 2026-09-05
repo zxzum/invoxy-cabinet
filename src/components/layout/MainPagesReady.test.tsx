@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
+import { lazy } from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LazyPage } from '@/App';
 import { MainPagesReady } from './MainPagesReady';
 
 const mocks = vi.hoisted(() => ({
@@ -159,6 +161,32 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('MainPagesReady', () => {
+  it('keeps the ready shell visible while an authenticated destination module loads', async () => {
+    const destination = deferred<{ default: () => React.ReactNode }>();
+    const PendingPage = lazy(() => destination.promise);
+    const client = createClient();
+
+    render(
+      <QueryClientProvider client={client}>
+        <MainPagesReady>
+          <div data-testid="ready-shell">
+            <div>shell navigation</div>
+            <LazyPage>
+              <PendingPage />
+            </LazyPage>
+          </div>
+        </MainPagesReady>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByTestId('ready-shell')).toBeTruthy();
+    expect(screen.getByText('shell navigation')).toBeTruthy();
+    expect(document.querySelector('.animate-spin')).toBeNull();
+
+    destination.resolve({ default: () => <div>destination</div> });
+    expect(await screen.findByText('destination')).toBeTruthy();
+  });
+
   it('warms shared cache keys and keeps children hidden while APIs are pending', async () => {
     const balance = deferred<Record<string, never>>();
     mocks.getBalance.mockImplementationOnce(() => balance.promise);

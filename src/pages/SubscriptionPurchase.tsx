@@ -11,6 +11,7 @@ import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { SwitchTariffSheet } from '../components/subscription/sheets/SwitchTariffSheet';
 import { TariffPurchaseForm } from '../components/subscription/purchase/TariffPurchaseForm';
 import { TariffPickerGrid } from '../components/subscription/purchase/TariffPickerGrid';
+import { getTariffCustomerFacingName } from '../components/subscription/purchase/tariffPresentation';
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { ResponsiveSheet } from '../components/ui/ResponsiveSheet';
 import { ExclamationIcon, SparklesIcon } from '@/components/icons';
@@ -30,8 +31,8 @@ export default function SubscriptionPurchase() {
     queryKey: ['subscription', subscriptionId],
     queryFn: () => subscriptionApi.getSubscription(subscriptionId),
     retry: false,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 60_000,
+    refetchOnMount: false,
   });
   const subscription = subscriptionResponse?.subscription ?? null;
 
@@ -44,8 +45,8 @@ export default function SubscriptionPurchase() {
   } = useQuery({
     queryKey: ['purchase-options', subscriptionId],
     queryFn: () => subscriptionApi.getPurchaseOptions(subscriptionId),
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 60_000,
+    refetchOnMount: false,
   });
 
   // Sales mode detection
@@ -286,7 +287,10 @@ export default function SubscriptionPurchase() {
                 setShowTariffPurchase(false);
                 setSelectedTariff(null);
               }}
-              title={selectedTariff.name}
+              title={getTariffCustomerFacingName(
+                selectedTariff.name,
+                t('subscription.whiteInternet'),
+              )}
             >
               <div className="px-4 pb-4 pt-1">
                 <TariffPurchaseForm

@@ -51,6 +51,17 @@ export function TariffPickerGrid({
   const g = getGlassColors(isDark);
   const { formatAmount, currencySymbol } = useCurrency();
   const { applyPromoDiscount } = usePromoDiscount();
+  const primaryTrafficLabel = t('subscription.primaryTraffic', 'Основной трафик');
+  const primaryTrafficDescription = t(
+    'subscription.primaryTrafficDescription',
+    'общий интернет через VPN',
+  );
+  const whiteInternetLabel = t('subscription.whiteInternet');
+  const whiteInternetDescription = t(
+    'subscription.whiteInternetDescription',
+    'отдельная квота для Белого интернета',
+  );
+  const additionalDeviceLabel = t('subscription.additionalDevice', 'Доп. устройство');
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -168,6 +179,17 @@ export function TariffPickerGrid({
               tariff.description,
               t('subscription.whiteInternet'),
             );
+            const deviceUnit =
+              tariff.device_limit > 0
+                ? t('subscription.devices', { count: tariff.device_limit })
+                    .replace(String(tariff.device_limit), '')
+                    .trim()
+                : '';
+            const maxDeviceLimit = tariff.max_device_limit ?? tariff.device_limit;
+            const deviceAddonLabel =
+              tariff.device_price_kopeks != null && tariff.device_price_kopeks > 0
+                ? `${additionalDeviceLabel} ${t('subscription.from', 'от')} ${formatPrice(tariff.device_price_kopeks)}${t('subscription.perMonth', '/мес')}${maxDeviceLimit > 0 ? `, ${t('subscription.additionalOptions.maxDevices', { count: maxDeviceLimit })} ${deviceUnit}` : ''}`
+                : null;
 
             const openTariffAction = () => {
               if (!canOpenTariff) return;
@@ -227,18 +249,22 @@ export function TariffPickerGrid({
                   <div className="flex flex-wrap gap-2">
                     {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
                       <FeatureBadge icon={ArrowDownIcon} tone="warning">
-                        {t('subscription.whiteInternet')} · {tariff.whitelist_traffic_limit_gb}{' '}
-                        {t('common.units.gb')}
+                        {`${whiteInternetLabel} ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')} — ${whiteInternetDescription}`}
                       </FeatureBadge>
                     )}
                     <FeatureBadge icon={ArrowDownIcon} tone="info">
-                      {tariff.traffic_limit_label}
+                      {`${primaryTrafficLabel} ${tariff.traffic_limit_label} — ${primaryTrafficDescription}`}
                     </FeatureBadge>
                     <FeatureBadge icon={DevicesIcon} tone="success">
                       {tariff.device_limit === 0
                         ? '∞'
                         : t('subscription.devices', { count: tariff.device_limit })}
                     </FeatureBadge>
+                    {deviceAddonLabel && (
+                      <FeatureBadge icon={DevicesIcon} tone="success">
+                        {deviceAddonLabel}
+                      </FeatureBadge>
+                    )}
                     {tariff.traffic_reset_mode && tariff.traffic_reset_mode !== 'NO_RESET' && (
                       <FeatureBadge icon={RestartIcon} tone="warning">
                         {t(`subscription.trafficReset.${tariff.traffic_reset_mode}`)}

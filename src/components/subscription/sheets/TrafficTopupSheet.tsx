@@ -42,6 +42,16 @@ export function TrafficTopupSheet({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [scope, setScope] = useState<'regular' | 'whitelist'>('regular');
+  const primaryTrafficLabel = t('subscription.primaryTraffic', 'Основной трафик');
+  const primaryTrafficDescription = t(
+    'subscription.primaryTrafficDescription',
+    'общий интернет через VPN',
+  );
+  const whiteInternetLabel = t('subscription.whiteInternet');
+  const whiteInternetDescription = t(
+    'subscription.whiteInternetDescription',
+    'отдельная квота для Белого интернета',
+  );
 
   useEffect(() => {
     if ((subscription.whitelist_traffic_limit_gb ?? 0) <= 0) setScope('regular');
@@ -82,16 +92,11 @@ export function TrafficTopupSheet({
               {t('subscription.additionalOptions.buyTraffic')}
             </div>
             <div className="mt-1 text-sm text-dark-400">
-              {t('subscription.additionalOptions.currentTrafficLimit', {
-                limit: subscription.traffic_limit_gb,
-                used: subscription.traffic_used_gb.toFixed(1),
-              })}
+              {`${primaryTrafficLabel}: ${subscription.traffic_used_gb.toFixed(1)} / ${subscription.traffic_limit_gb} ${t('common.units.gb')} — ${primaryTrafficDescription}`}
             </div>
             {(subscription.whitelist_traffic_limit_gb ?? 0) > 0 && (
               <div className="mt-1 text-xs text-accent-400">
-                {t('subscription.whiteInternet')}:{' '}
-                {subscription.whitelist_traffic_used_gb?.toFixed(1) ?? '0.0'} /{' '}
-                {subscription.whitelist_traffic_limit_gb} {t('common.units.gb')}
+                {`${whiteInternetLabel}: ${subscription.whitelist_traffic_used_gb?.toFixed(1) ?? '0.0'} / ${subscription.whitelist_traffic_limit_gb} ${t('common.units.gb')} — ${whiteInternetDescription}`}
               </div>
             )}
           </div>
@@ -125,6 +130,17 @@ export function TrafficTopupSheet({
         className={`mb-4 rounded-lg p-2 text-xs ${isDark ? 'bg-dark-700/30 text-dark-500' : 'bg-champagne-300/40 text-champagne-600'}`}
       >
         ⚠️ {t('subscription.additionalOptions.trafficWarning')}
+      </div>
+
+      <div className="mb-4 rounded-xl border border-accent-500/20 bg-accent-500/5 p-3">
+        <div className="text-sm font-medium text-dark-100">
+          {scope === 'regular' ? primaryTrafficLabel : whiteInternetLabel}
+        </div>
+        <div className="mt-1 text-xs text-dark-400">
+          {scope === 'regular'
+            ? `${subscription.traffic_used_gb.toFixed(1)} / ${subscription.traffic_limit_gb} ${t('common.units.gb')} — ${primaryTrafficDescription}`
+            : `${subscription.whitelist_traffic_used_gb?.toFixed(1) ?? '0.0'} / ${subscription.whitelist_traffic_limit_gb ?? 0} ${t('common.units.gb')} — ${whiteInternetDescription}`}
+        </div>
       </div>
 
       {(subscription.whitelist_traffic_limit_gb ?? 0) > 0 && (

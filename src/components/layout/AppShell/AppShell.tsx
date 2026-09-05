@@ -88,16 +88,6 @@ export function AppShell({ children }: AppShellProps) {
   const isMobileFullscreen = isFullscreen && isMobile;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-  // Задержка входа FAB сделана гейтом монтирования, а не delay в transition:
-  // framer-motion 12 при gesture-end берёт transition из animate-таргета, и
-  // delay там «залипал» бы на отпускании жеста (scale 0.92 держится ~350 мс).
-  const [fabReady, setFabReady] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setFabReady(true), 350);
-    return () => clearTimeout(timer);
-  }, []);
-
   useEffect(() => {
     setIsKeyboardOpen(false);
   }, [location.pathname]);
@@ -342,8 +332,9 @@ export function AppShell({ children }: AppShellProps) {
 
       <MobileBottomNav isKeyboardOpen={isKeyboardOpen} />
 
-      {fabReady && (
+      {location.pathname !== '/support' && (
         <MotionFabLink
+          key="support-fab"
           to="/support"
           className="ix-fab"
           aria-label="Поддержка"

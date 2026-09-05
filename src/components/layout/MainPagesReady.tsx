@@ -23,11 +23,6 @@ export function MainPagesReady({ children }: { children: React.ReactNode }) {
     gcTime: Infinity,
     retry: false,
     queryFn: async ({ signal }) => {
-      const pages = Promise.allSettled([
-        import('@/pages/SubscriptionPurchase'),
-        import('@/pages/Connection'),
-        import('@/pages/Profile'),
-      ]);
       const checkSession = () => {
         if (signal.aborted) throw new Error('Session changed');
       };
@@ -82,7 +77,6 @@ export function MainPagesReady({ children }: { children: React.ReactNode }) {
       } else if (current?.subscription) {
         await warm(['devices'], () => subscriptionApi.getDevices());
       }
-      await pages;
       checkSession();
       return true;
     },
