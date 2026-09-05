@@ -184,6 +184,12 @@ const sections: AdminSection[] = [
     items: [
       { name: 'admin.nav.tariffs', icon: 'tag', to: '/admin/tariffs', permission: 'tariffs:read' },
       {
+        name: 'admin.nav.trafficSettings',
+        icon: 'activity',
+        to: '/admin/settings?section=subs_traffic',
+        permission: 'settings:read',
+      },
+      {
         name: 'admin.nav.promocodes',
         icon: 'gift',
         to: '/admin/promocodes',
@@ -241,6 +247,12 @@ const sections: AdminSection[] = [
         permission: 'broadcasts:read',
       },
       {
+        name: 'admin.nav.referralBroadcast',
+        icon: 'send',
+        to: '/admin/settings?section=users_referral',
+        permission: 'settings:read',
+      },
+      {
         name: 'admin.nav.pinnedMessages',
         icon: 'pin',
         to: '/admin/pinned-messages',
@@ -295,6 +307,12 @@ const sections: AdminSection[] = [
         name: 'admin.nav.settings',
         icon: 'settings',
         to: '/admin/settings',
+        permission: 'settings:read',
+      },
+      {
+        name: 'admin.nav.notificationSettings',
+        icon: 'radio',
+        to: '/admin/settings?section=notif_admin',
         permission: 'settings:read',
       },
       {

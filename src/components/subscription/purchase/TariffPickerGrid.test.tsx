@@ -81,9 +81,13 @@ describe('TariffPickerGrid quota presentation', () => {
     );
 
     expect(screen.getByText('Основной трафик 750 ГБ — общий интернет через VPN')).toBeTruthy();
-    expect(
-      screen.getByText('Белый интернет 50 ГБ — отдельная квота для Белого интернета'),
-    ).toBeTruthy();
+    const whiteInternetBadge = screen.getByText(
+      'Белый интернет 50 ГБ — отдельная квота для Белого интернета',
+    ).parentElement;
+    expect(whiteInternetBadge).toBeTruthy();
+    expect(whiteInternetBadge?.className).toContain('whitespace-normal');
+    expect(whiteInternetBadge?.className).toContain('break-words');
+    expect(whiteInternetBadge?.className).not.toContain('whitespace-nowrap');
     expect(screen.getByText('Доп. устройство от 50 ₽/мес, максимум 10 устройств')).toBeTruthy();
   });
 });

@@ -167,8 +167,11 @@ export default function SubscriptionListCard({
         </div>
 
         {/* Traffic mini progress bar */}
-        {isActive && (
-          <div className="mt-3">
+        {isActive ? (
+          <div
+            className="mt-3 rounded-xl p-3"
+            style={{ background: g.innerBg, border: `1px solid ${g.innerBorder}` }}
+          >
             <div className="mb-1 flex items-baseline justify-between">
               <span className="text-[11px] font-medium" style={{ color: g.textSecondary }}>
                 {t('subscription.traffic', 'Трафик')}
@@ -191,10 +194,12 @@ export default function SubscriptionListCard({
                 />
               </div>
             )}
+            <WhiteInternetUsage subscription={subscription} compact />
           </div>
+        ) : (
+          <WhiteInternetUsage subscription={subscription} />
         )}
 
-        <WhiteInternetUsage subscription={subscription} />
         {/* Stats row */}
         <div
           className="mt-2.5 flex items-center gap-4 text-[12px]"

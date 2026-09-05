@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { adminSettingsApi, type SettingDefinition } from '../api/adminSettings';
@@ -30,11 +30,18 @@ const TARIFF_MODE_SETTINGS = ['MULTI_TARIFF_ENABLED', 'MAX_ACTIVE_SUBSCRIPTIONS'
 export default function AdminSettings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { capabilities } = usePlatform();
 
   // State
-  const [activeSection, setActiveSection] = useState('branding');
+  const requestedSection = searchParams.get('section');
+  const [activeSection, setActiveSection] = useState(requestedSection || 'branding');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // AdminPanel links can open the relevant settings category directly.
+  useEffect(() => {
+    setActiveSection(requestedSection || 'branding');
+  }, [requestedSection]);
 
   // Favorites hook
   const { favorites, toggleFavorite, isFavorite } = useFavoriteSettings();

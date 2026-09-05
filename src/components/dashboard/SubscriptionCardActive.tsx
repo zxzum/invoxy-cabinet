@@ -143,13 +143,18 @@ export default function SubscriptionCardActive({
       </div>
 
       {/* ─── Progress Bar ─── */}
-      <div className="mb-6">
+      <div
+        className="mb-6 rounded-xl p-3"
+        style={{ background: g.innerBg, border: `1px solid ${g.innerBorder}` }}
+      >
         <TrafficProgressBar
           usedGb={usedGb}
           limitGb={subscription.traffic_limit_gb}
           percent={usedPercent}
           isUnlimited={isUnlimited}
+          compact
         />
+        <WhiteInternetUsage subscription={subscription} compact />
       </div>
 
       {/* ─── Connect Device Button ─── */}
@@ -252,7 +257,6 @@ export default function SubscriptionCardActive({
         </Link>
       </div>
 
-      <WhiteInternetUsage subscription={subscription} />
       {/* ─── Sparkline ─── */}
       {dailyUsage.length >= 2 && (
         <div

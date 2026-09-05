@@ -16,9 +16,11 @@ export interface FeatureBadgeProps {
 
 export function FeatureBadge({ icon: Icon, children, tone = 'info' }: FeatureBadgeProps) {
   return (
-    <span className={`${toneClasses[tone]} gap-1.5 whitespace-nowrap`}>
-      <Icon className="h-3.5 w-3.5" />
-      {children}
+    <span
+      className={`${toneClasses[tone]} min-w-0 max-w-full items-start gap-1.5 whitespace-normal break-words`}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <span className="min-w-0">{children}</span>
     </span>
   );
 }

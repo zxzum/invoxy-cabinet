@@ -17,6 +17,7 @@ import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
 import { useCurrency } from '../hooks/useCurrency';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import PurchaseCTAButton from '../components/subscription/PurchaseCTAButton';
+import { WhiteInternetUsage } from '../components/subscription/WhiteInternetUsage';
 import {
   CopyIcon,
   PauseIcon,
@@ -915,7 +916,10 @@ export default function Subscription() {
               )}
 
               {/* ─── Traffic Progress ─── */}
-              <div className="mb-6">
+              <div
+                className="mb-6 rounded-xl p-3"
+                style={{ background: g.innerBg, border: `1px solid ${g.innerBorder}` }}
+              >
                 <div className="mb-2.5 flex items-center justify-between">
                   <span className="text-[11px] font-medium uppercase tracking-wider text-dark-50/40">
                     {t('subscription.traffic')}
@@ -954,6 +958,7 @@ export default function Subscription() {
                   isUnlimited={isUnlimited}
                   compact
                 />
+                <WhiteInternetUsage subscription={subscription} compact />
               </div>
 
               {/* ─── Connect Device Button ─── */}
@@ -1087,7 +1092,7 @@ export default function Subscription() {
               {subscription.servers && subscription.servers.length > 0 && (
                 <div className="mb-5">
                   <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-dark-50/35">
-                    {t('subscription.locationsLabel')}
+                    {t('subscription.squadsLabel', 'Сквады')}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {subscription.servers.map((server) => (
