@@ -249,10 +249,16 @@ function MainTabsRoute() {
 // instead of crashing the entire shell via the top-level boundary. Once the
 // authenticated shell is ready, a pending route must not replace it with a
 // second viewport loader.
-export function LazyPage({ children }: { children: React.ReactNode }) {
+export function LazyPage({
+  children,
+  fallback = <PageLoader variant="dark" />,
+}: {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
   return (
     <ErrorBoundary level="page">
-      <Suspense fallback={null}>{children}</Suspense>
+      <Suspense fallback={fallback}>{children}</Suspense>
     </ErrorBoundary>
   );
 }
@@ -373,7 +379,7 @@ function App() {
           <Route
             path="/"
             element={
-              <LazyPage>
+              <LazyPage fallback={null}>
                 <Dashboard />
               </LazyPage>
             }
@@ -381,7 +387,7 @@ function App() {
           <Route
             path="/subscription/purchase"
             element={
-              <LazyPage>
+              <LazyPage fallback={null}>
                 <SubscriptionPurchase />
               </LazyPage>
             }
@@ -389,7 +395,7 @@ function App() {
           <Route
             path="/connection"
             element={
-              <LazyPage>
+              <LazyPage fallback={null}>
                 <Connection />
               </LazyPage>
             }
@@ -397,7 +403,7 @@ function App() {
           <Route
             path="/profile"
             element={
-              <LazyPage>
+              <LazyPage fallback={null}>
                 <Profile />
               </LazyPage>
             }

@@ -32,7 +32,7 @@ export default function SubscriptionPurchase() {
     queryFn: () => subscriptionApi.getSubscription(subscriptionId),
     retry: false,
     staleTime: 60_000,
-    refetchOnMount: false,
+    refetchOnMount: 'always',
   });
   const subscription = subscriptionResponse?.subscription ?? null;
 
@@ -46,7 +46,7 @@ export default function SubscriptionPurchase() {
     queryKey: ['purchase-options', subscriptionId],
     queryFn: () => subscriptionApi.getPurchaseOptions(subscriptionId),
     staleTime: 60_000,
-    refetchOnMount: false,
+    refetchOnMount: 'always',
   });
 
   // Sales mode detection

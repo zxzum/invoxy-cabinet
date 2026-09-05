@@ -161,7 +161,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('MainPagesReady', () => {
-  it('keeps the ready shell visible while an authenticated destination module loads', async () => {
+  it('keeps the ready shell visible with an explicit shell fallback', async () => {
     const destination = deferred<{ default: () => React.ReactNode }>();
     const PendingPage = lazy(() => destination.promise);
     const client = createClient();
@@ -171,7 +171,7 @@ describe('MainPagesReady', () => {
         <MainPagesReady>
           <div data-testid="ready-shell">
             <div>shell navigation</div>
-            <LazyPage>
+            <LazyPage fallback={null}>
               <PendingPage />
             </LazyPage>
           </div>
@@ -185,6 +185,18 @@ describe('MainPagesReady', () => {
 
     destination.resolve({ default: () => <div>destination</div> });
     expect(await screen.findByText('destination')).toBeTruthy();
+  });
+
+  it('keeps a PageLoader as the default for non-shell lazy routes', () => {
+    const PendingPage = lazy(() => new Promise<{ default: () => React.ReactNode }>(() => {}));
+
+    render(
+      <LazyPage>
+        <PendingPage />
+      </LazyPage>,
+    );
+
+    expect(document.querySelector('.animate-spin')).toBeTruthy();
   });
 
   it('warms shared cache keys and keeps children hidden while APIs are pending', async () => {
