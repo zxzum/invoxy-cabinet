@@ -10,14 +10,13 @@ import { wheelApi } from '@/api/wheel';
 import { newsApi } from '@/api/news';
 import type { SubscriptionsListResponse, SubscriptionStatusResponse } from '@/types';
 import { useAuthStore } from '@/store/auth';
-import PageLoader from '@/components/common/PageLoader';
 
 // Warm the same cache used by the four main tabs. Background refetches keep
 // existing content visible; payment mutations still invalidate their queries.
 export function MainPagesReady({ children }: { children: React.ReactNode }) {
   const client = useQueryClient();
   const userId = useAuthStore((state) => state.user?.id);
-  const { isPending } = useQuery({
+  useQuery({
     queryKey: ['main-pages-ready', userId],
     staleTime: Infinity,
     gcTime: Infinity,
@@ -81,5 +80,8 @@ export function MainPagesReady({ children }: { children: React.ReactNode }) {
       return true;
     },
   });
-  return isPending ? <PageLoader variant="dark" /> : children;
+  // Prefetching is a cache warm-up, not a prerequisite for rendering the
+  // authenticated shell. Each page owns its stale/empty state and can show
+  // cached content immediately while this query continues in the background.
+  return children;
 }

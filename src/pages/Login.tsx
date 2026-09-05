@@ -62,8 +62,10 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isTelegramWebApp, setIsTelegramWebApp] = useState(false);
+  const [isTelegramWebApp, setIsTelegramWebApp] = useState(() => isInTelegramWebApp());
+  const [isLoading, setIsLoading] = useState(
+    () => isInTelegramWebApp() && Boolean(getTelegramInitData()),
+  );
   const [logoLoaded, setLogoLoaded] = useState(() => isLogoPreloaded());
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -568,7 +570,7 @@ export default function Login() {
 
             {/* Telegram auth section */}
             <div className="space-y-3">
-              {isLoading && isTelegramWebApp ? (
+              {isTelegramWebApp && (isAuthInitializing || isLoading) ? (
                 <div className="py-6 text-center">
                   <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
                   <p className="text-sm text-dark-400">{t('auth.authenticating')}</p>

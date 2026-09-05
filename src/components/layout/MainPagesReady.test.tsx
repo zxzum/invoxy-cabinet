@@ -199,23 +199,23 @@ describe('MainPagesReady', () => {
     expect(document.querySelector('.animate-spin')).toBeTruthy();
   });
 
-  it('warms shared cache keys and keeps children hidden while APIs are pending', async () => {
+  it('warms shared cache keys without hiding the ready shell', async () => {
     const balance = deferred<Record<string, never>>();
     mocks.getBalance.mockImplementationOnce(() => balance.promise);
     const client = createClient();
     const view = renderReady(client);
 
     await waitFor(() => expect(mocks.getBalance).toHaveBeenCalledTimes(1));
-    expect(view.container.querySelector('.animate-spin')).toBeTruthy();
-    expect(screen.queryByTestId('ready-content')).toBeNull();
+    expect(view.container.querySelector('.animate-spin')).toBeNull();
+    expect(screen.getByTestId('ready-content')).toBeTruthy();
     expect(mocks.getTrialInfo).not.toHaveBeenCalled();
 
     balance.resolve({});
     expect(await screen.findByTestId('ready-content')).toBeTruthy();
 
-    for (const key of SHARED_KEYS) {
-      expect(client.getQueryData(key)).toBeDefined();
-    }
+    await waitFor(() => {
+      for (const key of SHARED_KEYS) expect(client.getQueryData(key)).toBeDefined();
+    });
     expect(mocks.getNews).toHaveBeenCalledWith({ limit: 6, offset: 0 });
   });
 
@@ -258,7 +258,7 @@ describe('MainPagesReady', () => {
       ).toHaveLength(0);
     }
     expect(mocks.getTrialInfo).not.toHaveBeenCalled();
-    expect(screen.queryByTestId('ready-content')).toBeNull();
+    expect(screen.getByTestId('ready-content')).toBeTruthy();
     prefetch.mockRestore();
   });
 
