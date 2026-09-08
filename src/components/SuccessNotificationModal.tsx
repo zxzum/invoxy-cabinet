@@ -16,6 +16,7 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useHaptic } from '@/platform';
 import { CloseIcon, DevicesIcon, RocketIcon, TrafficIcon, WalletIcon } from '@/components/icons';
 import { SuccessBurst } from '@/components/motion';
+import { useToast } from '@/components/Toast';
 
 export default function SuccessNotificationModal() {
   const { t } = useTranslation();
@@ -26,6 +27,7 @@ export default function SuccessNotificationModal() {
   const { formatAmount, currencySymbol } = useCurrency();
   const { safeAreaInset, contentSafeAreaInset, isTelegramWebApp } = useTelegramSDK();
   const haptic = useHaptic();
+  const { showToast } = useToast();
 
   const safeBottom = isTelegramWebApp
     ? Math.max(safeAreaInset.bottom, contentSafeAreaInset.bottom)
@@ -58,6 +60,21 @@ export default function SuccessNotificationModal() {
       haptic.notification('success');
     }
   }, [isOpen, haptic]);
+
+  useEffect(() => {
+    if (!isOpen || !data) return;
+
+    const titleKey = {
+      balance_topup: 'successNotification.balanceTopup.title',
+      subscription_activated: 'successNotification.subscriptionActivated.title',
+      subscription_renewed: 'successNotification.subscriptionRenewed.title',
+      subscription_purchased: 'successNotification.subscriptionPurchased.title',
+      devices_purchased: 'successNotification.devicesPurchased.title',
+      traffic_purchased: 'successNotification.trafficPurchased.title',
+    }[data.type];
+
+    showToast({ type: 'success', message: data.message || data.title || t(titleKey) });
+  }, [data, isOpen, showToast, t]);
 
   // Scroll lock
   useEffect(() => {
@@ -240,7 +257,10 @@ export default function SuccessNotificationModal() {
           {isTrafficPurchased && data.trafficGbAdded && (
             <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
               <span className="text-dark-400">
-                {t('successNotification.trafficAdded', 'Traffic added')}
+                {t('successNotification.trafficAdded', {
+                  defaultValue: 'Traffic added',
+                  value: data.trafficGbAdded,
+                })}
               </span>
               <span className="text-lg font-bold text-success-400">+{data.trafficGbAdded} GB</span>
             </div>
@@ -249,7 +269,10 @@ export default function SuccessNotificationModal() {
           {isTrafficPurchased && data.newTrafficLimitGb && (
             <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
               <span className="text-dark-400">
-                {t('successNotification.totalTraffic', 'Total traffic')}
+                {t('successNotification.totalTraffic', {
+                  defaultValue: 'Total traffic',
+                  value: data.newTrafficLimitGb,
+                })}
               </span>
               <span className="font-semibold text-dark-100">{data.newTrafficLimitGb} GB</span>
             </div>
