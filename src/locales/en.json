@@ -634,6 +634,7 @@
       "buyTrafficTitle": "Buy more traffic",
       "trafficWarning": "Purchased traffic is valid for 30 days. You can buy one regular and one White Internet package per calendar month",
       "trafficUnavailable": "Traffic purchase is not available for your tariff",
+      "availableAgain": "Already purchased this month. Available again {{date}}",
       "unlimited": "Unlimited",
       "buyTrafficGb": "Buy {{gb}} GB",
       "buyWhitelistTrafficGb": "Buy {{gb}} GB of white internet",

@@ -461,6 +461,7 @@
       "buyTrafficTitle": "购买更多流量",
       "trafficWarning": "购买的流量有效期为30天。每个自然月可分别购买一个普通流量包和一个白名单互联网流量包",
       "trafficUnavailable": "您的套餐不支持购买流量",
+      "availableAgain": "本月已购买。{{date}} 后可再次购买",
       "unlimited": "无限制",
       "buyTrafficGb": "购买 {{gb}} GB",
       "buyUnlimited": "购买无限流量",

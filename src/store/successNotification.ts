@@ -55,7 +55,8 @@ export const useSuccessNotification = create<SuccessNotificationState>((set) => 
       // Increment signal to tell other modals to close
       closeOthersSignal: state.closeOthersSignal + 1,
     })),
-  hide: () => set({ isOpen: false, data: null }),
+  // Keep data mounted while AnimatePresence plays the exit transition.
+  hide: () => set({ isOpen: false }),
 }));
 
 /**

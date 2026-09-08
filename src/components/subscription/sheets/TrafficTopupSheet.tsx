@@ -183,13 +183,16 @@ export function TrafficTopupSheet({
             {trafficPackages.map((pkg) => (
               <button
                 key={pkg.gb}
-                onClick={() => onSelectedTrafficPackageChange(pkg.gb)}
+                onClick={() => pkg.is_available !== false && onSelectedTrafficPackageChange(pkg.gb)}
+                disabled={pkg.is_available === false}
                 className={`rounded-xl border p-4 text-center transition-all ${
-                  selectedTrafficPackage === pkg.gb
-                    ? 'border-accent-500 bg-accent-500/10'
-                    : isDark
-                      ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600'
-                      : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'
+                  pkg.is_available === false
+                    ? 'cursor-not-allowed border-dark-700/30 bg-dark-950/25 opacity-55'
+                    : selectedTrafficPackage === pkg.gb
+                      ? 'border-accent-500 bg-accent-500/10'
+                      : isDark
+                        ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600'
+                        : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'
                 }`}
               >
                 <div className="text-lg font-semibold text-dark-100">
@@ -216,6 +219,15 @@ export function TrafficTopupSheet({
                     formatPrice(pkg.price_kopeks)
                   )}
                 </div>
+                {pkg.is_available === false && (
+                  <div className="mt-2 text-xs leading-snug text-dark-400">
+                    {pkg.next_available_at
+                      ? t('subscription.additionalOptions.availableAgain', {
+                          date: new Date(pkg.next_available_at).toLocaleDateString(),
+                        })
+                      : pkg.unavailable_reason}
+                  </div>
+                )}
               </button>
             ))}
           </div>

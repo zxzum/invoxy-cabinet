@@ -180,6 +180,9 @@ export interface TrafficPackage {
   base_price_kopeks?: number;
   discount_percent?: number;
   discount_kopeks?: number;
+  is_available?: boolean;
+  unavailable_reason?: string | null;
+  next_available_at?: string | null;
 }
 
 export interface TrialInfo {

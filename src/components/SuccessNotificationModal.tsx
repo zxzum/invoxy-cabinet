@@ -6,7 +6,7 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useSuccessNotification } from '../store/successNotification';
@@ -86,7 +86,7 @@ export default function SuccessNotificationModal() {
     };
   }, [isOpen]);
 
-  if (!isOpen || !data) return null;
+  if (!data) return null;
 
   const isBalanceTopup = data.type === 'balance_topup';
   const isSubscription =
@@ -169,199 +169,213 @@ export default function SuccessNotificationModal() {
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <motion.div
-        className="absolute inset-0 bg-dark-950/80 backdrop-blur-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        onClick={handleClose}
-      />
-
-      <motion.div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="success-modal-title"
-        tabIndex={-1}
-        className="ix-island relative mx-4 w-full max-w-sm overflow-hidden"
-        initial={{ opacity: 0, y: 40, scale: 0.94 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-        style={{
-          marginBottom: safeBottom ? `${safeBottom}px` : undefined,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close button */}
-        <button
-          onClick={handleClose}
-          aria-label={t('common.close')}
-          className="absolute right-3 top-3 z-10 rounded-xl p-2 text-dark-400 transition-colors hover:bg-dark-800 hover:text-dark-200"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
-          <CloseIcon />
-        </button>
+          <motion.div
+            className="absolute inset-0 bg-dark-950/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleClose}
+          />
 
-        {/* Success header with animation */}
-        <div
-          className={`flex flex-col items-center bg-gradient-to-br ${gradientClass} px-6 pb-8 pt-10`}
-        >
-          {/* Use animate-pulse for celebration; bounce easing reads dated and
-              the lift is the moment, not the bounce. SuccessBurst сам себя
-              анимирует и гаснет — бесконечный pulse ему не нужен. */}
-          <div className={`mb-4 text-white ${isBurst ? '' : 'animate-pulse'}`}>{icon}</div>
-          <h2 id="success-modal-title" className="text-center text-2xl font-bold text-white">
-            {title}
-          </h2>
-          {message && <p className="mt-2 text-center text-white/80">{message}</p>}
-        </div>
-
-        {/* Details */}
-        <div className="space-y-4 p-6">
-          {/* Amount */}
-          {formattedAmount && (
-            <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
-              <span className="text-dark-400">
-                {isBalanceTopup
-                  ? t('successNotification.amount', 'Amount')
-                  : t('successNotification.price', 'Price')}
-              </span>
-              <span
-                className={`text-lg font-bold ${isDevicesPurchased || isTrafficPurchased ? 'text-dark-100' : 'text-success-400'}`}
-              >
-                {isDevicesPurchased || isTrafficPurchased ? '' : '+'}
-                {formattedAmount}
-              </span>
-            </div>
-          )}
-
-          {/* Devices info (for devices purchase) */}
-          {isDevicesPurchased && data.devicesAdded && (
-            <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
-              <span className="text-dark-400">
-                {t('successNotification.devicesAdded', 'Devices added')}
-              </span>
-              <span className="text-lg font-bold text-blue-400">+{data.devicesAdded}</span>
-            </div>
-          )}
-
-          {isDevicesPurchased && data.newDeviceLimit && (
-            <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
-              <span className="text-dark-400">
-                {t('successNotification.totalDevices', 'Total devices')}
-              </span>
-              <span className="font-semibold text-dark-100">{data.newDeviceLimit}</span>
-            </div>
-          )}
-
-          {/* Traffic info (for traffic purchase) */}
-          {isTrafficPurchased && data.trafficGbAdded && (
-            <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
-              <span className="text-dark-400">
-                {t('successNotification.trafficAdded', {
-                  defaultValue: 'Traffic added',
-                  value: data.trafficGbAdded,
-                })}
-              </span>
-              <span className="text-lg font-bold text-success-400">+{data.trafficGbAdded} GB</span>
-            </div>
-          )}
-
-          {isTrafficPurchased && data.newTrafficLimitGb && (
-            <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
-              <span className="text-dark-400">
-                {t('successNotification.totalTraffic', {
-                  defaultValue: 'Total traffic',
-                  value: data.newTrafficLimitGb,
-                })}
-              </span>
-              <span className="font-semibold text-dark-100">{data.newTrafficLimitGb} GB</span>
-            </div>
-          )}
-
-          {/* New balance (for top-up) */}
-          {isBalanceTopup && formattedBalance && (
-            <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
-              <span className="text-dark-400">
-                {t('successNotification.newBalance', 'New balance')}
-              </span>
-              <span className="text-lg font-bold text-dark-100">{formattedBalance}</span>
-            </div>
-          )}
-
-          {/* Tariff name */}
-          {data.tariffName && (
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-dark-800/50 px-4 py-3">
-              <span className="shrink-0 text-dark-400">
-                {t('successNotification.tariff', 'Tariff')}
-              </span>
-              <span className="min-w-0 truncate font-semibold text-dark-100">
-                {data.tariffName}
-              </span>
-            </div>
-          )}
-
-          {/* Expiry date */}
-          {formattedExpiry && (
-            <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
-              <span className="text-dark-400">
-                {t('successNotification.validUntil', 'Valid until')}
-              </span>
-              <span className="font-semibold text-dark-100">{formattedExpiry}</span>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="space-y-2 pt-2">
-            {isSubscription && (
-              <button
-                onClick={handleGoToSubscription}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 py-3.5 font-bold text-on-accent shadow-lg shadow-accent-500/25 transition-colors hover:bg-accent-400 active:bg-accent-600"
-              >
-                <RocketIcon className="h-8 w-8" />
-                <span>{t('successNotification.goToSubscription', 'Go to Subscription')}</span>
-              </button>
-            )}
-
-            {isBalanceTopup && (
-              <button
-                onClick={handleGoToBalance}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success-500 py-3.5 font-bold text-white shadow-lg shadow-success-500/25 transition-colors hover:bg-success-400 active:bg-success-600"
-              >
-                <WalletIcon className="h-8 w-8" />
-                <span>{t('successNotification.goToBalance', 'Go to Balance')}</span>
-              </button>
-            )}
-
-            {isDevicesPurchased && (
-              <button
-                onClick={handleGoToSubscription}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 py-3.5 font-bold text-on-accent shadow-lg shadow-accent-500/25 transition-colors hover:bg-accent-400 active:bg-accent-600"
-              >
-                <DevicesIcon className="h-8 w-8" />
-                <span>{t('successNotification.goToSubscription', 'Go to Subscription')}</span>
-              </button>
-            )}
-
-            {isTrafficPurchased && (
-              <button
-                onClick={handleGoToSubscription}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success-500 py-3.5 font-bold text-white shadow-lg shadow-success-500/25 transition-colors hover:bg-success-400 active:bg-success-600"
-              >
-                <TrafficIcon className="h-8 w-8" />
-                <span>{t('successNotification.goToSubscription', 'Go to Subscription')}</span>
-              </button>
-            )}
-
+          <motion.div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="success-modal-title"
+            tabIndex={-1}
+            className="ix-island relative mx-4 w-full max-w-sm overflow-hidden"
+            initial={{ opacity: 0, y: 40, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            style={{
+              marginBottom: safeBottom ? `${safeBottom}px` : undefined,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
             <button
               onClick={handleClose}
-              className="w-full rounded-xl bg-dark-800 py-3 font-semibold text-dark-300 transition-colors hover:bg-dark-700 hover:text-dark-100"
+              aria-label={t('common.close')}
+              className="absolute right-3 top-3 z-10 rounded-xl p-2 text-dark-400 transition-colors hover:bg-dark-800 hover:text-dark-200"
             >
-              {t('common.close', 'Close')}
+              <CloseIcon />
             </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+
+            {/* Success header with animation */}
+            <div
+              className={`flex flex-col items-center bg-gradient-to-br ${gradientClass} px-6 pb-8 pt-10`}
+            >
+              {/* Use animate-pulse for celebration; bounce easing reads dated and
+              the lift is the moment, not the bounce. SuccessBurst сам себя
+              анимирует и гаснет — бесконечный pulse ему не нужен. */}
+              <div className={`mb-4 text-white ${isBurst ? '' : 'animate-pulse'}`}>{icon}</div>
+              <h2 id="success-modal-title" className="text-center text-2xl font-bold text-white">
+                {title}
+              </h2>
+              {message && <p className="mt-2 text-center text-white/80">{message}</p>}
+            </div>
+
+            {/* Details */}
+            <div className="space-y-4 p-6">
+              {/* Amount */}
+              {formattedAmount && (
+                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                  <span className="text-dark-400">
+                    {isBalanceTopup
+                      ? t('successNotification.amount', 'Amount')
+                      : t('successNotification.price', 'Price')}
+                  </span>
+                  <span
+                    className={`text-lg font-bold ${isDevicesPurchased || isTrafficPurchased ? 'text-dark-100' : 'text-success-400'}`}
+                  >
+                    {isDevicesPurchased || isTrafficPurchased ? '' : '+'}
+                    {formattedAmount}
+                  </span>
+                </div>
+              )}
+
+              {/* Devices info (for devices purchase) */}
+              {isDevicesPurchased && data.devicesAdded && (
+                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                  <span className="text-dark-400">
+                    {t('successNotification.devicesAdded', 'Devices added')}
+                  </span>
+                  <span className="text-lg font-bold text-blue-400">+{data.devicesAdded}</span>
+                </div>
+              )}
+
+              {isDevicesPurchased && data.newDeviceLimit && (
+                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                  <span className="text-dark-400">
+                    {t('successNotification.totalDevices', 'Total devices')}
+                  </span>
+                  <span className="font-semibold text-dark-100">{data.newDeviceLimit}</span>
+                </div>
+              )}
+
+              {/* Traffic info (for traffic purchase) */}
+              {isTrafficPurchased && data.trafficGbAdded && (
+                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                  <span className="text-dark-400">
+                    {t('successNotification.trafficAdded', {
+                      defaultValue: 'Traffic added',
+                      value: data.trafficGbAdded,
+                    })}
+                  </span>
+                  <span className="text-lg font-bold text-success-400">
+                    +{data.trafficGbAdded} GB
+                  </span>
+                </div>
+              )}
+
+              {isTrafficPurchased && data.newTrafficLimitGb && (
+                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                  <span className="text-dark-400">
+                    {t('successNotification.totalTraffic', {
+                      defaultValue: 'Total traffic',
+                      value: data.newTrafficLimitGb,
+                    })}
+                  </span>
+                  <span className="font-semibold text-dark-100">{data.newTrafficLimitGb} GB</span>
+                </div>
+              )}
+
+              {/* New balance (for top-up) */}
+              {isBalanceTopup && formattedBalance && (
+                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                  <span className="text-dark-400">
+                    {t('successNotification.newBalance', 'New balance')}
+                  </span>
+                  <span className="text-lg font-bold text-dark-100">{formattedBalance}</span>
+                </div>
+              )}
+
+              {/* Tariff name */}
+              {data.tariffName && (
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-dark-800/50 px-4 py-3">
+                  <span className="shrink-0 text-dark-400">
+                    {t('successNotification.tariff', 'Tariff')}
+                  </span>
+                  <span className="min-w-0 truncate font-semibold text-dark-100">
+                    {data.tariffName}
+                  </span>
+                </div>
+              )}
+
+              {/* Expiry date */}
+              {formattedExpiry && (
+                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                  <span className="text-dark-400">
+                    {t('successNotification.validUntil', 'Valid until')}
+                  </span>
+                  <span className="font-semibold text-dark-100">{formattedExpiry}</span>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="space-y-2 pt-2">
+                {isSubscription && (
+                  <button
+                    onClick={handleGoToSubscription}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 py-3.5 font-bold text-on-accent shadow-lg shadow-accent-500/25 transition-colors hover:bg-accent-400 active:bg-accent-600"
+                  >
+                    <RocketIcon className="h-8 w-8" />
+                    <span>{t('successNotification.goToSubscription', 'Go to Subscription')}</span>
+                  </button>
+                )}
+
+                {isBalanceTopup && (
+                  <button
+                    onClick={handleGoToBalance}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-success-500 py-3.5 font-bold text-white shadow-lg shadow-success-500/25 transition-colors hover:bg-success-400 active:bg-success-600"
+                  >
+                    <WalletIcon className="h-8 w-8" />
+                    <span>{t('successNotification.goToBalance', 'Go to Balance')}</span>
+                  </button>
+                )}
+
+                {isDevicesPurchased && (
+                  <button
+                    onClick={handleGoToSubscription}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 py-3.5 font-bold text-on-accent shadow-lg shadow-accent-500/25 transition-colors hover:bg-accent-400 active:bg-accent-600"
+                  >
+                    <DevicesIcon className="h-8 w-8" />
+                    <span>{t('successNotification.goToSubscription', 'Go to Subscription')}</span>
+                  </button>
+                )}
+
+                {isTrafficPurchased && (
+                  <button
+                    onClick={handleGoToSubscription}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-success-500 py-3.5 font-bold text-white shadow-lg shadow-success-500/25 transition-colors hover:bg-success-400 active:bg-success-600"
+                  >
+                    <TrafficIcon className="h-8 w-8" />
+                    <span>{t('successNotification.goToSubscription', 'Go to Subscription')}</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={handleClose}
+                  className="w-full rounded-xl bg-dark-800 py-3 font-semibold text-dark-300 transition-colors hover:bg-dark-700 hover:text-dark-100"
+                >
+                  {t('common.close', 'Close')}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 
   if (typeof document !== 'undefined') {
