@@ -55,6 +55,7 @@
     "gift": "Gift",
     "tariffs": "Plans",
     "keys": "Keys",
+    "connection": "Connection",
     "navigation": "Navigation"
   },
   "notifications": {
@@ -305,6 +306,7 @@
     "devicesShort": "dev.",
     "trafficUsage": "{{used}} / {{limit}} GB",
     "trafficUsageTitle": "Traffic Usage",
+    "mainTraffic": "Main traffic",
     "usedTraffic": "used {{amount}}",
     "usedSuffix": "used",
     "unlimited": "Unlimited",
@@ -630,7 +632,7 @@
       "buyTraffic": "Buy more traffic",
       "currentTrafficLimit": "Current limit: {{limit}} GB (used {{used}} GB)",
       "buyTrafficTitle": "Buy more traffic",
-      "trafficWarning": "Purchased traffic is added to your current limit and is valid for 30 days from purchase",
+      "trafficWarning": "Purchased traffic is valid for 30 days. You can buy one regular and one White Internet package per calendar month",
       "trafficUnavailable": "Traffic purchase is not available for your tariff",
       "unlimited": "Unlimited",
       "buyTrafficGb": "Buy {{gb}} GB",

@@ -55,6 +55,7 @@
     "gift": "Подарить",
     "tariffs": "Тарифы",
     "keys": "Ключи",
+    "connection": "Подключение",
     "navigation": "Навигация"
   },
   "notifications": {
@@ -308,6 +309,7 @@
     "devicesShort": "устр.",
     "trafficUsage": "{{used}} / {{limit}} ГБ",
     "trafficUsageTitle": "Расход трафика",
+    "mainTraffic": "Основной трафик",
     "usedTraffic": "использовано {{amount}}",
     "usedSuffix": "израсходовано",
     "unlimited": "Безлимит",
@@ -650,7 +652,7 @@
       "buyTraffic": "Докупить трафик",
       "currentTrafficLimit": "Текущий лимит: {{limit}} ГБ (использовано {{used}} ГБ)",
       "buyTrafficTitle": "Докупить трафик",
-      "trafficWarning": "Докупленный трафик добавляется к текущему лимиту и действует 30 дней с момента покупки",
+      "trafficWarning": "Докупленный трафик действует 30 дней. Для основного и Белого интернета можно купить по одному пакету каждого типа в календарный месяц",
       "trafficUnavailable": "Докупка трафика недоступна для вашего тарифа",
       "unlimited": "Безлимит",
       "buyTrafficGb": "Купить {{gb}} ГБ",

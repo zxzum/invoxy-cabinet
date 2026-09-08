@@ -6,6 +6,7 @@ import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
+import { useSuccessNotification } from '../../../store/successNotification';
 
 // ──────────────────────────────────────────────────────────────────
 // Buy-traffic sheet. Self-owns the packages query + purchase mutation;
@@ -41,6 +42,7 @@ export function TrafficTopupSheet({
 }: TrafficTopupSheetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const showSuccess = useSuccessNotification((state) => state.show);
   const [scope, setScope] = useState<'regular' | 'whitelist'>('regular');
   const primaryTrafficLabel = t('subscription.primaryTraffic', 'Основной трафик');
   const primaryTrafficDescription = t(
@@ -70,11 +72,17 @@ export function TrafficTopupSheet({
 
   const purchaseMutation = useMutation({
     mutationFn: (gb: number) => subscriptionApi.purchaseTraffic(gb, subscriptionId, scope),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       queryClient.invalidateQueries({ queryKey: ['traffic-packages', subscriptionId, scope] });
+      showSuccess({
+        type: 'traffic_purchased',
+        amountKopeks: data.amount_paid_kopeks,
+        trafficGbAdded: data.gb_added,
+        message: `${scope === 'whitelist' ? whiteInternetLabel : primaryTrafficLabel}: +${data.gb_added} ${t('common.units.gb')}`,
+      });
       onClose();
       onSelectedTrafficPackageChange(null);
     },
@@ -189,7 +197,7 @@ export function TrafficTopupSheet({
                     ? '♾️ ' + t('subscription.additionalOptions.unlimited')
                     : `${pkg.gb} ${t('common.units.gb')}`}
                 </div>
-                {pkg.discount_percent && pkg.discount_percent > 0 && (
+                {pkg.discount_percent != null && pkg.discount_percent > 0 && (
                   <div className="mb-1">
                     <span className="inline-block rounded-full bg-success-500/20 px-2 py-0.5 text-xs font-medium text-success-400">
                       -{pkg.discount_percent}%

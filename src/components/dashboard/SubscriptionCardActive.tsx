@@ -153,6 +153,7 @@ export default function SubscriptionCardActive({
           percent={usedPercent}
           isUnlimited={isUnlimited}
           compact
+          label={t('dashboard.mainTraffic', 'Основной трафик')}
         />
         <WhiteInternetUsage subscription={subscription} compact />
       </div>
@@ -165,13 +166,13 @@ export default function SubscriptionCardActive({
       />
 
       {/* ─── Stats row: Tariff + Days Left ─── */}
-      <div className="mb-5 flex gap-2.5">
+      <div className="mb-5 grid min-w-0 grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)] gap-2.5">
         {/* Tariff badge — clickable. Neutral chrome: the tariff name has
             no traffic-zone semantics, so tinting it by the traffic zone
             (DESIGN.md Status-Hue Lockout) was wrong. */}
         <Link
           to={`/subscriptions/${subscription.id}`}
-          className="flex-1 rounded-[14px] p-3.5 transition-colors"
+          className="min-w-0 overflow-hidden rounded-[14px] p-3 transition-colors sm:p-3.5"
           style={{
             background: g.innerBg,
             border: `1px solid ${g.innerBorder}`,
@@ -183,17 +184,17 @@ export default function SubscriptionCardActive({
           >
             {t('dashboard.tariff')}
           </div>
-          <div className="min-w-0 truncate text-base font-bold leading-tight tracking-tight text-dark-50">
+          <div className="min-w-0 truncate text-sm font-bold leading-tight tracking-tight text-dark-50 sm:text-base">
             {subscription.tariff_name || t('subscription.currentPlan')}
           </div>
-          <div className="mt-0.5 font-mono text-[10px] text-dark-400">
+          <div className="mt-0.5 truncate whitespace-nowrap font-mono text-[10px] text-dark-50/30">
             {t('dashboard.validUntil', { date: formattedDate })}
           </div>
         </Link>
 
         {/* Days remaining */}
         <div
-          className="flex-1 rounded-[14px] p-3.5 transition-colors duration-300"
+          className="min-w-0 overflow-hidden rounded-[14px] p-3 transition-colors duration-300 sm:p-3.5"
           style={{
             background: g.innerBg,
             border:
@@ -202,7 +203,7 @@ export default function SubscriptionCardActive({
                 : `1px solid ${g.innerBorder}`,
           }}
         >
-          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-dark-400">
+          <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-dark-50/35">
             <div
               className="flex h-6 w-6 items-center justify-center rounded-[7px] transition-colors duration-300"
               style={{
@@ -218,13 +219,13 @@ export default function SubscriptionCardActive({
                 <CalendarIcon className="h-[13px] w-[13px]" />
               </span>
             </div>
-            {t('dashboard.remaining')}
+            <span className="truncate">{t('dashboard.remaining')}</span>
           </div>
           <div className="flex items-baseline gap-1">
             {/* Счётчик дней «перетекает» между значениями (spring из motion-kit);
                 цвет по-прежнему краснеет на последних трёх днях. */}
             <span
-              className="text-[22px] font-bold tracking-tight transition-colors duration-300"
+              className="text-xl font-bold tracking-tight transition-colors duration-300 sm:text-[22px]"
               style={{ color: daysLeft <= 3 ? 'rgb(var(--color-warning-400))' : g.text }}
             >
               <AnimatedNumber value={daysLeft} />
@@ -249,7 +250,7 @@ export default function SubscriptionCardActive({
         </button>
         <Link
           to={`/subscriptions/${subscription.id}`}
-          className="text-[11px] font-medium text-accent-400 transition-colors hover:text-accent-300"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-accent-400/25 bg-accent-400/10 px-3 py-2 text-xs font-semibold text-accent-300 transition-colors hover:border-accent-400/45 hover:bg-accent-400/15 hover:text-accent-200"
         >
           {t('dashboard.viewSubscription')} &rarr;
         </Link>

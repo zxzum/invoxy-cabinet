@@ -11,6 +11,7 @@ interface TrafficProgressBarProps {
   percent: number;
   isUnlimited: boolean;
   compact?: boolean;
+  label?: string;
 }
 
 const THRESHOLDS = [50, 75, 90];
@@ -21,6 +22,7 @@ export default function TrafficProgressBar({
   percent,
   isUnlimited,
   compact = false,
+  label,
 }: TrafficProgressBarProps) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -47,6 +49,14 @@ export default function TrafficProgressBar({
   if (isUnlimited) {
     return (
       <div role="progressbar" aria-label={t('dashboard.unlimited')}>
+        {label && (
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <span className="min-w-0 truncate text-xs font-semibold text-dark-50/55">{label}</span>
+            <span className="shrink-0 font-mono text-[11px] text-dark-50/35">
+              {formatTraffic(_usedGb)}
+            </span>
+          </div>
+        )}
         {/* Unlimited flowing bar */}
         <div
           className="relative overflow-hidden"
@@ -95,6 +105,14 @@ export default function TrafficProgressBar({
       aria-valuemax={100}
       aria-label={`${t('subscription.traffic')}: ${clampedPercent.toFixed(1)}%`}
     >
+      {label && (
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <span className="min-w-0 truncate text-xs font-semibold text-dark-50/55">{label}</span>
+          <span className="shrink-0 font-mono text-[11px] text-dark-50/35">
+            {formatTraffic(_usedGb)} / {formatTraffic(limitGb)}
+          </span>
+        </div>
+      )}
       {/* Track */}
       <div
         className="relative overflow-hidden"

@@ -6,7 +6,10 @@ import { subscriptionApi } from '../../../api/subscription';
 import { useTheme } from '../../../hooks/useTheme';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
-import { useCloseOnSuccessNotification } from '../../../store/successNotification';
+import {
+  useCloseOnSuccessNotification,
+  useSuccessNotification,
+} from '../../../store/successNotification';
 import { getGlassColors } from '../../../utils/glassTheme';
 import { getErrorMessage, type PurchaseStep } from '../../../utils/subscriptionHelpers';
 import { CheckIcon } from '../../icons';
@@ -57,6 +60,7 @@ export function ClassicPurchaseWizard({
   const g = getGlassColors(isDark);
   const { formatAmount, currencySymbol } = useCurrency();
   const { activeDiscount, applyPromoDiscount } = usePromoDiscount();
+  const showSuccess = useSuccessNotification((state) => state.show);
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -151,11 +155,16 @@ export function ClassicPurchaseWizard({
 
   const purchaseMutation = useMutation({
     mutationFn: () => subscriptionApi.submitPurchase(currentSelection, subscriptionId),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['purchase-options', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+      showSuccess({
+        type: subscriptionId ? 'subscription_renewed' : 'subscription_purchased',
+        tariffName: data.subscription.tariff_name,
+        expiresAt: data.subscription.end_date,
+      });
       navigate('/subscriptions', { replace: true });
     },
   });

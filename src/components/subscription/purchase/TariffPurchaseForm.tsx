@@ -7,6 +7,7 @@ import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage, getInsufficientBalanceError } from '../../../utils/subscriptionHelpers';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
+import { useSuccessNotification } from '../../../store/successNotification';
 import { dailyPriceQuote } from './dailyPrice';
 import { usePlatform } from '../../../platform';
 import { openPaymentUrl } from '../../../utils/openPaymentUrl';
@@ -68,6 +69,7 @@ export function TariffPurchaseForm({
   const queryClient = useQueryClient();
   const { formatAmount, currencySymbol } = useCurrency();
   const { applyPromoDiscount } = usePromoDiscount();
+  const showSuccess = useSuccessNotification((state) => state.show);
   // Та же котировка, что на карточке тарифа: серверная цена + промокод один раз.
   const dailyQuote = dailyPriceQuote(tariff, applyPromoDiscount);
   const { openLink, platform } = usePlatform();
@@ -147,10 +149,15 @@ export function TariffPurchaseForm({
         subscriptionId ?? undefined,
       );
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
       queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+      showSuccess({
+        type: subscriptionId ? 'subscription_renewed' : 'subscription_purchased',
+        tariffName: data.tariff_name,
+        expiresAt: data.subscription.end_date,
+      });
       navigate('/subscriptions', { replace: true });
     },
   });

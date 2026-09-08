@@ -958,6 +958,7 @@ export default function Subscription() {
                   percent={usedPercent}
                   isUnlimited={isUnlimited}
                   compact
+                  label={t('dashboard.mainTraffic', 'Основной трафик')}
                 />
                 <WhiteInternetUsage subscription={subscription} compact />
               </div>

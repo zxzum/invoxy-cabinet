@@ -53,6 +53,7 @@
     "wheel": "幸运转盘",
     "menu": "菜单",
     "gift": "赠送",
+    "connection": "连接",
     "navigation": "导航"
   },
   "notifications": {
@@ -311,6 +312,7 @@
     },
     "tariff": "套餐",
     "trafficUsageTitle": "流量使用",
+    "mainTraffic": "主要流量",
     "trialOffer": {
       "freeDesc": "免费试用我们的 VPN：无需任何承诺",
       "freeTitle": "免费试用",
@@ -457,7 +459,7 @@
       "buyTraffic": "购买更多流量",
       "currentTrafficLimit": "当前限制：{{limit}} GB（已使用 {{used}} GB）",
       "buyTrafficTitle": "购买更多流量",
-      "trafficWarning": "购买的流量将添加到当前限制，自购买之日起30天内有效",
+      "trafficWarning": "购买的流量有效期为30天。每个自然月可分别购买一个普通流量包和一个白名单互联网流量包",
       "trafficUnavailable": "您的套餐不支持购买流量",
       "unlimited": "无限制",
       "buyTrafficGb": "购买 {{gb}} GB",

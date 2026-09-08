@@ -53,6 +53,7 @@
     "wheel": "چرخ شانس",
     "menu": "منو",
     "gift": "هدیه",
+    "connection": "اتصال",
     "navigation": "ناوبری"
   },
   "notifications": {
@@ -311,6 +312,7 @@
     },
     "tariff": "تعرفه",
     "trafficUsageTitle": "مصرف ترافیک",
+    "mainTraffic": "ترافیک اصلی",
     "trialOffer": {
       "freeDesc": "وی‌پی‌ان ما را رایگان امتحان کنید: بدون هیچ تعهدی",
       "freeTitle": "دوره آزمایشی رایگان",
@@ -457,7 +459,7 @@
       "buyTraffic": "خرید ترافیک بیشتر",
       "currentTrafficLimit": "محدودیت فعلی: {{limit}} GB (مصرف شده {{used}} GB)",
       "buyTrafficTitle": "خرید ترافیک بیشتر",
-      "trafficWarning": "ترافیک خریداری‌شده به محدودیت فعلی اضافه می‌شود و تا ۳۰ روز از زمان خرید معتبر است",
+      "trafficWarning": "ترافیک خریداری‌شده ۳۰ روز معتبر است. در هر ماه تقویمی می‌توانید یک بسته عادی و یک بسته اینترنت سفید بخرید",
       "trafficUnavailable": "خرید ترافیک برای اشتراک شما در دسترس نیست",
       "unlimited": "نامحدود",
       "buyTrafficGb": "خرید {{gb}} GB",
