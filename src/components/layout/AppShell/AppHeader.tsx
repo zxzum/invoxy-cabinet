@@ -1,9 +1,8 @@
 import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { initDataUser } from '@telegram-apps/sdk-react';
 import { PiKey } from 'react-icons/pi';
 
 import { useAuthStore } from '@/store/auth';
@@ -19,6 +18,7 @@ import {
 } from '@/api/branding';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
+import { useUserAvatar } from '@/hooks/useUserAvatar';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import TicketNotificationBell from '@/components/TicketNotificationBell';
@@ -53,7 +53,7 @@ interface AppHeaderProps {
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
   onCommandPaletteOpen: () => void;
-  headerHeight: number;
+  headerHeight: number | string;
   isFullscreen: boolean;
   safeAreaInset: { top: number; bottom: number; left: number; right: number };
   contentSafeAreaInset: { top: number; bottom: number; left: number; right: number };
@@ -87,7 +87,7 @@ export function AppHeader({
   );
   const { haptic, platform } = usePlatform();
   const { theme, toggleTheme, canToggle } = useTheme();
-  const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
+  const avatar = useUserAvatar(user);
 
   // Branding
   const { data: branding } = useQuery({
@@ -106,18 +106,6 @@ export function AppHeader({
   });
 
   const appName = branding ? branding.name : FALLBACK_NAME;
-
-  // Get user photo from Telegram
-  useEffect(() => {
-    try {
-      const user = initDataUser();
-      if (user?.photo_url) {
-        setUserPhotoUrl(user.photo_url);
-      }
-    } catch {
-      // Not in Telegram or init data not available
-    }
-  }, []);
 
   // Lock scroll when menu is open (works in iframe/Telegram Mini App)
   useEffect(() => {
@@ -309,25 +297,18 @@ export function AppHeader({
                 {/* User info */}
                 <div className="mb-4 flex items-center justify-between border-b border-dark-800/50 pb-4">
                   <div className="flex items-center gap-3">
-                    {userPhotoUrl ? (
+                    {avatar.src ? (
                       <img
-                        src={userPhotoUrl}
+                        src={avatar.src}
                         alt="Avatar"
                         className="h-10 w-10 rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        }}
+                        onError={avatar.onError}
                       />
-                    ) : null}
-                    <div
-                      className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-full bg-dark-700',
-                        userPhotoUrl ? 'hidden' : '',
-                      )}
-                    >
-                      <UserIcon className="h-5 w-5" />
-                    </div>
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dark-700">
+                        <UserIcon className="h-5 w-5" />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium text-dark-100">
                         {displayName(user)}

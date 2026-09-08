@@ -10,6 +10,7 @@ import {
   SETTINGS_TREE,
   findTreeLocation,
   formatSettingKey,
+  findSettingsSection,
   getMappedCategoryKeys,
 } from '../components/admin';
 import { usePlatform } from '../platform/hooks/usePlatform';
@@ -35,12 +36,15 @@ export default function AdminSettings() {
 
   // State
   const requestedSection = searchParams.get('section');
-  const [activeSection, setActiveSection] = useState(requestedSection || 'branding');
+  // State: `?section=<id>` открывает нужный раздел сразу и игнорирует устаревшие ссылки.
+  const [activeSection, setActiveSection] = useState(
+    () => findSettingsSection(requestedSection) ?? 'branding',
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   // AdminPanel links can open the relevant settings category directly.
   useEffect(() => {
-    setActiveSection(requestedSection || 'branding');
+    setActiveSection(findSettingsSection(requestedSection) ?? 'branding');
   }, [requestedSection]);
 
   // Favorites hook

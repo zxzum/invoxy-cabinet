@@ -31,8 +31,15 @@ interface ResponsiveSheetProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  /** Ширина окна на десктопе: md для коротких диалогов, lg для форм с сеткой. */
+  size?: 'md' | 'lg';
   children: ReactNode;
 }
+
+const WIDTH: Record<NonNullable<ResponsiveSheetProps['size']>, string> = {
+  md: 'max-w-md',
+  lg: 'max-w-2xl',
+};
 
 /**
  * Нижний шит на телефоне, обычное окно на десктопе.
@@ -42,7 +49,13 @@ interface ResponsiveSheetProps {
  * и обрезает нижние скругления. На десктопе то же содержимое показывается
  * центрированным окном с ловушкой фокуса и закрытием по Escape.
  */
-export function ResponsiveSheet({ isOpen, onClose, title, children }: ResponsiveSheetProps) {
+export function ResponsiveSheet({
+  isOpen,
+  onClose,
+  title,
+  size = 'md',
+  children,
+}: ResponsiveSheetProps) {
   const { t } = useTranslation();
   const isDesktop = useIsDesktop();
   const [isClosing, setIsClosing] = useState(false);
@@ -98,7 +111,7 @@ export function ResponsiveSheet({ isOpen, onClose, title, children }: Responsive
               open: { opacity: 1, y: 0, scale: 1 },
             }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-dark-700 bg-dark-900 shadow-2xl"
+            className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${WIDTH[size]} flex-col overflow-hidden rounded-2xl border border-dark-700 bg-dark-900 shadow-2xl`}
           >
             <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-2">
               <h3 className="text-lg font-semibold text-dark-50">{title}</h3>

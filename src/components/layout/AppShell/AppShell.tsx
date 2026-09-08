@@ -13,6 +13,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useBranding } from '@/hooks/useBranding';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { resetVirtualKeyboard, useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { balanceApi } from '@/api/balance';
 import { displayName } from '@/utils/displayName';
 import { cn } from '@/lib/utils';
@@ -70,7 +71,8 @@ export function AppShell({ children }: AppShellProps) {
   const user = useAuthStore((state) => state.user);
   const { isFullscreen, safeAreaInset, contentSafeAreaInset, platform, isMobile } =
     useTelegramSDK();
-  const { mobile: headerHeight } = useHeaderHeight();
+  const { mobile, mobileCss } = useHeaderHeight();
+  const headerHeight = mobileCss ?? `${mobile}px`;
   const haptic = useHaptic();
   const { theme, toggleTheme, canToggle } = useTheme();
 
@@ -87,36 +89,13 @@ export function AppShell({ children }: AppShellProps) {
 
   const isMobileFullscreen = isFullscreen && isMobile;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const isKeyboardOpen = useVirtualKeyboard();
   useEffect(() => {
-    setIsKeyboardOpen(false);
+    resetVirtualKeyboard();
   }, [location.pathname]);
-
-  useEffect(() => {
-    const handleFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        setIsKeyboardOpen(true);
-      }
-    };
-    const handleFocusOut = (e: FocusEvent) => {
-      const relatedTarget = e.relatedTarget as HTMLElement | null;
-      if (
-        !relatedTarget ||
-        (relatedTarget.tagName !== 'INPUT' &&
-          relatedTarget.tagName !== 'TEXTAREA' &&
-          !relatedTarget.isContentEditable)
-      ) {
-        setIsKeyboardOpen(false);
-      }
-    };
-    document.addEventListener('focusin', handleFocusIn);
-    document.addEventListener('focusout', handleFocusOut);
-    return () => {
-      document.removeEventListener('focusin', handleFocusIn);
-      document.removeEventListener('focusout', handleFocusOut);
-    };
-  }, []);
+  const showMobileNav = ['/', '/subscription/purchase', '/connection', '/profile'].includes(
+    location.pathname,
+  );
 
   const sidebarNav = [
     { path: '/', label: 'Кабинет', icon: HomeIcon },
@@ -181,7 +160,7 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   return (
-    <div className="ix-app min-h-viewport">
+    <div className="ix-app min-h-viewport" data-mobile-nav={showMobileNav ? 'on' : 'off'}>
       <WebSocketNotifications />
       <CampaignBonusNotifier />
       <SuccessNotificationModal />
@@ -330,7 +309,7 @@ export function AppShell({ children }: AppShellProps) {
         </main>
       </div>
 
-      <MobileBottomNav isKeyboardOpen={isKeyboardOpen} />
+      {showMobileNav && <MobileBottomNav isKeyboardOpen={isKeyboardOpen} />}
 
       {location.pathname !== '/support' && (
         <MotionFabLink

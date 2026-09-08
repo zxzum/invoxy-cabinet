@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { BestValueBadge } from '../BestValueBadge';
 import { useNavigate } from 'react-router';
 import { staggerEntrance } from '@/components/motion';
 import { useTheme } from '../../../hooks/useTheme';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
+import { dailyPriceQuote } from './dailyPrice';
 import { getGlassColors } from '../../../utils/glassTheme';
 import { ArrowDownIcon, DevicesIcon, RestartIcon } from '@/components/icons';
 import { FeatureBadge } from '@/components/ui/FeatureBadge';
@@ -226,9 +228,14 @@ export function TariffPickerGrid({
                       : undefined
                   }
                   className={`bento-card-hover animate-none p-5 text-left transition-all ${
-                    isCurrentTariff ? 'bento-card-glow border-accent-500' : ''
+                    isCurrentTariff
+                      ? 'bento-card-glow border-accent-500'
+                      : tariff.is_highlighted
+                        ? 'border-2 border-urgent-400'
+                        : ''
                   }`}
                 >
+                  {tariff.is_highlighted && !isCurrentTariff && <BestValueBadge className="mb-2" />}
                   <div className="mb-3 flex items-start justify-between">
                     <div>
                       <div className="text-lg font-semibold text-dark-100">
@@ -274,14 +281,8 @@ export function TariffPickerGrid({
                   {/* Price info */}
                   <div className="mt-3 border-t border-dark-700/50 pt-3 text-sm text-dark-400">
                     {(() => {
-                      const dailyPrice =
-                        tariff.daily_price_kopeks ?? tariff.price_per_day_kopeks ?? 0;
-                      const originalDailyPrice = tariff.original_daily_price_kopeks || 0;
-                      if (dailyPrice > 0 || originalDailyPrice > 0) {
-                        const promoDaily = applyPromoDiscount(
-                          dailyPrice,
-                          originalDailyPrice > dailyPrice ? originalDailyPrice : undefined,
-                        );
+                      const promoDaily = dailyPriceQuote(tariff, applyPromoDiscount);
+                      if (promoDaily) {
                         return (
                           <span className="flex items-center gap-2">
                             <span className="font-medium text-accent-400">

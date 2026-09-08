@@ -27,6 +27,7 @@ import { ChevronRightIcon, StarIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { staggerEntrance } from '@/components/motion';
 import { safeLocal } from '../utils/safeStorage';
+import { getApiErrorMessage } from '../utils/api-error';
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -150,8 +151,8 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
       refreshUser();
     },
-    onError: (error: { response?: { data?: { detail?: string } } }) => {
-      setTrialError(error.response?.data?.detail || t('common.error'));
+    onError: (error: unknown) => {
+      setTrialError(getApiErrorMessage(error, t('common.error')));
     },
   });
 
@@ -330,7 +331,7 @@ export default function Dashboard() {
       {isMultiTariff && multiSubData?.subscriptions && multiSubData.subscriptions.length > 0 && (
         <motion.div {...section(1)} className="space-y-3">
           <div className="flex items-center justify-between px-1">
-            <span className="text-sm font-medium opacity-60">
+            <span className="text-sm font-medium text-dark-400">
               {t('dashboard.subscriptions', 'Подписки')}
             </span>
             <Link to="/subscriptions" className="text-xs text-accent-400 hover:underline">

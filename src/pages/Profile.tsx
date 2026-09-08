@@ -10,6 +10,7 @@ import { useAuthStore } from '../store/auth';
 import { displayName } from '../utils/displayName';
 import { authApi } from '../api/auth';
 import { isValidEmail } from '../utils/validation';
+import { useCountdown } from '../hooks/useCountdown';
 import { getApiErrorMessage } from '../utils/api-error';
 import {
   notificationsApi,
@@ -50,8 +51,8 @@ export default function Profile() {
   const [newEmail, setNewEmail] = useState('');
   const [changeCode, setChangeCode] = useState('');
   const [changeError, setChangeError] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [verificationResendCooldown, setVerificationResendCooldown] = useState(0);
+  const [resendCooldown, startResendCooldown] = useCountdown();
+  const [verificationResendCooldown, startVerificationResendCooldown] = useCountdown();
   const newEmailInputRef = useRef<HTMLInputElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,7 +127,7 @@ export default function Profile() {
     onSuccess: () => {
       setSuccess(t('profile.verificationResent'));
       setError(null);
-      setVerificationResendCooldown(UI.RESEND_COOLDOWN_SEC);
+      startVerificationResendCooldown(UI.RESEND_COOLDOWN_SEC);
     },
     onError: (err: unknown) => {
       setError(getApiErrorMessage(err, t('common.error')));
@@ -146,7 +147,7 @@ export default function Profile() {
         setUser(updatedUser);
       } else {
         setChangeEmailStep('code');
-        setResendCooldown(UI.RESEND_COOLDOWN_SEC);
+        startResendCooldown(UI.RESEND_COOLDOWN_SEC);
       }
     },
     onError: (err: unknown) => {
@@ -185,23 +186,6 @@ export default function Profile() {
     },
   });
 
-  // Resend cooldown timers
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setResendCooldown((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
-
-  useEffect(() => {
-    if (verificationResendCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setVerificationResendCooldown((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [verificationResendCooldown]);
-
   // Auto-focus inputs on step change (skip on Telegram — keyboard hides bottom nav)
   const { platform: profilePlatform, openTelegramLink } = usePlatform();
   useEffect(() => {
@@ -225,7 +209,7 @@ export default function Profile() {
     setNewEmail('');
     setChangeCode('');
     setChangeError(null);
-    setResendCooldown(0);
+    startResendCooldown(0);
   };
 
   const handleSendChangeCode = () => {
