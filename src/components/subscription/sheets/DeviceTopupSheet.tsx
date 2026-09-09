@@ -6,6 +6,7 @@ import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
+import { useSuccessNotification } from '../../../store/successNotification';
 
 // ──────────────────────────────────────────────────────────────────
 // Buy-devices sheet. Self-owns its devicePrice query + purchase mutation;
@@ -41,6 +42,7 @@ export function DeviceTopupSheet({
 }: DeviceTopupSheetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const showSuccess = useSuccessNotification((state) => state.show);
 
   const formatPrice = (kopeks: number) => {
     const rubles = kopeks / 100;
@@ -55,12 +57,18 @@ export function DeviceTopupSheet({
 
   const devicePurchaseMutation = useMutation({
     mutationFn: () => subscriptionApi.purchaseDevices(devicesToAdd, subscriptionId),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
       queryClient.invalidateQueries({ queryKey: ['devices', subscriptionId] });
       queryClient.invalidateQueries({ queryKey: ['device-price'] });
       queryClient.invalidateQueries({ queryKey: ['balance'] });
+      showSuccess({
+        type: 'devices_purchased',
+        amountKopeks: data.price_kopeks,
+        devicesAdded: data.devices_added,
+        newDeviceLimit: data.new_device_limit,
+      });
       onClose();
       onDevicesToAddChange(1);
     },

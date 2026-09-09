@@ -2021,6 +2021,18 @@ html.light .ix-island {
   color: rgb(var(--color-dark-50));
 }
 
+.ix-side-link-active:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--ix-accent-rgb), 0.4),
+    rgba(var(--ix-accent-rgb), 0.14)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--ix-accent-rgb), 0.16),
+    0 0 18px rgba(var(--ix-accent-rgb), 0.14);
+  color: rgb(var(--color-dark-50));
+}
+
 .ix-balance-card {
   border-radius: 18px;
   border: 1px solid rgba(var(--ix-accent-rgb), 0.16);
@@ -2099,7 +2111,6 @@ html.light .ix-island {
   color: white;
   background: linear-gradient(135deg, rgb(var(--color-accent-400)), rgb(var(--color-accent-700)));
   box-shadow: 0 12px 30px var(--ix-glow);
-  transition: box-shadow 0.2s ease;
 }
 
 @media (max-width: 1023px) {

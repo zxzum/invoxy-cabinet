@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PiKey } from 'react-icons/pi';
 
 import { useAuthStore } from '@/store/auth';
 import { displayName } from '@/utils/displayName';
@@ -43,6 +42,7 @@ import {
   SearchIcon,
   SunIcon,
   MoonIcon,
+  LinkIcon,
 } from './icons';
 
 const FALLBACK_NAME = import.meta.env.VITE_APP_NAME || 'Invoxy VPN';
@@ -141,7 +141,7 @@ export function AppHeader({
   const navItems = [
     { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
     { path: '/subscription/purchase', label: t('nav.tariffs'), icon: SubscriptionIcon },
-    { path: '/connection', label: t('nav.keys'), icon: PiKey },
+    { path: '/connection', label: t('nav.connection', 'Подключение'), icon: LinkIcon },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
     { path: '/subscriptions', label: t('nav.subscription'), icon: SubscriptionIcon },
     { path: '/balance', label: t('nav.balance'), icon: WalletIcon },

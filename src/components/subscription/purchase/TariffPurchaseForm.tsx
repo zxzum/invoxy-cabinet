@@ -74,6 +74,7 @@ export function TariffPurchaseForm({
   const dailyQuote = dailyPriceQuote(tariff, applyPromoDiscount);
   const { openLink, platform } = usePlatform();
   const ref = useRef<HTMLDivElement>(null);
+  const isEmbedded = !showHeader;
   const whiteInternetLabel = t('subscription.whiteInternet');
   const primaryTrafficLabel = t('subscription.primaryTraffic', 'Основной трафик');
   const primaryTrafficDescription = t(
@@ -248,26 +249,28 @@ export function TariffPurchaseForm({
 
   // Smooth scroll the form into view when first mounted.
   useEffect(() => {
-    if (ref.current) {
+    if (!isEmbedded && ref.current) {
       const timer = setTimeout(() => {
         ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isEmbedded]);
 
   useEffect(() => {
-    if (paymentSelection) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [paymentSelection]);
+    if (paymentSelection && !isEmbedded) {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [isEmbedded, paymentSelection]);
 
   if (paymentSelection) {
     return (
       <motion.div
         key="payment"
         ref={ref}
-        initial={{ opacity: 0, x: 24 }}
+        initial={isEmbedded ? false : { opacity: 0, x: 24 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: isEmbedded ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
       >
         <TariffPaymentSheet
           open
@@ -295,9 +298,9 @@ export function TariffPurchaseForm({
       key="details"
       ref={ref}
       className="space-y-4"
-      initial={{ opacity: 0, x: -18 }}
+      initial={isEmbedded ? false : { opacity: 0, x: -18 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: isEmbedded ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
     >
       {showHeader && (
         <div className="flex items-center justify-between gap-2">
@@ -310,32 +313,48 @@ export function TariffPurchaseForm({
         </div>
       )}
 
-      {marketingDescription && (
+      {!isEmbedded && marketingDescription && (
         <p className="whitespace-pre-line text-sm leading-5 text-dark-400">
           {marketingDescription}
         </p>
       )}
 
       {/* Tariff Info */}
-      <div className="rounded-xl bg-dark-800/50 p-3">
-        <div className="flex flex-wrap gap-3 text-sm">
-          <div className="text-dark-200">
-            {`${primaryTrafficLabel} ${tariff.traffic_limit_label} — ${primaryTrafficDescription}`}
-          </div>
-          <div className="text-dark-200">
-            {`${t('subscription.devices')}: ${tariff.device_limit === 0 ? '∞' : tariff.device_limit}`}
-            {tariff.extra_devices_count > 0 && (
-              <span className="ml-1 text-xs text-accent-400">(+{tariff.extra_devices_count})</span>
+      {isEmbedded ? (
+        <div className="rounded-xl bg-dark-800/50 p-3">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-dark-200">
+            <span>{`${primaryTrafficLabel}: ${tariff.traffic_limit_label}`}</span>
+            <span>{`${t('subscription.devices')}: ${tariff.device_limit === 0 ? '∞' : tariff.device_limit}`}</span>
+            {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
+              <span>
+                {`${whiteInternetLabel}: ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')}`}
+              </span>
             )}
           </div>
-          {deviceAddonLabel && <div className="text-dark-200">{deviceAddonLabel}</div>}
-          {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
-            <div className="text-dark-200">
-              {`${whiteInternetLabel} ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')} — ${whiteInternetDescription}`}
-            </div>
-          )}
         </div>
-      </div>
+      ) : (
+        <div className="rounded-xl bg-dark-800/50 p-3">
+          <div className="flex flex-wrap gap-3 text-sm">
+            <div className="text-dark-200">
+              {`${primaryTrafficLabel} ${tariff.traffic_limit_label} — ${primaryTrafficDescription}`}
+            </div>
+            <div className="text-dark-200">
+              {`${t('subscription.devices')}: ${tariff.device_limit === 0 ? '∞' : tariff.device_limit}`}
+              {tariff.extra_devices_count > 0 && (
+                <span className="ml-1 text-xs text-accent-400">
+                  (+{tariff.extra_devices_count})
+                </span>
+              )}
+            </div>
+            {deviceAddonLabel && <div className="text-dark-200">{deviceAddonLabel}</div>}
+            {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
+              <div className="text-dark-200">
+                {`${whiteInternetLabel} ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')} — ${whiteInternetDescription}`}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Daily Tariff Purchase */}
       {tariff.is_daily || (tariff.daily_price_kopeks && tariff.daily_price_kopeks > 0) ? (
@@ -366,20 +385,22 @@ export function TariffPurchaseForm({
               </div>
             )}
           </div>
-          <div className="space-y-2 text-sm text-dark-400">
-            <div className="flex items-start gap-2">
-              <span className="text-accent-400">•</span>
-              <span>{t('subscription.dailyPurchase.chargedDaily')}</span>
+          {!isEmbedded && (
+            <div className="space-y-2 text-sm text-dark-400">
+              <div className="flex items-start gap-2">
+                <span className="text-accent-400">•</span>
+                <span>{t('subscription.dailyPurchase.chargedDaily')}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-accent-400">•</span>
+                <span>{t('subscription.dailyPurchase.canPause')}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-accent-400">•</span>
+                <span>{t('subscription.dailyPurchase.pausedOnLowBalance')}</span>
+              </div>
             </div>
-            <div className="flex items-start gap-2">
-              <span className="text-accent-400">•</span>
-              <span>{t('subscription.dailyPurchase.canPause')}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-accent-400">•</span>
-              <span>{t('subscription.dailyPurchase.pausedOnLowBalance')}</span>
-            </div>
-          </div>
+          )}
 
           {(() => {
             const dailyPrice = dailyQuote?.price ?? 0;

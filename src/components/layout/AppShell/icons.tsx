@@ -20,6 +20,7 @@ export {
   SearchIcon,
   PlusIcon,
   ArrowRightIcon,
+  LinkIcon,
   DownloadIcon,
   PaletteIcon,
   RemnawaveIcon,

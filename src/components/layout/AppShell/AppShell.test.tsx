@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   logout: vi.fn(),
   impact: vi.fn(),
   getBalance: vi.fn(),
+  isTelegramWebApp: false,
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -31,6 +32,7 @@ vi.mock('@/platform', () => ({
 
 vi.mock('@/hooks/useTelegramSDK', () => ({
   useTelegramSDK: () => ({
+    isTelegramWebApp: mocks.isTelegramWebApp,
     isFullscreen: false,
     safeAreaInset: 0,
     contentSafeAreaInset: 0,
@@ -48,7 +50,7 @@ vi.mock('@/hooks/useBranding', () => ({
 }));
 vi.mock('@/hooks/useFeatureFlags', () => ({
   useFeatureFlags: () => ({
-    referralEnabled: false,
+    referralEnabled: true,
     wheelEnabled: false,
     hasContests: false,
     hasPolls: false,
@@ -65,7 +67,9 @@ vi.mock('@/components/CampaignBonusNotifier', () => ({ default: () => null }));
 vi.mock('@/components/SuccessNotificationModal', () => ({ default: () => null }));
 vi.mock('@/components/PromptDialogHost', () => ({ PromptDialogHost: () => null }));
 vi.mock('@/components/TicketNotificationBell', () => ({ default: () => null }));
-vi.mock('./MobileBottomNav', () => ({ MobileBottomNav: () => null }));
+vi.mock('./MobileBottomNav', () => ({
+  MobileBottomNav: () => <nav data-testid="mobile-bottom-nav" />,
+}));
 vi.mock('./AppHeader', () => ({ AppHeader: () => null }));
 
 function renderShell(pathname: string) {
@@ -98,6 +102,7 @@ describe('AppShell support FAB', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    mocks.isTelegramWebApp = false;
   });
 
   it('mounts one support FAB immediately on a normal shell route', () => {
@@ -110,5 +115,48 @@ describe('AppShell support FAB', () => {
     renderShell('/support');
 
     expect(screen.queryByRole('link', { name: 'Поддержка' })).toBeNull();
+  });
+
+  it('places personal navigation after tariffs in the sidebar', () => {
+    renderShell('/');
+
+    const tariffs = screen.getByRole('link', { name: 'Тарифы' });
+    const subscription = screen.getByRole('link', { name: 'Моя подписка' });
+    const referral = screen.getByRole('link', { name: 'Рефералы' });
+    const info = screen.getByRole('link', { name: 'Информация' });
+    const connection = screen.getByRole('link', { name: 'Подключение' });
+
+    for (const [before, after] of [
+      [tariffs, connection],
+      [connection, subscription],
+      [subscription, referral],
+      [referral, info],
+    ]) {
+      expect(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    expect(screen.queryByRole('link', { name: 'Мои ключи' })).toBeNull();
+  });
+
+  it.each(['/subscriptions', '/balance', '/referral', '/support', '/info'])(
+    'keeps the mobile nav on a direct user route: %s',
+    (pathname) => {
+      renderShell(pathname);
+
+      expect(screen.getByTestId('mobile-bottom-nav')).toBeTruthy();
+    },
+  );
+
+  it('does not mount the mobile nav in admin', () => {
+    renderShell('/admin');
+
+    expect(screen.queryByTestId('mobile-bottom-nav')).toBeNull();
+  });
+
+  it('renders Mini App page content without the cross-page motion wrapper', () => {
+    mocks.isTelegramWebApp = true;
+    const { container } = renderShell('/info');
+    const page = screen.getByText('page');
+
+    expect(page.parentElement).toBe(container.querySelector('main.ix-main'));
   });
 });

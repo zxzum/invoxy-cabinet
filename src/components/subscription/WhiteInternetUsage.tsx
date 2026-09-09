@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import TrafficProgressBar from '../dashboard/TrafficProgressBar';
 
 export function WhiteInternetUsage({
   subscription,
@@ -13,6 +14,20 @@ export function WhiteInternetUsage({
   const used = Math.max(0, subscription.whitelist_traffic_used_gb ?? 0);
   const percent = Math.min(100, (used / limit) * 100);
   const label = t('subscription.whiteInternet', 'Белый интернет');
+  if (compact) {
+    return (
+      <div className="border-t border-accent-400/20 pt-3">
+        <TrafficProgressBar
+          usedGb={used}
+          limitGb={limit}
+          percent={percent}
+          isUnlimited={false}
+          compact
+          label={label}
+        />
+      </div>
+    );
+  }
   return (
     <div
       className={

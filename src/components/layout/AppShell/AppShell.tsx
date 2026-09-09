@@ -3,7 +3,7 @@ import { useLocation, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { PiKey, PiChatCircle } from 'react-icons/pi';
+import { PiChatCircle } from 'react-icons/pi';
 
 import { useAuthStore } from '@/store/auth';
 import { useHaptic } from '@/platform';
@@ -32,9 +32,12 @@ import {
   LogoutIcon,
   SunIcon,
   MoonIcon,
+  LinkIcon,
+  UsersIcon,
+  InfoIcon,
 } from '@/components/icons';
 import { LOCAL_LOGO_URL } from '@/api/branding';
-import { AnimatedNumber, pillSpring, pressSpring } from '@/components/motion';
+import { AnimatedNumber } from '@/components/motion';
 
 import { MobileBottomNav } from './MobileBottomNav';
 import { AppHeader } from './AppHeader';
@@ -44,17 +47,24 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-const MotionFabLink = motion.create(Link);
-
 export function AppShell({ children }: AppShellProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const reducedMotion = useReducedMotion();
+  const {
+    isFullscreen,
+    safeAreaInset,
+    contentSafeAreaInset,
+    platform,
+    isMobile,
+    isTelegramWebApp,
+  } = useTelegramSDK();
   const [desktop, setDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
   const [previousPath, setPreviousPath] = useState(location.pathname);
   const [direction, setDirection] = useState(1);
   const tabs = ['/', '/subscription/purchase', '/connection', '/profile'];
-  if (previousPath !== location.pathname) {
+  const animatePage = !isTelegramWebApp && !reducedMotion;
+  if (animatePage && previousPath !== location.pathname) {
     const previousIndex = tabs.indexOf(previousPath);
     const nextIndex = tabs.indexOf(location.pathname);
     setDirection(previousIndex >= 0 && nextIndex >= 0 && nextIndex < previousIndex ? -1 : 1);
@@ -69,8 +79,6 @@ export function AppShell({ children }: AppShellProps) {
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
-  const { isFullscreen, safeAreaInset, contentSafeAreaInset, platform, isMobile } =
-    useTelegramSDK();
   const { mobile, mobileCss } = useHeaderHeight();
   const headerHeight = mobileCss ?? `${mobile}px`;
   const haptic = useHaptic();
@@ -93,14 +101,15 @@ export function AppShell({ children }: AppShellProps) {
   useEffect(() => {
     resetVirtualKeyboard();
   }, [location.pathname]);
-  const showMobileNav = ['/', '/subscription/purchase', '/connection', '/profile'].includes(
-    location.pathname,
-  );
+  const showMobileNav = !location.pathname.startsWith('/admin');
 
   const sidebarNav = [
     { path: '/', label: 'Кабинет', icon: HomeIcon },
-    { path: '/connection', label: 'Мои ключи', icon: KeyIcon },
     { path: '/subscription/purchase', label: 'Тарифы', icon: SubscriptionIcon },
+    { path: '/connection', label: 'Подключение', icon: LinkIcon },
+    { path: '/subscriptions', label: 'Моя подписка', icon: SubscriptionIcon },
+    ...(referralEnabled ? [{ path: '/referral', label: 'Рефералы', icon: UsersIcon }] : []),
+    { path: '/info', label: 'Информация', icon: InfoIcon },
   ];
 
   const isActive = (path: string) => {
@@ -279,60 +288,47 @@ export function AppShell({ children }: AppShellProps) {
         <div className="lg:hidden" style={{ height: headerHeight }} />
 
         <main className="ix-main" style={{ position: 'relative', overflowX: 'clip' }}>
-          <AnimatePresence mode={desktop ? 'wait' : 'popLayout'} custom={direction} initial={false}>
-            <motion.div
-              key={location.pathname}
+          {animatePage ? (
+            <AnimatePresence
+              mode={desktop ? 'wait' : 'popLayout'}
               custom={direction}
-              variants={{
-                enter: (value: number) =>
-                  reducedMotion
-                    ? { opacity: 1, x: 0, y: 0 }
-                    : desktop
+              initial={false}
+            >
+              <motion.div
+                key={location.pathname}
+                custom={direction}
+                variants={{
+                  enter: (value: number) =>
+                    desktop
                       ? { opacity: 0, y: 14, x: 0 }
                       : { opacity: 1, x: `${value * 100}%`, y: 0 },
-                visible: { opacity: 1, x: 0, y: 0 },
-                leave: (value: number) =>
-                  reducedMotion
-                    ? { opacity: 1, x: 0, y: 0 }
-                    : desktop
+                  visible: { opacity: 1, x: 0, y: 0 },
+                  leave: (value: number) =>
+                    desktop
                       ? { opacity: 0, y: -8, x: 0 }
                       : { opacity: 1, x: `${value * -100}%`, y: 0 },
-              }}
-              initial="enter"
-              animate="visible"
-              exit="leave"
-              transition={{ duration: reducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+                }}
+                initial="enter"
+                animate="visible"
+                exit="leave"
+                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          ) : (
+            children
+          )}
         </main>
       </div>
 
       {showMobileNav && <MobileBottomNav isKeyboardOpen={isKeyboardOpen} />}
 
       {location.pathname !== '/support' && (
-        <MotionFabLink
-          key="support-fab"
-          to="/support"
-          className="ix-fab"
-          aria-label="Поддержка"
-          onClick={handleNavClick}
-          initial={{ opacity: 0, scale: 0.6, y: 16 }}
-          animate={
-            isKeyboardOpen
-              ? { opacity: 0, scale: 0.8, y: 16, transition: pillSpring }
-              : { opacity: 1, scale: 1, y: 0, transition: pillSpring }
-          }
-          whileTap={{ scale: 0.92, transition: pressSpring }}
-        >
+        <Link to="/support" className="ix-fab" aria-label="Поддержка" onClick={handleNavClick}>
           <PiChatCircle className="h-6 w-6" />
-        </MotionFabLink>
+        </Link>
       )}
     </div>
   );
-}
-
-function KeyIcon({ className }: { className?: string }) {
-  return <PiKey className={className} />;
 }

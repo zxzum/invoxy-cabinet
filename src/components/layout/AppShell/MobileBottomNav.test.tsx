@@ -32,7 +32,7 @@ describe('MobileBottomNav', () => {
     renderNav('/');
     expect(screen.getByText('Главная')).toBeTruthy();
     expect(screen.getByText('Тарифы')).toBeTruthy();
-    expect(screen.getByText('Ключи')).toBeTruthy();
+    expect(screen.getByText('Подключение')).toBeTruthy();
     expect(screen.getByText('Профиль')).toBeTruthy();
   });
 
@@ -43,8 +43,10 @@ describe('MobileBottomNav', () => {
 
   it('marks the active item and renders the sliding plate', () => {
     const { container } = renderNav('/connection');
-    const keyLink = screen.getByText('Ключи').closest('a');
-    expect(keyLink?.getAttribute('aria-current')).toBe('page');
+    const connectionLink = screen.getByText('Подключение').closest('a');
+    expect(connectionLink?.getAttribute('aria-current')).toBe('page');
+    expect(connectionLink?.className).toContain('min-w-0');
+    expect(screen.getByText('Подключение').className).toContain('whitespace-nowrap');
     // Плашка активного таба — единственный data-nav-plate в дереве
     expect(container.querySelectorAll('[data-nav-plate]').length).toBe(1);
   });

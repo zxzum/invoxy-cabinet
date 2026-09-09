@@ -40,17 +40,17 @@ export default function Dashboard() {
   const blockingType = useBlockingStore((state) => state.blockingType);
   const [trialError, setTrialError] = useState<string | null>(null);
 
-  // Refresh user data on mount
+  // Auth bootstrap already provides the user. Avoid a duplicate /me request on
+  // every return to the dashboard; refresh only while that bootstrap is empty.
   useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+    if (!user) refreshUser();
+  }, [refreshUser, user]);
 
   // Fetch balance from API
   const { data: balanceData } = useQuery({
     queryKey: ['balance'],
     queryFn: balanceApi.getBalance,
     staleTime: API.BALANCE_STALE_TIME_MS,
-    refetchOnMount: 'always',
   });
 
   // Multi-tariff: check if user has multiple subscriptions
@@ -66,7 +66,6 @@ export default function Dashboard() {
     queryFn: () => subscriptionApi.getSubscription(),
     retry: false,
     staleTime: API.BALANCE_STALE_TIME_MS,
-    refetchOnMount: 'always',
     enabled: !isMultiTariff,
   });
 
@@ -117,6 +116,7 @@ export default function Dashboard() {
   const { data: referralInfo, isLoading: refLoading } = useQuery({
     queryKey: ['referral-info'],
     queryFn: referralApi.getReferralInfo,
+    staleTime: 60_000,
   });
 
   const { data: wheelConfig } = useQuery({

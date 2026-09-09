@@ -1,22 +1,17 @@
 import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { PiKey } from 'react-icons/pi';
 
 import { cn } from '@/lib/utils';
 import { usePlatform } from '@/platform';
 import { navSpring } from '@/components/motion';
-import { HomeIcon, SubscriptionIcon, UserIcon } from './icons';
+import { HomeIcon, LinkIcon, SubscriptionIcon, UserIcon } from './icons';
 
 interface MobileBottomNavProps {
   isKeyboardOpen: boolean;
 }
 
 const MotionLink = motion.create(Link);
-
-function KeyNavIcon({ className }: { className?: string }) {
-  return <PiKey className={className} />;
-}
 
 export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
   const { t } = useTranslation();
@@ -36,8 +31,8 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
     },
     {
       path: '/connection',
-      label: t('nav.keys', 'Ключи'),
-      icon: KeyNavIcon,
+      label: t('nav.connection', 'Подключение'),
+      icon: LinkIcon,
     },
     {
       path: '/profile',
@@ -78,7 +73,7 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
               onClick={() => haptic.impact('light')}
               whileTap={{ scale: 0.94 }}
               className={cn(
-                'relative z-10 flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2.5 text-[11px] font-medium transition-colors',
+                'relative z-10 flex min-w-0 min-h-16 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 text-[10px] font-medium leading-tight transition-colors sm:text-[11px]',
                 active ? 'text-dark-50' : 'text-dark-500',
               )}
             >
@@ -102,7 +97,9 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
                   active && 'drop-shadow-[0_0_10px_var(--ix-glow)]',
                 )}
               />
-              <span className="relative z-10">{item.label}</span>
+              <span className="relative z-10 max-w-full truncate whitespace-nowrap">
+                {item.label}
+              </span>
             </MotionLink>
           );
         })}

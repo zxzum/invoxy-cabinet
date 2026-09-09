@@ -249,9 +249,9 @@ export default function Connection() {
           <p className="mb-4 text-dark-400">{t('subscription.connection.noSubscription')}</p>
         </motion.div>
         <motion.div {...section(1)}>
-          <button onClick={handleGoBack} className="btn-primary px-6 py-2">
-            {t('common.close')}
-          </button>
+          <Link to="/subscription/purchase" className="btn-primary inline-flex px-6 py-2">
+            {t('subscription.purchase', 'Купить')}
+          </Link>
         </motion.div>
       </div>
     );
