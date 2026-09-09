@@ -38,7 +38,6 @@ export function DeviceTopupSheet({
   devicesToAdd,
   onDevicesToAddChange,
   purchaseOptions,
-  isDark,
 }: DeviceTopupSheetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -76,10 +75,7 @@ export function DeviceTopupSheet({
 
   if (!open) {
     return (
-      <button
-        onClick={onOpen}
-        className={`w-full rounded-xl border p-4 text-left transition-colors ${isDark ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600' : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'}`}
-      >
+      <button onClick={onOpen} className="card-interactive w-full p-4 text-left">
         <div className="flex items-center justify-between">
           <div>
             <div className="font-medium text-dark-100">
@@ -98,9 +94,7 @@ export function DeviceTopupSheet({
   }
 
   return (
-    <div
-      className={`rounded-xl border p-5 ${isDark ? 'border-dark-700/50 bg-dark-800/50' : 'border-champagne-300/60 bg-champagne-200/40'}`}
-    >
+    <div className="card-inset p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-medium text-dark-100">{t('subscription.buyDevices')}</h3>
         <button

@@ -72,7 +72,7 @@ export function CampaignDetailStats({ campaignId }: CampaignDetailStatsProps) {
       </div>
 
       {/* Conversion rate */}
-      <div className="rounded-xl bg-dark-800/30 p-3">
+      <div className="card-inset p-3">
         <div className="flex items-center justify-between">
           <span className="text-sm text-dark-500">
             {t('referral.partner.stats.conversionRate')}

@@ -525,11 +525,7 @@ export default function Support() {
                   )}
                 </div>
 
-                {formError && (
-                  <div className="rounded-xl border border-error-500/30 bg-error-500/10 p-3 text-sm text-error-400">
-                    {formError}
-                  </div>
-                )}
+                {formError && <div className="alert-error">{formError}</div>}
 
                 <div className="flex gap-3">
                   <Button

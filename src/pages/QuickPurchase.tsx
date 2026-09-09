@@ -183,7 +183,7 @@ function ContactForm({
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-4 rounded-2xl border border-dark-800/50 bg-dark-900/50 p-5">
+    <div className="card space-y-4">
       {/* Main contact */}
       <div>
         <label htmlFor="contact-input" className="mb-2 block text-sm font-medium text-dark-200">
@@ -195,7 +195,7 @@ function ContactForm({
           value={contactValue}
           onChange={(e) => onContactChange(e.target.value)}
           placeholder={t('landing.contactPlaceholder', 'email@example.com or @telegram')}
-          className="w-full rounded-xl border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-sm text-dark-50 placeholder-dark-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/25"
+          className="input"
         />
         <p className="mt-1.5 text-xs text-dark-500">{t('landing.contactHint')}</p>
       </div>
@@ -223,7 +223,7 @@ function ContactForm({
                 value={giftRecipient}
                 onChange={(e) => onGiftRecipientChange(e.target.value)}
                 placeholder={t('landing.recipientPlaceholder', 'Recipient email or @telegram')}
-                className="w-full rounded-xl border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-sm text-dark-50 placeholder-dark-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/25"
+                className="input"
               />
             </div>
             <div>
@@ -242,7 +242,7 @@ function ContactForm({
                   'Add a personal message (optional)',
                 )}
                 rows={3}
-                className="w-full resize-none rounded-xl border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-sm text-dark-50 placeholder-dark-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/25"
+                className="input resize-none"
               />
             </div>
           </motion.div>
@@ -272,10 +272,8 @@ function TariffCard({
       aria-checked={isSelected}
       onClick={onSelect}
       className={cn(
-        'relative flex w-full flex-col rounded-2xl border p-5 text-start transition-all duration-200',
-        isSelected
-          ? 'border-accent-500/50 bg-accent-500/5 ring-1 ring-accent-500/25'
-          : 'border-dark-800/50 bg-dark-900/50 hover:border-dark-700/50 hover:bg-dark-800/30',
+        'card-interactive relative flex w-full flex-col p-5 text-start',
+        isSelected && 'card-selected ring-1 ring-accent-500/25',
       )}
     >
       {/* Header */}
@@ -351,14 +349,7 @@ function PaymentMethodCard({
   const hasSubOptions = method.sub_options && method.sub_options.length > 1;
 
   return (
-    <div
-      className={cn(
-        'rounded-2xl border transition-all duration-200',
-        isSelected
-          ? 'border-accent-500/50 bg-accent-500/5'
-          : 'border-dark-800/50 bg-dark-900/50 hover:border-dark-700/50 hover:bg-dark-800/30',
-      )}
-    >
+    <div className={cn('card-inset transition-all duration-200', isSelected && 'card-selected')}>
       <button
         type="button"
         role="radio"
@@ -475,7 +466,7 @@ function SummaryCard({
   return (
     <div className="space-y-5">
       {/* Summary */}
-      <div className="rounded-2xl border border-dark-800/50 bg-dark-900/50 p-5">
+      <div className="card">
         {selectedTariff && (
           <div className="mb-3">
             <p className="text-xs font-medium uppercase tracking-wider text-dark-500">
@@ -541,7 +532,7 @@ function SummaryCard({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-xl border border-error-500/20 bg-error-500/5 p-3"
+            className="alert-error"
           >
             <p className="text-sm text-error-400">{submitError}</p>
           </motion.div>

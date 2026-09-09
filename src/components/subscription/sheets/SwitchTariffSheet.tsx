@@ -123,7 +123,7 @@ export function SwitchTariffSheet({
   if (!open || !tariffId) return null;
 
   return (
-    <div ref={ref} className="mb-6 space-y-4 rounded-xl bg-dark-800/50 p-5">
+    <div ref={ref} className="card-inset mb-6 space-y-4 p-5">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-dark-100">{t('subscription.switchTariff.title')}</h3>
         <button

@@ -47,7 +47,7 @@ export function PeriodComparison({
       <h4 className="mb-3 text-sm font-semibold text-dark-200">{resolvedTitle}</h4>
       <div className="grid grid-cols-2 gap-3">
         {/* Count comparison */}
-        <div className="rounded-xl bg-dark-800/30 p-3">
+        <div className="card-inset p-3">
           <div className="text-xs text-dark-500">{resolvedCountLabel}</div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-base font-semibold text-dark-100 sm:text-lg">
@@ -62,7 +62,7 @@ export function PeriodComparison({
         </div>
 
         {/* Earnings comparison */}
-        <div className="rounded-xl bg-dark-800/30 p-3">
+        <div className="card-inset p-3">
           <div className="text-xs text-dark-500">{resolvedEarningsLabel}</div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-base font-semibold text-success-400 sm:text-lg">

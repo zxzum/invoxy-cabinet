@@ -260,10 +260,7 @@ export default function Connection() {
   return (
     <motion.div {...section(0)}>
       {subscriptionUrl && !hideSubscriptionUrl && (
-        <motion.section
-          {...section(1)}
-          className="mb-5 rounded-2xl border border-dark-700/40 bg-dark-800/40 p-4"
-        >
+        <motion.section {...section(1)} className="card-inset mb-5 p-4">
           <div className="text-sm font-semibold text-dark-100">
             {t('subscription.subscriptionUrl', 'Ссылка подписки')}
           </div>

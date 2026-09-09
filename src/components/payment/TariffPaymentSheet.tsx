@@ -227,7 +227,7 @@ export function TariffPaymentSheet({
         </div>
       ) : (
         <div className="pb-4">
-          <div className="mb-4 rounded-2xl border border-accent-500/20 bg-accent-500/[0.06] p-4">
+          <div className="alert-info mb-4 p-4">
             <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-dark-500">
               {t('payment.tariffSheet.tariff', { tariff: tariffName })}
             </p>
@@ -288,10 +288,7 @@ export function TariffPaymentSheet({
                   const isExpanded = selectedMethodId === method.id;
 
                   return (
-                    <div
-                      key={method.id}
-                      className="overflow-hidden rounded-2xl border border-dark-700/70 bg-dark-800/60"
-                    >
+                    <div key={method.id} className="card-inset overflow-hidden">
                       <motion.button
                         type="button"
                         disabled={stage === 'creating'}
@@ -340,7 +337,7 @@ export function TariffPaymentSheet({
                                   disabled={stage === 'creating'}
                                   onClick={() => void payWithMethod(method, option.id)}
                                   whileTap={{ scale: 0.98 }}
-                                  className="rounded-xl border border-dark-700 bg-dark-900/50 px-3 py-2.5 text-start transition-colors hover:border-accent-500/40 hover:bg-accent-500/10 disabled:opacity-50"
+                                  className="card-interactive px-3 py-2.5 text-start hover:border-accent-500/40 hover:bg-accent-500/10"
                                 >
                                   <span className="block text-sm text-dark-100">{option.name}</span>
                                   {option.description && (

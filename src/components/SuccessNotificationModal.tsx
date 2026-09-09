@@ -229,7 +229,7 @@ export default function SuccessNotificationModal() {
             <div className="space-y-4 p-6">
               {/* Amount */}
               {formattedAmount && (
-                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                <div className="flex items-center justify-between card-inset px-4 py-3">
                   <span className="text-dark-400">
                     {isBalanceTopup
                       ? t('successNotification.amount', 'Amount')
@@ -246,7 +246,7 @@ export default function SuccessNotificationModal() {
 
               {/* Devices info (for devices purchase) */}
               {isDevicesPurchased && data.devicesAdded && (
-                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                <div className="flex items-center justify-between card-inset px-4 py-3">
                   <span className="text-dark-400">
                     {t('successNotification.devicesAdded', 'Devices added')}
                   </span>
@@ -255,7 +255,7 @@ export default function SuccessNotificationModal() {
               )}
 
               {isDevicesPurchased && data.newDeviceLimit && (
-                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                <div className="flex items-center justify-between card-inset px-4 py-3">
                   <span className="text-dark-400">
                     {t('successNotification.totalDevices', 'Total devices')}
                   </span>
@@ -265,7 +265,7 @@ export default function SuccessNotificationModal() {
 
               {/* Traffic info (for traffic purchase) */}
               {isTrafficPurchased && data.trafficGbAdded && (
-                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                <div className="flex items-center justify-between card-inset px-4 py-3">
                   <span className="text-dark-400">
                     {t('successNotification.trafficAdded', {
                       defaultValue: 'Traffic added',
@@ -279,7 +279,7 @@ export default function SuccessNotificationModal() {
               )}
 
               {isTrafficPurchased && data.newTrafficLimitGb && (
-                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                <div className="flex items-center justify-between card-inset px-4 py-3">
                   <span className="text-dark-400">
                     {t('successNotification.totalTraffic', {
                       defaultValue: 'Total traffic',
@@ -292,7 +292,7 @@ export default function SuccessNotificationModal() {
 
               {/* New balance (for top-up) */}
               {isBalanceTopup && formattedBalance && (
-                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                <div className="flex items-center justify-between card-inset px-4 py-3">
                   <span className="text-dark-400">
                     {t('successNotification.newBalance', 'New balance')}
                   </span>
@@ -302,7 +302,7 @@ export default function SuccessNotificationModal() {
 
               {/* Tariff name */}
               {data.tariffName && (
-                <div className="flex items-center justify-between gap-3 rounded-xl bg-dark-800/50 px-4 py-3">
+                <div className="flex items-center justify-between gap-3 card-inset px-4 py-3">
                   <span className="shrink-0 text-dark-400">
                     {t('successNotification.tariff', 'Tariff')}
                   </span>
@@ -314,7 +314,7 @@ export default function SuccessNotificationModal() {
 
               {/* Expiry date */}
               {formattedExpiry && (
-                <div className="flex items-center justify-between rounded-xl bg-dark-800/50 px-4 py-3">
+                <div className="flex items-center justify-between card-inset px-4 py-3">
                   <span className="text-dark-400">
                     {t('successNotification.validUntil', 'Valid until')}
                   </span>

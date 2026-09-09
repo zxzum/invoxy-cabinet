@@ -622,7 +622,7 @@ export default function Wheel() {
 
               {/* Stars confirmation panel */}
               {showStarsConfirm && !isSpinning && !isPayingStars ? (
-                <div className="space-y-3 rounded-xl border border-accent-500/30 bg-accent-500/5 p-4">
+                <div className="alert-info space-y-3 p-4">
                   <p className="text-center text-sm text-dark-300">
                     {t('wheel.confirmStarsPayment')}
                   </p>
@@ -657,8 +657,8 @@ export default function Wheel() {
 
               {/* No subscription hint */}
               {!isSpinning && noSubscription && (
-                <div className="rounded-linear border border-warning-500/30 bg-warning-500/5 p-4 text-center">
-                  <p className="text-warning-400">{t('wheel.errors.noSubscription')}</p>
+                <div className="alert-warning p-4 text-center">
+                  <p>{t('wheel.errors.noSubscription')}</p>
                 </div>
               )}
               {/* Cannot spin hint — only show for days payment (Stars via invoice always works) */}
@@ -666,7 +666,7 @@ export default function Wheel() {
                 !noSubscription &&
                 paymentType !== 'telegram_stars' &&
                 !config.can_spin && (
-                  <div className="rounded-linear border border-dark-700/30 bg-dark-800/30 p-4 text-center">
+                  <div className="card-inset p-4 text-center">
                     <p className="text-dark-400">
                       {config.can_spin_reason === 'daily_limit_reached'
                         ? t('wheel.errors.dailyLimitReached')
@@ -679,14 +679,14 @@ export default function Wheel() {
                 !noSubscription &&
                 paymentType === 'telegram_stars' &&
                 dailyLimitReached && (
-                  <div className="rounded-linear border border-dark-700/30 bg-dark-800/30 p-4 text-center">
+                  <div className="card-inset p-4 text-center">
                     <p className="text-dark-400">{t('wheel.errors.dailyLimitReached')}</p>
                   </div>
                 )}
               {/* Subscription selection required hint */}
               {!isSpinning && needsSubscriptionPick && (
-                <div className="rounded-linear border border-warning-500/30 bg-warning-500/5 p-4 text-center">
-                  <p className="text-warning-400">
+                <div className="alert-warning p-4 text-center">
+                  <p>
                     {t('wheel.errors.selectSubscription', 'Выберите подписку для списания дней')}
                   </p>
                 </div>
@@ -727,7 +727,7 @@ export default function Wheel() {
 
                   {/* Promocode if won */}
                   {spinResult.promocode && (
-                    <div className="mt-3 rounded-linear border border-accent-500/20 bg-accent-500/10 p-3 text-center">
+                    <div className="alert-info mt-3 p-3 text-center">
                       <p className="mb-1 text-xs text-accent-400">{t('wheel.yourPromoCode')}</p>
                       <p className="select-all font-mono text-lg font-bold tracking-wider text-white">
                         {spinResult.promocode}
@@ -790,7 +790,7 @@ export default function Wheel() {
                       <motion.div
                         key={item.id}
                         variants={staggerItem}
-                        className="flex items-center justify-between rounded-linear border border-dark-700/30 bg-dark-800/30 p-3"
+                        className="card-inset flex items-center justify-between p-3"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-linear bg-dark-700/50 text-xl">

@@ -197,7 +197,7 @@ function FaqAccordionItem({
   const sanitizedAnswer = useMemo(() => sanitizeHtml(item.a), [item.a]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-dark-700 bg-dark-800/50 transition-all hover:border-dark-600">
+    <div className="card-inset overflow-hidden transition-colors hover:border-dark-600">
       <button
         type="button"
         onClick={onToggle}
@@ -260,7 +260,7 @@ function FaqView({ items }: { items: FaqItem[] }) {
 
       {/* Accordion items */}
       {filteredItems.length === 0 ? (
-        <div className="rounded-xl border border-dark-700 bg-dark-800/50 p-6 text-center text-sm text-dark-400">
+        <div className="card-inset p-6 text-center text-sm text-dark-400">
           {search ? t('admin.infoPages.faq.noResults') : t('admin.infoPages.faq.noQuestions')}
         </div>
       ) : (
@@ -368,7 +368,7 @@ export default function InfoPageView() {
             <BackIcon />
           </button>
         )}
-        <div className="rounded-xl border border-dark-700 bg-dark-800/50 p-8 text-center text-dark-400">
+        <div className="card-inset p-8 text-center text-dark-400">
           {t('admin.infoPages.notFound')}
         </div>
       </div>

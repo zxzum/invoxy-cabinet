@@ -484,9 +484,9 @@ export function ClassicPurchaseWizard({
                   <Skeleton variant="card" count={3} className="h-16" />
                 </SkeletonGroup>
               ) : preview ? (
-                <div className="space-y-4 rounded-xl bg-dark-800/50 p-5">
+                <div className="space-y-4 card-inset p-5">
                   {activeDiscount?.is_active && activeDiscount.discount_percent && (
-                    <div className="flex items-center justify-center gap-2 rounded-lg border border-warning-500/30 bg-warning-500/10 p-3">
+                    <div className="alert-warning flex items-center justify-center gap-2">
                       <svg
                         className="h-4 w-4 text-warning-400"
                         fill="none"

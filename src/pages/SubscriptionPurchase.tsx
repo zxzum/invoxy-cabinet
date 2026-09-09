@@ -247,7 +247,7 @@ export default function SubscriptionPurchase() {
 
           {/* Legacy subscription notice */}
           {subscription && !subscription.is_trial && !subscription.tariff_id && (
-            <div className="mb-6 rounded-xl border border-accent-500/30 bg-accent-500/10 p-4">
+            <div className="alert-info mb-6 p-4">
               <div className="mb-2 font-medium text-accent-400">
                 {t('subscription.legacy.selectTariffTitle')}
               </div>

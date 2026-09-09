@@ -87,7 +87,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     if (level === 'widget') {
       return (
-        <div className="rounded-xl border border-error-500/30 bg-error-500/10 p-4 text-center">
+        <div className="alert-error p-4 text-center">
           <p className="text-sm text-error-400">Failed to load this section</p>
           <button
             onClick={this.handleReset}

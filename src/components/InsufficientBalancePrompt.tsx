@@ -73,9 +73,7 @@ export default function InsufficientBalancePrompt({
 
   if (compact) {
     return (
-      <div
-        className={`flex items-center justify-between gap-3 rounded-xl border border-error-500/30 bg-error-500/10 p-3 ${className}`}
-      >
+      <div className={`alert-error flex items-center justify-between gap-3 ${className}`}>
         <div className="flex items-center gap-2 text-sm text-error-400">
           <InfoIcon className="h-4 w-4 flex-shrink-0" />
           <span>
@@ -104,7 +102,7 @@ export default function InsufficientBalancePrompt({
 
   return (
     <div
-      className={`rounded-xl border border-error-500/30 bg-gradient-to-br from-error-500/10 to-warning-500/5 p-4 ${className}`}
+      className={`alert-error bg-gradient-to-br from-error-500/10 to-warning-500/5 p-4 ${className}`}
     >
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-error-500/20">

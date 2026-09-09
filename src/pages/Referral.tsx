@@ -143,10 +143,8 @@ export function RewardSettings({
       disabled={pending}
       onClick={onSelect}
       aria-pressed={selected}
-      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left text-sm transition-colors disabled:opacity-60 ${
-        selected
-          ? 'border-accent-500/40 bg-accent-500/10 text-dark-100'
-          : 'border-dark-700/40 bg-dark-800/30 text-dark-200 hover:border-dark-600'
+      className={`card-interactive flex w-full items-center gap-3 p-3 text-left text-sm ${
+        selected ? 'card-selected text-dark-100' : 'text-dark-200'
       }`}
     >
       <span
@@ -184,10 +182,8 @@ export function RewardSettings({
                   onClick={() =>
                     onChange({ reward_preference: kind.value, set_reward_preference: true })
                   }
-                  className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors disabled:opacity-60 ${
-                    selected
-                      ? 'border-accent-500/50 bg-accent-500/10'
-                      : 'border-dark-700/40 bg-dark-800/30 hover:border-dark-600'
+                  className={`card-interactive flex items-start gap-3 p-3 text-left ${
+                    selected ? 'card-selected' : ''
                   }`}
                 >
                   <span
@@ -287,11 +283,7 @@ export function ProgrammeTerms({ terms }: { terms: ReferralTerms }) {
           {levels.map((lvl) => (
             <li
               key={lvl.level}
-              className={`rounded-xl border p-3 transition-colors ${
-                lvl.is_current
-                  ? 'border-accent-500/40 bg-accent-500/10'
-                  : 'border-dark-700/40 bg-dark-800/30'
-              }`}
+              className={`card-inset p-3 transition-colors ${lvl.is_current ? 'card-selected' : ''}`}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span
@@ -365,7 +357,7 @@ export function ProgrammeTerms({ terms }: { terms: ReferralTerms }) {
       )}
 
       {terms.personal_percent != null && (
-        <p className="mt-4 rounded-xl border border-warning-500/25 bg-warning-500/10 p-3 text-sm text-warning-300">
+        <p className="alert-warning mt-4">
           {t('referral.terms.personalRate', { percent: terms.personal_percent })}
         </p>
       )}
@@ -819,11 +811,7 @@ export default function Referral() {
           />
           {/* Ошибка сохранения обязана быть видна: без неё нажатие выглядит
               принятым, а выбор остаётся прежним. */}
-          {rewardChoiceError && (
-            <p className="mt-2 rounded-xl border border-error-500/30 bg-error-500/10 p-3 text-sm text-error-400">
-              {rewardChoiceError}
-            </p>
-          )}
+          {rewardChoiceError && <p className="alert-error mt-2">{rewardChoiceError}</p>}
         </div>
       )}
 
@@ -833,10 +821,7 @@ export default function Referral() {
         {referralList?.items && referralList.items.length > 0 ? (
           <div className="space-y-3">
             {referralList.items.map((ref) => (
-              <div
-                key={ref.id}
-                className="flex items-center justify-between rounded-xl border border-dark-700/30 bg-dark-800/30 p-3"
-              >
+              <div key={ref.id} className="card-inset flex items-center justify-between p-3">
                 <div>
                   <div className="font-medium text-dark-100">
                     {ref.first_name || ref.username || t('referral.anonymousUser', { id: ref.id })}
@@ -871,10 +856,7 @@ export default function Referral() {
           </h2>
           <div className="space-y-3">
             {earnings.items.map((earning) => (
-              <div
-                key={earning.id}
-                className="flex items-center justify-between rounded-xl border border-dark-700/30 bg-dark-800/30 p-3"
-              >
+              <div key={earning.id} className="card-inset flex items-center justify-between p-3">
                 <div>
                   <div className="text-dark-100">
                     {earning.referral_first_name ||
@@ -1118,10 +1100,7 @@ export default function Referral() {
             {withdrawalHistory?.items && withdrawalHistory.items.length > 0 ? (
               <div className="space-y-3">
                 {withdrawalHistory.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between rounded-xl border border-dark-700/30 bg-dark-800/30 p-3"
-                  >
+                  <div key={item.id} className="card-inset flex items-center justify-between p-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-dark-100">

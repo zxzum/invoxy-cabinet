@@ -132,7 +132,7 @@ export default function ChannelSubscriptionScreen() {
           {channels.map((ch) => (
             <div
               key={ch.channel_id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-error-500/30 bg-error-500/10 p-3"
+              className="alert-error flex items-center justify-between gap-3"
             >
               <span className="truncate text-sm font-medium text-dark-50">
                 {ch.title || ch.channel_id}
@@ -166,8 +166,8 @@ export default function ChannelSubscriptionScreen() {
 
       {/* Error message */}
       {error && (
-        <div className="rounded-xl border border-error-500/30 bg-error-500/10 p-3">
-          <p className="text-sm text-error-400">{error}</p>
+        <div className="alert-error">
+          <p>{error}</p>
         </div>
       )}
     </BlockingShell>

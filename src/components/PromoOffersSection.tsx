@@ -255,17 +255,13 @@ export default function PromoOffersSection({ className = '' }: PromoOffersSectio
 
       {/* Success/Error Messages */}
       {successMessage && (
-        <div className="flex items-center gap-3 rounded-xl border border-success-500/30 bg-success-500/10 p-4 text-success-400">
+        <div className="alert-success flex items-center gap-3 p-4">
           <CheckIcon />
           <span>{successMessage}</span>
         </div>
       )}
 
-      {errorMessage && (
-        <div className="rounded-xl border border-error-500/30 bg-error-500/10 p-4 text-error-400">
-          {errorMessage}
-        </div>
-      )}
+      {errorMessage && <div className="alert-error p-4">{errorMessage}</div>}
 
       {/* Available Offers */}
       {availableOffers.length > 0 && (

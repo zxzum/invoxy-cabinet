@@ -74,7 +74,7 @@ export function TariffPickerGrid({
     <>
       {/* Promo group discount banner */}
       {tariffs.some((tariff) => tariff.promo_group_name) && (
-        <div className="mb-4 flex items-center gap-3 rounded-xl border border-success-500/30 bg-success-500/10 p-3">
+        <div className="alert-success mb-4 flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-500/20 text-success-400">
             <svg
               className="h-5 w-5"

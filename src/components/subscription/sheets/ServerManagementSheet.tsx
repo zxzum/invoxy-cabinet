@@ -77,10 +77,7 @@ export function ServerManagementSheet({
 
   if (!open) {
     return (
-      <button
-        onClick={onOpen}
-        className={`w-full rounded-xl border p-4 text-left transition-colors ${isDark ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600' : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'}`}
-      >
+      <button onClick={onOpen} className="card-interactive w-full p-4 text-left">
         <div className="flex items-center justify-between">
           <div>
             <div className="font-medium text-dark-100">
@@ -97,9 +94,7 @@ export function ServerManagementSheet({
   }
 
   return (
-    <div
-      className={`rounded-xl border p-5 ${isDark ? 'border-dark-700/50 bg-dark-800/50' : 'border-champagne-300/60 bg-champagne-200/40'}`}
-    >
+    <div className="card-inset p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-medium text-dark-100">
           {t('subscription.additionalOptions.manageServersTitle')}
@@ -129,7 +124,7 @@ export function ServerManagementSheet({
           </div>
 
           {countriesData.discount_percent > 0 && (
-            <div className="rounded-lg border border-success-500/30 bg-success-500/10 p-2 text-xs text-success-400">
+            <div className="alert-success p-2 text-xs">
               🎁{' '}
               {t('subscription.serverManagement.discountBanner', {
                 percent: countriesData.discount_percent,
@@ -157,16 +152,14 @@ export function ServerManagementSheet({
                       }
                     }}
                     disabled={!country.is_available && !isCurrentlyConnected}
-                    className={`flex w-full items-center justify-between rounded-xl border p-3 text-left transition-all ${
+                    className={`card-interactive flex w-full items-center justify-between p-3 text-left ${
                       isSelected
                         ? willBeAdded
                           ? 'border-success-500 bg-success-500/10'
-                          : 'border-accent-500 bg-accent-500/10'
+                          : 'card-selected'
                         : willBeRemoved
                           ? 'border-error-500/50 bg-error-500/5'
-                          : isDark
-                            ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600'
-                            : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'
+                          : ''
                     } ${!country.is_available && !isCurrentlyConnected ? 'cursor-not-allowed opacity-50' : ''}`}
                   >
                     <div className="flex min-w-0 items-center gap-3">

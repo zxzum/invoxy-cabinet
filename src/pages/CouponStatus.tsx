@@ -13,9 +13,7 @@ import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-dark-950 px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-6 sm:p-8">
-        {children}
-      </div>
+      <div className="card w-full max-w-md p-6 sm:p-8">{children}</div>
     </div>
   );
 }
@@ -123,7 +121,7 @@ export default function CouponStatus() {
         <h1 className="mb-1 text-lg font-semibold text-dark-100">{t('coupon.title')}</h1>
         <p className="mb-6 text-sm text-dark-400">{t('coupon.subtitle')}</p>
 
-        <div className="mb-6 space-y-2 rounded-xl border border-dark-800 bg-dark-900 p-4 text-left text-sm">
+        <div className="card-inset mb-6 space-y-2 p-4 text-left text-sm">
           <div className="flex justify-between gap-4">
             <span className="text-dark-400">{t('coupon.tariff')}</span>
             <span className="font-medium text-dark-100">{coupon.tariff_name}</span>
@@ -144,11 +142,7 @@ export default function CouponStatus() {
           )}
         </div>
 
-        {redeemError && (
-          <div className="mb-4 rounded-xl border border-error-500/30 bg-error-500/10 p-3 text-sm text-error-400">
-            {redeemError}
-          </div>
-        )}
+        {redeemError && <div className="alert-error mb-4">{redeemError}</div>}
 
         <div className="space-y-3">
           {coupon.bot_link && (

@@ -25,7 +25,7 @@ function AmountDisplay({ amountKopeks, label }: { amountKopeks: number; label: s
   const amountRubles = amountKopeks / 100;
 
   return (
-    <div className="mt-4 rounded-xl bg-dark-800/50 px-6 py-4">
+    <div className="card-inset mt-4 px-6 py-4">
       <p className="text-xs text-dark-400">{label}</p>
       <p className="mt-1 text-2xl font-bold text-dark-50">
         {formatAmount(amountRubles)} <span className="text-lg text-dark-400">{currencySymbol}</span>
@@ -121,7 +121,7 @@ function FailedState({ amountKopeks }: { amountKopeks: number | null }) {
       <button
         type="button"
         onClick={handleTryAgain}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-dark-800/50 px-6 py-3 text-sm font-medium text-dark-200 transition-colors hover:bg-dark-700/50"
+        className="card-interactive flex w-full items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-dark-200"
       >
         {t('balance.topUpResult.tryAgain')}
       </button>
@@ -169,7 +169,7 @@ function TimeoutState({ onRetry, onGoBack }: { onRetry: () => void; onGoBack: ()
         <button
           type="button"
           onClick={onGoBack}
-          className="w-full rounded-xl bg-dark-800/50 px-6 py-3 text-sm font-medium text-dark-200 transition-colors hover:bg-dark-700/50"
+          className="card-interactive w-full px-6 py-3 text-sm font-medium text-dark-200"
         >
           {t('balance.topUpResult.goToBalance')}
         </button>
@@ -334,11 +334,7 @@ export default function TopUpResult() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-dark-950 px-4">
-      <div
-        className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-8"
-        aria-live="polite"
-        aria-atomic="true"
-      >
+      <div className="card w-full max-w-md p-8" aria-live="polite" aria-atomic="true">
         {resolvedPaid ? (
           <SuccessState amountKopeks={amountKopeks} />
         ) : resolvedFailed ? (

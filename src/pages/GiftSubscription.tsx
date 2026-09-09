@@ -159,10 +159,8 @@ function TariffCard({
       aria-checked={isSelected}
       onClick={onSelect}
       className={cn(
-        'flex w-full items-center gap-4 rounded-2xl border p-4 text-start transition-all duration-200',
-        isSelected
-          ? 'border-accent-500/50 bg-accent-500/5'
-          : 'border-dark-800/50 bg-dark-900/50 hover:border-dark-700/50',
+        'card-interactive flex w-full items-center gap-4 p-4 text-start',
+        isSelected && 'card-selected',
       )}
     >
       {/* Gift circle icon */}
@@ -329,14 +327,7 @@ function PaymentMethodCard({
   const hasSubOptions = method.sub_options && method.sub_options.length > 1;
 
   return (
-    <div
-      className={cn(
-        'rounded-2xl border transition-all duration-200',
-        isSelected
-          ? 'border-accent-500/50 bg-accent-500/5'
-          : 'border-dark-800/50 bg-dark-900/50 hover:border-dark-700/50',
-      )}
-    >
+    <div className={cn('card-inset transition-all duration-200', isSelected && 'card-selected')}>
       <button
         type="button"
         role="radio"
@@ -572,14 +563,14 @@ function BuyTabContent({
 
       {/* Selected tariff description */}
       {selectedTariff?.description && (
-        <div className="rounded-xl border border-dark-800/30 bg-dark-800/20 px-4 py-3">
+        <div className="card-inset px-4 py-3">
           <p className="text-sm text-dark-300">{selectedTariff.description}</p>
         </div>
       )}
 
       {/* Promo group banner */}
       {config.promo_group_name && (
-        <div className="flex items-center gap-3 rounded-xl border border-success-500/30 bg-success-500/10 p-3">
+        <div className="alert-success flex items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success-500/20">
             <SparklesIcon className="h-4 w-4 text-success-400" />
           </div>
@@ -596,7 +587,7 @@ function BuyTabContent({
 
       {/* Active discount banner */}
       {config.active_discount_percent != null && config.active_discount_percent > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-warning-500/30 bg-warning-500/10 p-3">
+        <div className="alert-warning flex items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-warning-500/20">
             <SparklesIcon className="h-4 w-4 text-warning-400" />
           </div>
@@ -672,7 +663,7 @@ function BuyTabContent({
 
       {/* Summary / Balance info */}
       {paymentMode === 'balance' && (
-        <div className="rounded-2xl border border-dark-800/50 bg-dark-900/50 p-4">
+        <div className="card-inset p-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-dark-400">{t('gift.yourBalance')}</span>
             <span className="text-sm font-semibold text-dark-200">
@@ -689,7 +680,7 @@ function BuyTabContent({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-xl border border-warning-500/20 bg-warning-500/5 p-3"
+            className="alert-warning"
           >
             <p className="text-sm text-warning-400">
               {t('gift.insufficientBalance')}{' '}
@@ -711,7 +702,7 @@ function BuyTabContent({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-xl border border-error-500/20 bg-error-500/5 p-3"
+            className="alert-error"
           >
             <p className="text-sm text-error-400">{submitError}</p>
           </motion.div>
@@ -892,7 +883,7 @@ function ActivateTabContent({ initialCode }: { initialCode?: string | null }) {
             setActivateError(null);
           }}
           placeholder={t('gift.activateCodePlaceholder')}
-          className="w-full rounded-2xl border border-dark-700/50 bg-dark-800/50 px-6 py-4 text-center font-mono text-sm text-dark-50 placeholder-dark-500 outline-none transition-colors focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/25"
+          className="input px-6 py-4 text-center font-mono"
           aria-label={t('gift.activateTitle')}
         />
 
@@ -930,7 +921,7 @@ function ActivateTabContent({ initialCode }: { initialCode?: string | null }) {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="w-full max-w-sm rounded-xl border border-error-500/20 bg-error-500/5 p-3"
+            className="alert-error w-full max-w-sm"
           >
             <p className="text-center text-sm text-error-400">{activateError}</p>
           </motion.div>
@@ -1035,7 +1026,7 @@ function SentGiftCard({ gift }: { gift: SentGift }) {
   const handleDismissToast = useCallback(() => setShowToast(false), []);
 
   return (
-    <div className="rounded-2xl border border-dark-800/50 bg-dark-900/50 p-4">
+    <div className="card-inset p-4">
       {/* Header: tariff name + status badge */}
       <div className="mb-3 flex items-start justify-between">
         <h3 className="text-base font-bold text-dark-50">{gift.tariff_name ?? t('gift.tariff')}</h3>
@@ -1116,7 +1107,7 @@ function ReceivedGiftCard({ gift }: { gift: ReceivedGift }) {
   const statusText = t(statusKey);
 
   return (
-    <div className="rounded-2xl border border-dark-800/50 bg-dark-900/50 p-4">
+    <div className="card-inset p-4">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <h3 className="text-base font-bold text-dark-50">{gift.tariff_name ?? t('gift.tariff')}</h3>
@@ -1143,7 +1134,7 @@ function ReceivedGiftCard({ gift }: { gift: ReceivedGift }) {
 
       {/* Gift message */}
       {gift.gift_message && (
-        <div className="mt-2 rounded-xl bg-dark-800/50 p-3">
+        <div className="card-inset mt-2 p-3">
           <p className="text-xs italic text-dark-300">{gift.gift_message}</p>
         </div>
       )}

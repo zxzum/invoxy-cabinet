@@ -181,7 +181,7 @@ function ReplacementFaqItem({
   const sanitizedAnswer = useMemo(() => sanitizeRichHtml(item.a), [item.a]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-dark-700 bg-dark-800/50 transition-all hover:border-dark-600">
+    <div className="card-inset overflow-hidden transition-colors hover:border-dark-600">
       <button
         type="button"
         onClick={onToggle}
@@ -615,13 +615,13 @@ export default function Info() {
             <h3 className="mb-4 text-lg font-semibold text-dark-50">{t('info.yourProgress')}</h3>
 
             <div className="mb-4 grid grid-cols-2 gap-4">
-              <div className="rounded-xl bg-dark-800/50 p-3">
+              <div className="card-inset p-3">
                 <div className="mb-1 text-xs text-dark-400">{t('info.totalSpent')}</div>
                 <div className="truncate text-base font-bold text-dark-50 sm:text-lg">
                   {formatCurrency(loyaltyData.current_spent_rubles)}
                 </div>
               </div>
-              <div className="rounded-xl bg-dark-800/50 p-3">
+              <div className="card-inset p-3">
                 <div className="mb-1 text-xs text-dark-400">{t('info.currentStatus')}</div>
                 <div className="truncate text-base font-bold text-accent-400 sm:text-lg">
                   {loyaltyData.current_tier_name || '-'}
@@ -701,7 +701,7 @@ export default function Info() {
 
                 {/* Discounts */}
                 {hasAnyDiscount(tier) ? (
-                  <div className="rounded-xl bg-dark-800/50 p-3">
+                  <div className="card-inset p-3">
                     <div className="mb-2 text-xs text-dark-400">{t('info.discounts')}:</div>
                     <div className="flex flex-wrap gap-2">
                       {tier.server_discount_percent > 0 && (

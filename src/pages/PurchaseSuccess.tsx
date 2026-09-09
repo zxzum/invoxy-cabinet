@@ -59,7 +59,7 @@ function CopyableField({ label, value }: { label: string; value: string }) {
   }, [value]);
 
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-dark-800/50 px-4 py-3">
+    <div className="card-inset flex items-center gap-2 px-4 py-3">
       <div className="min-w-0 flex-1 text-left">
         <p className="text-xs text-dark-400">{label}</p>
         <p className="mt-0.5 break-all font-mono text-sm text-dark-100">{value}</p>
@@ -781,11 +781,7 @@ export default function PurchaseSuccess() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-dark-950 px-4">
-      <div
-        className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-8"
-        aria-live="polite"
-        aria-atomic="true"
-      >
+      <div className="card w-full max-w-md p-8" aria-live="polite" aria-atomic="true">
         {isError ? (
           <FailedState />
         ) : isBuyerGiftLink ? (

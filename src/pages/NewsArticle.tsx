@@ -279,9 +279,7 @@ export default function NewsArticlePage() {
             <BackIcon />
           </button>
         )}
-        <div className="rounded-xl border border-dark-700 bg-dark-800/50 p-8 text-center text-dark-400">
-          {t('news.noNews')}
-        </div>
+        <div className="card-inset p-8 text-center text-dark-400">{t('news.noNews')}</div>
       </div>
     );
   }

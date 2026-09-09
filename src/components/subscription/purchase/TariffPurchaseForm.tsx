@@ -348,7 +348,7 @@ export function TariffPurchaseForm({
 
       {/* Tariff Info */}
       {isEmbedded ? (
-        <div className="rounded-xl bg-dark-800/50 p-3">
+        <div className="card-inset p-3">
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-dark-200">
             <span>{`${primaryTrafficLabel}: ${tariff.traffic_limit_label}`}</span>
             <span>{`${t('subscription.devices')}: ${tariff.device_limit === 0 ? '∞' : tariff.device_limit}`}</span>
@@ -360,7 +360,7 @@ export function TariffPurchaseForm({
           </div>
         </div>
       ) : (
-        <div className="rounded-xl bg-dark-800/50 p-3">
+        <div className="card-inset p-3">
           <div className="flex flex-wrap gap-3 text-sm">
             <div className="text-dark-200">
               {`${primaryTrafficLabel} ${tariff.traffic_limit_label} — ${primaryTrafficDescription}`}
@@ -385,7 +385,7 @@ export function TariffPurchaseForm({
 
       {/* Daily Tariff Purchase */}
       {tariff.is_daily || (tariff.daily_price_kopeks && tariff.daily_price_kopeks > 0) ? (
-        <div className="rounded-xl border border-accent-500/30 bg-accent-500/10 p-5">
+        <div className="alert-info p-5">
           <div className="mb-4 text-center">
             <div className="mb-2 text-sm text-dark-400">
               {t('subscription.dailyPurchase.costPerDay')}
@@ -531,12 +531,12 @@ export function TariffPurchaseForm({
                         setSelectedTariffPeriod(period);
                         setUseCustomDays(false);
                       }}
-                      className={`relative min-h-[76px] rounded-xl border px-3 py-2.5 text-left transition-all ${
+                      className={`card-interactive relative min-h-[76px] px-3 py-2.5 text-left ${
                         selectedTariffPeriod?.days === period.days && !useCustomDays
-                          ? 'border border-accent-500 bg-accent-500/10'
+                          ? 'card-selected'
                           : period.is_highlighted
-                            ? 'border-2 border-urgent-400 bg-dark-800/50'
-                            : 'border border-dark-700/50 bg-dark-800/50 hover:border-dark-600'
+                            ? 'border-2 border-urgent-400'
+                            : ''
                       }`}
                     >
                       {displayDiscount && displayDiscount > 0 && (
@@ -576,7 +576,7 @@ export function TariffPurchaseForm({
             {tariff.periods.length === 0 &&
               !useCustomDays &&
               !(tariff.custom_days_enabled && (tariff.price_per_day_kopeks ?? 0) > 0) && (
-                <div className="rounded-xl border border-warning-500/30 bg-warning-500/10 p-4 text-center">
+                <div className="alert-warning p-4 text-center">
                   <div className="mb-2 text-sm font-medium text-warning-400">
                     {t('subscription.noPeriodsAvailable')}
                   </div>
@@ -591,7 +591,7 @@ export function TariffPurchaseForm({
 
             {/* Custom days option */}
             {tariff.custom_days_enabled && (tariff.price_per_day_kopeks ?? 0) > 0 && (
-              <div className="rounded-xl border border-dark-700/50 bg-dark-800/50 p-4">
+              <div className="card-inset p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-medium text-dark-200">
                     {t('subscription.customDays.title')}
@@ -694,7 +694,7 @@ export function TariffPurchaseForm({
               <div className="mb-3 text-sm text-dark-400">
                 {t('subscription.customTraffic.label')}
               </div>
-              <div className="rounded-xl border border-dark-700/50 bg-dark-800/50 p-4">
+              <div className="card-inset p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-medium text-dark-200">
                     {t('subscription.customTraffic.selectVolume')}
@@ -774,7 +774,7 @@ export function TariffPurchaseForm({
 
           {/* Summary & Purchase */}
           {(selectedTariffPeriod || useCustomDays) && (
-            <div className="rounded-xl bg-dark-800/50 p-5">
+            <div className="card-inset p-5">
               {(() => {
                 const basePeriodPrice = useCustomDays
                   ? customDays * (tariff.price_per_day_kopeks ?? 0)
@@ -874,7 +874,7 @@ export function TariffPurchaseForm({
                     </div>
 
                     {promoPeriod.percent && (
-                      <div className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-warning-500/30 bg-warning-500/10 p-2">
+                      <div className="alert-warning mb-4 flex items-center justify-center gap-2 p-2">
                         <span className="text-sm font-medium text-warning-400">
                           {t('promo.discountApplied')} -{promoPeriod.percent}%
                         </span>

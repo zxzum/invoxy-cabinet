@@ -90,10 +90,7 @@ export function TrafficTopupSheet({
 
   if (!open) {
     return (
-      <button
-        onClick={onOpen}
-        className={`w-full rounded-xl border p-4 text-left transition-colors ${isDark ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600' : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'}`}
-      >
+      <button onClick={onOpen} className="card-interactive w-full p-4 text-left">
         <div className="flex items-center justify-between">
           <div>
             <div className="font-medium text-dark-100">
@@ -115,9 +112,7 @@ export function TrafficTopupSheet({
   }
 
   return (
-    <div
-      className={`rounded-xl border p-5 ${isDark ? 'border-dark-700/50 bg-dark-800/50' : 'border-champagne-300/60 bg-champagne-200/40'}`}
-    >
+    <div className="card-inset p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-medium text-dark-100">
           {t('subscription.additionalOptions.buyTrafficTitle')}
@@ -140,7 +135,7 @@ export function TrafficTopupSheet({
         ⚠️ {t('subscription.additionalOptions.trafficWarning')}
       </div>
 
-      <div className="mb-4 rounded-xl border border-accent-500/20 bg-accent-500/5 p-3">
+      <div className="alert-info mb-4">
         <div className="text-sm font-medium text-dark-100">
           {scope === 'regular' ? primaryTrafficLabel : whiteInternetLabel}
         </div>
@@ -185,14 +180,12 @@ export function TrafficTopupSheet({
                 key={pkg.gb}
                 onClick={() => pkg.is_available !== false && onSelectedTrafficPackageChange(pkg.gb)}
                 disabled={pkg.is_available === false}
-                className={`rounded-xl border p-4 text-center transition-all ${
+                className={`card-interactive p-4 text-center ${
                   pkg.is_available === false
                     ? 'cursor-not-allowed border-dark-700/30 bg-dark-950/25 opacity-55'
                     : selectedTrafficPackage === pkg.gb
-                      ? 'border-accent-500 bg-accent-500/10'
-                      : isDark
-                        ? 'border-dark-700/50 bg-dark-800/50 hover:border-dark-600'
-                        : 'border-champagne-300/60 bg-champagne-200/40 hover:border-champagne-400'
+                      ? 'card-selected'
+                      : ''
                 }`}
               >
                 <div className="text-lg font-semibold text-dark-100">

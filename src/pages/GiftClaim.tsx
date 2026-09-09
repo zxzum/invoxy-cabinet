@@ -21,9 +21,7 @@ function isValidEmail(value: string): boolean {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-dark-950 px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-6 sm:p-8">
-        {children}
-      </div>
+      <div className="card w-full max-w-md p-6 sm:p-8">{children}</div>
     </div>
   );
 }
@@ -251,13 +249,13 @@ export default function GiftClaim() {
         </div>
 
         {gift.gift_message && (
-          <div className="w-full rounded-xl border border-dark-700/30 bg-dark-800/40 p-4 text-left">
+          <div className="card-inset w-full p-4 text-left">
             <p className="text-sm italic text-dark-200">&ldquo;{gift.gift_message}&rdquo;</p>
           </div>
         )}
 
         {willReplace && (
-          <p className="w-full rounded-lg border border-warning-500/20 bg-warning-500/5 p-3 text-xs text-warning-400">
+          <p className="alert-warning w-full text-xs">
             {t(
               'landing.giftClaim.replaceWarning',
               'You already have a subscription — activating this gift will replace it.',
@@ -298,7 +296,7 @@ export default function GiftClaim() {
                 setClaimError(null);
               }}
               placeholder="email@example.com"
-              className="w-full rounded-xl border border-dark-700/50 bg-dark-800/50 px-4 py-3 text-sm text-dark-50 placeholder-dark-500 outline-none focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/25"
+              className="input w-full"
             />
             {claimError && <p className="text-sm text-error-400">{claimError}</p>}
             <button

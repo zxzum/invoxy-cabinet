@@ -115,7 +115,7 @@ function CodeOnlySuccessState({
       </div>
 
       {/* Gift code display */}
-      <div className="w-full rounded-xl border border-accent-500/20 bg-accent-500/5 p-4">
+      <div className="alert-info w-full p-4">
         <p className="mb-1 text-xs font-medium uppercase tracking-wider text-dark-400">
           {t('gift.codeLabel', 'Gift code')}
         </p>
@@ -131,7 +131,7 @@ function CodeOnlySuccessState({
       <p className="-mt-3 text-xs text-dark-400">{t('gift.qrHint', 'Scan to activate the gift')}</p>
 
       {/* Share message preview */}
-      <div className="w-full rounded-xl border border-dark-700/30 bg-dark-800/40 p-4 text-left">
+      <div className="card-inset w-full p-4 text-left">
         <p className="mb-3 text-sm font-medium text-dark-100">
           {t('gift.shareText', 'I have a gift for you! Activate it here:')}
         </p>
@@ -237,8 +237,8 @@ function DeliveredState({
       </div>
 
       {warning && (
-        <div className="w-full rounded-xl border border-warning-500/20 bg-warning-500/5 p-3">
-          <p className="text-sm text-warning-400">{t(`gift.warning.${warning}`)}</p>
+        <div className="alert-warning w-full">
+          <p className="text-sm">{t(`gift.warning.${warning}`)}</p>
         </div>
       )}
 
@@ -304,8 +304,8 @@ function PendingActivationState({
       </div>
 
       {warning && (
-        <div className="w-full rounded-xl border border-warning-500/20 bg-warning-500/5 p-3">
-          <p className="text-sm text-warning-400">{t(`gift.warning.${warning}`)}</p>
+        <div className="alert-warning w-full">
+          <p className="text-sm">{t(`gift.warning.${warning}`)}</p>
         </div>
       )}
 
@@ -510,11 +510,7 @@ export default function GiftResult() {
   if (!token) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-4">
-        <div
-          className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-8"
-          aria-live="polite"
-          aria-atomic="true"
-        >
+        <div className="card w-full max-w-md p-8" aria-live="polite" aria-atomic="true">
           <NoTokenState />
         </div>
       </div>
