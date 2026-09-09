@@ -733,10 +733,10 @@ export const backgroundRegistry: BackgroundDefinition[] = [
     descriptionKey: 'admin.backgrounds.liquidGradientDesc',
     category: 'css',
     settings: [
-      { key: 'color1', label: 'admin.backgrounds.color1', type: 'color', default: '#6366f1' },
-      { key: 'color2', label: 'admin.backgrounds.color2', type: 'color', default: '#ec4899' },
-      { key: 'color3', label: 'admin.backgrounds.color3', type: 'color', default: '#22d3ee' },
-      { key: 'color4', label: 'admin.backgrounds.color4', type: 'color', default: '#a855f7' },
+      { key: 'color1', label: 'admin.backgrounds.color1', type: 'color', default: '#22d3ee' },
+      { key: 'color2', label: 'admin.backgrounds.color2', type: 'color', default: '#0ea5e9' },
+      { key: 'color3', label: 'admin.backgrounds.color3', type: 'color', default: '#14b8a6' },
+      { key: 'color4', label: 'admin.backgrounds.color4', type: 'color', default: '#164e63' },
       {
         key: 'speed',
         label: 'admin.backgrounds.speed',

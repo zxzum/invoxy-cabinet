@@ -25,10 +25,10 @@ export default function LiquidGradientBackground({ settings }: Props) {
   const paused = useAnimationPause();
 
   const colors = [
-    sanitizeColor(settings.color1, '#6366f1'),
-    sanitizeColor(settings.color2, '#ec4899'),
-    sanitizeColor(settings.color3, '#22d3ee'),
-    sanitizeColor(settings.color4, '#a855f7'),
+    sanitizeColor(settings.color1, '#22d3ee'),
+    sanitizeColor(settings.color2, '#0ea5e9'),
+    sanitizeColor(settings.color3, '#14b8a6'),
+    sanitizeColor(settings.color4, '#164e63'),
   ];
   const speed = safeSelect(settings.speed, ['slow', 'normal', 'fast'] as const, 'normal');
   const blurAmount = clampNumber(settings.blurAmount, 10, 120, 60);
