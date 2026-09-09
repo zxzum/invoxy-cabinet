@@ -1118,22 +1118,26 @@ export default function Subscription() {
                 </div>
               )}
 
-              {/* ─── Purchased Traffic Packages ─── */}
-              {subscription.traffic_purchases && subscription.traffic_purchases.length > 0 && (
+              {/* ─── Purchased Traffic Packages (main + white internet) ─── */}
+              {(subscription.traffic_purchases?.length ?? 0) +
+                (subscription.whitelist_traffic_purchases?.length ?? 0) >
+                0 && (
                 <div className="mb-5">
                   <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-dark-400">
                     {t('subscription.purchasedTraffic')}
                   </div>
                   <div className="space-y-2">
-                    {subscription.traffic_purchases.map((purchase) => (
-                      <div
-                        key={purchase.id}
-                        className="rounded-[12px] p-3"
-                        style={{
-                          background: g.innerBg,
-                          border: `1px solid ${g.innerBorder}`,
-                        }}
-                      >
+                    {[
+                      ...(subscription.traffic_purchases ?? []).map((purchase) => ({
+                        purchase,
+                        kind: 'main' as const,
+                      })),
+                      ...(subscription.whitelist_traffic_purchases ?? []).map((purchase) => ({
+                        purchase,
+                        kind: 'white' as const,
+                      })),
+                    ].map(({ purchase, kind }) => (
+                      <div key={`${kind}-${purchase.id}`} className="card-inset p-3">
                         <div className="mb-2 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div
@@ -1144,6 +1148,11 @@ export default function Subscription() {
                             </div>
                             <span className="text-sm font-semibold text-dark-50">
                               {purchase.traffic_gb} {t('common.units.gb')}
+                            </span>
+                            <span className="text-[11px] text-dark-400">
+                              {kind === 'white'
+                                ? t('subscription.whiteInternet')
+                                : t('subscription.mainTraffic')}
                             </span>
                           </div>
                           <div className="text-right">
