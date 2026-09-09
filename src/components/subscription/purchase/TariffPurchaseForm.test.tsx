@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -62,10 +62,11 @@ vi.mock('../../../hooks/useCurrency', () => ({
 }));
 vi.mock('../../../hooks/usePromoDiscount', () => ({
   usePromoDiscount: () => ({
+    // Как combinePromoDiscount: процент считается от исходной цены, если она есть.
     applyPromoDiscount: (price: number, original?: number | null) => ({
       price,
       original: original ?? null,
-      percent: null,
+      percent: original && original > price ? Math.round((1 - price / original) * 100) : null,
       isPromoGroup: false,
     }),
   }),
@@ -119,13 +120,13 @@ afterEach(() => {
   mocks.scrollIntoView.mockClear();
 });
 
-function renderForm() {
+function renderForm(tariffOverride: Tariff = tariff) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
         <TariffPurchaseForm
-          tariff={tariff}
+          tariff={tariffOverride}
           subscriptionId={undefined}
           balanceKopeks={10000}
           showHeader={false}
@@ -148,5 +149,43 @@ describe('TariffPurchaseForm modal mode', () => {
     expect(screen.getByRole('button', { name: 'Купить' })).toBeTruthy();
 
     await waitFor(() => expect(mocks.scrollIntoView).not.toHaveBeenCalled());
+  });
+
+  it('показывает скидку на длинном периоде от помесячной базы, даже без original_price_kopeks', () => {
+    const discountedTariff: Tariff = {
+      ...tariff,
+      periods: [
+        {
+          days: 30,
+          months: 1,
+          label: '30 дней',
+          price_kopeks: 10000,
+          price_label: '100 ₽',
+          price_per_month_kopeks: 10000,
+          price_per_month_label: '100 ₽',
+        },
+        {
+          days: 90,
+          months: 3,
+          label: '90 дней',
+          price_kopeks: 27000,
+          price_label: '270 ₽',
+          price_per_month_kopeks: 9000,
+          price_per_month_label: '90 ₽',
+        },
+      ],
+    };
+    renderForm(discountedTariff);
+
+    // У 30 дней скидки нет, у 90 дней — бейдж и зачёркнутая база 3 × 100 ₽.
+    const monthButton = screen.getByText('30 дней').closest('button')!;
+    expect(monthButton.textContent).not.toContain('%');
+    const quarterButton = screen.getByText('90 дней').closest('button')!;
+    expect(quarterButton.textContent).toContain('-10%');
+    expect(quarterButton.textContent).toContain('300.00');
+
+    // После выбора периода — баннер и зачёркнутый итог в сводке.
+    fireEvent.click(quarterButton);
+    expect(screen.getByText(/promo\.discountApplied/).textContent).toContain('-10%');
   });
 });

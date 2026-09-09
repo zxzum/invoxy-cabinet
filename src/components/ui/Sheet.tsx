@@ -167,9 +167,19 @@ export function Sheet({
     if (isOpen) {
       setIsMounted(true);
       setTranslateY(0);
-      // Кадр на монтирование портала, чтобы въезд шёл из translateY(100%).
-      const frameId = requestAnimationFrame(() => setIsVisible(true));
-      return () => cancelAnimationFrame(frameId);
+      // Двойной rAF: первый кадр браузер обязан отрисовать шит в
+      // translateY(100%), и только потом включаем видимость. С одним rAF
+      // колбэк может попасть в тот же кадр, что и маунт портала (на быстром
+      // повторном открытии — почти всегда), первый отрисованный кадр тогда
+      // уже translateY(0) и въезда нет.
+      let innerFrame = 0;
+      const outerFrame = requestAnimationFrame(() => {
+        innerFrame = requestAnimationFrame(() => setIsVisible(true));
+      });
+      return () => {
+        cancelAnimationFrame(outerFrame);
+        cancelAnimationFrame(innerFrame);
+      };
     }
     setIsVisible(false);
     const timerId = window.setTimeout(() => {

@@ -68,6 +68,63 @@ describe('Sheet', () => {
     expect(sheet.style.paddingBottom).toBe('max(env(safe-area-inset-bottom, 0px), 34px)');
   });
 
+  it('въезд детерминирован: кадр в translateY(100%), видимость только после двух rAF', () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      frames.push(cb);
+      return frames.length;
+    });
+
+    render(
+      <PlatformProvider>
+        <Sheet isOpen onClose={vi.fn()} title="Сервер">
+          <p>тело</p>
+        </Sheet>
+      </PlatformProvider>,
+    );
+
+    const sheet = screen.getByRole('dialog');
+    expect(sheet.style.transform).toBe('translateY(100%)');
+    expect(frames).toHaveLength(1);
+
+    // Первый кадр — монтирование «за экраном», видимость ещё не включена.
+    act(() => frames.shift()?.(0));
+    expect(sheet.style.transform).toBe('translateY(100%)');
+
+    act(() => frames.shift()?.(0));
+    expect(sheet.style.transform).toBe('translateY(0px)');
+  });
+
+  it('повторное открытие снова начинается из translateY(100%)', () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <PlatformProvider>
+        <Sheet isOpen onClose={vi.fn()} title="Сервер">
+          <p>тело</p>
+        </Sheet>
+      </PlatformProvider>,
+    );
+    // Закрыли и дождались размонтирования.
+    rerender(
+      <PlatformProvider>
+        <Sheet isOpen={false} onClose={vi.fn()} title="Сервер">
+          <p>тело</p>
+        </Sheet>
+      </PlatformProvider>,
+    );
+    act(() => vi.advanceTimersByTime(240));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    rerender(
+      <PlatformProvider>
+        <Sheet isOpen onClose={vi.fn()} title="Сервер">
+          <p>тело</p>
+        </Sheet>
+      </PlatformProvider>,
+    );
+    expect(screen.getByRole('dialog').style.transform).toBe('translateY(100%)');
+  });
+
   it('кнопка «Закрыть» зовёт onClose сразу, а выезд и размонтирование — после isOpen=false', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();

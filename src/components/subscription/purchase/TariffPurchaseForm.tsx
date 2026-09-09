@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage, getInsufficientBalanceError } from '../../../utils/subscriptionHelpers';
 import { useCurrency } from '../../../hooks/useCurrency';
-import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
+import { usePromoDiscount, type PromoDiscountResult } from '../../../hooks/usePromoDiscount';
 import { useSuccessNotification } from '../../../store/successNotification';
 import { dailyPriceQuote } from './dailyPrice';
 import { usePlatform } from '../../../platform';
@@ -96,6 +96,33 @@ export function TariffPurchaseForm({
     kopeks === 0
       ? t('subscription.free', 'Бесплатно')
       : `${formatAmount(kopeks / 100)} ${currencySymbol}`;
+
+  // Скидка за длинный период зашита в цену (3/6/12 мес дешевле помесячной
+  // базы), но original_price_kopeks бэк шлёт только при скидке промо-группы.
+  // Исходную цену считаем от помесячной базы самого короткого периода —
+  // бейдж -X% и зачёркнутая цена появляются на всех периодах с реальной
+  // скидкой, а не только на тех, где сработала промо-группа.
+  const shortestPeriod = tariff.periods.reduce<TariffPeriod | undefined>(
+    (min, period) => (min === undefined || period.days < min.days ? period : min),
+    undefined,
+  );
+  const basePerMonthKopeks = shortestPeriod
+    ? (shortestPeriod.original_price_kopeks ?? shortestPeriod.price_kopeks) /
+      Math.max(1, shortestPeriod.months)
+    : 0;
+
+  const periodQuote = (period: TariffPeriod): PromoDiscountResult => {
+    const serverOriginal =
+      period.original_price_kopeks && period.original_price_kopeks > period.price_kopeks
+        ? period.original_price_kopeks
+        : 0;
+    const baseTotal = Math.round(basePerMonthKopeks * Math.max(1, period.months));
+    const volumeOriginal = baseTotal > period.price_kopeks ? baseTotal : 0;
+    return applyPromoDiscount(
+      period.price_kopeks,
+      Math.max(serverOriginal, volumeOriginal) || undefined,
+    );
+  };
   const deviceUnit =
     tariff.device_limit > 0
       ? t('subscription.devices', { count: tariff.device_limit })
@@ -491,10 +518,7 @@ export function TariffPurchaseForm({
             {tariff.periods.length > 0 && !useCustomDays && (
               <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {tariff.periods.map((period) => {
-                  const promoPeriod = applyPromoDiscount(
-                    period.price_kopeks,
-                    period.original_price_kopeks,
-                  );
+                  const promoPeriod = periodQuote(period);
                   const displayDiscount = promoPeriod.percent;
                   const displayOriginal = promoPeriod.original;
                   const displayPrice = promoPeriod.price;
@@ -755,16 +779,15 @@ export function TariffPurchaseForm({
                 const basePeriodPrice = useCustomDays
                   ? customDays * (tariff.price_per_day_kopeks ?? 0)
                   : selectedTariffPeriod?.price_kopeks || 0;
-                const existingPeriodOriginal = useCustomDays
-                  ? tariff.original_price_per_day_kopeks &&
-                    tariff.original_price_per_day_kopeks > (tariff.price_per_day_kopeks ?? 0)
+                const existingPeriodOriginal =
+                  tariff.original_price_per_day_kopeks &&
+                  tariff.original_price_per_day_kopeks > (tariff.price_per_day_kopeks ?? 0)
                     ? customDays * tariff.original_price_per_day_kopeks
-                    : undefined
-                  : selectedTariffPeriod?.original_price_kopeks &&
-                      selectedTariffPeriod.original_price_kopeks > selectedTariffPeriod.price_kopeks
-                    ? selectedTariffPeriod.original_price_kopeks
                     : undefined;
-                const promoPeriod = applyPromoDiscount(basePeriodPrice, existingPeriodOriginal);
+                const promoPeriod =
+                  useCustomDays || !selectedTariffPeriod
+                    ? applyPromoDiscount(basePeriodPrice, existingPeriodOriginal)
+                    : periodQuote(selectedTariffPeriod);
 
                 const trafficPrice =
                   useCustomTraffic && tariff.custom_traffic_enabled
