@@ -190,13 +190,12 @@ describe('TariffPaymentSheet', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('plays the mobile exit before closing on backdrop press', async () => {
+  it('closes immediately on backdrop press; the sheet plays the exit itself', async () => {
     const onOpenChange = vi.fn();
     renderSheet({ onOpenChange });
 
     await screen.findByText('Банковская карта');
     fireEvent.click(document.querySelector('[data-sheet-backdrop]')!);
-    expect(onOpenChange).not.toHaveBeenCalled();
-    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false), { timeout: 600 });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

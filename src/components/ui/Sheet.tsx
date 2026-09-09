@@ -8,6 +8,12 @@ import { sheetInsets } from './sheetInsets';
 
 export interface SheetProps {
   isOpen: boolean;
+  /**
+   * Вызывается сразу при действии закрытия (кнопка, бэкдроп, Escape, свайп).
+   * Родитель только ставит isOpen=false; шит сам доигрывает анимацию выезда
+   * вниз и размонтируется после неё — размонтировать его синхронно с
+   * isOpen=false не нужно.
+   */
   onClose: () => void;
   /**
    * Snap points as fractions of viewport height (0-1)
@@ -73,7 +79,7 @@ interface DragState {
 }
 
 const VELOCITY_THRESHOLD = 0.5; // px/ms - fast swipe closes regardless of position
-const ANIMATION_DURATION = 300;
+const ANIMATION_DURATION = 240;
 
 export function Sheet({
   isOpen,
@@ -102,12 +108,12 @@ export function Sheet({
   });
 
   const [currentSnapIndex, setCurrentSnapIndex] = useState(initialSnap);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [isOpening, setIsOpening] = useState(false);
-  const [translateY, setTranslateY] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
+  // isMounted держит шит в DOM, пока играет выезд; isVisible — единственный
+  // источник целевой позиции (translateY 0 / 100%) и прозрачности бэкдропа.
   const [isMounted, setIsMounted] = useState(isOpen);
-  const closeTimerRef = useRef<number | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [translateY, setTranslateY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const haptic = useHaptic();
   const { t } = useTranslation();
@@ -116,24 +122,6 @@ export function Sheet({
   const { topSafeArea, bottomSafeArea } = useHeaderHeight();
   const insets = sheetInsets({ snap: snapPoints[currentSnapIndex], topSafeArea, bottomSafeArea });
 
-  const closeAnimated = useCallback(() => {
-    if (closeTimerRef.current !== null) return;
-    setIsVisible(false);
-    setIsOpening(false);
-    setIsAnimating(true);
-    closeTimerRef.current = window.setTimeout(() => {
-      closeTimerRef.current = null;
-      onClose();
-    }, ANIMATION_DURATION);
-  }, [onClose]);
-
-  useEffect(
-    () => () => {
-      if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
-    },
-    [],
-  );
-
   // Handle keyboard events
   useEffect(() => {
     if (!isOpen || !closeOnEscape) return;
@@ -141,17 +129,18 @@ export function Sheet({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        closeAnimated();
+        onClose();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, closeOnEscape, closeAnimated]);
+  }, [isOpen, closeOnEscape, onClose]);
 
-  // Handle body scroll lock
+  // Handle body scroll lock: держим всё время, пока шит в DOM, включая анимацию
+  // выезда — иначе страница под ним дёрнулась бы до конца анимации.
   useEffect(() => {
-    if (isOpen) {
+    if (isMounted) {
       const scrollY = window.scrollY;
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
@@ -171,34 +160,23 @@ export function Sheet({
         window.scrollTo(0, scrollY);
       };
     }
-  }, [isOpen]);
+  }, [isMounted]);
 
-  // Animation on open/close
+  // Mount/exit lifecycle: родитель управляет только isOpen.
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
-      setIsVisible(false);
-      setIsOpening(true);
-      setIsAnimating(false);
       setTranslateY(0);
-
-      // Small delay to ensure the portal is mounted before sliding it in.
+      // Кадр на монтирование портала, чтобы въезд шёл из translateY(100%).
       const frameId = requestAnimationFrame(() => setIsVisible(true));
-      const timerId = window.setTimeout(() => setIsOpening(false), ANIMATION_DURATION);
-      return () => {
-        cancelAnimationFrame(frameId);
-        window.clearTimeout(timerId);
-      };
-    } else {
-      setIsVisible(false);
-      setIsOpening(false);
-      setIsAnimating(true);
-      const timerId = window.setTimeout(() => {
-        setIsMounted(false);
-        setIsAnimating(false);
-      }, ANIMATION_DURATION);
-      return () => window.clearTimeout(timerId);
+      return () => cancelAnimationFrame(frameId);
     }
+    setIsVisible(false);
+    const timerId = window.setTimeout(() => {
+      setIsMounted(false);
+      setTranslateY(0);
+    }, ANIMATION_DURATION);
+    return () => window.clearTimeout(timerId);
   }, [isOpen]);
 
   // Find closest snap point
@@ -247,10 +225,10 @@ export function Sheet({
     [currentSnapIndex, snapPoints, closeOnDragDown, closeThreshold],
   );
 
-  // Handle drag start
+  // Handle drag start (только с ручки; пока шит выезжает — не трогаем)
   const handleDragStart = useCallback(
     (clientY: number) => {
-      if (isAnimating) return;
+      if (!isOpen) return;
 
       const state = dragState.current;
       state.startY = clientY;
@@ -260,8 +238,9 @@ export function Sheet({
       state.velocity = 0;
       state.lastY = clientY;
       state.lastTime = Date.now();
+      setIsDragging(true);
     },
-    [isAnimating],
+    [isOpen],
   );
 
   // Handle drag move
@@ -293,19 +272,14 @@ export function Sheet({
     if (!state.isDragging) return;
 
     state.isDragging = false;
-    setIsAnimating(true);
+    setIsDragging(false);
 
     const targetSnap = findClosestSnap(translateY, state.velocity);
 
     if (targetSnap === -1) {
-      // Close the sheet
+      // Закрытие: onClose сразу, выезд доиграет эффект по isOpen=false.
       haptic.notification('warning');
-      setTranslateY(window.innerHeight);
-      setTimeout(() => {
-        onClose();
-        setTranslateY(0);
-        setIsAnimating(false);
-      }, ANIMATION_DURATION);
+      onClose();
     } else {
       // Snap to position
       if (targetSnap !== currentSnapIndex) {
@@ -313,9 +287,6 @@ export function Sheet({
       }
       setCurrentSnapIndex(targetSnap);
       setTranslateY(0);
-      setTimeout(() => {
-        setIsAnimating(false);
-      }, ANIMATION_DURATION);
     }
   }, [translateY, findClosestSnap, currentSnapIndex, haptic, onClose]);
 
@@ -363,40 +334,37 @@ export function Sheet({
   const handleBackdropClick = useCallback(() => {
     if (closeOnBackdropClick) {
       haptic.impact('light');
-      closeAnimated();
+      onClose();
     }
-  }, [closeOnBackdropClick, closeAnimated, haptic]);
+  }, [closeOnBackdropClick, onClose, haptic]);
 
   if (!isMounted) return null;
 
   const sheet = (
-    <div
-      className={`fixed inset-0 z-50 flex items-end justify-center ${
-        isVisible ? 'opacity-100' : 'opacity-0'
-      } transition-opacity duration-300`}
-    >
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
       {/* Backdrop */}
       <div
         data-sheet-backdrop
-        className={`absolute inset-0 bg-black/65 transition-[opacity,backdrop-filter] duration-300 ${
-          isVisible ? 'opacity-100' : 'opacity-0'
-        } ${isVisible ? 'backdrop-blur-sm' : 'backdrop-blur-0'}`}
+        className={`absolute inset-0 bg-black/65 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleBackdropClick}
       />
 
-      {/* Sheet */}
+      {/* Sheet: единственный механизм движения — inline transform с CSS-переходом;
+          во время перетаскивания переход отключён, шит следует за пальцем. */}
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-dark-900 shadow-2xl ${
-          isAnimating || isOpening ? 'transition-transform duration-300 ease-out' : ''
-        } ${isVisible ? 'translate-y-0' : 'translate-y-full'} ${className}`}
+        className={`relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-dark-900 shadow-2xl ${className}`}
         style={{
           maxHeight: insets.maxHeight,
-          transform: `translateY(${isVisible ? translateY : '100%'}px)`,
           paddingBottom: insets.paddingBottom,
+          transform: isVisible ? `translateY(${translateY}px)` : 'translateY(100%)',
+          transitionProperty: 'transform',
+          transitionDuration: isDragging ? '0ms' : `${ANIMATION_DURATION}ms`,
+          transitionTimingFunction: 'ease-out',
+          willChange: 'transform',
         }}
       >
         {/* Drag handle area */}
@@ -437,8 +405,3 @@ export function Sheet({
 
   return createPortal(sheet, document.body);
 }
-
-// Light theme styles applied via CSS
-// Add to globals.css:
-// .light .sheet-backdrop { @apply bg-dark-950/40; }
-// .light .sheet-container { @apply bg-champagne-100; }

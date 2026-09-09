@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -9,7 +9,6 @@ import { Sheet } from './Sheet';
 
 /** Ширина, с которой нижний шит перестаёт быть уместным. */
 const DESKTOP_QUERY = '(min-width: 640px)';
-const CLOSE_DURATION_MS = 240;
 
 function useIsDesktop(): boolean {
   const [isDesktop, setIsDesktop] = useState(
@@ -58,22 +57,12 @@ export function ResponsiveSheet({
 }: ResponsiveSheetProps) {
   const { t } = useTranslation();
   const isDesktop = useIsDesktop();
-  const [isClosing, setIsClosing] = useState(false);
-  const requestClose = useCallback(() => setIsClosing(true), []);
 
-  useEffect(() => {
-    if (!isDesktop || !isClosing) return;
-    const timer = window.setTimeout(onClose, CLOSE_DURATION_MS);
-    return () => window.clearTimeout(timer);
-  }, [isClosing, isDesktop, onClose]);
-
-  useEffect(() => {
-    if (isOpen) setIsClosing(false);
-  }, [isOpen]);
-
+  // onClose вызывается сразу; выезд доигрывает AnimatePresence (десктоп)
+  // или сам Sheet (мобильный) — отдельного таймера закрытия не нужно.
   // Ловушка нужна только своей ветке: у Sheet она уже своя.
-  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen && isDesktop && !isClosing, {
-    onEscape: requestClose,
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen && isDesktop, {
+    onEscape: onClose,
   });
 
   if (!isDesktop) {
@@ -86,7 +75,7 @@ export function ResponsiveSheet({
 
   return createPortal(
     <AnimatePresence>
-      {isOpen && !isClosing && (
+      {isOpen && (
         <motion.div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           initial="closed"
@@ -98,7 +87,7 @@ export function ResponsiveSheet({
             className="absolute inset-0 cursor-default bg-black/65"
             variants={{ closed: { opacity: 0 }, open: { opacity: 1 } }}
             transition={{ duration: 0.24, ease: 'easeOut' }}
-            onClick={requestClose}
+            onClick={onClose}
           />
           <motion.div
             ref={dialogRef}
@@ -117,7 +106,7 @@ export function ResponsiveSheet({
               <h3 className="text-lg font-semibold text-dark-50">{title}</h3>
               <button
                 type="button"
-                onClick={requestClose}
+                onClick={onClose}
                 aria-label={t('common.close', 'Закрыть')}
                 className="-mr-1.5 flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-dark-400 transition-colors hover:bg-dark-800 hover:text-dark-200"
               >

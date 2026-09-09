@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
@@ -71,6 +71,12 @@ export default function SubscriptionPurchase() {
   // Tariffs mode state
   const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(null);
   const [showTariffPurchase, setShowTariffPurchase] = useState(false);
+  // Шит доигрывает анимацию выезда после isOpen=false — тариф для его
+  // содержимого держим в ref, иначе selectedTariff=null размонтировал бы
+  // шит посреди анимации.
+  const lastSelectedTariffRef = useRef<Tariff | null>(null);
+  if (selectedTariff) lastSelectedTariffRef.current = selectedTariff;
+  const sheetTariff = selectedTariff ?? lastSelectedTariffRef.current;
   // (selectedTariffPeriod / customDays / customTrafficGb / useCustomDays /
   //  useCustomTraffic moved into <TariffPurchaseForm>; form remounts with
   //  fresh state via key=tariff.id when the parent picks a new tariff)
@@ -280,22 +286,19 @@ export default function SubscriptionPurchase() {
             onSwitchTariff={(tariffId) => setSwitchTariffId(tariffId)}
           />
 
-          {selectedTariff && (
+          {sheetTariff && (
             <ResponsiveSheet
               isOpen={showTariffPurchase}
               onClose={() => {
                 setShowTariffPurchase(false);
                 setSelectedTariff(null);
               }}
-              title={getTariffCustomerFacingName(
-                selectedTariff.name,
-                t('subscription.whiteInternet'),
-              )}
+              title={getTariffCustomerFacingName(sheetTariff.name, t('subscription.whiteInternet'))}
             >
               <div className="px-4 pb-4 pt-1">
                 <TariffPurchaseForm
-                  key={selectedTariff.id}
-                  tariff={selectedTariff}
+                  key={sheetTariff.id}
+                  tariff={sheetTariff}
                   subscriptionId={subscriptionId}
                   balanceKopeks={purchaseOptions?.balance_kopeks}
                   showHeader={false}
