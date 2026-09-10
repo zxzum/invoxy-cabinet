@@ -156,7 +156,7 @@ export default function TrialOfferCard({
       )}
 
       {/* Trial stats */}
-      <div className="mb-7 flex justify-center gap-8">
+      <div className="mx-auto mb-7 grid max-w-xs grid-cols-3">
         {[
           { value: String(trialInfo.duration_days), label: t('subscription.trial.days') },
           {

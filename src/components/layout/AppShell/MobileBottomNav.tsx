@@ -46,12 +46,12 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
       aria-hidden={isKeyboardOpen || undefined}
       inert={isKeyboardOpen || undefined}
       className={cn(
-        'fixed inset-x-3 bottom-3 z-50 mx-auto max-w-lg rounded-[26px] border border-white/10 transition-opacity duration-200 lg:hidden',
+        'fixed inset-x-3 z-50 mx-auto max-w-lg rounded-[26px] border border-white/10 transition-opacity duration-200 lg:hidden',
         'ix-island',
         isKeyboardOpen ? 'pointer-events-none opacity-0' : 'opacity-100',
       )}
       style={{
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        bottom: 'var(--mobile-nav-offset)',
         boxShadow: '0 18px 50px -14px rgba(0, 0, 0, 0.55), 0 0 40px -18px var(--ix-glow)',
       }}
     >
