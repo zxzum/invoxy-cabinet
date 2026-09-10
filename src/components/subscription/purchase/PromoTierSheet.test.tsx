@@ -36,10 +36,10 @@ vi.mock('react-i18next', () => ({
     t: (key: string, options?: Record<string, unknown>) => {
       const values: Record<string, string> = {
         'subscription.promoGroup.tiersTitle': 'Статусы и скидки',
-        'subscription.promoGroup.currentGroup': 'Ваша группа',
+        'subscription.promoGroup.currentGroup': 'Применённая группа',
         'subscription.promoGroup.yourProgress': 'Ваш прогресс',
         'subscription.promoGroup.totalSpent': 'Потрачено',
-        'subscription.promoGroup.currentStatus': 'Текущий статус',
+        'subscription.promoGroup.currentStatus': 'Уровень по тратам',
         'subscription.promoGroup.nextStatus': 'Следующий статус',
         'subscription.promoGroup.toNextStatus': 'До следующего статуса',
         'subscription.promoGroup.allStatusesAchieved': 'Максимальный статус достигнут',
@@ -146,9 +146,11 @@ describe('PromoTierSheet', () => {
     expect(screen.getByText('Достигнут')).toBeTruthy();
     expect(screen.getByText('Недоступен')).toBeTruthy();
     expect(
-      screen.getAllByText((_, element) => element?.textContent?.includes('Ваша группа') ?? false)
-        .length,
+      screen.getAllByText(
+        (_, element) => element?.textContent?.includes('Применённая группа') ?? false,
+      ).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByText('Уровень по тратам')).toBeTruthy();
   });
 
   it('shows an empty state when the API has no public tiers', async () => {
