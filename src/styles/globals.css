@@ -2246,7 +2246,9 @@ html.dark {
 }
 
 .tariff-card [data-tariff-summary] {
-  min-height: 13.5rem;
+  height: 20rem;
+  min-height: 20rem;
+  overflow: hidden;
 }
 
 .tariff-card [data-tariff-features] {
@@ -2263,7 +2265,8 @@ html.dark {
 
 @media (max-width: 639px) {
   .tariff-card [data-tariff-summary] {
-    min-height: 12rem;
+    height: 18rem;
+    min-height: 18rem;
   }
 }
 
