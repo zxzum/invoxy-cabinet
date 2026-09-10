@@ -11,4 +11,17 @@ describe('liquid glass surfaces', () => {
     expect(css).toMatch(/\.bento-card,[\s\S]*backdrop-filter/);
     expect(css).not.toMatch(/\.card-inset[^}]*background:\s*rgb\(/);
   });
+
+  it('keeps shared declarations in the component layer for modifiers', () => {
+    const css = readFileSync(new URL('./globals.css', import.meta.url), 'utf8');
+
+    expect(css).toMatch(/@layer components \{\s*\/\* One three-variant system/);
+    expect(css).toContain('.card-interactive.card-selected');
+  });
+
+  it('does not elevate every role dialog as a glass surface', () => {
+    const css = readFileSync(new URL('./globals.css', import.meta.url), 'utf8');
+
+    expect(css).not.toContain('[role="dialog"]');
+  });
 });
