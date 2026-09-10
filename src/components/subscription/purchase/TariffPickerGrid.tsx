@@ -13,6 +13,7 @@ import { ArrowDownIcon, DevicesIcon, InfoIcon, RestartIcon } from '@/components/
 import { FeatureBadge } from '@/components/ui/FeatureBadge';
 import type { Tariff, Subscription, PurchaseOptions } from '../../../types';
 import { getTariffCustomerFacingName, getTariffMarketingDescription } from './tariffPresentation';
+import { PromoTierSheet } from './PromoTierSheet';
 
 // ──────────────────────────────────────────────────────────────────
 // TariffPickerGrid
@@ -54,7 +55,8 @@ export function TariffPickerGrid({
   const g = getGlassColors(isDark);
   const { formatAmount, currencySymbol } = useCurrency();
   const { applyPromoDiscount } = usePromoDiscount();
-  const [showPromoGroupInfo, setShowPromoGroupInfo] = useState(false);
+  const [isPromoTierSheetOpen, setIsPromoTierSheetOpen] = useState(false);
+  const currentPromoGroupName = tariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name;
   const whiteInternetLabel = t('subscription.whiteInternet');
 
   const formatPrice = (kopeks: number) =>
@@ -94,23 +96,23 @@ export function TariffPickerGrid({
             </div>
             <button
               type="button"
-              aria-expanded={showPromoGroupInfo}
+              aria-expanded={isPromoTierSheetOpen}
               aria-label={t('subscription.promoGroup.aboutGroups', 'Что это за группа?')}
-              onClick={() => setShowPromoGroupInfo((value) => !value)}
+              onClick={() => setIsPromoTierSheetOpen(true)}
               className="shrink-0 rounded-lg p-1 text-success-400 transition-colors hover:bg-success-500/20"
             >
               <InfoIcon className="h-5 w-5" />
             </button>
           </div>
-          {showPromoGroupInfo && (
-            <p className="mt-2 text-xs leading-5 text-dark-400">
-              {t(
-                'subscription.promoGroup.explanation',
-                'Группа определяет ваши персональные скидки. Она назначается автоматически и может меняться со временем — следите за предложениями.',
-              )}
-            </p>
-          )}
         </div>
+      )}
+
+      {isPromoTierSheetOpen && (
+        <PromoTierSheet
+          isOpen
+          onClose={() => setIsPromoTierSheetOpen(false)}
+          currentGroupName={currentPromoGroupName}
+        />
       )}
 
       {/* Tariff Grid */}
