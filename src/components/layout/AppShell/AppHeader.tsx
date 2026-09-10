@@ -158,7 +158,7 @@ export function AppHeader({
     <>
       {/* Header - only on mobile */}
       <header
-        className="glass fixed left-0 right-0 top-0 z-50 shadow-lg shadow-black/10 lg:hidden"
+        className="glass fixed left-3 right-3 top-3 z-50 overflow-hidden shadow-lg shadow-black/10 lg:hidden"
         style={{
           paddingTop: isFullscreen
             ? `${Math.max(safeAreaInset.top, contentSafeAreaInset.top) + (telegramPlatform === 'android' ? 48 : 45)}px`
@@ -268,7 +268,7 @@ export function AppHeader({
           <motion.div
             key="mobile-menu"
             className="fixed inset-x-0 bottom-0 z-40 lg:hidden"
-            style={{ top: headerHeight }}
+            style={{ top: `calc(${headerHeight} + 0.75rem)` }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

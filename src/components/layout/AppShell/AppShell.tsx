@@ -283,7 +283,7 @@ export function AppShell({ children }: AppShellProps) {
           )}
         </div>
 
-        <div className="lg:hidden" style={{ height: headerHeight }} />
+        <div className="lg:hidden" style={{ height: `calc(${headerHeight} + 0.75rem)` }} />
 
         <main className="ix-main" style={{ position: 'relative', overflowX: 'clip' }}>
           {animatePage ? (

@@ -10,7 +10,6 @@ import { useDestructiveConfirm } from '../platform/hooks/useNativeDialog';
 import TrafficProgressBar from '../components/dashboard/TrafficProgressBar';
 import { HoverBorderGradient } from '../components/ui/hover-border-gradient';
 import { useTrafficZone } from '../hooks/useTrafficZone';
-import { formatTraffic } from '../utils/formatTraffic';
 import { getGlassColors } from '../utils/glassTheme';
 import { useTheme } from '../hooks/useTheme';
 import InsufficientBalancePrompt from '../components/InsufficientBalancePrompt';
@@ -921,30 +920,18 @@ export default function Subscription() {
                 className="mb-6 rounded-xl p-3"
                 style={{ background: g.innerBg, border: `1px solid ${g.innerBorder}` }}
               >
-                <div className="mb-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-dark-400">
-                    {t('subscription.traffic')}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] text-dark-400">
-                      {isUnlimited
-                        ? formatTraffic(usedGb)
-                        : `${formatTraffic(usedGb)} / ${formatTraffic(subscription.traffic_limit_gb)}`}
-                    </span>
-                    <button
-                      onClick={() => refreshTrafficMutation.mutate()}
-                      disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
-                      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-dark-400 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <RefreshIcon
-                        className="h-3 w-3"
-                        spinning={refreshTrafficMutation.isPending}
-                      />
-                      {trafficRefreshCooldown > 0
-                        ? `${trafficRefreshCooldown}s`
-                        : t('common.refresh')}
-                    </button>
-                  </div>
+                <div className="mb-2.5 flex justify-end">
+                  <button
+                    onClick={() => refreshTrafficMutation.mutate()}
+                    disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
+                    aria-label={t('common.refresh')}
+                    className="flex items-center gap-1.5 rounded-full border border-dark-700/60 bg-dark-800/35 px-2.5 py-1 text-[10px] font-medium text-dark-300 transition-colors hover:border-accent-400/30 hover:bg-accent-400/10 hover:text-accent-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <RefreshIcon className="h-3 w-3" spinning={refreshTrafficMutation.isPending} />
+                    {trafficRefreshCooldown > 0
+                      ? `${trafficRefreshCooldown}s`
+                      : t('common.refresh')}
+                  </button>
                 </div>
                 {subscription.traffic_reset_mode &&
                   subscription.traffic_reset_mode !== 'NO_RESET' && (

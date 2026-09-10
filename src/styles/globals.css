@@ -1957,9 +1957,9 @@ input[type="checkbox"]:hover:not(:checked) {
 
   /* Shared liquid-glass surface tokens. Keep the variants declarative so
      legacy cards, islands, sheets, and dialogs stay on the same visual seam. */
-  --glass-radius: 20px;
-  --glass-radius-elevated: 24px;
-  --glass-radius-accent: 22px;
+  --glass-radius: 16px;
+  --glass-radius-elevated: 20px;
+  --glass-radius-accent: 18px;
   --glass-border: 1px solid rgba(var(--ix-accent-rgb), 0.2);
   --glass-border-elevated: 1px solid rgba(var(--ix-accent-rgb), 0.34);
   --glass-border-accent: 1px solid rgba(var(--ix-accent-rgb), 0.3);
@@ -2231,8 +2231,8 @@ html.dark {
 /* Tariff anatomy keeps the descriptive copy intact while pinning the price
    divider and action row to the same baseline across a grid row. */
 .tariff-card {
-  display: grid;
-  grid-template-rows: minmax(7rem, 1fr) auto auto auto;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 100%;
   padding: 20px;
@@ -2245,8 +2245,26 @@ html.dark {
   min-width: 0;
 }
 
+.tariff-card [data-tariff-summary] {
+  min-height: 13.5rem;
+}
+
+.tariff-card [data-tariff-features] {
+  min-height: 5rem;
+}
+
+.tariff-card [data-tariff-price] {
+  margin-top: auto;
+}
+
 .tariff-card [data-tariff-action] {
   margin-top: 16px;
+}
+
+@media (max-width: 639px) {
+  .tariff-card [data-tariff-summary] {
+    min-height: 12rem;
+  }
 }
 
 .ix-sidebar {

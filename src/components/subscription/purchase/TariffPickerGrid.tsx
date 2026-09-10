@@ -241,20 +241,22 @@ export function TariffPickerGrid({
                       ? 'glass-surface-accent'
                       : 'glass-surface'
                   } bento-card-hover ${isCurrentTariff ? 'bento-card-glow' : ''} ${
-                    isCurrentTariff
-                      ? 'border-accent-500'
-                      : tariff.is_highlighted
-                        ? 'border-2 border-urgent-400'
-                        : ''
+                    isCurrentTariff ? 'border-accent-500' : ''
+                  } ${
+                    tariff.is_highlighted
+                      ? 'border-2 border-violet-400/70 ring-2 ring-violet-400/25 shadow-[0_22px_50px_-24px_rgba(124,58,237,0.9)]'
+                      : ''
                   }`}
                 >
                   <div data-tariff-summary>
-                    {tariff.is_highlighted && (
-                      <BestValueBadge
-                        className="mb-2"
-                        label={t('subscription.recommendedTariff', 'Рекомендуемый тариф')}
-                      />
-                    )}
+                    <div className="mb-2 h-6">
+                      {tariff.is_highlighted && (
+                        <BestValueBadge
+                          variant="tariff"
+                          label={t('subscription.recommendedTariff', 'Рекомендуемый тариф')}
+                        />
+                      )}
+                    </div>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -270,7 +272,7 @@ export function TariffPickerGrid({
                           )}
                         </div>
                         {marketingDescription && (
-                          <div className="mt-1 max-w-prose whitespace-pre-line text-sm leading-5 text-dark-400">
+                          <div className="tariff-description mt-1 max-w-prose whitespace-pre-line text-sm leading-5 text-dark-400">
                             {marketingDescription}
                           </div>
                         )}
