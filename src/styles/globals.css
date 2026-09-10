@@ -1948,6 +1948,75 @@ input[type="checkbox"]:hover:not(:checked) {
 :root {
   --ix-accent-rgb: 34, 211, 238;
   --ix-glow: rgba(34, 211, 238, 0.38);
+
+  /* Shared liquid-glass surface tokens. Keep the variants declarative so
+     legacy cards, islands, sheets, and dialogs stay on the same visual seam. */
+  --glass-radius: 30px;
+  --glass-radius-elevated: 32px;
+  --glass-radius-accent: 28px;
+  --glass-border: 1px solid rgba(var(--ix-accent-rgb), 0.2);
+  --glass-border-elevated: 1px solid rgba(var(--ix-accent-rgb), 0.34);
+  --glass-border-accent: 1px solid rgba(var(--ix-accent-rgb), 0.3);
+  --glass-fill: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.07),
+    rgba(var(--ix-accent-rgb), 0.08) 44%,
+    rgba(var(--color-dark-950), 0.56)
+  );
+  --glass-fill-elevated: linear-gradient(
+    145deg,
+    rgba(var(--ix-accent-rgb), 0.15),
+    rgba(var(--color-dark-900), 0.68) 52%,
+    rgba(var(--color-dark-950), 0.76)
+  );
+  --glass-fill-accent: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(var(--ix-accent-rgb), 0.12) 46%,
+    rgba(var(--color-dark-950), 0.64)
+  );
+  --glass-blur: 18px;
+  --glass-blur-elevated: 24px;
+  --glass-blur-accent: 22px;
+  --glass-saturation: 140%;
+  --glass-saturation-elevated: 150%;
+  --glass-saturation-accent: 150%;
+  --glass-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --glass-inner-highlight-elevated: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  --glass-inner-highlight-accent: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --glass-shadow: 0 18px 48px -24px rgba(0, 0, 0, 0.55);
+  --glass-shadow-elevated: 0 28px 80px -32px rgba(0, 0, 0, 0.72), 0 0 42px -20px var(--ix-glow);
+  --glass-shadow-accent: 0 24px 64px -24px rgba(0, 0, 0, 0.7), 0 0 40px -18px var(--ix-glow);
+}
+
+html.light {
+  --glass-border: 1px solid rgba(var(--ix-accent-rgb), 0.24);
+  --glass-border-elevated: 1px solid rgba(var(--ix-accent-rgb), 0.32);
+  --glass-border-accent: 1px solid rgba(var(--ix-accent-rgb), 0.28);
+  --glass-fill: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(var(--ix-accent-rgb), 0.08) 46%,
+    rgba(var(--color-champagne-100), 0.82)
+  );
+  --glass-fill-elevated: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(var(--ix-accent-rgb), 0.1) 52%,
+    rgba(var(--color-champagne-100), 0.9)
+  );
+  --glass-fill-accent: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.94),
+    rgba(var(--ix-accent-rgb), 0.12) 46%,
+    rgba(var(--color-champagne-100), 0.84)
+  );
+  --glass-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.84);
+  --glass-inner-highlight-elevated: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  --glass-inner-highlight-accent: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  --glass-shadow: 0 18px 44px -26px rgba(15, 23, 42, 0.2);
+  --glass-shadow-elevated: 0 24px 60px -28px rgba(15, 23, 42, 0.24);
+  --glass-shadow-accent: 0 20px 50px -26px rgba(15, 23, 42, 0.22);
 }
 
 /* Base paint lives on html (the propagated canvas background), not on body:
@@ -1975,6 +2044,71 @@ html.dark {
   min-height: 100dvh;
 }
 
+/* One three-variant system. Legacy selectors intentionally share these
+   declarations so new surfaces do not drift from cards and overlays. */
+.glass-surface,
+.glass,
+.bento-card,
+.card {
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  box-shadow: var(--glass-inner-highlight), var(--glass-shadow);
+}
+
+.glass-surface-elevated,
+.card-inset,
+.sheet-container,
+.sheet-content,
+.dialog-content,
+[role="dialog"] {
+  border: var(--glass-border-elevated);
+  border-radius: var(--glass-radius-elevated);
+  background: var(--glass-fill-elevated);
+  backdrop-filter: blur(var(--glass-blur-elevated)) saturate(var(--glass-saturation-elevated));
+  -webkit-backdrop-filter: blur(var(--glass-blur-elevated))
+    saturate(var(--glass-saturation-elevated));
+  box-shadow: var(--glass-inner-highlight-elevated), var(--glass-shadow-elevated);
+}
+
+.glass-surface-accent,
+.ix-island {
+  border: var(--glass-border-accent);
+  border-radius: var(--glass-radius-accent);
+  background: var(--glass-fill-accent);
+  backdrop-filter: blur(var(--glass-blur-accent)) saturate(var(--glass-saturation-accent));
+  -webkit-backdrop-filter: blur(var(--glass-blur-accent)) saturate(var(--glass-saturation-accent));
+  box-shadow: var(--glass-inner-highlight-accent), var(--glass-shadow-accent);
+}
+
+@media (display-mode: standalone) {
+  .glass.app-mobile-header {
+    border-inline: 0;
+    border-top: 0;
+    background: rgba(var(--color-dark-950), 0.95);
+  }
+}
+
+@media (max-width: 1023px) {
+  .glass-surface,
+  .glass-surface-elevated,
+  .glass-surface-accent,
+  .glass,
+  .bento-card,
+  .card,
+  .card-inset,
+  .sheet-container,
+  .sheet-content,
+  .dialog-content,
+  [role="dialog"],
+  .ix-island {
+    backdrop-filter: blur(12px) saturate(125%);
+    -webkit-backdrop-filter: blur(12px) saturate(125%);
+  }
+}
+
 @media (min-width: 1024px) {
   .ix-app {
     display: grid;
@@ -1985,28 +2119,6 @@ html.dark {
 .ix-island {
   position: relative;
   overflow: hidden;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(
-    155deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(var(--ix-accent-rgb), 0.06) 42%,
-    rgba(255, 255, 255, 0.025) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 24px 64px -24px rgba(0, 0, 0, 0.7),
-    0 0 40px -18px var(--ix-glow);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-}
-
-html.light .ix-island {
-  border-color: rgba(var(--ix-accent-rgb), 0.16);
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.92), rgba(var(--ix-accent-rgb), 0.08));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 18px 40px -24px rgba(15, 23, 42, 0.18);
 }
 
 /* .ix-island выставляет position: relative (позиционирование ::before), и как
@@ -2204,32 +2316,6 @@ html.light .ix-island {
     bottom: calc(96px + env(safe-area-inset-bottom, 0px));
     right: 16px;
   }
-}
-
-.bento-card,
-.card {
-  border-color: rgba(var(--ix-accent-rgb), 0.14) !important;
-  background: linear-gradient(
-    180deg,
-    rgba(var(--color-dark-800), 0.42),
-    rgba(var(--color-dark-950), 0.58)
-  ) !important;
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 18px 48px -24px rgba(0, 0, 0, 0.55) !important;
-}
-
-html.light .bento-card,
-html.light .card {
-  border-color: rgba(var(--ix-accent-rgb), 0.18) !important;
-  background: rgba(var(--color-champagne-50), 0.78) !important;
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 16px 36px -24px rgba(15, 23, 42, 0.2) !important;
 }
 
 /* ========== Живость: кроссфейд палитры, sweep, press, reduced-motion ========== */
