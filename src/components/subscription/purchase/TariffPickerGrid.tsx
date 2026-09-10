@@ -249,7 +249,7 @@ export function TariffPickerGrid({
                   }`}
                 >
                   <div data-tariff-summary>
-                    {tariff.is_highlighted && !isCurrentTariff && (
+                    {tariff.is_highlighted && (
                       <BestValueBadge
                         className="mb-2"
                         label={t('subscription.recommendedTariff', 'Рекомендуемый тариф')}

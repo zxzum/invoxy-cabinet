@@ -171,11 +171,11 @@ describe('выделенный тариф в списке', () => {
     expect(tariffCard('Базовый').className).not.toContain('border-2');
   });
 
-  it('текущий тариф важнее подсказки: двух рамок сразу не бывает', async () => {
+  it('текущий тариф сохраняет свою рамку и показывает рекомендацию', async () => {
     const { render: renderGrid, cardFor: tariffCard } = await import('./tariffGridHarness');
     renderGrid([{ id: 2, name: 'Про', is_highlighted: true }], { currentTariffId: 2 });
 
-    expect(screen.queryByText(ru('subscription.recommendedTariff'))).toBeNull();
+    expect(await screen.findByText(ru('subscription.recommendedTariff'))).toBeTruthy();
     expect(tariffCard('Про').className).toContain('border-accent-500');
   });
 });
