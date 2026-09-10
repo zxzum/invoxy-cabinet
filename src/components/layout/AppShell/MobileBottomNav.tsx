@@ -41,12 +41,18 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
     },
   ];
 
+  const activeIndex = items.findIndex((item) =>
+    item.path === '/'
+      ? location.pathname === '/'
+      : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
+  );
+
   return (
     <nav
       aria-hidden={isKeyboardOpen || undefined}
       inert={isKeyboardOpen || undefined}
       className={cn(
-        'fixed inset-x-3 z-50 mx-auto max-w-lg rounded-[26px] border border-white/10 transition-opacity duration-200 lg:hidden',
+        'fixed inset-x-3 z-50 mx-auto max-w-lg transition-opacity duration-200 lg:hidden',
         'ix-island glass-surface-elevated',
         isKeyboardOpen ? 'pointer-events-none opacity-0' : 'opacity-100',
       )}
@@ -56,6 +62,22 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
         className="relative grid"
         style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
       >
+        {activeIndex >= 0 && (
+          <motion.span
+            data-nav-plate
+            aria-hidden="true"
+            initial={false}
+            animate={{ x: `calc(${activeIndex} * (100% + 8px))` }}
+            transition={navSpring}
+            className="pointer-events-none absolute inset-y-1 left-1 z-0 w-[calc(25%-8px)] rounded-2xl"
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(var(--ix-accent-rgb), 0.24), rgba(var(--ix-accent-rgb), 0.08))',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 0 24px -6px var(--ix-glow)',
+              willChange: 'transform',
+            }}
+          />
+        )}
         {items.map((item) => {
           const active =
             item.path === '/'
@@ -74,20 +96,6 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
                 active ? 'text-dark-50' : 'text-dark-500',
               )}
             >
-              {active && (
-                <motion.span
-                  layoutId="mobile-nav-plate"
-                  data-nav-plate
-                  aria-hidden="true"
-                  className="absolute inset-1 z-0 rounded-2xl"
-                  transition={navSpring}
-                  style={{
-                    background:
-                      'linear-gradient(135deg, rgba(var(--ix-accent-rgb), 0.24), rgba(var(--ix-accent-rgb), 0.08))',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 0 24px -6px var(--ix-glow)',
-                  }}
-                />
-              )}
               <Icon
                 className={cn(
                   'relative z-10 h-6 w-6 transition-transform',

@@ -68,8 +68,13 @@ export function TariffPickerGrid({
     <>
       {/* Promo group discount banner */}
       {tariffs.some((tariff) => tariff.promo_group_name) && (
-        <div className="alert-success mb-4">
-          <div className="flex items-center gap-3">
+        <div className="alert-success relative mb-4">
+          <button
+            type="button"
+            aria-expanded={isPromoTierSheetOpen}
+            onClick={() => setIsPromoTierSheetOpen(true)}
+            className="flex w-full cursor-pointer items-center gap-3 pr-10 text-left"
+          >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success-500/20 text-success-400">
               <svg
                 className="h-5 w-5"
@@ -94,16 +99,16 @@ export function TariffPickerGrid({
                 {t('subscription.promoGroup.personalDiscountsApplied')}
               </span>
             </div>
-            <button
-              type="button"
-              aria-expanded={isPromoTierSheetOpen}
-              aria-label={t('subscription.promoGroup.aboutGroups', 'Что это за группа?')}
-              onClick={() => setIsPromoTierSheetOpen(true)}
-              className="shrink-0 rounded-lg p-1 text-success-400 transition-colors hover:bg-success-500/20"
-            >
-              <InfoIcon className="h-5 w-5" />
-            </button>
-          </div>
+          </button>
+          <button
+            type="button"
+            aria-expanded={isPromoTierSheetOpen}
+            aria-label={t('subscription.promoGroup.aboutGroups', 'Что это за группа?')}
+            onClick={() => setIsPromoTierSheetOpen(true)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-success-400 transition-colors hover:bg-success-500/20"
+          >
+            <InfoIcon className="h-5 w-5" />
+          </button>
         </div>
       )}
 
@@ -157,6 +162,8 @@ export function TariffPickerGrid({
             const bIsCurrent = b.is_current || b.id === subscription?.tariff_id;
             if (aIsCurrent && !bIsCurrent) return -1;
             if (!aIsCurrent && bIsCurrent) return 1;
+            if (a.is_highlighted && !b.is_highlighted) return -1;
+            if (!a.is_highlighted && b.is_highlighted) return 1;
             return 0;
           })
           .map((tariff, index) => {
@@ -229,7 +236,7 @@ export function TariffPickerGrid({
                         }
                       : undefined
                   }
-                  className={`tariff-card animate-none h-full text-left transition-all ${
+                  className={`tariff-card animate-none h-full rounded-2xl text-left transition-all ${
                     isCurrentTariff || tariff.is_highlighted
                       ? 'glass-surface-accent'
                       : 'glass-surface'
@@ -243,7 +250,10 @@ export function TariffPickerGrid({
                 >
                   <div data-tariff-summary>
                     {tariff.is_highlighted && !isCurrentTariff && (
-                      <BestValueBadge className="mb-2" />
+                      <BestValueBadge
+                        className="mb-2"
+                        label={t('subscription.recommendedTariff', 'Рекомендуемый тариф')}
+                      />
                     )}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">

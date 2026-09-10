@@ -52,7 +52,7 @@ export default function TrafficProgressBar({
         {label && (
           <div className="mb-2 flex items-baseline justify-between gap-3">
             <span className="min-w-0 truncate text-xs font-semibold text-dark-50/55">{label}</span>
-            <span className="shrink-0 font-mono text-[11px] text-dark-50/35">
+            <span className="shrink-0 font-mono text-[11px] text-dark-400">
               {formatTraffic(_usedGb)}
             </span>
           </div>
@@ -108,7 +108,7 @@ export default function TrafficProgressBar({
       {label && (
         <div className="mb-2 flex items-baseline justify-between gap-3">
           <span className="min-w-0 truncate text-xs font-semibold text-dark-50/55">{label}</span>
-          <span className="shrink-0 font-mono text-[11px] text-dark-50/35">
+          <span className="shrink-0 font-mono text-[11px] text-dark-400">
             {formatTraffic(_usedGb)} / {formatTraffic(limitGb)}
           </span>
         </div>

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -155,6 +155,34 @@ async function renderReferral() {
     </QueryClientProvider>,
   );
 }
+
+describe('ссылки для приглашения', () => {
+  it('показывают копирование и share для обеих ссылок с Telegram fallback', async () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      await renderReferral();
+
+      const inputs = (await screen.findAllByRole('textbox')) as HTMLInputElement[];
+      const copyButtons = screen.getAllByRole('button', { name: 'referral.copyLink' });
+      const shareButtons = screen.getAllByRole('button', { name: 'referral.shareButton' });
+
+      expect(inputs).toHaveLength(2);
+      expect(copyButtons).toHaveLength(2);
+      expect(shareButtons).toHaveLength(2);
+
+      fireEvent.click(shareButtons[0]);
+      expect(open).toHaveBeenLastCalledWith(
+        expect.stringContaining(`url=${encodeURIComponent(inputs[0].value)}`),
+        '_blank',
+        'noopener',
+      );
+      fireEvent.click(shareButtons[1]);
+      expect(open).toHaveBeenCalledTimes(2);
+    } finally {
+      open.mockRestore();
+    }
+  });
+});
 
 describe('награды днями в истории начислений', () => {
   it('называются днями, а не нулём рублей', async () => {

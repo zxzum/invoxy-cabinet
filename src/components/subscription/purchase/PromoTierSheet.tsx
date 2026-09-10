@@ -92,7 +92,13 @@ export function PromoTierSheet({ isOpen, onClose, currentGroupName }: PromoTierS
   };
 
   return (
-    <ResponsiveSheet isOpen={isOpen} onClose={onClose} title={title} size="lg">
+    <ResponsiveSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      size="lg"
+      className="rounded-t-2xl rounded-b-none sm:rounded-2xl"
+    >
       <div className="space-y-5 p-4 sm:p-6">
         {isLoading ? (
           <SkeletonGroup className="space-y-3">
@@ -105,7 +111,10 @@ export function PromoTierSheet({ isOpen, onClose, currentGroupName }: PromoTierS
           </div>
         ) : data ? (
           <>
-            <section className="bento-card p-4 sm:p-5" aria-labelledby="promo-progress-title">
+            <section
+              className="bento-card rounded-2xl p-4 sm:p-5"
+              aria-labelledby="promo-progress-title"
+            >
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <h3 id="promo-progress-title" className="text-lg font-semibold text-dark-50">
@@ -119,7 +128,7 @@ export function PromoTierSheet({ isOpen, onClose, currentGroupName }: PromoTierS
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="card-inset min-w-0 p-3">
+                <div className="card-inset rounded-xl min-w-0 p-3">
                   <div className="mb-1 text-xs text-dark-400">
                     {t('subscription.promoGroup.totalSpent')}
                   </div>
@@ -127,7 +136,7 @@ export function PromoTierSheet({ isOpen, onClose, currentGroupName }: PromoTierS
                     {formatRubles(data.current_spent_rubles)}
                   </div>
                 </div>
-                <div className="card-inset min-w-0 p-3">
+                <div className="card-inset rounded-xl min-w-0 p-3">
                   <div className="mb-1 text-xs text-dark-400">
                     {t('subscription.promoGroup.currentStatus')}
                   </div>
@@ -187,7 +196,7 @@ export function PromoTierSheet({ isOpen, onClose, currentGroupName }: PromoTierS
                   <article
                     key={tier.id}
                     role="listitem"
-                    className={`bento-card p-4 ${
+                    className={`bento-card rounded-2xl p-4 ${
                       tier.is_current
                         ? 'bg-accent-500/5 ring-2 ring-accent-500/50'
                         : tier.is_achieved
@@ -222,7 +231,7 @@ export function PromoTierSheet({ isOpen, onClose, currentGroupName }: PromoTierS
                     </div>
 
                     {hasDiscounts(tier) ? (
-                      <div className="card-inset p-3">
+                      <div className="card-inset rounded-xl p-3">
                         <div className="mb-2 text-xs text-dark-400">
                           {t('subscription.promoGroup.discounts')}:
                         </div>

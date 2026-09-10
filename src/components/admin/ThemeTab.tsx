@@ -213,13 +213,13 @@ export function ThemeTab() {
   return (
     <div className="space-y-6">
       {/* Theme toggles */}
-      <div className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6">
+      <div className="glass-surface p-5 sm:p-6">
         <h3 className="mb-4 text-lg font-semibold text-dark-100">
           {t('admin.settings.availableThemes')}
         </h3>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-3 sm:p-4">
+          <div className="card-inset flex items-center justify-between p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <MoonIcon />
               <span className="text-sm font-medium text-dark-200 sm:text-base">
@@ -236,7 +236,7 @@ export function ThemeTab() {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-dark-700/30 p-3 sm:p-4">
+          <div className="card-inset flex items-center justify-between p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <SunIcon />
               <span className="text-sm font-medium text-dark-200 sm:text-base">
@@ -256,7 +256,7 @@ export function ThemeTab() {
       </div>
 
       {/* Quick Presets */}
-      <div className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6">
+      <div className="glass-surface p-5 sm:p-6">
         <button
           onClick={() => toggleSection('presets')}
           className="flex w-full items-center justify-between"
@@ -277,7 +277,7 @@ export function ThemeTab() {
               <button
                 key={preset.id}
                 onClick={() => applyPreset(preset.colors)}
-                className="rounded-xl border border-dark-600 p-3 transition-all hover:scale-[1.02] hover:border-dark-500"
+                className="card-interactive p-3 transition-transform hover:scale-[1.02]"
                 style={{ backgroundColor: preset.colors.darkBackground }}
               >
                 <div className="mb-2 flex items-center gap-2">
@@ -310,7 +310,7 @@ export function ThemeTab() {
       </div>
 
       {/* Custom Colors */}
-      <div className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6">
+      <div className="glass-surface p-5 sm:p-6">
         <button
           onClick={() => toggleSection('colors')}
           className="flex w-full items-center justify-between"
@@ -430,7 +430,7 @@ export function ThemeTab() {
           <button
             onClick={() => updateColorsMutation.mutate(draftColors)}
             disabled={updateColorsMutation.isPending}
-            className="rounded-xl bg-accent-500 px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
+            className="btn-primary px-4"
           >
             {updateColorsMutation.isPending
               ? t('common.saving', t('common.save'))
@@ -439,7 +439,7 @@ export function ThemeTab() {
           <button
             onClick={handleCancel}
             disabled={updateColorsMutation.isPending}
-            className="rounded-xl bg-dark-700 px-4 py-2 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-600 disabled:opacity-50"
+            className="btn-secondary px-4"
           >
             {t('common.cancel')}
           </button>
@@ -451,7 +451,7 @@ export function ThemeTab() {
         <button
           onClick={() => resetColorsMutation.mutate()}
           disabled={resetColorsMutation.isPending}
-          className="rounded-xl bg-dark-700 px-4 py-2 text-sm text-dark-300 transition-colors hover:bg-dark-600 disabled:opacity-50"
+          className="btn-secondary px-4"
         >
           {t('admin.settings.resetAllColors')}
         </button>

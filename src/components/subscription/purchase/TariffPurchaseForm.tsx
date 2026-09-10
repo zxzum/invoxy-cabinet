@@ -348,7 +348,7 @@ export function TariffPurchaseForm({
 
       {/* Tariff Info */}
       {isEmbedded ? (
-        <div className="card-inset p-3">
+        <div className="card-inset rounded-xl p-3">
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-dark-200">
             <span>{`${primaryTrafficLabel}: ${tariff.traffic_limit_label}`}</span>
             <span>{`${t('subscription.devices')}: ${tariff.device_limit === 0 ? '∞' : tariff.device_limit}`}</span>
@@ -360,7 +360,7 @@ export function TariffPurchaseForm({
           </div>
         </div>
       ) : (
-        <div className="card-inset p-3">
+        <div className="card-inset rounded-xl p-3">
           <div className="flex flex-wrap gap-3 text-sm">
             <div className="text-dark-200">
               {`${primaryTrafficLabel} ${tariff.traffic_limit_label} — ${primaryTrafficDescription}`}
@@ -591,7 +591,7 @@ export function TariffPurchaseForm({
 
             {/* Custom days option */}
             {tariff.custom_days_enabled && (tariff.price_per_day_kopeks ?? 0) > 0 && (
-              <div className="card-inset p-4">
+              <div className="card-inset rounded-xl p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-medium text-dark-200">
                     {t('subscription.customDays.title')}
@@ -694,7 +694,7 @@ export function TariffPurchaseForm({
               <div className="mb-3 text-sm text-dark-400">
                 {t('subscription.customTraffic.label')}
               </div>
-              <div className="card-inset p-4">
+              <div className="card-inset rounded-xl p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-medium text-dark-200">
                     {t('subscription.customTraffic.selectVolume')}
@@ -774,7 +774,7 @@ export function TariffPurchaseForm({
 
           {/* Summary & Purchase */}
           {(selectedTariffPeriod || useCustomDays) && (
-            <div className="card-inset p-5">
+            <div className="card-inset rounded-xl p-5">
               {(() => {
                 const basePeriodPrice = useCustomDays
                   ? customDays * (tariff.price_per_day_kopeks ?? 0)

@@ -49,6 +49,8 @@ describe('MobileBottomNav', () => {
     expect(screen.getByText('Подключение').className).toContain('whitespace-nowrap');
     // Плашка активного таба — единственный data-nav-plate в дереве
     expect(container.querySelectorAll('[data-nav-plate]').length).toBe(1);
+    expect(container.querySelector('nav > div > [data-nav-plate]')).toBeTruthy();
+    expect(connectionLink?.querySelector('[data-nav-plate]')).toBeNull();
   });
 
   it('hides itself while the keyboard is open', () => {

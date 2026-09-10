@@ -122,7 +122,7 @@ describe('AppShell support FAB', () => {
 
     const tariffs = screen.getByRole('link', { name: 'Тарифы' });
     const subscription = screen.getByRole('link', { name: 'Моя подписка' });
-    const referral = screen.getByRole('link', { name: 'Рефералы' });
+    const referral = screen.getByRole('link', { name: 'Приглашенные' });
     const info = screen.getByRole('link', { name: 'Информация' });
     const connection = screen.getByRole('link', { name: 'Подключение' });
 

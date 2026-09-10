@@ -147,6 +147,27 @@ describe('TariffPickerGrid card anatomy', () => {
     }
   });
 
+  it('puts the API-recommended tariff first and keeps its highlight', () => {
+    render(
+      <MemoryRouter>
+        <TariffPickerGrid
+          tariffs={[tariff, { ...tariff, id: 2, name: 'Premium LTE', is_highlighted: true }]}
+          subscription={null}
+          purchaseOptions={undefined}
+          isTariffsMode
+          isMultiTariff={false}
+          onSelectTariff={vi.fn()}
+          onSwitchTariff={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    const cards = Array.from(document.querySelectorAll('[data-tariff-card]'));
+    expect(cards[0]?.textContent).toContain('Premium LTE');
+    expect(cards[0]?.className).toContain('border-2');
+    expect(cards[0]?.textContent).toContain('Рекомендуемый тариф');
+  });
+
   it('keeps the promo sheet mounted while its open state closes', () => {
     render(
       <MemoryRouter>
@@ -169,5 +190,30 @@ describe('TariffPickerGrid card anatomy', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'close promo sheet' }));
     expect(screen.getByTestId('promo-tier-sheet').getAttribute('data-open')).toBe('false');
+  });
+
+  it('opens the promo sheet from the banner body as well as the info button', () => {
+    render(
+      <MemoryRouter>
+        <TariffPickerGrid
+          tariffs={[{ ...tariff, promo_group_name: 'Invoxy Friends' }]}
+          subscription={null}
+          purchaseOptions={undefined}
+          isTariffsMode
+          isMultiTariff={false}
+          onSelectTariff={vi.fn()}
+          onSwitchTariff={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    const sheet = screen.getByTestId('promo-tier-sheet');
+    const bannerText = screen.getByText('subscription.promoGroup.yourGroup');
+    fireEvent.click(bannerText);
+    expect(sheet.getAttribute('data-open')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'close promo sheet' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Что это за группа?' }));
+    expect(screen.getByTestId('promo-tier-sheet').getAttribute('data-open')).toBe('true');
   });
 });

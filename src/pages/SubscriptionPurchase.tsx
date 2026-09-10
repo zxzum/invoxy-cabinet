@@ -159,7 +159,7 @@ export default function SubscriptionPurchase() {
       {/* Tariffs Section */}
       {isTariffsMode && tariffs.length > 0 && (
         <div
-          className="relative overflow-hidden rounded-3xl"
+          className="relative overflow-hidden rounded-2xl"
           style={{
             background: g.cardBg,
             border: `1px solid ${g.cardBorder}`,
@@ -294,6 +294,7 @@ export default function SubscriptionPurchase() {
                 setSelectedTariff(null);
               }}
               title={getTariffCustomerFacingName(sheetTariff.name, t('subscription.whiteInternet'))}
+              className="rounded-t-2xl rounded-b-none sm:rounded-2xl"
             >
               <div className="px-4 pb-4 pt-1">
                 <TariffPurchaseForm

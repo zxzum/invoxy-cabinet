@@ -117,35 +117,25 @@ export default function SubscriptionCardActive({
         {/* Big percentage / infinity */}
         <div className="text-right">
           {isUnlimited ? (
-            <>
-              <div
-                className="font-display text-[28px] font-extrabold leading-none tracking-tight"
-                style={{ color: zone.mainVar }}
-              >
-                &#8734;
-              </div>
-              <div className="mt-1 font-mono text-[11px] text-dark-400">
-                {formatTraffic(usedGb)} {t('dashboard.usedSuffix')}
-              </div>
-            </>
+            <div
+              className="font-display text-[28px] font-extrabold leading-none tracking-tight"
+              style={{ color: zone.mainVar }}
+            >
+              &#8734;
+            </div>
           ) : (
-            <>
-              <div className="font-display text-[38px] font-extrabold leading-none tracking-tight text-dark-50">
-                {animatedPercent.toFixed(0)}
-                <span className="ml-px text-lg font-medium text-dark-400">%</span>
-              </div>
-              <div className="mt-0.5 font-mono text-[11px] text-dark-400">
-                {formatTraffic(usedGb)} / {formatTraffic(subscription.traffic_limit_gb)}
-              </div>
-            </>
+            <div className="font-display text-[42px] font-extrabold leading-none tracking-tight text-dark-50 sm:text-[46px]">
+              {animatedPercent.toFixed(0)}
+              <span className="ml-px text-lg font-medium text-dark-400">%</span>
+            </div>
           )}
         </div>
       </div>
 
       {/* ─── Progress Bar ─── */}
       <div
-        className="mb-6 rounded-xl p-3"
-        style={{ background: g.innerBg, border: `1px solid ${g.innerBorder}` }}
+        className="glass-surface-accent mb-6 p-3"
+        style={{ borderColor: `rgba(${zone.mainVarRaw}, 0.24)` }}
       >
         <TrafficProgressBar
           usedGb={usedGb}
@@ -166,7 +156,7 @@ export default function SubscriptionCardActive({
       />
 
       {/* ─── Stats row: Tariff + Days Left ─── */}
-      <div className="mb-5 grid min-w-0 grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)] gap-2.5">
+      <div className="mb-5 grid min-w-0 grid-cols-2 gap-2.5">
         {/* Tariff badge — clickable. Neutral chrome: the tariff name has
             no traffic-zone semantics, so tinting it by the traffic zone
             (DESIGN.md Status-Hue Lockout) was wrong. */}
@@ -187,7 +177,7 @@ export default function SubscriptionCardActive({
           <div className="min-w-0 truncate text-sm font-bold leading-tight tracking-tight text-dark-50 sm:text-base">
             {subscription.tariff_name || t('subscription.currentPlan')}
           </div>
-          <div className="mt-0.5 truncate whitespace-nowrap font-mono text-[10px] text-dark-50/30">
+          <div className="mt-0.5 truncate whitespace-nowrap font-mono text-[10px] text-dark-400">
             {t('dashboard.validUntil', { date: formattedDate })}
           </div>
         </Link>
@@ -203,7 +193,7 @@ export default function SubscriptionCardActive({
                 : `1px solid ${g.innerBorder}`,
           }}
         >
-          <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-dark-50/35">
+          <div className="mb-1 flex min-w-0 items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-dark-400">
             <div
               className="flex h-6 w-6 items-center justify-center rounded-[7px] transition-colors duration-300"
               style={{
@@ -240,7 +230,7 @@ export default function SubscriptionCardActive({
         <button
           onClick={() => refreshTrafficMutation.mutate()}
           disabled={refreshTrafficMutation.isPending || trafficRefreshCooldown > 0}
-          className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-dark-400 transition-colors hover:bg-dark-50/[0.05] hover:text-dark-50/50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-full border border-dark-700/60 bg-dark-800/35 px-2.5 py-1 text-[11px] font-medium text-dark-300 transition-colors hover:border-accent-400/30 hover:bg-accent-400/10 hover:text-accent-300 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={t('common.refresh')}
         >
           <RefreshIcon

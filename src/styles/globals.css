@@ -21,6 +21,12 @@
   inherits: false;
 }
 
+@property --ix-page-blur-factor {
+  syntax: "<number>";
+  initial-value: 1;
+  inherits: true;
+}
+
 .hover-border-gradient {
   --_bg: var(--border-inner-bg, rgb(var(--color-dark-900)));
   --_accent: var(--accent-color, rgb(var(--color-accent-400)));
@@ -105,7 +111,7 @@
        низ контента), встаёт выше --mobile-nav-clearance — иначе панель это
        перекрывает. Высота панели — константа дизайна (иконка + подпись). */
     --mobile-nav-height: 76px;
-    --mobile-nav-offset: max(16px, env(safe-area-inset-bottom, 0px));
+    --mobile-nav-offset: max(12px, env(safe-area-inset-bottom, 0px));
     --mobile-nav-clearance: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + 12px);
   }
 
@@ -1951,9 +1957,9 @@ input[type="checkbox"]:hover:not(:checked) {
 
   /* Shared liquid-glass surface tokens. Keep the variants declarative so
      legacy cards, islands, sheets, and dialogs stay on the same visual seam. */
-  --glass-radius: 30px;
-  --glass-radius-elevated: 32px;
-  --glass-radius-accent: 28px;
+  --glass-radius: 20px;
+  --glass-radius-elevated: 24px;
+  --glass-radius-accent: 22px;
   --glass-border: 1px solid rgba(var(--ix-accent-rgb), 0.2);
   --glass-border-elevated: 1px solid rgba(var(--ix-accent-rgb), 0.34);
   --glass-border-accent: 1px solid rgba(var(--ix-accent-rgb), 0.3);
@@ -2032,16 +2038,82 @@ html {
 html.dark {
   background-image:
     radial-gradient(ellipse 90% 50% at 50% -15%, rgba(var(--ix-accent-rgb), 0.22), transparent 55%),
-    linear-gradient(rgba(var(--ix-accent-rgb), 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(var(--ix-accent-rgb), 0.045) 1px, transparent 1px);
-  background-size:
-    auto,
-    56px 56px,
-    56px 56px;
+    radial-gradient(ellipse 70% 45% at 100% 100%, rgba(var(--ix-accent-rgb), 0.08), transparent 68%),
+    radial-gradient(ellipse 65% 45% at 0% 65%, rgba(var(--ix-accent-rgb), 0.05), transparent 72%);
+  background-size: auto;
+  background-attachment: fixed;
 }
 
 .ix-app {
   min-height: 100dvh;
+}
+
+/* Let a new page settle before its glass surfaces start blurring. This keeps
+   route changes cheap and avoids the opaque flash seen when backdrop-filter
+   and transform begin on the same frame. */
+@keyframes ix-page-glass-in {
+  from {
+    --ix-page-blur-factor: 0;
+  }
+  to {
+    --ix-page-blur-factor: 1;
+  }
+}
+
+.ix-page-transition {
+  --ix-page-blur-factor: 0;
+  animation: ix-page-glass-in 0.22s 0.24s ease-out both;
+}
+
+.ix-page-transition .glass-surface,
+.ix-page-transition .glass,
+.ix-page-transition .bento-card,
+.ix-page-transition .bento-card-hover,
+.ix-page-transition .card,
+.ix-page-transition .card-inset {
+  backdrop-filter: blur(calc(var(--glass-blur) * var(--ix-page-blur-factor)))
+    saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * var(--ix-page-blur-factor)))
+    saturate(var(--glass-saturation));
+}
+
+.ix-page-transition .glass-surface-elevated {
+  backdrop-filter: blur(calc(var(--glass-blur-elevated) * var(--ix-page-blur-factor)))
+    saturate(var(--glass-saturation-elevated));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur-elevated) * var(--ix-page-blur-factor)))
+    saturate(var(--glass-saturation-elevated));
+}
+
+.ix-page-transition .glass-surface-accent {
+  backdrop-filter: blur(calc(var(--glass-blur-accent) * var(--ix-page-blur-factor)))
+    saturate(var(--glass-saturation-accent));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur-accent) * var(--ix-page-blur-factor)))
+    saturate(var(--glass-saturation-accent));
+}
+
+@media (max-width: 1023px) {
+  .ix-page-transition .glass-surface,
+  .ix-page-transition .glass,
+  .ix-page-transition .bento-card,
+  .ix-page-transition .bento-card-hover,
+  .ix-page-transition .card,
+  .ix-page-transition .card-inset {
+    backdrop-filter: blur(calc(12px * var(--ix-page-blur-factor))) saturate(125%);
+    -webkit-backdrop-filter: blur(calc(12px * var(--ix-page-blur-factor))) saturate(125%);
+  }
+
+  .ix-page-transition .glass-surface-elevated,
+  .ix-page-transition .glass-surface-accent {
+    backdrop-filter: blur(calc(12px * var(--ix-page-blur-factor))) saturate(125%);
+    -webkit-backdrop-filter: blur(calc(12px * var(--ix-page-blur-factor))) saturate(125%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ix-page-transition {
+    --ix-page-blur-factor: 1;
+    animation: none;
+  }
 }
 
 @layer components {
@@ -2362,11 +2434,14 @@ html.palette-fade *,
 html.palette-fade *::before,
 html.palette-fade *::after {
   transition:
+    background 0.45s ease-out,
     background-color 0.45s ease-out,
     color 0.45s ease-out,
     border-color 0.45s ease-out,
     fill 0.45s ease-out,
-    box-shadow 0.45s ease-out !important;
+    box-shadow 0.45s ease-out,
+    backdrop-filter 0.45s ease-out,
+    -webkit-backdrop-filter 0.45s ease-out !important;
 }
 
 /* Одноразовый световой sweep по главной кнопке — только на hover,

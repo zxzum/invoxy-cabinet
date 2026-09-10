@@ -58,4 +58,14 @@ describe('liquid glass surfaces', () => {
     expect(responsiveSheet).toContain('glass-surface-elevated');
     expect(responsiveSheet).toContain('dialog-content');
   });
+
+  it('keeps the dark canvas free of a permanent grid and fades glass blur with palettes', () => {
+    const css = readFileSync(new URL('./globals.css', import.meta.url), 'utf8');
+    const darkCanvas = css.slice(css.indexOf('html.dark {'), css.indexOf('.ix-app {'));
+
+    expect(darkCanvas).not.toContain('56px 56px');
+    expect(darkCanvas.match(/radial-gradient/g)).toHaveLength(3);
+    expect(css).toContain('backdrop-filter 0.45s ease-out');
+    expect(css).toContain('-webkit-backdrop-filter 0.45s ease-out');
+  });
 });

@@ -108,7 +108,7 @@ export function AppShell({ children }: AppShellProps) {
     { path: '/subscription/purchase', label: 'Тарифы', icon: SubscriptionIcon },
     { path: '/connection', label: 'Подключение', icon: LinkIcon },
     { path: '/subscriptions', label: 'Моя подписка', icon: SubscriptionIcon },
-    ...(referralEnabled ? [{ path: '/referral', label: 'Рефералы', icon: UsersIcon }] : []),
+    ...(referralEnabled ? [{ path: '/referral', label: 'Приглашенные', icon: UsersIcon }] : []),
     { path: '/info', label: 'Информация', icon: InfoIcon },
   ];
 
@@ -295,6 +295,7 @@ export function AppShell({ children }: AppShellProps) {
               <motion.div
                 key={location.pathname}
                 custom={direction}
+                className="ix-page-transition"
                 variants={{
                   enter: (value: number) =>
                     desktop

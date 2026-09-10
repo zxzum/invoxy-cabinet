@@ -30,6 +30,7 @@ import {
   GripIcon,
   PlusIcon,
   SaveIcon,
+  StarIcon,
   TrashIcon,
   XIcon,
 } from '@/components/icons';
@@ -42,6 +43,7 @@ interface SortableTariffCardProps {
   onDelete: () => void;
   onToggle: () => void;
   onToggleTrial: () => void;
+  onToggleHighlight: () => void;
 }
 
 function SortableTariffCard({
@@ -50,6 +52,7 @@ function SortableTariffCard({
   onDelete,
   onToggle,
   onToggleTrial,
+  onToggleHighlight,
 }: SortableTariffCardProps) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -110,6 +113,12 @@ function SortableTariffCard({
                     {t('admin.tariffs.giftBadge')}
                   </span>
                 )}
+                {tariff.is_highlighted && (
+                  <span className="inline-flex items-center gap-1 rounded bg-urgent-400/20 px-2 py-0.5 text-xs text-urgent-400">
+                    <StarIcon className="h-3 w-3" filled />
+                    {t('admin.tariffs.highlightLabel')}
+                  </span>
+                )}
                 {!tariff.is_active && (
                   <span className="rounded bg-dark-600 px-2 py-0.5 text-xs text-dark-400">
                     {t('admin.tariffs.inactive')}
@@ -161,6 +170,20 @@ function SortableTariffCard({
                 title={t('admin.tariffs.toggleTrial')}
               >
                 <GiftIcon />
+              </button>
+
+              <button
+                onClick={onToggleHighlight}
+                aria-label={t('admin.tariffs.highlightLabel')}
+                aria-pressed={tariff.is_highlighted}
+                className={`rounded-lg p-2 transition-colors ${
+                  tariff.is_highlighted
+                    ? 'bg-urgent-400/20 text-urgent-400 hover:bg-urgent-400/30'
+                    : 'bg-dark-700 text-dark-400 hover:bg-dark-600'
+                }`}
+                title={t('admin.tariffs.highlightLabel')}
+              >
+                <StarIcon filled={tariff.is_highlighted} />
               </button>
 
               <button
@@ -270,6 +293,14 @@ export default function AdminTariffs() {
     },
   });
 
+  const toggleHighlightMutation = useMutation({
+    mutationFn: ({ tariffId, isHighlighted }: { tariffId: number; isHighlighted: boolean }) =>
+      tariffsApi.updateTariff(tariffId, { is_highlighted: isHighlighted }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-tariffs'] });
+    },
+  });
+
   // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -367,6 +398,12 @@ export default function AdminTariffs() {
                   onDelete={() => handleDelete(tariff)}
                   onToggle={() => toggleMutation.mutate(tariff.id)}
                   onToggleTrial={() => toggleTrialMutation.mutate(tariff.id)}
+                  onToggleHighlight={() =>
+                    toggleHighlightMutation.mutate({
+                      tariffId: tariff.id,
+                      isHighlighted: !tariff.is_highlighted,
+                    })
+                  }
                 />
               ))}
             </div>

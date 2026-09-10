@@ -33,6 +33,8 @@ export interface TariffListItem {
   is_active: boolean;
   is_trial_available: boolean;
   show_in_gift: boolean;
+  /** Тариф отмечен как выгодный — выделяется в списке у клиента. */
+  is_highlighted?: boolean;
   is_daily: boolean;
   daily_price_kopeks: number;
   /** UUID продукта Lava для рекуррентных подписок (цена/период заданы в кабинете Lava) */

@@ -288,7 +288,7 @@ export function TariffPaymentSheet({
                   const isExpanded = selectedMethodId === method.id;
 
                   return (
-                    <div key={method.id} className="card-inset overflow-hidden">
+                    <div key={method.id} className="card-inset rounded-xl overflow-hidden">
                       <motion.button
                         type="button"
                         disabled={stage === 'creating'}
@@ -302,7 +302,7 @@ export function TariffPaymentSheet({
                         whileTap={{ scale: 0.98 }}
                         aria-expanded={hasOptions ? isExpanded : undefined}
                         {...staggerEntrance(index, 0.02, 0.04)}
-                        className="flex min-h-14 w-full items-center justify-between rounded-2xl px-4 py-3 text-start text-sm text-dark-100 transition-colors hover:bg-accent-500/10 disabled:opacity-50"
+                        className="flex min-h-14 w-full items-center justify-between rounded-xl px-4 py-3 text-start text-sm text-dark-100 transition-colors hover:bg-accent-500/10 disabled:opacity-50"
                       >
                         <span className="min-w-0">
                           <span className="block truncate">{method.name}</span>
@@ -377,7 +377,12 @@ export function TariffPaymentSheet({
   if (embedded) return content;
 
   return (
-    <ResponsiveSheet isOpen={open} onClose={close} title={title}>
+    <ResponsiveSheet
+      isOpen={open}
+      onClose={close}
+      title={title}
+      className="rounded-t-2xl rounded-b-none sm:rounded-2xl"
+    >
       {content}
     </ResponsiveSheet>
   );
