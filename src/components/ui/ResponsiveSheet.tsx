@@ -100,7 +100,7 @@ export function ResponsiveSheet({
               open: { opacity: 1, y: 0, scale: 1 },
             }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${WIDTH[size]} flex-col overflow-hidden rounded-2xl border border-dark-700 bg-dark-900 shadow-2xl`}
+            className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${WIDTH[size]} flex-col overflow-hidden glass-surface-elevated dialog-content`}
           >
             <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-2">
               <h3 className="text-lg font-semibold text-dark-50">{title}</h3>

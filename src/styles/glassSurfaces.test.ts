@@ -16,12 +16,25 @@ describe('liquid glass surfaces', () => {
     const css = readFileSync(new URL('./globals.css', import.meta.url), 'utf8');
 
     expect(css).toMatch(/@layer components \{\s*\/\* One three-variant system/);
+    expect(css).toContain('.card-inset.card-selected');
+    expect(css).toMatch(
+      /\.card-inset\.card-selected,\s*\.card-inset\.card-selected:hover\s*\{\s*@apply border-accent-500 bg-accent-500\/10;\s*\}/,
+    );
     expect(css).toContain('.card-interactive.card-selected');
   });
 
-  it('does not elevate every role dialog as a glass surface', () => {
+  it('uses explicit elevation classes for active sheet and dialog surfaces', () => {
     const css = readFileSync(new URL('./globals.css', import.meta.url), 'utf8');
+    const sheet = readFileSync(new URL('../components/ui/Sheet.tsx', import.meta.url), 'utf8');
+    const responsiveSheet = readFileSync(
+      new URL('../components/ui/ResponsiveSheet.tsx', import.meta.url),
+      'utf8',
+    );
 
     expect(css).not.toContain('[role="dialog"]');
+    expect(sheet).toContain('glass-surface-elevated');
+    expect(sheet).toContain('sheet-content');
+    expect(responsiveSheet).toContain('glass-surface-elevated');
+    expect(responsiveSheet).toContain('dialog-content');
   });
 });

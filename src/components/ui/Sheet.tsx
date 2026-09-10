@@ -348,7 +348,7 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-dark-900 shadow-2xl ${className}`}
+        className={`relative flex w-full max-w-lg flex-col overflow-hidden glass-surface-elevated sheet-content ${className}`}
         style={{
           maxHeight: insets.maxHeight,
           paddingBottom: insets.paddingBottom,

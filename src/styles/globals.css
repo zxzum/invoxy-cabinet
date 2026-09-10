@@ -2073,6 +2073,20 @@ html.dark {
     box-shadow: var(--glass-inner-highlight-elevated), var(--glass-shadow-elevated);
   }
 
+  .card-inset.card-selected,
+  .card-inset.card-selected:hover {
+    @apply border-accent-500 bg-accent-500/10;
+  }
+
+  .light .card-inset.card-selected,
+  .light .card-inset.card-selected:hover {
+    @apply border-accent-500/60 bg-accent-500/15;
+  }
+
+  .sheet-content {
+    border-radius: var(--glass-radius-elevated) var(--glass-radius-elevated) 0 0;
+  }
+
   .glass-surface-accent,
   .ix-island {
     border: var(--glass-border-accent);
