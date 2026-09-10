@@ -57,10 +57,7 @@ const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', zh: 'zh-CN
 // Format number as rubles
 const formatRubles = (kopeks: number) => {
   const locale = localeMap[i18n.language] || 'ru-RU';
-  return (
-    (kopeks / 100).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) +
-    ' ₽'
-  );
+  return `${Math.round(kopeks / 100).toLocaleString(locale)} ₽`;
 };
 
 // Main Component

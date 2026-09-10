@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { BestValueBadge } from '../BestValueBadge';
@@ -8,7 +9,7 @@ import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
 import { dailyPriceQuote } from './dailyPrice';
 import { getGlassColors } from '../../../utils/glassTheme';
-import { ArrowDownIcon, DevicesIcon, RestartIcon } from '@/components/icons';
+import { ArrowDownIcon, DevicesIcon, InfoIcon, RestartIcon } from '@/components/icons';
 import { FeatureBadge } from '@/components/ui/FeatureBadge';
 import type { Tariff, Subscription, PurchaseOptions } from '../../../types';
 import { getTariffCustomerFacingName, getTariffMarketingDescription } from './tariffPresentation';
@@ -53,17 +54,8 @@ export function TariffPickerGrid({
   const g = getGlassColors(isDark);
   const { formatAmount, currencySymbol } = useCurrency();
   const { applyPromoDiscount } = usePromoDiscount();
-  const primaryTrafficLabel = t('subscription.primaryTraffic', 'Основной трафик');
-  const primaryTrafficDescription = t(
-    'subscription.primaryTrafficDescription',
-    'общий интернет через VPN',
-  );
+  const [showPromoGroupInfo, setShowPromoGroupInfo] = useState(false);
   const whiteInternetLabel = t('subscription.whiteInternet');
-  const whiteInternetDescription = t(
-    'subscription.whiteInternetDescription',
-    'отдельная квота LTE',
-  );
-  const additionalDeviceLabel = t('subscription.additionalDevice', 'Доп. устройство');
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -74,32 +66,50 @@ export function TariffPickerGrid({
     <>
       {/* Promo group discount banner */}
       {tariffs.some((tariff) => tariff.promo_group_name) && (
-        <div className="alert-success mb-4 flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-500/20 text-success-400">
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
-              />
-            </svg>
-          </div>
-          <div>
-            <div className="text-sm font-medium text-success-400">
+        <div className="alert-success mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success-500/20 text-success-400">
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
+                />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1 truncate text-sm font-medium text-success-400">
               {t('subscription.promoGroup.yourGroup', {
                 name: tariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name,
               })}
+              <span className="font-normal text-dark-400">
+                {' · '}
+                {t('subscription.promoGroup.personalDiscountsApplied')}
+              </span>
             </div>
-            <div className="text-xs text-dark-400">
-              {t('subscription.promoGroup.personalDiscountsApplied')}
-            </div>
+            <button
+              type="button"
+              aria-expanded={showPromoGroupInfo}
+              aria-label={t('subscription.promoGroup.aboutGroups', 'Что это за группа?')}
+              onClick={() => setShowPromoGroupInfo((value) => !value)}
+              className="shrink-0 rounded-lg p-1 text-success-400 transition-colors hover:bg-success-500/20"
+            >
+              <InfoIcon className="h-5 w-5" />
+            </button>
           </div>
+          {showPromoGroupInfo && (
+            <p className="mt-2 text-xs leading-5 text-dark-400">
+              {t(
+                'subscription.promoGroup.explanation',
+                'Группа определяет ваши персональные скидки. Она назначается автоматически и может меняться со временем — следите за предложениями.',
+              )}
+            </p>
+          )}
         </div>
       )}
 
@@ -130,7 +140,7 @@ export function TariffPickerGrid({
             </button>
           </div>
         )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {[...tariffs]
           .filter((tariff) => {
             // In multi-tariff mode: hide already purchased tariffs
@@ -181,17 +191,6 @@ export function TariffPickerGrid({
               tariff.description,
               t('subscription.whiteInternet'),
             );
-            const deviceUnit =
-              tariff.device_limit > 0
-                ? t('subscription.devices', { count: tariff.device_limit })
-                    .replace(String(tariff.device_limit), '')
-                    .trim()
-                : '';
-            const maxDeviceLimit = tariff.max_device_limit ?? tariff.device_limit;
-            const deviceAddonLabel =
-              tariff.device_price_kopeks != null && tariff.device_price_kopeks > 0
-                ? `${additionalDeviceLabel} ${t('subscription.from', 'от')} ${formatPrice(tariff.device_price_kopeks)}${t('subscription.perMonth', '/мес')}${maxDeviceLimit > 0 ? `, ${t('subscription.additionalOptions.maxDevices', { count: maxDeviceLimit })} ${deviceUnit}` : ''}`
-                : null;
 
             const openTariffAction = () => {
               if (!canOpenTariff) return;
@@ -208,7 +207,7 @@ export function TariffPickerGrid({
               // wheel-banner). whileTap на обёртку не вешаем: у карточки уже
               // есть свой press через .bento-card-hover:active — было бы двойное
               // вжатие.
-              <motion.div key={tariff.id} {...staggerEntrance(index, 0.1, 0.06)}>
+              <motion.div key={tariff.id} className="h-full" {...staggerEntrance(index, 0.1, 0.06)}>
                 <div
                   role={canOpenTariff ? 'button' : undefined}
                   tabIndex={canOpenTariff ? 0 : undefined}
@@ -227,7 +226,7 @@ export function TariffPickerGrid({
                         }
                       : undefined
                   }
-                  className={`bento-card-hover animate-none p-5 text-left transition-all ${
+                  className={`bento-card-hover animate-none flex h-full flex-col p-5 text-left transition-all ${
                     isCurrentTariff
                       ? 'bento-card-glow border-accent-500'
                       : tariff.is_highlighted
@@ -236,10 +235,19 @@ export function TariffPickerGrid({
                   }`}
                 >
                   {tariff.is_highlighted && !isCurrentTariff && <BestValueBadge className="mb-2" />}
-                  <div className="mb-3 flex items-start justify-between">
-                    <div>
-                      <div className="text-lg font-semibold text-dark-100">
-                        {customerFacingName}
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-lg font-semibold text-dark-100">
+                          {customerFacingName}
+                        </span>
+                        {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 ? (
+                          <span className="badge-success text-xs">{whiteInternetLabel}</span>
+                        ) : (
+                          <span className="badge-neutral text-xs">
+                            {t('subscription.noLte', 'Без LTE')}
+                          </span>
+                        )}
                       </div>
                       {marketingDescription && (
                         <div className="mt-1 max-w-prose whitespace-pre-line text-sm leading-5 text-dark-400">
@@ -248,30 +256,25 @@ export function TariffPickerGrid({
                       )}
                     </div>
                     {isCurrentTariff && (
-                      <span className="badge-success text-xs">
+                      <span className="badge-success shrink-0 text-xs">
                         {t('subscription.currentTariff')}
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="mb-3 flex flex-wrap gap-2">
                     {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
                       <FeatureBadge icon={ArrowDownIcon} tone="warning">
-                        {`${whiteInternetLabel} ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')} — ${whiteInternetDescription}`}
+                        {`${whiteInternetLabel} ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')}`}
                       </FeatureBadge>
                     )}
                     <FeatureBadge icon={ArrowDownIcon} tone="info">
-                      {`${primaryTrafficLabel} ${tariff.traffic_limit_label} — ${primaryTrafficDescription}`}
+                      {tariff.traffic_limit_label}
                     </FeatureBadge>
                     <FeatureBadge icon={DevicesIcon} tone="success">
                       {tariff.device_limit === 0
                         ? '∞'
                         : t('subscription.devices', { count: tariff.device_limit })}
                     </FeatureBadge>
-                    {deviceAddonLabel && (
-                      <FeatureBadge icon={DevicesIcon} tone="success">
-                        {deviceAddonLabel}
-                      </FeatureBadge>
-                    )}
                     {tariff.traffic_reset_mode && tariff.traffic_reset_mode !== 'NO_RESET' && (
                       <FeatureBadge icon={RestartIcon} tone="warning">
                         {t(`subscription.trafficReset.${tariff.traffic_reset_mode}`)}
@@ -279,7 +282,7 @@ export function TariffPickerGrid({
                     )}
                   </div>
                   {/* Price info */}
-                  <div className="mt-3 border-t border-dark-700/50 pt-3 text-sm text-dark-400">
+                  <div className="mt-auto border-t border-dark-700/50 pt-3 text-sm text-dark-400">
                     {(() => {
                       const promoDaily = dailyPriceQuote(tariff, applyPromoDiscount);
                       if (promoDaily) {

@@ -276,30 +276,26 @@ export default function Profile() {
       initial="initial"
       animate="animate"
     >
-      <motion.div variants={staggerItem}>
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('profile.title')}</h1>
-      </motion.div>
-
       {/* User Info Card */}
       <motion.div variants={staggerItem}>
         <Card>
-          <h2 className="mb-6 text-lg font-semibold text-dark-100">{t('profile.accountInfo')}</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
+          <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('profile.accountInfo')}</h2>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
               <span className="text-dark-400">{t('profile.telegramId')}</span>
               <span className="font-medium text-dark-100">{user?.telegram_id}</span>
             </div>
             {user?.username && (
-              <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
+              <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
                 <span className="text-dark-400">{t('profile.username')}</span>
                 <span className="font-medium text-dark-100">@{user.username}</span>
               </div>
             )}
-            <div className="flex items-center justify-between border-b border-dark-800/50 py-3">
+            <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
               <span className="text-dark-400">{t('profile.name')}</span>
               <span className="font-medium text-dark-100">{displayName(user)}</span>
             </div>
-            <div className="flex items-center justify-between py-3">
+            <div className="flex items-center justify-between py-2.5">
               <span className="text-dark-400">{t('profile.registeredAt')}</span>
               <span className="font-medium text-dark-100">
                 {user?.created_at ? new Date(user.created_at).toLocaleDateString(uiLocale()) : '-'}
@@ -330,11 +326,11 @@ export default function Profile() {
       {referralTerms?.is_enabled && referralLink && (
         <motion.div variants={staggerItem} initial="initial" animate="animate">
           <Card>
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <h2 className="text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
               <Link
                 to="/referral"
-                className="flex items-center gap-1 text-accent-400 transition-colors hover:text-accent-300"
+                className="ml-auto flex items-center gap-1 text-accent-400 transition-colors hover:text-accent-300"
               >
                 <span className="text-sm">{t('referral.title')}</span>
                 <ArrowRightIcon className="h-4 w-4" />

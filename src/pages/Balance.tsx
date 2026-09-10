@@ -267,7 +267,7 @@ export default function Balance() {
                 {promocodeSuccess.amount > 0 && (
                   <div className="mt-1">
                     {t('balance.promocode.balanceAdded', {
-                      amount: promocodeSuccess.amount.toFixed(2),
+                      amount: Math.round(promocodeSuccess.amount).toLocaleString(uiLocale()),
                     })}
                   </div>
                 )}

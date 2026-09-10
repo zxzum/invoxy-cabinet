@@ -340,9 +340,9 @@
       "resume": "Resume"
     },
     "trialOffer": {
-      "freeTitle": "Free Trial Available",
+      "freeTitle": "Trial Available",
       "paidTitle": "Trial Subscription",
-      "freeDesc": "Try our VPN for free, no commitment required",
+      "freeDesc": "Try our VPN with no commitment required",
       "paidDesc": "Get started with a trial subscription"
     },
     "stats": {
@@ -464,7 +464,7 @@
     "month": "mo",
     "insufficientBalance": "Insufficient balance. Missing {{missing}} ₽",
     "trial": {
-      "title": "Free Trial",
+      "title": "Trial",
       "titlePaid": "Trial Subscription",
       "description": "Try our VPN service!",
       "days": "days",
@@ -474,11 +474,15 @@
       "devices_one": "{{count}} device",
       "devices_other": "{{count}} devices",
       "price": "Price",
-      "activate": "Activate Free",
+      "activate": "Activate",
       "payAndActivate": "Pay & Activate",
       "topUpToActivate": "Top Up Balance",
       "insufficientBalance": "Top up your balance to activate",
-      "unavailable": "Trial is not available"
+      "unavailable": "Trial is not available",
+      "daysLabel_one": "day",
+      "daysLabel_other": "days",
+      "devicesLabel_one": "device",
+      "devicesLabel_other": "devices"
     },
     "trialBanner": {
       "title": "Trial period active",
@@ -678,7 +682,9 @@
     },
     "promoGroup": {
       "yourGroup": "Your group: {{name}}",
-      "personalDiscountsApplied": "Personal discounts applied to prices"
+      "personalDiscountsApplied": "Personal discounts applied to prices",
+      "aboutGroups": "What is this group?",
+      "explanation": "Your group defines your personal discounts. It is assigned automatically and may change over time — watch for offers."
     },
     "tariff": {
       "perDay": "/ day",
@@ -788,7 +794,8 @@
     "statusActive": "Active",
     "statusExpired": "Expired",
     "statusLimited": "Limited",
-    "statusTrial": "Trial"
+    "statusTrial": "Trial",
+    "noLte": "No LTE"
   },
   "balance": {
     "title": "Balance",
@@ -1025,12 +1032,12 @@
     "copied": "Copied!",
     "shareButton": "Share",
     "shareMessage": "Join me on {{botName}} and earn up to {{percent}}% cashback!",
-    "shareHint": "Share this link with friends. When they sign up and make a purchase, you'll earn {{percent}}% commission!",
+    "shareHint": "Share the link with friends. When they sign up and pay, you get a {{percent}}% bonus on their top-up amount!",
     "stats": {
       "totalReferrals": "Total Referrals",
       "activeReferrals": "Active",
       "totalEarnings": "Total Earnings",
-      "commissionRate": "Commission Rate",
+      "commissionRate": "Bonus",
       "earnedDays": "{{count}} subscription days",
       "chainDepth": "Network depth",
       "levelsValue": "up to {{count}} lvl.",
@@ -1039,7 +1046,7 @@
     },
     "terms": {
       "title": "Program Terms",
-      "commission": "Commission",
+      "commission": "Bonus",
       "minTopup": "Min. Top-up",
       "newUserBonus": "New User Bonus",
       "inviterBonus": "Inviter Bonus",

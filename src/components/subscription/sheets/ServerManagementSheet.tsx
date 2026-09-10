@@ -7,6 +7,7 @@ import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
 import { Skeleton, SkeletonGroup } from '../../ui/skeleton';
+import { formatPrice } from '../../../utils/format';
 
 // ──────────────────────────────────────────────────────────────────
 // Manage-servers sheet (classic-mode only — caller decides whether to
@@ -42,11 +43,6 @@ export function ServerManagementSheet({
 }: ServerManagementSheetProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-
-  const formatPrice = (kopeks: number) => {
-    const rubles = kopeks / 100;
-    return rubles % 1 === 0 ? `${rubles} ₽` : `${rubles.toFixed(2)} ₽`;
-  };
 
   const { data: countriesData, isLoading: countriesLoading } = useQuery({
     queryKey: ['countries', subscriptionId],

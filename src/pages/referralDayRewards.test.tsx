@@ -26,7 +26,7 @@ vi.mock('react-i18next', () => ({
         'referral.levelBadge': 'уровень {{count}}',
         'referral.stats.earnedDays': '{{count}} дн. подписки',
         'referral.terms.noLevels': 'Уровни наград ещё не настроены',
-        'referral.shareHint': 'Получите {{percent}}% комиссии!',
+        'referral.shareHint': 'Получите {{percent}}% бонуса от суммы пополнения!',
         'referral.shareHintLevels': 'Награда начисляется по уровням программы.',
       };
       const template = templates[key];
@@ -230,7 +230,7 @@ describe('обещание процента под многоуровневой 
     await renderReferral();
 
     await screen.findByText(/Уровень 1: 10%/);
-    expect(screen.queryByText(/25% комиссии/)).toBeNull();
+    expect(screen.queryByText(/25% бонуса/)).toBeNull();
     expect(screen.getByText(/по уровням программы/)).toBeTruthy();
   });
 
@@ -239,6 +239,6 @@ describe('обещание процента под многоуровневой 
     state.info = { commission_percent: 25 };
     await renderReferral();
 
-    expect(await screen.findByText(/25% комиссии/)).toBeTruthy();
+    expect(await screen.findByText(/25% бонуса/)).toBeTruthy();
   });
 });

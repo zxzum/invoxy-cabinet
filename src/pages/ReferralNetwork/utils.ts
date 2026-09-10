@@ -5,7 +5,7 @@ import type { SubscriptionStatus } from '@/types/referralNetwork';
  * Format kopeks to a human-readable ruble string.
  */
 export function formatKopeksToRubles(kopeks: number): string {
-  return `${(kopeks / 100).toLocaleString(uiLocale())}`;
+  return Math.round(kopeks / 100).toLocaleString(uiLocale());
 }
 
 /**

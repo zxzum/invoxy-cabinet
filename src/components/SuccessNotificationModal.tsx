@@ -13,6 +13,7 @@ import { useSuccessNotification } from '../store/successNotification';
 import { useCurrency } from '../hooks/useCurrency';
 import { useTelegramSDK } from '../hooks/useTelegramSDK';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { lockBodyScroll } from '@/utils/scrollLock';
 import { useHaptic } from '@/platform';
 import { CloseIcon, DevicesIcon, RocketIcon, TrafficIcon, WalletIcon } from '@/components/icons';
 import { SuccessBurst } from '@/components/motion';
@@ -79,11 +80,7 @@ export default function SuccessNotificationModal() {
   // Scroll lock
   useEffect(() => {
     if (!isOpen) return;
-
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return lockBodyScroll();
   }, [isOpen]);
 
   if (!data) return null;

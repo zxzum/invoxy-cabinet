@@ -761,7 +761,7 @@ export default function Referral() {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input type="text" readOnly value={referralLink} className="input flex-1 text-sm" />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => copyLink(referralLink, 'cabinet')}
                   disabled={!referralLink}
@@ -1017,7 +1017,7 @@ export default function Referral() {
       {/* ==================== Withdrawal Section ==================== */}
 
       {withdrawalSectionVisible && (
-        <div id="withdrawal-section" className="space-y-6">
+        <div id="withdrawal-section" className="scroll-mt-24 space-y-6 lg:scroll-mt-4">
           {/* Withdrawal Balance Card */}
           {withdrawalEnabled && withdrawalBalance && (
             <div className="bento-card">

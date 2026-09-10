@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 import { ChevronLeftIcon, ChevronRightIcon, DocumentIcon, XIcon } from '@/components/icons';
+import { lockBodyScroll } from '@/utils/scrollLock';
 
 import { ticketsApi } from '../../api/tickets';
 
@@ -76,11 +77,7 @@ export function MessageMediaGrid({
   // Lock body scroll while fullscreen overlay is open (mobile mainly).
   useEffect(() => {
     if (fullscreenIndex === null) return undefined;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return lockBodyScroll();
   }, [fullscreenIndex]);
 
   // All hooks have been called — safe to early-return now.

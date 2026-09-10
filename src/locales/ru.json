@@ -343,9 +343,9 @@
       "resume": "Возобновить"
     },
     "trialOffer": {
-      "freeTitle": "Бесплатный пробный период",
+      "freeTitle": "Пробный период",
       "paidTitle": "Пробная подписка",
-      "freeDesc": "Попробуйте наш VPN бесплатно: без обязательств",
+      "freeDesc": "Попробуйте наш VPN без обязательств",
       "paidDesc": "Начните с пробной подписки"
     },
     "stats": {
@@ -476,7 +476,7 @@
     "month": "мес",
     "insufficientBalance": "Недостаточно средств. Не хватает {{missing}} ₽",
     "trial": {
-      "title": "Бесплатный пробный период",
+      "title": "Пробный период",
       "titlePaid": "Пробная подписка",
       "description": "Попробуйте наш VPN сервис!",
       "days": "дней",
@@ -488,11 +488,17 @@
       "devices_few": "{{count}} устройства",
       "devices_many": "{{count}} устройств",
       "price": "Стоимость",
-      "activate": "Активировать бесплатно",
+      "activate": "Активировать",
       "payAndActivate": "Оплатить с баланса",
       "topUpToActivate": "Пополнить баланс",
       "insufficientBalance": "Пополните баланс для активации",
-      "unavailable": "Пробный период недоступен"
+      "unavailable": "Пробный период недоступен",
+      "daysLabel_one": "день",
+      "daysLabel_few": "дня",
+      "daysLabel_many": "дней",
+      "devicesLabel_one": "устройство",
+      "devicesLabel_few": "устройства",
+      "devicesLabel_many": "устройств"
     },
     "trialBanner": {
       "title": "Пробный период активен",
@@ -698,7 +704,9 @@
     },
     "promoGroup": {
       "yourGroup": "Ваша группа: {{name}}",
-      "personalDiscountsApplied": "Персональные скидки применены к ценам"
+      "personalDiscountsApplied": "Персональные скидки применены к ценам",
+      "aboutGroups": "Что это за группа?",
+      "explanation": "Группа определяет ваши персональные скидки. Она назначается автоматически и может меняться со временем — следите за предложениями."
     },
     "tariff": {
       "perDay": "/ день",
@@ -808,7 +816,8 @@
     "statusActive": "Активна",
     "statusExpired": "Истекла",
     "statusLimited": "Ограничена",
-    "statusTrial": "Триал"
+    "statusTrial": "Триал",
+    "noLte": "Без LTE"
   },
   "balance": {
     "title": "Баланс",
@@ -1045,12 +1054,12 @@
     "copied": "Скопировано!",
     "shareButton": "Поделиться",
     "shareMessage": "Заходи в {{botName}} по моей ссылке и получай до {{percent}}% кешбэка!",
-    "shareHint": "Поделитесь ссылкой с друзьями. Когда они зарегистрируются и оплатят, вы получите {{percent}}% комиссии!",
+    "shareHint": "Поделитесь ссылкой с друзьями. Когда они зарегистрируются и оплатят, вы получите {{percent}}% бонуса от суммы их пополнения!",
     "stats": {
       "totalReferrals": "Всего рефералов",
       "activeReferrals": "Активных",
       "totalEarnings": "Общий заработок",
-      "commissionRate": "Комиссия",
+      "commissionRate": "Бонус",
       "earnedDays": "{{count}} дн. подписки",
       "chainDepth": "Глубина сети",
       "levelsValue": "до {{count}} ур.",
@@ -1059,7 +1068,7 @@
     },
     "terms": {
       "title": "Условия программы",
-      "commission": "Комиссия",
+      "commission": "Бонус",
       "minTopup": "Мин. пополнение",
       "newUserBonus": "Бонус новому пользователю",
       "inviterBonus": "Бонус пригласившему",
@@ -1097,7 +1106,7 @@
       "referral_subscription_renewal": "Продление подписки реферала",
       "referral_bonus": "Бонус за реферала",
       "referral_first_topup": "Первое пополнение",
-      "referral_commission_topup": "Комиссия с пополнения",
+      "referral_commission_topup": "Бонус с пополнения",
       "referral_registration_reward": "Награда за регистрацию",
       "referral_days_reward": "Дни подписки",
       "referral_days_bonus": "Бонусные дни"
@@ -6405,13 +6414,13 @@
   },
   "profile": {
     "title": "Профиль",
-    "accountInfo": "Информация об аккаунте",
+    "accountInfo": "Об аккаунте",
     "telegramId": "Telegram ID",
     "username": "Имя пользователя",
     "name": "Имя",
     "registeredAt": "Дата регистрации",
     "emailAuth": "Авторизация по Email",
-    "linkEmailDescription": "Привяжите email для входа без Telegram. После привязки на ваш email придёт письмо для подтверждения.",
+    "linkEmailDescription": "Привяжите email для входа без Telegram.",
     "linkEmail": "Привязать Email",
     "emailRequired": "Введите email",
     "invalidEmail": "Введите корректный email адрес",
@@ -7108,7 +7117,7 @@
   "subscriptions": {
     "buy": "Купить подписку",
     "buyAnother": "Купить ещё",
-    "browsePlans": "Посмотреть тарифы и купить подписку",
+    "browsePlans": "Посмотреть тарифы",
     "empty": "У вас пока нет подписок",
     "emptyDesc": "Выберите тариф, чтобы начать пользоваться сервисом",
     "title": "Мои подписки"

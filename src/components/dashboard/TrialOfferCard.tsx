@@ -22,12 +22,18 @@ export default function TrialOfferCard({
   activateTrialMutation,
   trialError,
 }: TrialOfferCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { formatAmount, currencySymbol } = useCurrency();
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
   const isFree = !trialInfo.requires_payment;
   const canAfford = balanceKopeks >= trialInfo.price_kopeks;
+
+  // Подпись под числом с правильным склонением: «1 устройство», «2 дня», «5 дней».
+  const pluralLabel = (baseKey: string, count: number) => {
+    const form = new Intl.PluralRules(i18n.language).select(count);
+    return t(`${baseKey}_${form}`, t(`${baseKey}_many`));
+  };
 
   return (
     <div
@@ -158,14 +164,17 @@ export default function TrialOfferCard({
       {/* Trial stats */}
       <div className="mx-auto mb-7 grid max-w-xs grid-cols-3">
         {[
-          { value: String(trialInfo.duration_days), label: t('subscription.trial.days') },
+          {
+            value: String(trialInfo.duration_days),
+            label: pluralLabel('subscription.trial.daysLabel', trialInfo.duration_days),
+          },
           {
             value: trialInfo.traffic_limit_gb === 0 ? '∞' : String(trialInfo.traffic_limit_gb),
             label: t('common.units.gb'),
           },
           {
             value: trialInfo.device_limit === 0 ? '∞' : String(trialInfo.device_limit),
-            label: t('subscription.trial.devices'),
+            label: pluralLabel('subscription.trial.devicesLabel', trialInfo.device_limit),
           },
         ].map((stat, i) => (
           <div key={i} className="text-center">

@@ -45,13 +45,13 @@ export function formatPrice(kopeks: number, lang?: string): string {
     amount = currencyApi.convertFromRub(amount, config.key, cachedExchangeRates);
   }
 
-  // Для IRR суммы большие — без дробной части.
-  const maximumFractionDigits = config.currency === 'IRR' ? 0 : 2;
+  const maximumFractionDigits = config.currency === 'RUB' || config.currency === 'IRR' ? 0 : 2;
 
   try {
     return new Intl.NumberFormat(config.locale, {
       style: 'currency',
       currency: config.currency,
+      minimumFractionDigits: 0,
       maximumFractionDigits,
     }).format(amount);
   } catch {

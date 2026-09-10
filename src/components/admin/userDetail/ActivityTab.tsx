@@ -110,7 +110,7 @@ function AmountChip({ item }: { item: UserActivityItem }) {
   return (
     <span className={`shrink-0 text-sm font-semibold tabular-nums ${tone}`}>
       {sign}
-      {rubles.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽
+      {Math.round(rubles).toLocaleString('ru-RU')} ₽
     </span>
   );
 }

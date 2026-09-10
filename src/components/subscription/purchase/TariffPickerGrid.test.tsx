@@ -66,7 +66,7 @@ const tariff: Tariff = {
 afterEach(cleanup);
 
 describe('TariffPickerGrid quota presentation', () => {
-  it('renders explicit quota and device add-on labels from tariff values', () => {
+  it('renders short quota facts and the LTE indicator from tariff values', () => {
     render(
       <MemoryRouter>
         <TariffPickerGrid
@@ -81,12 +81,32 @@ describe('TariffPickerGrid quota presentation', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Основной трафик 750 ГБ — общий интернет через VPN')).toBeTruthy();
-    const whiteInternetBadge = screen.getByText('LTE 50 ГБ — отдельная квота LTE').parentElement;
+    expect(screen.getByText('750 ГБ')).toBeTruthy();
+    const whiteInternetBadge = screen.getByText('LTE 50 ГБ').parentElement;
     expect(whiteInternetBadge).toBeTruthy();
     expect(whiteInternetBadge?.className).toContain('whitespace-normal');
     expect(whiteInternetBadge?.className).toContain('break-words');
     expect(whiteInternetBadge?.className).not.toContain('whitespace-nowrap');
-    expect(screen.getByText('Доп. устройство от 50 ₽/мес, максимум 10 устройств')).toBeTruthy();
+    expect(screen.getByText('LTE')).toBeTruthy();
+    expect(screen.queryByText(/Доп\. устройство/)).toBeNull();
+  });
+
+  it('flags tariffs without LTE with a muted badge', () => {
+    render(
+      <MemoryRouter>
+        <TariffPickerGrid
+          tariffs={[{ ...tariff, whitelist_traffic_limit_gb: 0 }]}
+          subscription={null}
+          purchaseOptions={undefined}
+          isTariffsMode
+          isMultiTariff={false}
+          onSelectTariff={vi.fn()}
+          onSwitchTariff={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Без LTE')).toBeTruthy();
+    expect(screen.queryByText('LTE 50 ГБ')).toBeNull();
   });
 });

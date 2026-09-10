@@ -7,6 +7,7 @@ import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
 import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
 import { useSuccessNotification } from '../../../store/successNotification';
+import { formatPrice } from '../../../utils/format';
 
 // ──────────────────────────────────────────────────────────────────
 // Buy-traffic sheet. Self-owns the packages query + purchase mutation;
@@ -59,11 +60,6 @@ export function TrafficTopupSheet({
   useEffect(() => {
     if ((subscription.whitelist_traffic_limit_gb ?? 0) <= 0) setScope('regular');
   }, [subscription.id, subscription.whitelist_traffic_limit_gb]);
-
-  const formatPrice = (kopeks: number) => {
-    const rubles = kopeks / 100;
-    return rubles % 1 === 0 ? `${rubles} ₽` : `${rubles.toFixed(2)} ₽`;
-  };
 
   const { data: trafficPackages } = useQuery({
     queryKey: ['traffic-packages', subscriptionId, scope],

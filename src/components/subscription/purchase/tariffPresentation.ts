@@ -12,6 +12,24 @@ const replaceCustomerFacingTerms = (text: string, whiteInternetLabel: string) =>
       () => whiteInternetLabel,
     );
 
+/** Sentences like «LTE не входит в тариф» move to a dedicated badge on the card. */
+const stripNoLteSentences = (text: string, whiteInternetLabel: string) => {
+  const label = whiteInternetLabel.toLowerCase();
+  return text
+    .split('\n')
+    .map((line) =>
+      (line.match(/[^.!?]+[.!?]*/g) ?? [])
+        .filter(
+          (sentence) => !(sentence.toLowerCase().includes(label) && /не\s+вход/i.test(sentence)),
+        )
+        .join('')
+        .trim(),
+    )
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 /** Keep marketing copy, remove dynamic fact bullets, and hide legacy internals. */
 export function getTariffMarketingDescription(
   description: string | null,
@@ -27,7 +45,9 @@ export function getTariffMarketingDescription(
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return marketingCopy ? replaceCustomerFacingTerms(marketingCopy, whiteInternetLabel) : null;
+  if (!marketingCopy) return null;
+  const withCustomerTerms = replaceCustomerFacingTerms(marketingCopy, whiteInternetLabel);
+  return stripNoLteSentences(withCustomerTerms, whiteInternetLabel) || null;
 }
 
 export function getTariffCustomerFacingName(name: string, whiteInternetLabel = 'LTE'): string {

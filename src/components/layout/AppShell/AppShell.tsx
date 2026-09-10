@@ -195,13 +195,11 @@ export function AppShell({ children }: AppShellProps) {
           <div className="ix-balance-card">
             <div className="text-[11px] uppercase tracking-wide text-dark-500">Баланс</div>
             {/* Счётчик вместо строки: при пополнении баланс «докручивается» до
-                нового значения. Формат — тот же ru-RU с двумя знаками. */}
+                нового значения. Копеек нет — показываем целые рубли. */}
             <AnimatedNumber
               className="mt-1 block text-xl font-semibold text-dark-100"
               value={balanceRubles}
-              format={(v) =>
-                `${v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`
-              }
+              format={(v) => `${v.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} ₽`}
             />
             <Link to="/balance" onClick={handleNavClick} className="ix-balance-topup">
               Пополнить

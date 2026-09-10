@@ -235,7 +235,7 @@ export function TariffPaymentSheet({
               <span>{t('payment.tariffSheet.price')}</span>
               <AnimatedNumber
                 value={priceKopeks / 100}
-                format={(v) => `${v.toFixed(2)} ${currencySymbol}`}
+                format={(v) => `${formatAmount(v)} ${currencySymbol}`}
               />
             </div>
             {balanceKopeks > 0 && (
@@ -243,7 +243,7 @@ export function TariffPaymentSheet({
                 <span>{t('payment.tariffSheet.fromBalance')}</span>
                 <AnimatedNumber
                   value={Math.min(balanceKopeks, priceKopeks) / 100}
-                  format={(v) => `−${v.toFixed(2)} ${currencySymbol}`}
+                  format={(v) => `−${formatAmount(v)} ${currencySymbol}`}
                 />
               </div>
             )}
@@ -258,7 +258,7 @@ export function TariffPaymentSheet({
               <span className="text-2xl font-bold text-accent-400">
                 <AnimatedNumber
                   value={missing / 100}
-                  format={(v) => `${v.toFixed(2)} ${currencySymbol}`}
+                  format={(v) => `${formatAmount(v)} ${currencySymbol}`}
                 />
               </span>
             </div>

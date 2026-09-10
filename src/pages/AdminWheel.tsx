@@ -1095,7 +1095,7 @@ function InlinePrizeForm({
             className="input w-full"
           />
           <p className="mt-1 text-xs text-dark-500">
-            = {(toNumber(formData.prize_value_kopeks) / 100).toFixed(2)} RUB
+            = {Math.round(toNumber(formData.prize_value_kopeks) / 100)} RUB
           </p>
         </div>
 

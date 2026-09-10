@@ -18,15 +18,17 @@ import { TariffPaymentSheet } from './TariffPaymentSheet';
  * ResponsiveSheet, выбирая мобильную/десктопную ветку.
  */
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, fallback?: unknown) =>
-      resolveRu(key) ?? (typeof fallback === 'string' ? fallback : key),
-    i18n: { language: 'ru', changeLanguage: () => Promise.resolve() },
-  }),
-  Trans: ({ children }: { children?: unknown }) => children ?? null,
-  initReactI18next: { type: '3rdParty', init: () => {} },
-}));
+vi.mock('react-i18next', () => {
+  const t = (key: string, fallback?: unknown) =>
+    resolveRu(key) ?? (typeof fallback === 'string' ? fallback : key);
+  const i18n = { language: 'ru', changeLanguage: () => Promise.resolve() };
+
+  return {
+    useTranslation: () => ({ t, i18n }),
+    Trans: ({ children }: { children?: unknown }) => children ?? null,
+    initReactI18next: { type: '3rdParty', init: () => {} },
+  };
+});
 
 function resolveRu(key: string): string | undefined {
   const value = key

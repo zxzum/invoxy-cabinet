@@ -26,6 +26,18 @@ describe('getTariffMarketingDescription', () => {
     );
   });
 
+  it('strips the «LTE не входит» sentence — the card badge carries that fact', () => {
+    expect(
+      getTariffMarketingDescription(
+        'Быстрый VPN для всего. Белые списки не входят в тариф.\nБез ограничений по скорости.',
+      ),
+    ).toBe('Быстрый VPN для всего.\nБез ограничений по скорости.');
+  });
+
+  it('returns null when the description was only the «LTE не входит» sentence', () => {
+    expect(getTariffMarketingDescription('LTE не входит.')).toBe(null);
+  });
+
   it('normalizes legacy tariff names for customers', () => {
     expect(getTariffCustomerFacingName('Премиум · WHITELIST')).toBe('Премиум · LTE');
   });

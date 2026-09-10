@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CloseIcon } from '@/components/icons';
 import { useHeaderHeight } from '@/hooks/useHeaderHeight';
 import { useHaptic } from '@/platform';
+import { lockBodyScroll } from '@/utils/scrollLock';
 import { sheetInsets } from './sheetInsets';
 
 export interface SheetProps {
@@ -140,26 +141,7 @@ export function Sheet({
   // Handle body scroll lock: держим всё время, пока шит в DOM, включая анимацию
   // выезда — иначе страница под ним дёрнулась бы до конца анимации.
   useEffect(() => {
-    if (isMounted) {
-      const scrollY = window.scrollY;
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      // Растягиваем через left/right, а не width: 100% — у body в globals.css
-      // width: 100vw, и inline-100% на движках с классическим скроллбаром
-      // делал бы страницу уже на ширину скроллбара («сжатый» контент).
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-
-      return () => {
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        window.scrollTo(0, scrollY);
-      };
-    }
+    if (isMounted) return lockBodyScroll();
   }, [isMounted]);
 
   // Mount/exit lifecycle: родитель управляет только isOpen.

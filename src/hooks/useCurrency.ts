@@ -49,9 +49,10 @@ export function useCurrency() {
 
   // Format amount with currency conversion
   const formatAmount = useCallback(
-    (rubAmount: number, decimals: number = 2): string => {
+    (rubAmount: number, decimals?: number): string => {
+      const fractionDigits = decimals ?? (isRussian || targetCurrency === 'IRR' ? 0 : 2);
       if (isRussian) {
-        return rubAmount.toFixed(decimals);
+        return rubAmount.toFixed(fractionDigits);
       }
 
       // Convert to target currency
@@ -66,14 +67,14 @@ export function useCurrency() {
         return Math.round(convertedAmount).toLocaleString('fa-IR');
       }
 
-      return convertedAmount.toFixed(decimals);
+      return convertedAmount.toFixed(fractionDigits);
     },
     [isRussian, targetCurrency, exchangeRates],
   );
 
   // Format amount with currency symbol
   const formatWithCurrency = useCallback(
-    (rubAmount: number, decimals: number = 2): string => {
+    (rubAmount: number, decimals?: number): string => {
       return `${formatAmount(rubAmount, decimals)} ${currencySymbol}`;
     },
     [formatAmount, currencySymbol],
@@ -81,7 +82,7 @@ export function useCurrency() {
 
   // Format amount with + sign (for earnings/bonuses)
   const formatPositive = useCallback(
-    (rubAmount: number, decimals: number = 2): string => {
+    (rubAmount: number, decimals?: number): string => {
       return `+${formatAmount(rubAmount, decimals)} ${currencySymbol}`;
     },
     [formatAmount, currencySymbol],
