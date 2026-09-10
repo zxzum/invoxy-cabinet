@@ -15,7 +15,7 @@ const replaceCustomerFacingTerms = (text: string, whiteInternetLabel: string) =>
 /** Keep marketing copy, remove dynamic fact bullets, and hide legacy internals. */
 export function getTariffMarketingDescription(
   description: string | null,
-  whiteInternetLabel = 'Белый интернет',
+  whiteInternetLabel = 'LTE',
 ): string | null {
   if (!description?.trim()) return null;
 
@@ -30,9 +30,6 @@ export function getTariffMarketingDescription(
   return marketingCopy ? replaceCustomerFacingTerms(marketingCopy, whiteInternetLabel) : null;
 }
 
-export function getTariffCustomerFacingName(
-  name: string,
-  whiteInternetLabel = 'Белый интернет',
-): string {
+export function getTariffCustomerFacingName(name: string, whiteInternetLabel = 'LTE'): string {
   return replaceCustomerFacingTerms(name.trim(), whiteInternetLabel);
 }

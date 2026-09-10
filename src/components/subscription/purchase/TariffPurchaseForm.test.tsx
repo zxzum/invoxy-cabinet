@@ -30,7 +30,7 @@ vi.mock('react-i18next', () => ({
       if (key === 'subscription.from') return 'от';
       if (key === 'subscription.month') return 'месяц';
       if (key === 'subscription.perMonth') return '/мес';
-      if (key === 'subscription.whiteInternet') return 'Белый интернет';
+      if (key === 'subscription.whiteInternet') return 'LTE';
       if (key === 'subscription.primaryTraffic') return 'Основной трафик';
       if (key === 'subscription.primaryTrafficDescription') return 'общий интернет через VPN';
       if (key === 'subscription.whiteInternetDescription') {
@@ -144,7 +144,7 @@ describe('TariffPurchaseForm modal mode', () => {
     expect(screen.queryByText('Длинное маркетинговое описание тарифа')).toBeNull();
     expect(screen.getByText('Основной трафик: 100 ГБ')).toBeTruthy();
     expect(screen.getByText('Устройства: 2')).toBeTruthy();
-    expect(screen.getByText('Белый интернет: 20 ГБ')).toBeTruthy();
+    expect(screen.getByText('LTE: 20 ГБ')).toBeTruthy();
     expect(screen.getByText('30 дней')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Купить' })).toBeTruthy();
 

@@ -50,9 +50,10 @@ export function TrafficTopupSheet({
     'общий интернет через VPN',
   );
   const whiteInternetLabel = t('subscription.whiteInternet');
+  const whiteInternetBarLabel = t('subscription.whiteInternetServers', 'LTE сервера');
   const whiteInternetDescription = t(
     'subscription.whiteInternetDescription',
-    'отдельная квота для Белого интернета',
+    'отдельная квота LTE',
   );
 
   useEffect(() => {
@@ -101,7 +102,7 @@ export function TrafficTopupSheet({
             </div>
             {(subscription.whitelist_traffic_limit_gb ?? 0) > 0 && (
               <div className="mt-1 text-xs text-accent-400">
-                {`${whiteInternetLabel}: ${subscription.whitelist_traffic_used_gb?.toFixed(1) ?? '0.0'} / ${subscription.whitelist_traffic_limit_gb} ${t('common.units.gb')} — ${whiteInternetDescription}`}
+                {`${whiteInternetBarLabel}: ${subscription.whitelist_traffic_used_gb?.toFixed(1) ?? '0.0'} / ${subscription.whitelist_traffic_limit_gb} ${t('common.units.gb')} — ${whiteInternetDescription}`}
               </div>
             )}
           </div>
@@ -142,7 +143,7 @@ export function TrafficTopupSheet({
         <div className="mt-1 text-xs text-dark-400">
           {scope === 'regular'
             ? `${subscription.traffic_used_gb.toFixed(1)} / ${subscription.traffic_limit_gb} ${t('common.units.gb')} — ${primaryTrafficDescription}`
-            : `${subscription.whitelist_traffic_used_gb?.toFixed(1) ?? '0.0'} / ${subscription.whitelist_traffic_limit_gb ?? 0} ${t('common.units.gb')} — ${whiteInternetDescription}`}
+            : `${whiteInternetBarLabel}: ${subscription.whitelist_traffic_used_gb?.toFixed(1) ?? '0.0'} / ${subscription.whitelist_traffic_limit_gb ?? 0} ${t('common.units.gb')} — ${whiteInternetDescription}`}
         </div>
       </div>
 

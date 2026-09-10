@@ -13,7 +13,7 @@ export function WhiteInternetUsage({
   if (limit <= 0) return null;
   const used = Math.max(0, subscription.whitelist_traffic_used_gb ?? 0);
   const percent = Math.min(100, (used / limit) * 100);
-  const label = t('subscription.whiteInternet', 'Белый интернет');
+  const label = t('subscription.whiteInternetServers', 'LTE сервера');
   if (compact) {
     return (
       <div className="border-t border-accent-400/20 pt-3">

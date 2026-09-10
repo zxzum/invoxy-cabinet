@@ -9,7 +9,8 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: unknown) => {
       if (key === 'common.units.gb') return 'ГБ';
-      if (key === 'subscription.whiteInternet') return 'Белый интернет';
+      if (key === 'subscription.whiteInternet') return 'LTE';
+      if (key === 'subscription.whiteInternetServers') return 'LTE сервера';
       if (key === 'subscription.devices') {
         const count = (options as { count?: number } | undefined)?.count;
         return `${count} устройств`;
@@ -43,7 +44,7 @@ vi.mock('../../../hooks/usePromoDiscount', () => ({
 
 const tariff: Tariff = {
   id: 1,
-  name: 'Standard Белый интернет',
+  name: 'Standard LTE',
   description: null,
   tier_level: 1,
   traffic_limit_gb: 750,
@@ -81,9 +82,7 @@ describe('TariffPickerGrid quota presentation', () => {
     );
 
     expect(screen.getByText('Основной трафик 750 ГБ — общий интернет через VPN')).toBeTruthy();
-    const whiteInternetBadge = screen.getByText(
-      'Белый интернет 50 ГБ — отдельная квота для Белого интернета',
-    ).parentElement;
+    const whiteInternetBadge = screen.getByText('LTE 50 ГБ — отдельная квота LTE').parentElement;
     expect(whiteInternetBadge).toBeTruthy();
     expect(whiteInternetBadge?.className).toContain('whitespace-normal');
     expect(whiteInternetBadge?.className).toContain('break-words');

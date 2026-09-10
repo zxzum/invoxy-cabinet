@@ -22,14 +22,14 @@ interface LandingPlan {
 const FALLBACK_PLANS: LandingPlan[] = [
   { name: 'Стандарт', price: '120 ₽', details: '350 ГБ · 3 устройства' },
   {
-    name: 'Стандарт · Белый интернет',
+    name: 'Стандарт · LTE сервера',
     price: '200 ₽',
-    details: '750 ГБ основной трафик + 50 ГБ Белый интернет · 5 устройств',
+    details: '750 ГБ основной трафик + 50 ГБ LTE сервера · 5 устройств',
   },
   {
-    name: 'Премиум · Белый интернет',
+    name: 'Премиум · LTE сервера',
     price: '400 ₽',
-    details: '1000 ГБ основной трафик + 150 ГБ Белый интернет · 10 устройств, максимум 15',
+    details: '1000 ГБ основной трафик + 150 ГБ LTE сервера · 10 устройств, максимум 15',
   },
 ];
 
@@ -118,7 +118,7 @@ export default function Landing() {
             variants={staggerItem}
             className="mt-6 max-w-xl text-lg leading-8 text-dark-300"
           >
-            Стабильное соединение, понятные тарифы и отдельный лимит для Белого интернета.
+            Стабильное соединение, понятные тарифы и отдельный лимит для LTE сервера.
           </motion.p>
 
           <motion.div variants={staggerItem} className="mt-9 flex flex-wrap justify-center gap-3">
@@ -153,7 +153,7 @@ export default function Landing() {
           <motion.div variants={itemReveal} className="mb-8 text-center">
             <h2 className="text-2xl font-semibold sm:text-3xl">Тарифы</h2>
             <p className="mt-2 text-sm text-dark-400">
-              Периоды 30 / 90 / 180 / 360 дней. Белый интернет можно пополнять отдельно.
+              Периоды 30 / 90 / 180 / 360 дней. LTE сервера можно пополнять отдельно.
             </p>
           </motion.div>
 

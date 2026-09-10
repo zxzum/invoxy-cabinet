@@ -26,7 +26,7 @@ describe('WhiteInternetUsage', () => {
       />,
     );
 
-    const progress = screen.getByRole('progressbar', { name: 'Белый интернет' });
+    const progress = screen.getByRole('progressbar', { name: 'LTE сервера' });
     expect(progress.getAttribute('aria-valuemin')).toBe('0');
     expect(progress.getAttribute('aria-valuemax')).toBe('100');
     expect(progress.getAttribute('aria-valuenow')).toBe('25');
@@ -40,7 +40,7 @@ describe('WhiteInternetUsage', () => {
       />,
     );
 
-    const progress = screen.getByRole('progressbar', { name: 'Белый интернет' });
+    const progress = screen.getByRole('progressbar', { name: 'LTE сервера' });
     expect(progress.getAttribute('aria-valuenow')).toBe('100');
     expect((container.querySelector('[style*="width"]') as HTMLElement).style.width).toBe('100%');
   });

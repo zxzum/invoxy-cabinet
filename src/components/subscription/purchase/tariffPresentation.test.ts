@@ -19,14 +19,14 @@ describe('getTariffMarketingDescription', () => {
     expect(
       getTariffMarketingDescription(
         'С белыми списками: трафик через WHITELIST-ноды учитывается отдельно, остальное — по лимиту RemnaWave.\n\n• 50 ГБ WHITELIST-трафика\n\nОптимальный выбор на каждый день.',
-        'Белый интернет',
+        'LTE',
       ),
     ).toBe(
-      'Белый интернет: трафик через Белый интернет учитывается отдельно, остальное — по лимиту VPN.\n\nОптимальный выбор на каждый день.',
+      'LTE: трафик через LTE учитывается отдельно, остальное — по лимиту VPN.\n\nОптимальный выбор на каждый день.',
     );
   });
 
   it('normalizes legacy tariff names for customers', () => {
-    expect(getTariffCustomerFacingName('Премиум · WHITELIST')).toBe('Премиум · Белый интернет');
+    expect(getTariffCustomerFacingName('Премиум · WHITELIST')).toBe('Премиум · LTE');
   });
 });

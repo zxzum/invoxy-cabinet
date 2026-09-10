@@ -61,7 +61,7 @@ export function TariffPickerGrid({
   const whiteInternetLabel = t('subscription.whiteInternet');
   const whiteInternetDescription = t(
     'subscription.whiteInternetDescription',
-    'отдельная квота для Белого интернета',
+    'отдельная квота LTE',
   );
   const additionalDeviceLabel = t('subscription.additionalDevice', 'Доп. устройство');
 
