@@ -137,6 +137,17 @@ describe('AppShell support FAB', () => {
     expect(screen.queryByRole('link', { name: 'Мои ключи' })).toBeNull();
   });
 
+  it('renders desktop navigation as an island without dropping balance controls', () => {
+    renderShell('/');
+
+    const sidebar = screen.getByRole('complementary');
+
+    expect(sidebar.classList.contains('ix-sidebar-island')).toBe(true);
+    expect(screen.getByRole('link', { name: 'Тарифы' })).toBeTruthy();
+    expect(screen.getByText('Баланс')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Пополнить' })).toBeTruthy();
+  });
+
   it.each(['/subscriptions', '/balance', '/referral', '/support', '/info'])(
     'keeps the mobile nav on a direct user route: %s',
     (pathname) => {

@@ -175,7 +175,7 @@ export function AppShell({ children }: AppShellProps) {
       <SuccessNotificationModal />
       <PromptDialogHost />
 
-      <aside className="ix-sidebar hidden lg:flex">
+      <aside className="ix-sidebar ix-sidebar-island glass-surface-elevated hidden lg:flex">
         <div className="ix-sidebar-user">
           <div className="ix-avatar">{initials || logoLetter}</div>
           <div className="min-w-0">

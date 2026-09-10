@@ -2127,6 +2127,8 @@ html.dark {
   .ix-app {
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
   }
 }
 
@@ -2155,23 +2157,19 @@ html.dark {
 }
 
 .ix-sidebar {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
   flex-direction: column;
   gap: 18px;
   padding: 22px 16px 20px;
-  border-right: 1px solid rgba(var(--ix-accent-rgb), 0.12);
-  /* Glass sidebar: translucent enough for the animated background to read
-     through, still opaque enough for text contrast. Light theme rides the
-     --color-dark-* → champagne remap, so the same alphas apply there. */
-  background: linear-gradient(
-    180deg,
-    rgba(var(--color-dark-800), 0.5),
-    rgba(var(--color-dark-950), 0.66)
-  );
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+@media (min-width: 1024px) {
+  .ix-sidebar-island {
+    position: sticky;
+    top: 16px;
+    bottom: 16px;
+    height: calc(100dvh - 32px);
+    align-self: start;
+  }
 }
 
 .ix-sidebar-user {
