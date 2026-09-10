@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { CloseIcon } from '@/components/icons';
 import { useHeaderHeight } from '@/hooks/useHeaderHeight';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useHaptic } from '@/platform';
 import { lockBodyScroll } from '@/utils/scrollLock';
 import { sheetInsets } from './sheetInsets';
@@ -123,20 +124,10 @@ export function Sheet({
   const { topSafeArea, bottomSafeArea } = useHeaderHeight();
   const insets = sheetInsets({ snap: snapPoints[currentSnapIndex], topSafeArea, bottomSafeArea });
 
-  // Handle keyboard events
-  useEffect(() => {
-    if (!isOpen || !closeOnEscape) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, closeOnEscape, onClose]);
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen && isMounted, {
+    onEscape: closeOnEscape ? onClose : undefined,
+    lockScroll: false,
+  });
 
   // Handle body scroll lock: держим всё время, пока шит в DOM, включая анимацию
   // выезда — иначе страница под ним дёрнулась бы до конца анимации.
@@ -344,10 +335,14 @@ export function Sheet({
       {/* Sheet: единственный механизм движения — inline transform с CSS-переходом;
           во время перетаскивания переход отключён, шит следует за пальцем. */}
       <div
-        ref={sheetRef}
+        ref={(node) => {
+          sheetRef.current = node;
+          dialogRef.current = node;
+        }}
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        tabIndex={-1}
         className={`relative flex w-full max-w-lg flex-col overflow-hidden glass-surface-elevated sheet-content ${className}`}
         style={{
           maxHeight: insets.maxHeight,

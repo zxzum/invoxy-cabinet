@@ -2050,7 +2050,8 @@ html.dark {
   .glass-surface,
   .glass,
   .bento-card,
-  .card {
+  .card,
+  .card-inset {
     border: var(--glass-border);
     border-radius: var(--glass-radius);
     background: var(--glass-fill);
@@ -2060,7 +2061,6 @@ html.dark {
   }
 
   .glass-surface-elevated,
-  .card-inset,
   .sheet-container,
   .sheet-content,
   .dialog-content {
@@ -2088,7 +2088,7 @@ html.dark {
   }
 
   .glass-surface-accent,
-  .ix-island {
+  .ix-island:not(.glass-surface-elevated) {
     border: var(--glass-border-accent);
     border-radius: var(--glass-radius-accent);
     background: var(--glass-fill-accent);
@@ -2160,7 +2160,7 @@ html.dark {
    divider and action row to the same baseline across a grid row. */
 .tariff-card {
   display: grid;
-  grid-template-rows: auto minmax(7rem, 1fr) auto auto;
+  grid-template-rows: minmax(7rem, 1fr) auto auto auto;
   min-width: 0;
   min-height: 100%;
   padding: 20px;

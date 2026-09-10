@@ -155,4 +155,50 @@ describe('Sheet', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('ловит фокус на мобильном шите, возвращает его после закрытия и не дублирует Escape', () => {
+    vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+      {} as DOMRect,
+    ] as unknown as DOMRectList);
+    const trigger = document.createElement('button');
+    document.body.append(trigger);
+    trigger.focus();
+    const onClose = vi.fn();
+    const { rerender } = render(
+      <PlatformProvider>
+        <Sheet isOpen onClose={onClose} title="Сервер">
+          <button type="button">Первый</button>
+          <button type="button">Последний</button>
+        </Sheet>
+      </PlatformProvider>,
+    );
+
+    const dialog = screen.getByRole('dialog');
+    const closeButton = screen.getByRole('button', { name: 'Закрыть' });
+    const lastButton = screen.getByRole('button', { name: 'Последний' });
+    expect(dialog.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(closeButton);
+
+    lastButton.focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(document.activeElement).toBe(closeButton);
+
+    closeButton.focus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(lastButton);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <PlatformProvider>
+        <Sheet isOpen={false} onClose={onClose} title="Сервер">
+          <button type="button">Первый</button>
+          <button type="button">Последний</button>
+        </Sheet>
+      </PlatformProvider>,
+    );
+    expect(document.activeElement).toBe(trigger);
+    trigger.remove();
+  });
 });

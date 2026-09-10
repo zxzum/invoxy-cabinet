@@ -107,9 +107,9 @@ export function TariffPickerGrid({
         </div>
       )}
 
-      {isPromoTierSheetOpen && (
+      {currentPromoGroupName && (
         <PromoTierSheet
-          isOpen
+          isOpen={isPromoTierSheetOpen}
           onClose={() => setIsPromoTierSheetOpen(false)}
           currentGroupName={currentPromoGroupName}
         />
@@ -272,7 +272,10 @@ export function TariffPickerGrid({
                       )}
                     </div>
                   </div>
-                  <div data-tariff-features className="flex flex-wrap gap-2">
+                  <div
+                    data-tariff-features
+                    className="flex flex-wrap items-start content-start gap-2"
+                  >
                     {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
                       <FeatureBadge icon={ArrowDownIcon} tone="warning">
                         {`${whiteInternetLabel} ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')}`}

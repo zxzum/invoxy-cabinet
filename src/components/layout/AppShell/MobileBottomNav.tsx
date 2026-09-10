@@ -47,13 +47,10 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
       inert={isKeyboardOpen || undefined}
       className={cn(
         'fixed inset-x-3 z-50 mx-auto max-w-lg rounded-[26px] border border-white/10 transition-opacity duration-200 lg:hidden',
-        'ix-island',
+        'ix-island glass-surface-elevated',
         isKeyboardOpen ? 'pointer-events-none opacity-0' : 'opacity-100',
       )}
-      style={{
-        bottom: 'var(--mobile-nav-offset)',
-        boxShadow: '0 18px 50px -14px rgba(0, 0, 0, 0.55), 0 0 40px -18px var(--ix-glow)',
-      }}
+      style={{ bottom: 'var(--mobile-nav-offset)' }}
     >
       <div
         className="relative grid"

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import { TariffPickerGrid } from './TariffPickerGrid';
@@ -40,6 +40,13 @@ vi.mock('../../../hooks/usePromoDiscount', () => ({
   usePromoDiscount: () => ({
     applyPromoDiscount: (price: number) => ({ price }),
   }),
+}));
+vi.mock('./PromoTierSheet', () => ({
+  PromoTierSheet: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => (
+    <div data-testid="promo-tier-sheet" data-open={String(isOpen)}>
+      <button type="button" aria-label="close promo sheet" onClick={onClose} />
+    </div>
+  ),
 }));
 
 const tariff: Tariff = {
@@ -132,8 +139,35 @@ describe('TariffPickerGrid card anatomy', () => {
 
     for (const card of cards) {
       expect(card.querySelector('[data-tariff-summary]')).toBeTruthy();
-      expect(card.querySelector('[data-tariff-features]')).toBeTruthy();
+      const features = card.querySelector('[data-tariff-features]');
+      expect(features).toBeTruthy();
+      expect(features?.className).toContain('items-start');
+      expect(features?.className).toContain('content-start');
       expect(card.querySelector('[data-tariff-action]')).toBeTruthy();
     }
+  });
+
+  it('keeps the promo sheet mounted while its open state closes', () => {
+    render(
+      <MemoryRouter>
+        <TariffPickerGrid
+          tariffs={[{ ...tariff, promo_group_name: 'Invoxy Friends' }]}
+          subscription={null}
+          purchaseOptions={undefined}
+          isTariffsMode
+          isMultiTariff={false}
+          onSelectTariff={vi.fn()}
+          onSwitchTariff={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    const sheet = screen.getByTestId('promo-tier-sheet');
+    expect(sheet.getAttribute('data-open')).toBe('false');
+    fireEvent.click(screen.getByRole('button', { name: 'Что это за группа?' }));
+    expect(sheet.getAttribute('data-open')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'close promo sheet' }));
+    expect(screen.getByTestId('promo-tier-sheet').getAttribute('data-open')).toBe('false');
   });
 });
