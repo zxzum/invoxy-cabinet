@@ -233,7 +233,7 @@ export function TariffPickerGrid({
                     isCurrentTariff || tariff.is_highlighted
                       ? 'glass-surface-accent'
                       : 'glass-surface'
-                  } ${isCurrentTariff ? 'bento-card-glow' : 'bento-card-hover'} ${
+                  } bento-card-hover ${isCurrentTariff ? 'bento-card-glow' : ''} ${
                     isCurrentTariff
                       ? 'border-accent-500'
                       : tariff.is_highlighted
