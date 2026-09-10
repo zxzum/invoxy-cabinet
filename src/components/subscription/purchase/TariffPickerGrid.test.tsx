@@ -110,3 +110,30 @@ describe('TariffPickerGrid quota presentation', () => {
     expect(screen.queryByText('LTE 50 ГБ')).toBeNull();
   });
 });
+
+describe('TariffPickerGrid card anatomy', () => {
+  it('gives current and ordinary tariffs the same stable regions', () => {
+    render(
+      <MemoryRouter>
+        <TariffPickerGrid
+          tariffs={[tariff, { ...tariff, id: 2, name: 'Premium LTE', is_current: true }]}
+          subscription={null}
+          purchaseOptions={undefined}
+          isTariffsMode
+          isMultiTariff={false}
+          onSelectTariff={vi.fn()}
+          onSwitchTariff={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    const cards = Array.from(document.querySelectorAll('[data-tariff-card]'));
+    expect(cards).toHaveLength(2);
+
+    for (const card of cards) {
+      expect(card.querySelector('[data-tariff-summary]')).toBeTruthy();
+      expect(card.querySelector('[data-tariff-features]')).toBeTruthy();
+      expect(card.querySelector('[data-tariff-action]')).toBeTruthy();
+    }
+  });
+});

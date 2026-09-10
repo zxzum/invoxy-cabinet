@@ -2156,6 +2156,27 @@ html.dark {
     radial-gradient(90% 50% at 92% 118%, rgba(var(--ix-accent-rgb), 0.1), transparent 62%);
 }
 
+/* Tariff anatomy keeps the descriptive copy intact while pinning the price
+   divider and action row to the same baseline across a grid row. */
+.tariff-card {
+  display: grid;
+  grid-template-rows: auto minmax(7rem, 1fr) auto auto;
+  min-width: 0;
+  min-height: 100%;
+  padding: 20px;
+}
+
+.tariff-card [data-tariff-summary],
+.tariff-card [data-tariff-features],
+.tariff-card [data-tariff-price],
+.tariff-card [data-tariff-action] {
+  min-width: 0;
+}
+
+.tariff-card [data-tariff-action] {
+  margin-top: 16px;
+}
+
 .ix-sidebar {
   flex-direction: column;
   gap: 18px;

@@ -22,7 +22,7 @@ import { PromoTierSheet } from './PromoTierSheet';
 //   - an optional promo-group banner when any tariff carries a
 //     promo_group_name
 //   - the "all tariffs purchased" empty state (multi-tariff mode)
-//   - the grid itself (1 col mobile, 2 cols sm+) with promo prices,
+//   - the grid itself (1 col mobile, 2 cols sm, 3 cols xl) with promo prices,
 //     per-tariff CTAs differentiated by user state (extend / switch /
 //     purchase / legacy renewal)
 //
@@ -211,6 +211,7 @@ export function TariffPickerGrid({
               // вжатие.
               <motion.div key={tariff.id} className="h-full" {...staggerEntrance(index, 0.1, 0.06)}>
                 <div
+                  data-tariff-card
                   role={canOpenTariff ? 'button' : undefined}
                   tabIndex={canOpenTariff ? 0 : undefined}
                   aria-label={canOpenTariff ? customerFacingName : undefined}
@@ -228,42 +229,50 @@ export function TariffPickerGrid({
                         }
                       : undefined
                   }
-                  className={`bento-card-hover animate-none flex h-full flex-col p-5 text-left transition-all ${
+                  className={`tariff-card animate-none h-full text-left transition-all ${
+                    isCurrentTariff || tariff.is_highlighted
+                      ? 'glass-surface-accent'
+                      : 'glass-surface'
+                  } ${isCurrentTariff ? 'bento-card-glow' : 'bento-card-hover'} ${
                     isCurrentTariff
-                      ? 'bento-card-glow border-accent-500'
+                      ? 'border-accent-500'
                       : tariff.is_highlighted
                         ? 'border-2 border-urgent-400'
                         : ''
                   }`}
                 >
-                  {tariff.is_highlighted && !isCurrentTariff && <BestValueBadge className="mb-2" />}
-                  <div className="mb-3 flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-lg font-semibold text-dark-100">
-                          {customerFacingName}
-                        </span>
-                        {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 ? (
-                          <span className="badge-success text-xs">{whiteInternetLabel}</span>
-                        ) : (
-                          <span className="badge-neutral text-xs">
-                            {t('subscription.noLte', 'Без LTE')}
+                  <div data-tariff-summary>
+                    {tariff.is_highlighted && !isCurrentTariff && (
+                      <BestValueBadge className="mb-2" />
+                    )}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-lg font-semibold text-dark-100">
+                            {customerFacingName}
                           </span>
+                          {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 ? (
+                            <span className="badge-success text-xs">{whiteInternetLabel}</span>
+                          ) : (
+                            <span className="badge-neutral text-xs">
+                              {t('subscription.noLte', 'Без LTE')}
+                            </span>
+                          )}
+                        </div>
+                        {marketingDescription && (
+                          <div className="mt-1 max-w-prose whitespace-pre-line text-sm leading-5 text-dark-400">
+                            {marketingDescription}
+                          </div>
                         )}
                       </div>
-                      {marketingDescription && (
-                        <div className="mt-1 max-w-prose whitespace-pre-line text-sm leading-5 text-dark-400">
-                          {marketingDescription}
-                        </div>
+                      {isCurrentTariff && (
+                        <span className="badge-success shrink-0 text-xs">
+                          {t('subscription.currentTariff')}
+                        </span>
                       )}
                     </div>
-                    {isCurrentTariff && (
-                      <span className="badge-success shrink-0 text-xs">
-                        {t('subscription.currentTariff')}
-                      </span>
-                    )}
                   </div>
-                  <div className="mb-3 flex flex-wrap gap-2">
+                  <div data-tariff-features className="flex flex-wrap gap-2">
                     {(tariff.whitelist_traffic_limit_gb ?? 0) > 0 && (
                       <FeatureBadge icon={ArrowDownIcon} tone="warning">
                         {`${whiteInternetLabel} ${tariff.whitelist_traffic_limit_gb} ${t('common.units.gb')}`}
@@ -284,7 +293,10 @@ export function TariffPickerGrid({
                     )}
                   </div>
                   {/* Price info */}
-                  <div className="mt-auto border-t border-dark-700/50 pt-3 text-sm text-dark-400">
+                  <div
+                    data-tariff-price
+                    className="border-t border-dark-700/50 pt-3 text-sm text-dark-400"
+                  >
                     {(() => {
                       const promoDaily = dailyPriceQuote(tariff, applyPromoDiscount);
                       if (promoDaily) {
@@ -353,7 +365,7 @@ export function TariffPickerGrid({
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="mt-4 flex gap-2">
+                  <div data-tariff-action className="flex gap-2">
                     {isCurrentTariff ? (
                       subscription?.is_daily ? (
                         <div className="flex-1 py-2 text-center text-sm text-dark-500">
