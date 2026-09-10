@@ -44,6 +44,7 @@ coverage/
 tmp/
 temp/
 miniapp/
+.worktrees/
 
 # AI & Agents context
 .ai/
