@@ -38,7 +38,9 @@ describe('liquid glass surfaces', () => {
     expect(css).toContain('.ix-island:not(.glass-surface-elevated)');
     expect(nav).toContain("'ix-island glass-surface-elevated'");
     expect(nav).toContain("style={{ bottom: 'var(--mobile-nav-offset)' }}");
-    expect(css).toContain('grid-template-rows: minmax(7rem, 1fr) auto auto auto;');
+    expect(css).toContain('.tariff-card {');
+    expect(css).toContain('display: flex;');
+    expect(css).toContain('height: 20rem;');
     expect(tariffGrid).toMatch(
       /data-tariff-features[\s\S]*?className="flex flex-wrap items-start content-start gap-2"/,
     );
