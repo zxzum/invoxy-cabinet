@@ -403,14 +403,6 @@ describe('cabinet route boundary', () => {
     }
   });
 
-  it('keeps the protected news list route reachable', async () => {
-    auth.state.isAuthenticated = true;
-
-    await renderApp('/news');
-
-    expect(await screen.findByTestId('news-page')).toBeTruthy();
-  });
-
   it('sends successful OAuth login to /dashboard', async () => {
     const { saveOAuthState } = await import('./utils/oauth');
     const { default: OAuthCallback } = await import('./pages/OAuthCallback');

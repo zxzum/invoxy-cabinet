@@ -170,7 +170,6 @@ const AdminLandingStats = lazyWithRetry(() => import('./pages/AdminLandingStats'
 const AdminReferralNetwork = lazyWithRetry(() => import('./pages/ReferralNetwork'));
 
 // News pages
-const News = lazyWithRetry(() => import('./components/news/NewsSection'));
 const NewsArticlePage = lazyWithRetry(() => import('./pages/NewsArticle'));
 const AdminNews = lazyWithRetry(() => import('./pages/AdminNews'));
 const AdminNewsCreate = lazyWithRetry(() => import('./pages/AdminNewsCreate'));
@@ -706,16 +705,6 @@ function App() {
             <ProtectedRoute>
               <LazyPage>
                 <ConnectionQR />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/news"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <News />
               </LazyPage>
             </ProtectedRoute>
           }
