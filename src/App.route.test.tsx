@@ -20,6 +20,8 @@ const { auth, authApi, blocking, landingApi, permissions, translation } = vi.hoi
       setUser: vi.fn(),
       checkAdminStatus: vi.fn().mockResolvedValue(undefined),
     },
+    consent: { capture: vi.fn(() => false), toggle: vi.fn() },
+    telegram: { inTelegram: false, initData: null as string | null },
   },
   authApi: {
     getOAuthProviders: vi.fn(),
@@ -73,8 +75,8 @@ vi.mock('./hooks/useAnalyticsCounters', () => ({ useAnalyticsCounters: () => {} 
 vi.mock('./hooks/useSiteVerification', () => ({ useSiteVerification: () => {} }));
 vi.mock('./hooks/useDoneKey', () => ({ useDoneKey: () => {} }));
 vi.mock('./hooks/useTelegramSDK', () => ({
-  isInTelegramWebApp: () => false,
-  getTelegramInitData: () => null,
+  isInTelegramWebApp: () => auth.telegram.inTelegram,
+  getTelegramInitData: () => auth.telegram.initData,
   useTelegramSDK: () => ({
     safeAreaInset: { top: 0, bottom: 0 },
     contentSafeAreaInset: { top: 0, bottom: 0 },
@@ -84,11 +86,11 @@ vi.mock('./hooks/useTelegramSDK', () => ({
 vi.mock('./hooks/useLegalConsentGate', () => ({
   useLegalConsentGate: () => ({
     pending: false,
-    capture: () => false,
+    capture: auth.consent.capture,
     acceptedKeys: [],
     documents: [],
     accepted: {},
-    toggle: vi.fn(),
+    toggle: auth.consent.toggle,
     allAccepted: true,
   }),
 }));
@@ -225,7 +227,9 @@ function LocationProbe() {
   );
 }
 
-async function renderApp(initialEntry: string) {
+async function renderApp(
+  initialEntry: string | { pathname: string; search?: string; hash?: string; state?: unknown },
+) {
   const { default: App } = await import('./App');
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -340,7 +344,11 @@ beforeEach(() => {
   auth.state.isAuthenticated = false;
   auth.state.isLoading = false;
   auth.state.isAdmin = false;
+  auth.telegram.inTelegram = false;
+  auth.telegram.initData = null;
   blocking.state.blockingType = null;
+  auth.consent.capture.mockReset().mockReturnValue(false);
+  auth.consent.toggle.mockReset();
   for (const mock of [
     auth.state.loginWithTelegram,
     auth.state.loginWithEmail,
@@ -363,6 +371,14 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('cabinet route boundary', () => {
+  it('keeps an ordinary unauthenticated root public with its query and hash', async () => {
+    await renderApp('/?ref=invite-42#plans');
+
+    expect(await screen.findByTestId('landing-page')).toBeTruthy();
+    expect(auth.state.loginWithTelegram).not.toHaveBeenCalled();
+    expect(screen.getByTestId('location').textContent).toContain('/?ref=invite-42#plans');
+  });
+
   it('keeps the public root data-free for authenticated visitors', async () => {
     auth.state.isAuthenticated = true;
 
@@ -370,6 +386,67 @@ describe('cabinet route boundary', () => {
 
     expect(await screen.findByTestId('landing-page')).toBeTruthy();
     expect(screen.queryByTestId('dashboard-page')).toBeNull();
+  });
+
+  it('auto-authenticates a Telegram root once and replaces it with the dashboard', async () => {
+    auth.telegram.inTelegram = true;
+    auth.telegram.initData = 'query_id=telegram&auth_date=123&hash=valid';
+    auth.state.loginWithTelegram.mockImplementation(async (initData: string) => {
+      expect(initData).toBe(auth.telegram.initData);
+      auth.state.isAuthenticated = true;
+    });
+
+    await renderApp('/');
+
+    await waitFor(() => expect(auth.state.loginWithTelegram).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(screen.getByTestId('location').textContent).toContain('/dashboard[REPLACE]'),
+    );
+    expect(screen.queryByTestId('landing-page')).toBeNull();
+  });
+
+  it('keeps a Telegram root without initData on the public landing page', async () => {
+    auth.telegram.inTelegram = true;
+
+    await renderApp('/?source=telegram#launch');
+
+    expect(await screen.findByTestId('landing-page')).toBeTruthy();
+    expect(auth.state.loginWithTelegram).not.toHaveBeenCalled();
+    expect(screen.getByTestId('location').textContent).toContain('/?source=telegram#launch');
+  });
+
+  it('shows the existing Telegram retry state once when root auth is rejected', async () => {
+    auth.telegram.inTelegram = true;
+    auth.telegram.initData = 'invalid-init-data';
+    auth.state.loginWithTelegram.mockRejectedValue({ response: { status: 422 } });
+
+    await renderApp('/');
+
+    await waitFor(() => expect(auth.state.loginWithTelegram).toHaveBeenCalledOnce());
+    expect(await screen.findByRole('button', { name: 'auth.tryAgain' })).toBeTruthy();
+    expect(screen.queryByTestId('landing-page')).toBeNull();
+  });
+
+  it('preserves the route-state return query, hash, and referral after Telegram root auth', async () => {
+    auth.telegram.inTelegram = true;
+    auth.telegram.initData = 'query_id=telegram&auth_date=123&hash=valid';
+    auth.state.loginWithTelegram.mockImplementation(async () => {
+      auth.state.isAuthenticated = true;
+    });
+
+    await renderApp({
+      pathname: '/',
+      search: '?source=telegram',
+      hash: '#launch',
+      state: { from: '/referral?ref=invite-42#plans' },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('location').textContent).toContain(
+        '/referral?ref=invite-42#plans[REPLACE]',
+      ),
+    );
+    expect(await screen.findByTestId('referral-page')).toBeTruthy();
   });
 
   it('protects /dashboard and records the requested return path', async () => {

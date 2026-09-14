@@ -42,6 +42,7 @@ import { saveReturnUrl } from './utils/token';
 import { useAnalyticsCounters } from './hooks/useAnalyticsCounters';
 import { useSiteVerification } from './hooks/useSiteVerification';
 import { useDoneKey } from './hooks/useDoneKey';
+import { getTelegramInitData, isInTelegramWebApp } from './hooks/useTelegramSDK';
 // Auth pages - load immediately (small)
 import Login from './pages/Login';
 import TelegramCallback from './pages/TelegramCallback';
@@ -249,7 +250,7 @@ function MainTabsRoute() {
   const outlet = useOutlet();
 
   if (location.pathname === '/') {
-    return <Landing />;
+    return isInTelegramWebApp() && getTelegramInitData() ? <Login /> : <Landing />;
   }
 
   return <ProtectedRoute>{outlet}</ProtectedRoute>;

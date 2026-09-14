@@ -19,6 +19,7 @@ const { auth, authApi, brandingApi, infoApi, referral, translation, useAuthStore
         loginWithEmail: vi.fn(),
         registerWithEmail: vi.fn(),
       },
+      telegram: { inTelegram: false, initData: null as string | null },
     };
     const useAuthStore = Object.assign(
       (selector?: (state: typeof auth.state) => unknown) =>
@@ -98,8 +99,8 @@ vi.mock('../api/branding', () => ({
 }));
 vi.mock('../api/info', () => ({ infoApi }));
 vi.mock('../hooks/useTelegramSDK', () => ({
-  isInTelegramWebApp: () => false,
-  getTelegramInitData: () => null,
+  isInTelegramWebApp: () => auth.telegram.inTelegram,
+  getTelegramInitData: () => auth.telegram.initData,
   useTelegramSDK: () => ({
     safeAreaInset: { top: 0, bottom: 0 },
     contentSafeAreaInset: { top: 0, bottom: 0 },
@@ -167,6 +168,8 @@ beforeEach(() => {
   auth.state.loginWithDeepLink.mockReset();
   auth.state.loginWithEmail.mockReset().mockResolvedValue(undefined);
   auth.state.registerWithEmail.mockReset();
+  auth.telegram.inTelegram = false;
+  auth.telegram.initData = null;
   authApi.getOAuthProviders.mockReset().mockResolvedValue({ providers: [] });
   authApi.getOAuthAuthorizeUrl.mockReset();
   authApi.forgotPassword.mockReset();
@@ -338,6 +341,17 @@ describe('Login integration shell', () => {
 });
 
 describe('Login email semantics', () => {
+  it('does not auto-authenticate or show Telegram loading on explicit /register', async () => {
+    auth.telegram.inTelegram = true;
+    auth.telegram.initData = 'valid-init-data';
+
+    renderLogin('/register');
+
+    expect(await screen.findByLabelText('First Name')).toBeTruthy();
+    expect(auth.state.loginWithTelegram).not.toHaveBeenCalled();
+    expect(screen.queryByText('auth.authenticating')).toBeNull();
+  });
+
   it('shows validation without calling the store for an invalid email', () => {
     renderLogin();
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'invalid' } });

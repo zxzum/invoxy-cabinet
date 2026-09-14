@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -45,6 +45,7 @@ export default function Login() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const isRegistrationRoute = location.pathname === '/register';
   const {
     isAuthenticated,
     isLoading: isAuthInitializing,
@@ -74,8 +75,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isTelegramWebApp, setIsTelegramWebApp] = useState(() => isInTelegramWebApp());
   const [isLoading, setIsLoading] = useState(
-    () => isInTelegramWebApp() && Boolean(getTelegramInitData()),
+    () => !isRegistrationRoute && isInTelegramWebApp() && Boolean(getTelegramInitData()),
   );
+  const telegramAuthAttemptedRef = useRef(false);
   const [logoLoaded, setLogoLoaded] = useState(() => isLogoPreloaded());
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -202,11 +204,12 @@ export default function Login() {
   // with stale tokens triggering interceptor refresh/redirect loops
   useEffect(() => {
     // Don't attempt Telegram auth until store initialization is done
-    if (isAuthInitializing) return;
+    if (isAuthInitializing || isRegistrationRoute || telegramAuthAttemptedRef.current) return;
 
     const tryTelegramAuth = async () => {
       const initData = getTelegramInitData();
       if (!isInTelegramWebApp() || !initData) return;
+      telegramAuthAttemptedRef.current = true;
 
       setIsTelegramWebApp(true);
       setIsLoading(true);
@@ -241,6 +244,7 @@ export default function Login() {
 
           // Show backend error detail if available, otherwise generic message
           setError(detail || t('auth.telegramRequired'));
+          break;
         }
       }
 
@@ -248,7 +252,15 @@ export default function Login() {
     };
 
     tryTelegramAuth();
-  }, [isAuthInitializing, loginWithTelegram, navigate, t, getReturnUrl, consent.capture]);
+  }, [
+    isAuthInitializing,
+    isRegistrationRoute,
+    loginWithTelegram,
+    navigate,
+    t,
+    getReturnUrl,
+    consent.capture,
+  ]);
 
   const handleRetryTelegramAuth = () => {
     // Clear ALL cached auth state to prevent stale token/initData loops
