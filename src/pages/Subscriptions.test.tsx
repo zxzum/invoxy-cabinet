@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PlatformProvider } from '../platform/PlatformProvider';
 import type { SubscriptionsListResponse } from '../types';
 import Subscriptions from './Subscriptions';
 
@@ -36,22 +37,12 @@ vi.mock('../utils/glassTheme', () => ({
     textSecondary: 'gray',
   }),
 }));
-vi.mock('../components/subscription/SubscriptionListCard', () => ({
-  default: ({
-    onClick,
-    subscription,
-  }: {
-    onClick: () => void;
-    subscription: { tariff_name: string };
-  }) => <button onClick={onClick}>{subscription.tariff_name}</button>,
-}));
-vi.mock('../components/dashboard/TrialOfferCard', () => ({
-  default: () => <div>trial offer</div>,
-}));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : key),
+    i18n: { language: 'ru' },
   }),
+  initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
 function createClient() {
@@ -68,17 +59,19 @@ function renderPage() {
   return render(
     <MemoryRouter initialEntries={['/subscriptions']}>
       <QueryClientProvider client={createClient()}>
-        <Routes>
-          <Route
-            path="*"
-            element={
-              <>
-                <Subscriptions />
-                <CurrentPath />
-              </>
-            }
-          />
-        </Routes>
+        <PlatformProvider>
+          <Routes>
+            <Route
+              path="*"
+              element={
+                <>
+                  <Subscriptions />
+                  <CurrentPath />
+                </>
+              }
+            />
+          </Routes>
+        </PlatformProvider>
       </QueryClientProvider>
     </MemoryRouter>,
   );
@@ -145,7 +138,9 @@ describe('Subscriptions target states', () => {
 
     renderPage();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Fixture тариф' }));
+    expect(await screen.findByText('12.0 / 100 ГБ')).toBeTruthy();
+    expect(screen.getByText('Автопродление')).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: /Fixture тариф/ }));
 
     await waitFor(() =>
       expect(screen.getByTestId('current-path').textContent).toBe('/subscriptions/42'),
