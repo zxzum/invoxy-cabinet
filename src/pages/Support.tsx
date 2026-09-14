@@ -111,7 +111,13 @@ export default function Support() {
   };
 
   // Get support configuration
-  const { data: supportConfig, isLoading: configLoading } = useQuery({
+  const {
+    data: supportConfig,
+    isLoading: configLoading,
+    isError: configError,
+    error: configQueryError,
+    refetch: refetchSupportConfig,
+  } = useQuery({
     queryKey: ['support-config'],
     queryFn: infoApi.getSupportConfig,
   });
@@ -298,6 +304,19 @@ export default function Support() {
     );
   }
 
+  if (configError) {
+    return (
+      <div className="mx-auto mt-12 max-w-md">
+        <Card className="glass-surface text-center">
+          <div role="alert" className="alert-error mb-4">
+            {getApiErrorMessage(configQueryError, t('common.error'))}
+          </div>
+          <Button onClick={() => void refetchSupportConfig()}>{t('common.retry', 'Retry')}</Button>
+        </Card>
+      </div>
+    );
+  }
+
   // If tickets are disabled, show redirect message
   if (supportConfig && !supportConfig.tickets_enabled) {
     log.debug('Tickets disabled, config:', supportConfig);
@@ -307,11 +326,9 @@ export default function Support() {
     const contact = resolveSupportContact(supportConfig);
 
     const getSupportMessage = () => {
-      log.debug('Getting support message for type:', supportConfig.support_type);
-
       const title = isAdmin ? t('support.ticketsDisabled') : t('support.title');
 
-      if (supportConfig.support_type === 'url' && supportConfig.support_url) {
+      if (contact?.kind === 'external') {
         return {
           title,
           message: t('support.useExternalLink'),
@@ -319,12 +336,21 @@ export default function Support() {
         };
       }
 
-      // profile и любой fallback — контакт в телеграме
-      const supportUsername = supportConfig.support_username || '@support';
+      if (contact?.kind === 'telegram') {
+        const supportUsername = supportConfig.support_username?.trim();
+        return {
+          title,
+          message: supportUsername
+            ? t('support.contactSupport', { username: supportUsername })
+            : t('support.contactUs'),
+          buttonText: t('support.contactUs'),
+        };
+      }
+
       return {
         title,
-        message: t('support.contactSupport', { username: supportUsername }),
-        buttonText: t('support.contactUs'),
+        message: t('support.ticketsDisabled'),
+        buttonText: null,
       };
     };
 
@@ -338,7 +364,7 @@ export default function Support() {
           </div>
           <h2 className="mb-2 text-xl font-semibold text-dark-100">{supportMessage.title}</h2>
           <p className="mb-6 text-dark-400">{supportMessage.message}</p>
-          {contact && (
+          {contact && supportMessage.buttonText && (
             <Button onClick={() => openSupportContact(supportConfig)} fullWidth>
               {supportMessage.buttonText}
             </Button>
