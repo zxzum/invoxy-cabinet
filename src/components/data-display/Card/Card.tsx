@@ -1,4 +1,9 @@
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+import {
+  forwardRef,
+  type ComponentPropsWithoutRef,
+  type HTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -88,7 +93,12 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 
     if (asChild) {
       return (
-        <Slot ref={ref} className={classes}>
+        <Slot
+          ref={ref}
+          className={classes}
+          onClick={interactive ? handleClick : onClick}
+          {...(props as ComponentPropsWithoutRef<typeof Slot>)}
+        >
           {children}
         </Slot>
       );
