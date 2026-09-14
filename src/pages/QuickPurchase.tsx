@@ -56,6 +56,7 @@ function getUsableTariffs(config: LandingConfig | undefined): LandingTariff[] {
           Number.isInteger(period.days) &&
           period.days > 0 &&
           typeof period.price_kopeks === 'number' &&
+          Number.isInteger(period.price_kopeks) &&
           Number.isFinite(period.price_kopeks) &&
           period.price_kopeks > 0,
       ),

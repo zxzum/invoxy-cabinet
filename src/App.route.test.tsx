@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from 'rea
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { auth, authApi, landingApi, permissions, translation } = vi.hoisted(() => ({
+const { auth, authApi, blocking, landingApi, permissions, translation } = vi.hoisted(() => ({
   auth: {
     state: {
       isAuthenticated: false,
@@ -27,6 +27,9 @@ const { auth, authApi, landingApi, permissions, translation } = vi.hoisted(() =>
     verifyEmail: vi.fn(),
     autoLogin: vi.fn(),
     linkProviderCallback: vi.fn(),
+  },
+  blocking: {
+    state: { blockingType: null as string | null },
   },
   landingApi: {
     getPurchaseStatus: vi.fn(),
@@ -62,8 +65,8 @@ vi.mock('./store/permissions', () => ({
 }));
 
 vi.mock('./store/blocking', () => ({
-  useBlockingStore: (selector: (state: { blockingType: null }) => unknown) =>
-    selector({ blockingType: null }),
+  useBlockingStore: (selector: (state: typeof blocking.state) => unknown) =>
+    selector(blocking.state),
 }));
 
 vi.mock('./hooks/useAnalyticsCounters', () => ({ useAnalyticsCounters: () => {} }));
@@ -111,7 +114,14 @@ vi.mock('./api/branding', () => ({
 }));
 
 vi.mock('./api/info', () => ({
-  infoApi: { getLegalConsentConfig: vi.fn().mockResolvedValue(null) },
+  infoApi: {
+    getLegalConsentConfig: vi.fn().mockResolvedValue(null),
+    getPublicOffer: vi.fn().mockResolvedValue({ content: '<p>Offer</p>', updated_at: null }),
+    getPrivacyPolicy: vi.fn().mockResolvedValue({ content: '<p>Privacy</p>', updated_at: null }),
+    getRecurrentPayments: vi
+      .fn()
+      .mockResolvedValue({ content: '<p>Recurring</p>', updated_at: null }),
+  },
 }));
 
 vi.mock('./api/news', () => ({
@@ -164,11 +174,11 @@ vi.mock('./components/backgrounds/BackgroundHost', () => ({
   BackgroundHost: () => null,
 }));
 vi.mock('./components/blocking', () => ({
-  MaintenanceScreen: () => null,
-  ChannelSubscriptionScreen: () => null,
-  BlacklistedScreen: () => null,
-  AccountDeletedScreen: () => null,
-  ServiceUnavailableScreen: () => null,
+  MaintenanceScreen: () => <div data-testid="maintenance-screen" />,
+  ChannelSubscriptionScreen: () => <div data-testid="channel-screen" />,
+  BlacklistedScreen: () => <div data-testid="blacklisted-screen" />,
+  AccountDeletedScreen: () => <div data-testid="account-deleted-screen" />,
+  ServiceUnavailableScreen: () => <div data-testid="service-unavailable-screen" />,
 }));
 vi.mock('./components/ErrorBoundary', () => ({
   ErrorBoundary: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -330,6 +340,7 @@ beforeEach(() => {
   auth.state.isAuthenticated = false;
   auth.state.isLoading = false;
   auth.state.isAdmin = false;
+  blocking.state.blockingType = null;
   for (const mock of [
     auth.state.loginWithTelegram,
     auth.state.loginWithEmail,
@@ -393,6 +404,19 @@ describe('cabinet route boundary', () => {
     await renderApp('/register');
 
     expect(await screen.findByLabelText('First Name')).toBeTruthy();
+  });
+
+  it.each([
+    ['/offer', 'Публичная оферта'],
+    ['/privacy', 'Политика конфиденциальности'],
+    ['/recurrent-payments', 'Рекуррентные платежи'],
+  ])('keeps %s readable while blocking is active', async (path, title) => {
+    blocking.state.blockingType = 'maintenance';
+
+    await renderApp(path);
+
+    expect(await screen.findByRole('heading', { name: title })).toBeTruthy();
+    expect(screen.queryByTestId('maintenance-screen')).toBeNull();
   });
 
   it.each([

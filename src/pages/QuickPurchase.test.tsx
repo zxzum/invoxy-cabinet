@@ -113,14 +113,15 @@ function renderPage() {
   );
 }
 
+const invalidPrices = [0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, undefined] as const;
 const unusableTariffCases = [
   [],
-  [
+  ...invalidPrices.map((price) => [
     {
       ...config().tariffs[0],
-      periods: [{ ...config().tariffs[0].periods[0], price_kopeks: undefined }],
+      periods: [{ ...config().tariffs[0].periods[0], price_kopeks: price }],
     },
-  ],
+  ]),
 ] as unknown as LandingConfig['tariffs'][];
 
 beforeEach(() => {
@@ -176,6 +177,60 @@ describe('QuickPurchase', () => {
       expect(mocks.createPurchase).not.toHaveBeenCalled();
     },
   );
+
+  it.each([1, 12_500])('accepts a positive integer price: %i kopeks', async (price) => {
+    mocks.getConfig.mockResolvedValue(
+      config({
+        tariffs: [
+          {
+            ...config().tariffs[0],
+            periods: [{ ...config().tariffs[0].periods[0], price_kopeks: price }],
+          },
+        ],
+      }),
+    );
+
+    renderPage();
+    expect(await screen.findByText('API tariff')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your contact'), {
+      target: { value: 'buyer@example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Pay/ }));
+
+    await waitFor(() => expect(mocks.createPurchase).toHaveBeenCalledTimes(1));
+    expect(mocks.createPurchase).toHaveBeenCalledWith(
+      'spring',
+      expect.objectContaining({ period_days: 30, is_gift: false }),
+    );
+  });
+
+  it('includes recipient fields in a gift purchase payload', async () => {
+    renderPage();
+
+    expect(await screen.findByText('API tariff')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your contact'), {
+      target: { value: 'buyer@example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'As a gift' }));
+    fireEvent.change(screen.getByLabelText('landing.recipientLabel'), {
+      target: { value: 'recipient@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('landing.giftMessageLabel'), {
+      target: { value: 'Happy birthday' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Pay/ }));
+
+    await waitFor(() => expect(mocks.createPurchase).toHaveBeenCalledTimes(1));
+    expect(mocks.createPurchase).toHaveBeenCalledWith(
+      'spring',
+      expect.objectContaining({
+        is_gift: true,
+        gift_recipient_type: 'email',
+        gift_recipient_value: 'recipient@example.com',
+        gift_message: 'Happy birthday',
+      }),
+    );
+  });
 
   it('rejects unsafe API payment and icon URLs', async () => {
     mocks.getConfig.mockResolvedValue(

@@ -207,14 +207,20 @@ function withReadableTextShades(
   light: ThemeSurfaces,
 ): ColorPalette {
   const readable = (shade: ShadeLevel, towards: Rgb, bg: Rgb, min: number) =>
-    tripletOf(ensureReadable(parseTriplet(palette[shade]), towards, bg, min));
+    ensureReadable(parseTriplet(palette[shade]), towards, bg, min);
+  const dark300 = readable(300, dark.text, dark.surface, TEXT_SHADE_MIN_RATIO);
+  const dark400 = readable(400, dark.text, dark.surface, TEXT_SHADE_MIN_RATIO);
+  const light700 = readable(700, light.text, light.surface, LIGHT_TEXT_SHADE_MIN_RATIO);
+  const light800 = readable(800, light.text, light.surface, LIGHT_TEXT_SHADE_MIN_RATIO);
   return {
     ...palette,
     500: tripletOf(ensureFillCarriesText(parseTriplet(palette[500]))),
-    300: readable(300, dark.text, dark.surface, TEXT_SHADE_MIN_RATIO),
-    400: readable(400, dark.text, dark.surface, TEXT_SHADE_MIN_RATIO),
-    700: readable(700, light.text, light.surface, LIGHT_TEXT_SHADE_MIN_RATIO),
-    800: readable(800, light.text, light.surface, LIGHT_TEXT_SHADE_MIN_RATIO),
+    300: tripletOf(dark300),
+    400: tripletOf(relativeLuminance(dark400) <= relativeLuminance(dark300) ? dark400 : dark300),
+    700: tripletOf(light700),
+    800: tripletOf(
+      relativeLuminance(light800) <= relativeLuminance(light700) ? light800 : light700,
+    ),
   };
 }
 

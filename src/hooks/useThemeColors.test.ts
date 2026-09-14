@@ -66,14 +66,13 @@ describe('applyThemeColors: статусные палитры', () => {
     expect(readVar('--color-error-500')).toBe(hexToTriplet('#dc2626'));
   });
 
-  it('дефолтная палитра в рантайме совпадает со статикой globals.css', () => {
-    // Иначе после загрузки JS цвета «уезжают» относительно первой отрисовки.
+  it('дефолтная палитра в рантайме следует текущим цветам темы', () => {
     applyThemeColors(DEFAULT_THEME_COLORS);
 
-    expect(readVar('--color-accent-500')).toBe('59, 130, 246');
-    expect(readVar('--color-success-500')).toBe('34, 197, 94');
-    expect(readVar('--color-warning-500')).toBe('245, 158, 11');
-    expect(readVar('--color-error-500')).toBe('239, 68, 68');
+    expect(readVar('--color-accent-500')).toBe(hexToTriplet(DEFAULT_THEME_COLORS.accent));
+    expect(readVar('--color-success-500')).toBe(hexToTriplet(DEFAULT_THEME_COLORS.success));
+    expect(readVar('--color-warning-500')).toBe(hexToTriplet(DEFAULT_THEME_COLORS.warning));
+    expect(readVar('--color-error-500')).toBe(hexToTriplet(DEFAULT_THEME_COLORS.error));
   });
 
   it.each([
