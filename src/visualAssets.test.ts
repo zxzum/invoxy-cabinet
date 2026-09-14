@@ -1,30 +1,12 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-const ASSETS = [
-  'apps/happ.png',
-  'apps/incy.png',
+const RUNTIME_ASSETS = [
   'auth-background.png',
   'brand-mark.png',
-  'desktop-shape-1.webp',
-  'desktop-shape-2.webp',
-  'desktop-shape-3.webp',
   'landing-hero.png',
   'landing-shield.png',
-  'profile-balance-bg.webp',
-  'promo-group-bg.webp',
-  'referral-network-bg.png',
-  'referral-robot.webp',
-  'shape-1.webp',
-  'shape-2.webp',
-  'shape-3.webp',
-  'shape-4.webp',
-  'shape-5.webp',
-  'subscription-bg-desktop.webp',
-  'subscription-orb.webp',
-  'subscription-status-bg.webp',
-  'trial-card-bg.png',
-  'trial-ribbon.png',
 ] as const;
 
 const TARGET_SOURCE_FILES = [
@@ -37,19 +19,38 @@ const TARGET_SOURCE_FILES = [
   './styles/globals.css',
 ];
 
+function listFiles(directory: string, prefix = ''): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+    const fullPath = `${directory}/${entry.name}`;
+    return entry.isDirectory() ? listFiles(fullPath, relativePath) : [relativePath];
+  });
+}
+
 describe('migrated visual assets', () => {
-  it('copies the approved case-sensitive asset set', () => {
-    for (const asset of ASSETS) {
+  it('keeps only runtime-used assets in the public image tree', () => {
+    const imageRoot = fileURLToPath(new URL('../public/images/', import.meta.url));
+
+    expect(listFiles(imageRoot).sort()).toEqual([...RUNTIME_ASSETS].sort());
+
+    for (const asset of RUNTIME_ASSETS) {
       expect(existsSync(new URL(`../public/images/${asset}`, import.meta.url))).toBe(true);
     }
   });
 
-  it('resolves every migrated image reference in task-owned source files', () => {
+  it('resolves exactly the runtime image references in task-owned source files', () => {
+    const references = new Set<string>();
+
     for (const sourceFile of TARGET_SOURCE_FILES) {
       const source = readFileSync(new URL(sourceFile, import.meta.url), 'utf8');
       for (const match of source.matchAll(/\/images\/([^"')\s?]+)/g)) {
-        expect(existsSync(new URL(`../public/images/${match[1]}`, import.meta.url))).toBe(true);
+        references.add(match[1]);
       }
+    }
+
+    expect([...references].sort()).toEqual([...RUNTIME_ASSETS].sort());
+    for (const asset of references) {
+      expect(existsSync(new URL(`../public/images/${asset}`, import.meta.url))).toBe(true);
     }
   });
 });
