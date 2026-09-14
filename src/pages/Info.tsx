@@ -410,7 +410,7 @@ export default function Info() {
     }
 
     return (
-      <div className="bento-card prose prose-invert max-w-none">
+      <div className="glass-surface bento-card prose prose-invert max-w-none">
         <div className="overflow-x-auto" dangerouslySetInnerHTML={{ __html: infoPageHtml }} />
       </div>
     );
@@ -452,7 +452,7 @@ export default function Info() {
       return (
         <div className="space-y-2">
           {faqPages.map((faq: FaqPage) => (
-            <div key={faq.id} className="bento-card overflow-hidden p-0">
+            <div key={faq.id} className="glass-surface bento-card overflow-hidden p-0">
               <button
                 onClick={() => toggleFaq(faq.id)}
                 className="flex min-h-[52px] w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-dark-800/50"
@@ -485,7 +485,7 @@ export default function Info() {
       }
 
       return (
-        <div className="bento-card prose prose-invert max-w-none">
+        <div className="glass-surface bento-card prose prose-invert max-w-none">
           <div
             className="overflow-x-auto"
             dangerouslySetInnerHTML={{ __html: formatContent(rules.content) }}
@@ -513,7 +513,7 @@ export default function Info() {
       }
 
       return (
-        <div className="bento-card prose prose-invert max-w-none">
+        <div className="glass-surface bento-card prose prose-invert max-w-none">
           <div
             className="overflow-x-auto"
             dangerouslySetInnerHTML={{ __html: formatContent(privacy.content) }}
@@ -541,7 +541,7 @@ export default function Info() {
       }
 
       return (
-        <div className="bento-card prose prose-invert max-w-none">
+        <div className="glass-surface bento-card prose prose-invert max-w-none">
           <div
             className="overflow-x-auto"
             dangerouslySetInnerHTML={{ __html: formatContent(offer.content) }}
@@ -609,9 +609,9 @@ export default function Info() {
       };
 
       return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-5 lg:gap-6">
           {/* Progress Card */}
-          <div className="bento-card p-5">
+          <div className="glass-surface bento-card p-5">
             <h3 className="mb-4 text-lg font-semibold text-dark-50">{t('info.yourProgress')}</h3>
 
             <div className="mb-4 grid grid-cols-2 gap-4">
@@ -668,7 +668,7 @@ export default function Info() {
             {loyaltyData.tiers.map((tier) => (
               <div
                 key={tier.id}
-                className={`bento-card p-4 transition-all ${
+                className={`glass-surface bento-card p-4 transition-all ${
                   tier.is_current
                     ? 'bg-accent-500/5 ring-2 ring-accent-500/50'
                     : tier.is_achieved
@@ -743,7 +743,7 @@ export default function Info() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <div className="flex items-center gap-3">
         <InfoIcon className="h-6 w-6" />
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('info.title')}</h1>

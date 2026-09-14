@@ -65,14 +65,14 @@ export default function Contests() {
 
   if (error) {
     return (
-      <div className="card border-error-500/20 bg-error-500/10">
+      <div className="glass-surface card border-error-500/20 bg-error-500/10">
         <p className="text-error-400">{t('contests.error')}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <div className="flex items-center gap-3">
         <GamepadIcon className="h-6 w-6" />
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('contests.title')}</h1>
@@ -82,7 +82,7 @@ export default function Contests() {
       {selectedContest && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-dark-950/70 p-4 backdrop-blur-sm">
           <div
-            className="bento-card max-h-[80vh] w-full max-w-lg overflow-y-auto"
+            className="glass-surface bento-card max-h-[80vh] w-full max-w-lg overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -198,7 +198,7 @@ export default function Contests() {
       {contests && contests.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {contests.map((contest) => (
-            <div key={contest.id} className="card">
+            <div key={contest.id} className="glass-surface card">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h3 className="break-words text-lg font-semibold">{contest.name}</h3>
@@ -229,7 +229,7 @@ export default function Contests() {
           ))}
         </div>
       ) : (
-        <div className="card py-12 text-center">
+        <div className="glass-surface card py-12 text-center">
           <GamepadIcon className="h-6 w-6" />
           <p className="mt-4 text-dark-400">{t('contests.noContests')}</p>
         </div>

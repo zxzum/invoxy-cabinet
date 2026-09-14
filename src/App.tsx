@@ -76,6 +76,7 @@ const Info = lazyWithRetry(() => import('./pages/Info'));
 const Wheel = lazyWithRetry(() => import('./pages/Wheel'));
 const GiftSubscription = lazyWithRetry(() => import('./pages/GiftSubscription'));
 const GiftResult = lazyWithRetry(() => import('./pages/GiftResult'));
+const News = lazyWithRetry(() => import('./pages/News'));
 const ConnectionQR = lazyWithRetry(() => import('./pages/ConnectionQR'));
 const QuickPurchase = lazyWithRetry(() => import('./pages/QuickPurchase'));
 const PurchaseSuccess = lazyWithRetry(() => import('./pages/PurchaseSuccess'));
@@ -705,6 +706,16 @@ function App() {
             <ProtectedRoute>
               <LazyPage>
                 <ConnectionQR />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/news"
+          element={
+            <ProtectedRoute>
+              <LazyPage>
+                <News />
               </LazyPage>
             </ProtectedRoute>
           }

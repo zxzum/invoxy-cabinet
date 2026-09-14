@@ -269,7 +269,7 @@ export default function NewsArticlePage() {
 
   if (isError || !article) {
     return (
-      <div className="space-y-6">
+      <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
         {!capabilities.hasBackButton && (
           <button
             onClick={() => navigate('/dashboard')}
@@ -279,13 +279,15 @@ export default function NewsArticlePage() {
             <BackIcon />
           </button>
         )}
-        <div className="card-inset p-8 text-center text-dark-400">{t('news.noNews')}</div>
+        <div className="glass-surface card-inset p-8 text-center text-dark-400">
+          {t('news.noNews')}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       {/* Back button */}
       {!capabilities.hasBackButton && (
         <button
@@ -370,7 +372,7 @@ export default function NewsArticlePage() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="overflow-hidden rounded-xl"
+          className="glass-surface overflow-hidden rounded-xl"
         >
           <img
             src={article.featured_image_url}
@@ -387,7 +389,7 @@ export default function NewsArticlePage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="prose max-w-none lg:max-w-3xl"
+        className="glass-surface prose max-w-none p-6 lg:max-w-3xl"
         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
       />
     </div>

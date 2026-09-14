@@ -58,12 +58,12 @@ export default function ReferralPartnerApply() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <h1 className="text-2xl font-bold text-dark-50">{t('referral.partner.applyTitle')}</h1>
       <p className="text-sm text-dark-400">{t('referral.partner.applyDesc')}</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="bento-card space-y-4">
+        <div className="glass-surface bento-card space-y-4">
           <div>
             <label
               htmlFor="rp-company-name"

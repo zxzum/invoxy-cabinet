@@ -475,7 +475,7 @@ export default function Wheel() {
 
   if (error || !config) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+      <div className="glass-surface flex min-h-[60vh] flex-col items-center justify-center gap-4 p-8">
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error-500/10">
           <span className="text-4xl">😔</span>
         </div>
@@ -486,7 +486,7 @@ export default function Wheel() {
 
   if (!config.is_enabled) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
+      <div className="glass-surface flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-dark-800">
           <span className="text-5xl">🎡</span>
         </div>
@@ -520,7 +520,7 @@ export default function Wheel() {
     (paymentType === 'telegram_stars' ? !starsEnabled : !config.can_spin);
 
   return (
-    <div className="animate-fade-in space-y-6 pb-8">
+    <div className="animate-fade-in flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-8">
       {/* Simple Header */}
       <div>
         <h1 className="text-2xl font-bold text-dark-50">{t('wheel.title')}</h1>
@@ -535,7 +535,7 @@ export default function Wheel() {
       </div>
 
       {/* Wheel Section */}
-      <Card>
+      <Card className="glass-surface">
         <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr,280px]">
           {/* Left: Wheel and Controls */}
           <div>
@@ -751,7 +751,7 @@ export default function Wheel() {
       </Card>
 
       {/* History Section - full width, collapsible */}
-      <Card>
+      <Card className="glass-surface">
         <button
           onClick={() => setHistoryExpanded(!historyExpanded)}
           className="flex w-full items-center justify-between p-4"

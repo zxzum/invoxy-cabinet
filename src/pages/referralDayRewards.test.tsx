@@ -157,7 +157,7 @@ async function renderReferral() {
 }
 
 describe('ссылки для приглашения', () => {
-  it('показывают копирование и share для обеих ссылок с Telegram fallback', async () => {
+  it('не выдумывают ссылку бота без серверной или настроечной ссылки', async () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null);
     try {
       await renderReferral();
@@ -166,9 +166,10 @@ describe('ссылки для приглашения', () => {
       const copyButtons = screen.getAllByRole('button', { name: 'referral.copyLink' });
       const shareButtons = screen.getAllByRole('button', { name: 'referral.shareButton' });
 
-      expect(inputs).toHaveLength(2);
-      expect(copyButtons).toHaveLength(2);
-      expect(shareButtons).toHaveLength(2);
+      expect(inputs).toHaveLength(1);
+      expect(copyButtons).toHaveLength(1);
+      expect(shareButtons).toHaveLength(1);
+      expect(screen.queryByDisplayValue(/invoxy_bot/)).toBeNull();
 
       fireEvent.click(shareButtons[0]);
       expect(open).toHaveBeenLastCalledWith(
@@ -176,11 +177,20 @@ describe('ссылки для приглашения', () => {
         '_blank',
         'noopener',
       );
-      fireEvent.click(shareButtons[1]);
-      expect(open).toHaveBeenCalledTimes(2);
+      expect(open).toHaveBeenCalledOnce();
     } finally {
       open.mockRestore();
     }
+  });
+
+  it('сохраняют ссылку бота, которую вернул target API', async () => {
+    state.info = { bot_referral_link: 'https://t.me/configured_bot?start=ABC' };
+    await renderReferral();
+
+    expect(await screen.findByDisplayValue('https://t.me/configured_bot?start=ABC')).toBeTruthy();
+    expect(screen.getAllByRole('textbox')).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'referral.copyLink' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'referral.shareButton' })).toHaveLength(2);
   });
 });
 

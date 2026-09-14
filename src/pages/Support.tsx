@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'react-router';
 import { ticketsApi } from '../api/tickets';
 import { MessageMediaGrid } from '../components/tickets/MessageMediaGrid';
 import { infoApi } from '../api/info';
@@ -40,6 +41,7 @@ export default function Support() {
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const queryClient = useQueryClient();
   const { openTelegramLink, openLink } = usePlatform();
+  const [searchParams] = useSearchParams();
 
   const openSupportContact = useCallback(
     (config: SupportConfig) => {
@@ -71,6 +73,11 @@ export default function Support() {
 
   const blobUrlsRef = useRef<Set<string>>(new Set());
 
+  const rawTicketId = searchParams.get('ticket');
+  const parsedTicketId = rawTicketId && /^\d+$/.test(rawTicketId) ? Number(rawTicketId) : null;
+  const queryTicketId =
+    parsedTicketId !== null && Number.isSafeInteger(parsedTicketId) ? parsedTicketId : null;
+
   useEffect(() => {
     const urls = blobUrlsRef;
     return () => {
@@ -100,17 +107,49 @@ export default function Support() {
     queryFn: infoApi.getSupportConfig,
   });
 
-  const { data: tickets, isLoading } = useQuery({
+  const {
+    data: tickets,
+    isLoading,
+    isError: ticketsError,
+    error: ticketsQueryError,
+  } = useQuery({
     queryKey: ['tickets'],
     queryFn: () => ticketsApi.getTickets({ per_page: 20 }),
     enabled: supportConfig?.tickets_enabled === true,
   });
 
-  const { data: ticketDetail, isLoading: detailLoading } = useQuery({
-    queryKey: ['ticket', selectedTicket?.id],
-    queryFn: () => ticketsApi.getTicket(selectedTicket!.id),
-    enabled: !!selectedTicket,
+  const activeTicketId = selectedTicket?.id ?? queryTicketId;
+
+  const {
+    data: ticketDetail,
+    isLoading: detailLoading,
+    isError: detailError,
+    error: detailQueryError,
+  } = useQuery({
+    queryKey: ['ticket', activeTicketId],
+    queryFn: () => ticketsApi.getTicket(activeTicketId!),
+    enabled: activeTicketId !== null && supportConfig?.tickets_enabled === true,
   });
+
+  const canReply =
+    ticketDetail !== undefined &&
+    ticketDetail.status !== 'closed' &&
+    !ticketDetail.is_reply_blocked;
+  const ticketListError = ticketsError
+    ? getApiErrorMessage(ticketsQueryError, t('common.error'))
+    : null;
+  const ticketDetailError = detailError
+    ? getApiErrorMessage(detailQueryError, t('common.error'))
+    : null;
+
+  useEffect(() => {
+    if (queryTicketId === null || !tickets?.items) return;
+    const ticket = tickets.items.find((item) => item.id === queryTicketId);
+    if (!ticket || selectedTicket?.id === ticket.id) return;
+    setSelectedTicket(ticket as unknown as TicketDetail);
+    setShowCreateForm(false);
+    setFormError(null);
+  }, [queryTicketId, selectedTicket?.id, tickets?.items]);
 
   // Handle file selection (multi-upload)
   const handleFileSelect = async (
@@ -193,10 +232,10 @@ export default function Support() {
               media_items: ready.map((a) => ({ type: 'photo' as const, file_id: a.fileId })),
             }
           : undefined;
-      await ticketsApi.addMessage(selectedTicket!.id, replyMessage, media);
+      await ticketsApi.addMessage(activeTicketId!, replyMessage, media);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ticket', selectedTicket?.id] });
+      queryClient.invalidateQueries({ queryKey: ['ticket', activeTicketId] });
       setFormError(null);
       setReplyMessage('');
       clearReplyAttachments();
@@ -271,7 +310,7 @@ export default function Support() {
 
     return (
       <div className="mx-auto mt-12 max-w-md">
-        <Card className="text-center">
+        <Card className="glass-surface text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
             <ChatIcon className="h-8 w-8 text-dark-400" />
           </div>
@@ -335,7 +374,7 @@ export default function Support() {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0"
       variants={staggerContainer}
       initial="initial"
       animate="animate"
@@ -365,7 +404,7 @@ export default function Support() {
         supportConfig.support_username &&
         resolveSupportContact(supportConfig) && (
           <motion.div variants={staggerItem} initial="initial" animate="animate">
-            <Card className="flex items-center justify-between">
+            <Card className="glass-surface flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-dark-800">
                   <ChatIcon className="h-5 w-5 text-dark-400" />
@@ -388,13 +427,15 @@ export default function Support() {
 
       <motion.div variants={staggerItem} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tickets List */}
-        <Card className="lg:col-span-1">
+        <Card className="glass-surface lg:col-span-1">
           <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('support.yourTickets')}</h2>
 
           {isLoading ? (
             <SkeletonGroup className="space-y-3">
               <Skeleton variant="card" count={3} className="h-16" />
             </SkeletonGroup>
+          ) : ticketListError ? (
+            <div className="alert-error">{ticketListError}</div>
           ) : tickets?.items && tickets.items.length > 0 ? (
             <div className="space-y-2">
               {tickets.items.map((ticket) => (
@@ -407,7 +448,7 @@ export default function Support() {
                     clearReplyAttachments();
                   }}
                   className={`w-full rounded-bento border p-4 text-left transition-all ${
-                    selectedTicket?.id === ticket.id
+                    activeTicketId === ticket.id
                       ? 'border-accent-500 bg-accent-500/10'
                       : 'border-dark-700/50 bg-dark-800/30 hover:border-dark-600'
                   }`}
@@ -435,7 +476,7 @@ export default function Support() {
         </Card>
 
         {/* Ticket Detail / Create Form */}
-        <Card className="lg:col-span-2">
+        <Card className="glass-surface lg:col-span-2">
           {showCreateForm ? (
             <div>
               <h2 className="mb-6 text-lg font-semibold text-dark-100">
@@ -550,21 +591,29 @@ export default function Support() {
                 </div>
               </form>
             </div>
-          ) : selectedTicket ? (
+          ) : activeTicketId !== null ? (
             <div className="flex h-full flex-col">
               <div className="mb-6 flex flex-col gap-2 border-b border-dark-800/50 pb-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-dark-100">
-                    {ticketDetail?.title || selectedTicket.title}
+                    {ticketDetail?.title || selectedTicket?.title || `#${activeTicketId}`}
                   </h2>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className={getStatusBadge(ticketDetail?.status || selectedTicket.status)}>
-                      {getStatusLabel(ticketDetail?.status || selectedTicket.status)}
+                    <span
+                      className={getStatusBadge(
+                        ticketDetail?.status || selectedTicket?.status || 'open',
+                      )}
+                    >
+                      {getStatusLabel(ticketDetail?.status || selectedTicket?.status || 'open')}
                     </span>
-                    <span className="text-xs text-dark-500">
-                      {t('support.created')}{' '}
-                      {new Date(selectedTicket.created_at).toLocaleDateString(uiLocale())}
-                    </span>
+                    {(ticketDetail?.created_at || selectedTicket?.created_at) && (
+                      <span className="text-xs text-dark-500">
+                        {t('support.created')}{' '}
+                        {new Date(
+                          ticketDetail?.created_at || selectedTicket?.created_at || '',
+                        ).toLocaleDateString(uiLocale())}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -574,6 +623,8 @@ export default function Support() {
                 <SkeletonGroup className="space-y-3">
                   <Skeleton variant="card" count={3} className="h-16" />
                 </SkeletonGroup>
+              ) : ticketDetailError ? (
+                <div className="alert-error">{ticketDetailError}</div>
               ) : ticketDetail?.messages ? (
                 <div className="scrollbar-hide mb-6 max-h-96 flex-1 space-y-4 overflow-y-auto">
                   {ticketDetail.messages.map((msg) => (
@@ -612,7 +663,7 @@ export default function Support() {
               ) : null}
 
               {/* Reply Form */}
-              {ticketDetail?.status !== 'closed' && !ticketDetail?.is_reply_blocked && (
+              {canReply && (
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();

@@ -541,7 +541,7 @@ function BuyTabContent({
   }, [selectedTariff]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       {/* Tariff selection */}
       {showTariffCards && (
         <div>
@@ -563,7 +563,7 @@ function BuyTabContent({
 
       {/* Selected tariff description */}
       {selectedTariff?.description && (
-        <div className="card-inset px-4 py-3">
+        <div className="glass-surface card-inset px-4 py-3">
           <p className="text-sm text-dark-300">{selectedTariff.description}</p>
         </div>
       )}
@@ -663,7 +663,7 @@ function BuyTabContent({
 
       {/* Summary / Balance info */}
       {paymentMode === 'balance' && (
-        <div className="card-inset p-4">
+        <div className="glass-surface card-inset p-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-dark-400">{t('gift.yourBalance')}</span>
             <span className="text-sm font-semibold text-dark-200">

@@ -56,7 +56,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
   const webKey = `${campaign.id}-web`;
 
   return (
-    <div className="bento-card space-y-4">
+    <div className="glass-surface bento-card space-y-4">
       {/* Campaign header */}
       <div className="flex items-center justify-between gap-2">
         <h3 className="min-w-0 truncate text-base font-semibold text-dark-100">{campaign.name}</h3>

@@ -510,7 +510,11 @@ export default function GiftResult() {
   if (!token) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-4">
-        <div className="card w-full max-w-md p-8" aria-live="polite" aria-atomic="true">
+        <div
+          className="glass-surface card w-full max-w-md p-8"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <NoTokenState />
         </div>
       </div>
@@ -531,7 +535,7 @@ export default function GiftResult() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <div
-        className="w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-8"
+        className="glass-surface w-full max-w-md rounded-2xl border border-dark-800/50 bg-dark-900/50 p-8"
         aria-live="polite"
         aria-atomic="true"
       >

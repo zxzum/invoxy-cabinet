@@ -358,7 +358,7 @@ export default function InfoPageView() {
 
   if (isError || !page) {
     return (
-      <div className="space-y-6">
+      <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
         {!capabilities.hasBackButton && (
           <button
             onClick={() => navigate('/info')}
@@ -368,7 +368,7 @@ export default function InfoPageView() {
             <BackIcon />
           </button>
         )}
-        <div className="card-inset p-8 text-center text-dark-400">
+        <div className="glass-surface card-inset p-8 text-center text-dark-400">
           {t('admin.infoPages.notFound')}
         </div>
       </div>
@@ -376,7 +376,7 @@ export default function InfoPageView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       {/* Back button */}
       {!capabilities.hasBackButton && (
         <button
@@ -403,7 +403,7 @@ export default function InfoPageView() {
       ) : (
         /* Regular page content - sanitized with DOMPurify (strict allowlist) */
         <div
-          className="prose max-w-none overflow-x-auto lg:max-w-3xl"
+          className="glass-surface prose max-w-none overflow-x-auto p-6 lg:max-w-3xl"
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
       )}

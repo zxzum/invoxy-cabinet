@@ -160,7 +160,7 @@ export function RewardSettings({
   );
 
   return (
-    <div className="bento-card">
+    <div className="glass-surface bento-card">
       <h2 className="text-lg font-semibold text-dark-100">{t('referral.rewardSettings.title')}</h2>
       <p className="mt-1 text-sm text-dark-400">{t('referral.rewardSettings.intro')}</p>
 
@@ -267,7 +267,7 @@ export function ProgrammeTerms({ terms }: { terms: ReferralTerms }) {
   const progress = tierProgressText(terms, t);
 
   return (
-    <div className="bento-card animate-none">
+    <div className="glass-surface bento-card animate-none">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-dark-100">{t('referral.terms.title')}</h2>
         {/* Правило режима — одной фразой над лестницей. Без неё список
@@ -404,12 +404,15 @@ export default function Referral() {
   });
 
   // Build referral link for cabinet registration
-  const referralLink = info?.referral_code
-    ? `${window.location.origin}/login?ref=${info.referral_code}`
-    : '';
+  const referralLink =
+    info?.referral_link ||
+    (info?.referral_code ? `${window.location.origin}/login?ref=${info.referral_code}` : '');
+  const configuredBotUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME?.trim();
   const botReferralLink = info?.referral_code
     ? info.bot_referral_link ||
-      `https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'invoxy_bot'}?start=${encodeURIComponent(info.referral_code)}`
+      (configuredBotUsername
+        ? `https://t.me/${configuredBotUsername}?start=${encodeURIComponent(info.referral_code)}`
+        : '')
     : '';
 
   const rewardChoiceMutation = useMutation({
@@ -546,7 +549,7 @@ export default function Referral() {
     const gridCols = gridColsMap[cardCount] ?? 'md:grid-cols-4';
 
     return (
-      <div className="bento-card animate-none">
+      <div className="glass-surface bento-card animate-none">
         <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.terms.title')}</h2>
         <div className={`grid grid-cols-2 gap-4 ${gridCols}`}>
           <StatCard
@@ -669,7 +672,7 @@ export default function Referral() {
   const section = (index: number) => staggerEntrance(index, 0.05, 0.07);
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <motion.div {...section(0)}>
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('referral.title')}</h1>
       </motion.div>
@@ -722,7 +725,7 @@ export default function Referral() {
       </motion.div>
 
       {/* Referral Links */}
-      <motion.div {...section(2)} className="bento-card animate-none">
+      <motion.div {...section(2)} className="glass-surface bento-card animate-none">
         <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
         <div className="space-y-3">
           {/* Bot link */}
@@ -825,7 +828,7 @@ export default function Referral() {
       )}
 
       {/* Referrals List */}
-      <motion.div {...section(4)} className="bento-card animate-none">
+      <motion.div {...section(4)} className="glass-surface bento-card animate-none">
         <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.yourReferrals')}</h2>
         {referralList?.items && referralList.items.length > 0 ? (
           <div className="space-y-3">
@@ -859,7 +862,7 @@ export default function Referral() {
 
       {/* Earnings History */}
       {earnings?.items && earnings.items.length > 0 && (
-        <div className="bento-card">
+        <div className="glass-surface bento-card">
           <h2 className="mb-4 text-lg font-semibold text-dark-100">
             {t('referral.earningsHistory')}
           </h2>
@@ -890,7 +893,7 @@ export default function Referral() {
 
       {/* Status: none — Become a Partner CTA */}
       {terms?.partner_section_visible !== false && showApplySection && (
-        <div className="bento-card">
+        <div className="glass-surface bento-card">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-400">
               <PartnerIcon className="h-8 w-8" />
@@ -921,7 +924,7 @@ export default function Referral() {
 
       {/* Status: pending — Application Under Review */}
       {terms?.partner_section_visible !== false && showPendingSection && (
-        <div className="bento-card border-warning-500/20">
+        <div className="glass-surface bento-card border-warning-500/20">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-warning-500/10 text-warning-400">
               <ClockIcon />
@@ -947,7 +950,7 @@ export default function Referral() {
 
       {/* Status: approved — Partner Badge */}
       {terms?.partner_section_visible !== false && showApprovedSection && (
-        <div className="bento-card border-success-500/20">
+        <div className="glass-surface bento-card border-success-500/20">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-success-500/10 text-success-400">
               <PartnerIcon className="h-8 w-8" />
@@ -976,7 +979,7 @@ export default function Referral() {
 
       {/* Status: rejected — Rejection Notice */}
       {terms?.partner_section_visible !== false && showRejectedSection && (
-        <div className="bento-card border-error-500/20">
+        <div className="glass-surface bento-card border-error-500/20">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-error-500/10 text-error-400">
               <ExclamationIcon className="h-8 w-8" />
@@ -1029,7 +1032,7 @@ export default function Referral() {
         <div id="withdrawal-section" className="scroll-mt-24 space-y-6 lg:scroll-mt-4">
           {/* Withdrawal Balance Card */}
           {withdrawalEnabled && withdrawalBalance && (
-            <div className="bento-card">
+            <div className="glass-surface bento-card">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-400">
                   <WalletIcon className="h-8 w-8" />
@@ -1102,7 +1105,7 @@ export default function Referral() {
           )}
 
           {/* Withdrawal History */}
-          <div className="bento-card">
+          <div className="glass-surface bento-card">
             <h2 className="mb-4 text-lg font-semibold text-dark-100">
               {t('referral.withdrawal.history')}
             </h2>

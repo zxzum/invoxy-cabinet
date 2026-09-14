@@ -43,6 +43,7 @@ const DISABLED_REASON = 'Функция вывода реферального б
 
 const state = {
   withdrawalEnabled: true,
+  partnerSectionVisible: true,
   history: [] as Record<string, unknown>[],
 };
 
@@ -102,7 +103,7 @@ vi.mock('@/api/referral', () => ({
         inviter_bonus_kopeks: 0,
         inviter_bonus_rubles: 0,
         max_commission_payments: 0,
-        partner_section_visible: true,
+        partner_section_visible: state.partnerSectionVisible,
       }),
   },
 }));
@@ -141,6 +142,7 @@ if (!window.matchMedia) {
 afterEach(() => {
   cleanup();
   state.withdrawalEnabled = true;
+  state.partnerSectionVisible = true;
   state.history = [];
 });
 
@@ -219,6 +221,17 @@ describe('приглашение в партнёры', () => {
     expect(
       await screen.findByText(resolveRu('referral.partner.becomePartnerDesc') as string),
     ).toBeTruthy();
+  });
+
+  it('уважает серверный флаг видимости партнёрского раздела', async () => {
+    // The flag is owned by referral terms, not by partner status.
+    // This prevents a hidden partner section from leaking through the CTA.
+    state.withdrawalEnabled = true;
+    state.partnerSectionVisible = false;
+    await renderReferral();
+
+    await screen.findByText(resolveRu('referral.yourLink') as string);
+    expect(screen.queryByText(resolveRu('referral.partner.becomePartner') as string)).toBeNull();
   });
 });
 

@@ -98,14 +98,14 @@ export default function Polls() {
 
   if (error) {
     return (
-      <div className="card border-error-500/20 bg-error-500/10">
+      <div className="glass-surface card border-error-500/20 bg-error-500/10">
         <p className="text-error-400">{t('polls.error')}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <div className="flex items-center gap-3">
         <ClipboardIcon className="h-6 w-6" />
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('polls.title')}</h1>
@@ -125,7 +125,7 @@ export default function Polls() {
             aria-modal="true"
             aria-labelledby="poll-dialog-title"
             tabIndex={-1}
-            className="card relative max-h-[80vh] w-full max-w-lg overflow-y-auto"
+            className="glass-surface card relative max-h-[80vh] w-full max-w-lg overflow-y-auto"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="poll-dialog-title" className="text-xl font-bold">
@@ -205,7 +205,7 @@ export default function Polls() {
       {polls && polls.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {polls.map((poll) => (
-            <div key={poll.id} className="card">
+            <div key={poll.id} className="glass-surface card">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <h3 className="break-words text-lg font-semibold">{poll.title}</h3>
@@ -243,7 +243,7 @@ export default function Polls() {
           ))}
         </div>
       ) : (
-        <div className="card py-12 text-center">
+        <div className="glass-surface card py-12 text-center">
           <ClipboardIcon className="h-6 w-6" />
           <p className="mt-4 text-dark-400">{t('polls.noPolls')}</p>
         </div>
