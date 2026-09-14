@@ -78,6 +78,13 @@ export default function Support() {
   const queryTicketId =
     parsedTicketId !== null && Number.isSafeInteger(parsedTicketId) ? parsedTicketId : null;
 
+  const clearTicketQuery = useCallback(() => {
+    if (!searchParams.has('ticket')) return;
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete('ticket');
+    setSearchParams(nextSearchParams);
+  }, [searchParams, setSearchParams]);
+
   useEffect(() => {
     const urls = blobUrlsRef;
     return () => {
@@ -143,25 +150,22 @@ export default function Support() {
     : null;
 
   useEffect(() => {
-    if (queryTicketId === null || !tickets?.items) return;
-    const ticket = tickets.items.find((item) => item.id === queryTicketId);
-    if (!ticket) {
-      if (selectedTicket !== null) setSelectedTicket(null);
+    if (showCreateForm || queryTicketId === null) return;
+
+    const listTicket = tickets?.items?.find((item) => item.id === queryTicketId);
+    const targetTicket =
+      listTicket ?? (ticketDetail?.id === queryTicketId ? ticketDetail : undefined);
+
+    if (targetTicket) {
+      if (selectedTicket?.id === targetTicket.id) return;
+      setSelectedTicket(targetTicket as TicketDetail);
+      setShowCreateForm(false);
+      setFormError(null);
       return;
     }
-    if (selectedTicket?.id === ticket.id) return;
-    setSelectedTicket(ticket as unknown as TicketDetail);
-    setShowCreateForm(false);
-    setFormError(null);
-  }, [queryTicketId, selectedTicket, tickets?.items]);
 
-  useEffect(() => {
-    if (queryTicketId === null || !ticketDetail || ticketDetail.id !== queryTicketId) return;
-    if (selectedTicket?.id === ticketDetail.id) return;
-    setSelectedTicket(ticketDetail);
-    setShowCreateForm(false);
-    setFormError(null);
-  }, [queryTicketId, selectedTicket?.id, ticketDetail]);
+    if (selectedTicket !== null) setSelectedTicket(null);
+  }, [queryTicketId, selectedTicket?.id, showCreateForm, ticketDetail, tickets?.items]);
 
   // Handle file selection (multi-upload)
   const handleFileSelect = async (
@@ -398,6 +402,7 @@ export default function Support() {
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
         <Button
           onClick={() => {
+            clearTicketQuery();
             setShowCreateForm(true);
             setSelectedTicket(null);
             setFormError(null);

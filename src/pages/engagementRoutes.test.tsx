@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, useSearchParams } from 'react-router';
+import { MemoryRouter, useLocation, useSearchParams } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ReactNode } from 'react';
+import { Profiler, StrictMode, type ReactNode } from 'react';
 
 const mocks = vi.hoisted(() => ({
   getSupportConfig: vi.fn(),
@@ -57,6 +57,7 @@ vi.mock('../platform', () => ({
     openTelegramLink: vi.fn(),
     openLink: vi.fn(),
     openInvoice: vi.fn(),
+    haptic: { impact: vi.fn() },
     capabilities: { hasInvoice: false },
   }),
   useHaptic: () => ({ impact: vi.fn(), notification: vi.fn(), selectionChanged: vi.fn() }),
@@ -94,6 +95,11 @@ function TicketQueryNavigator() {
       navigate-to-missing-ticket
     </button>
   );
+}
+
+function SupportLocationProbe() {
+  const location = useLocation();
+  return <output data-testid="support-location">{location.search}</output>;
 }
 
 beforeEach(() => {
@@ -177,6 +183,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
   mocks.getWheelConfig.mockReset();
 });
 
@@ -240,6 +247,45 @@ describe('support and activity flows', () => {
 
     await waitFor(() => expect(mocks.getTicket).toHaveBeenCalledWith(99));
     expect((await screen.findAllByText('Ticket 99')).length).toBeGreaterThan(0);
+  });
+
+  it('stably selects a deep-linked ticket outside the first page without a render loop', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const commitSpy = vi.fn();
+    const { default: Support } = await import('./Support');
+    renderPage(
+      <StrictMode>
+        <Profiler id="support-deep-link" onRender={commitSpy}>
+          <Support />
+        </Profiler>
+      </StrictMode>,
+      '/support?ticket=99',
+    );
+
+    await screen.findAllByText('Ticket 42');
+    expect(await screen.findAllByText('Ticket 99')).toHaveLength(1);
+    expect(mocks.getTicket).toHaveBeenCalledTimes(1);
+    expect(
+      errorSpy.mock.calls.some(([message]) => String(message).includes('Maximum update depth')),
+    ).toBe(false);
+    expect(commitSpy.mock.calls.length).toBeLessThan(5);
+  });
+
+  it('clears the ticket query when opening a new ticket form', async () => {
+    const { default: Support } = await import('./Support');
+    renderPage(
+      <>
+        <Support />
+        <SupportLocationProbe />
+      </>,
+      '/support?ticket=42',
+    );
+
+    await screen.findAllByText('Ticket 42');
+    fireEvent.click(screen.getByRole('button', { name: 'support.newTicket' }));
+
+    await waitFor(() => expect(screen.getByTestId('support-location').textContent).toBe(''));
+    expect(screen.getByText('support.createTicket')).toBeTruthy();
   });
 
   it('shows a ticket list error instead of treating it as empty', async () => {
