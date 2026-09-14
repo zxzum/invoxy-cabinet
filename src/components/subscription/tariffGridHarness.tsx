@@ -23,7 +23,17 @@ const base = (overrides: Partial<Tariff> & { id: number; name: string }): Tariff
     extra_devices_count: 0,
     servers_count: 0,
     servers: [],
-    periods: [],
+    periods: [
+      {
+        days: 30,
+        months: 1,
+        label: '30 дней',
+        price_kopeks: 9900,
+        price_label: '99 ₽',
+        price_per_month_kopeks: 9900,
+        price_per_month_label: '99 ₽',
+      },
+    ],
     ...overrides,
   }) as unknown as Tariff;
 
