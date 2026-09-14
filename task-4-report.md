@@ -119,3 +119,54 @@ No production files, dependencies, bot/deploy files, or unrelated work were chan
 - The test-only jsdom shims support the real responsive sheet without changing runtime behavior.
 - Browser evidence is limited to the reachable unauthenticated shell because credentials/backend configuration were unavailable.
 - Fix-round commit SHA is recorded in the final handoff after the explicit file-only commit.
+
+## Fix round 2 — protected responsive browser evidence
+
+### RED
+
+The first protected-route browser assertion ran against the real Vite entrypoint without any session seed and failed as expected: `/dashboard` redirected to `/login` at the desktop viewport. This confirmed the browser check was exercising `AppWithNavigator`/`BrowserRouter` and `ProtectedRoute`, rather than a mocked route.
+
+### GREEN
+
+The temporary test-only Playwright harness then seeded a fake, non-production JWT in `sessionStorage`, a fake refresh token and persisted fixture user in storage, and intercepted `/api/cabinet/**` plus `/health/**` with local fixtures. It exercised the real router, Zustand auth bootstrap, `MainPagesReady`, `Layout`/`AppShell`, and the real dashboard, subscriptions, and connection pages.
+
+Focused browser command:
+
+```text
+rtk node /tmp/invoxy-task4-round2/browser-evidence.js
+```
+
+Result: desktop `1440x900` and mobile `375x812` both passed for `/dashboard`, `/subscriptions`, and `/connection`.
+
+The browser assertions also passed for:
+
+- `/cabinet/auth/me` and `/cabinet/auth/me/is-admin` auth bootstrap requests.
+- `MainPagesReady` fixture requests for purchase options, app config, and connection link.
+- AppShell core navigation links and keyboard focus/Enter navigation `/dashboard → /connection`.
+- `prefers-reduced-motion: reduce`.
+- No horizontal overflow on all three routes at both sizes.
+- No page errors or unexpected console errors. The two per-viewport Framer Motion reduced-motion warnings were expected and explicitly explained.
+
+Affecting unit tests and type-check after the browser run:
+
+- The Task 4 focused Vitest suite — 8 files, 50 tests passed.
+- `rtk npm run type-check` — passed.
+
+### Evidence
+
+Screenshots were captured outside the repository by the same protected browser run:
+
+- Desktop dashboard: `/tmp/invoxy-task4-round2-desktop-dashboard.png`
+- Desktop subscriptions: `/tmp/invoxy-task4-round2-desktop-subscriptions.png`
+- Desktop connection: `/tmp/invoxy-task4-round2-desktop-connection.png`
+- Mobile dashboard: `/tmp/invoxy-task4-round2-mobile-dashboard.png`
+- Mobile subscriptions: `/tmp/invoxy-task4-round2-mobile-subscriptions.png`
+- Mobile connection: `/tmp/invoxy-task4-round2-mobile-connection.png`
+
+### Fix-round files and self-review
+
+- Tracked change: `task-4-report.md` only.
+- The temporary browser harness was outside the repository and was removed after the clean GREEN run; no Playwright dependency, config, production code, or product mock was added.
+- The session uses only synthetic fixture values and fake tokens; no production credentials were used.
+- No bot, deploy, dependency, or unrelated files were changed. Pre-existing untracked `.codegraph/`, `AGENTS.md`, and `CLAUDE.md` remain preserved and unstaged.
+- Fix-round commit SHA is recorded in the final handoff after the explicit report-only commit.
