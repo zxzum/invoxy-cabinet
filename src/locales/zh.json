@@ -324,7 +324,77 @@
     "unlimited": "无限",
     "usageLast14Days": "近 14 天使用情况",
     "usedSuffix": "已用",
-    "validUntil": "有效期至 {{date}}"
+    "validUntil": "有效期至 {{date}}",
+    "luna": {
+      "loading": "正在加载订阅…",
+      "empty": "没有有效的订阅",
+      "hero": {
+        "trial": "试用订阅",
+        "paid": "您的订阅",
+        "manage": "管理",
+        "until": "有效期至"
+      },
+      "traffic": {
+        "regular": "主流量",
+        "lte": "LTE 流量",
+        "regularEmpty": "流量数据不可用",
+        "lteEmpty": "未开通 LTE 流量"
+      },
+      "devices": {
+        "title": "已连接设备",
+        "manage": "管理设备",
+        "disconnect": "断开连接",
+        "empty": "没有已连接的设备"
+      },
+      "renewal": {
+        "title": "快速续费",
+        "allOptions": "全部选项",
+        "submit": "续费订阅",
+        "empty": "暂无可用续费选项"
+      },
+      "connection": {
+        "title": "访问与连接",
+        "copy": "复制链接",
+        "copied": "链接已复制",
+        "happ": "在 HAPP 中连接",
+        "incy": "在 INCY 中连接",
+        "qr": "显示二维码",
+        "empty": "订阅链接不可用"
+      },
+      "addons": {
+        "title": "增值购买",
+        "devices": "额外设备",
+        "traffic": "主流量",
+        "lte": "LTE 流量",
+        "addDevices": "添加设备",
+        "addTraffic": "添加流量",
+        "addLte": "添加 LTE 流量",
+        "unavailable": "不可用",
+        "empty": "暂无增值购买选项"
+      },
+      "trial": {
+        "eyebrow": "试用期",
+        "priceLabel": "价格"
+      },
+      "offer": {
+        "title": "无限制完整访问",
+        "description": "选择符合您流量、设备数量和时长需求的套餐——支持余额或银行卡支付。",
+        "price": "灵活套餐",
+        "priceLabel": "适合各种场景"
+      },
+      "referral": {
+        "title": "邀请好友",
+        "description": "分享您的链接，好友每次付款您都能获得余额奖励。",
+        "statReferrals": "已邀请",
+        "statEarnings": "可用余额",
+        "action": "打开推荐计划"
+      },
+      "support": {
+        "title": "需要帮助？",
+        "description": "支持团队将协助您解决连接和支付问题。",
+        "action": "联系客服"
+      }
+    }
   },
   "subscription": {
     "title": "订阅",

@@ -19,6 +19,8 @@ export interface LunaAddonsCardProps {
   addDevicesLabel?: string;
   addTrafficLabel?: string;
   addLteLabel?: string;
+  unlimitedLabel?: string;
+  unavailableLabel?: string;
   emptyMessage?: string;
   loadingMessage?: string;
 }
@@ -28,6 +30,8 @@ function PackageCard({
   label,
   addLabel,
   trafficUnitLabel,
+  unlimitedLabel,
+  unavailableLabel,
   formatPrice,
   onOpen,
 }: {
@@ -35,12 +39,14 @@ function PackageCard({
   label: string;
   addLabel: string;
   trafficUnitLabel: string;
+  unlimitedLabel: string;
+  unavailableLabel: string;
   formatPrice: (packageOption: TrafficPackage) => string;
   onOpen?: (packageOption: TrafficPackage) => void;
 }) {
   const unavailable = packageOption.is_available === false;
   const packageLabel = packageOption.is_unlimited
-    ? 'Unlimited'
+    ? unlimitedLabel
     : `${String(packageOption.gb)} ${trafficUnitLabel}`;
 
   return (
@@ -65,7 +71,7 @@ function PackageCard({
       </button>
       {unavailable && (
         <p className="mt-2 text-center text-[11px] text-dark-500">
-          {packageOption.unavailable_reason || 'Unavailable'}
+          {packageOption.unavailable_reason || unavailableLabel}
         </p>
       )}
     </article>
@@ -89,6 +95,8 @@ export default function LunaAddonsCard({
   addDevicesLabel = 'Add devices',
   addTrafficLabel = 'Add main traffic',
   addLteLabel = 'Add LTE traffic',
+  unlimitedLabel = 'Unlimited',
+  unavailableLabel = 'Unavailable',
   emptyMessage = 'No add-ons available',
   loadingMessage = 'Loading add-ons',
 }: LunaAddonsCardProps) {
@@ -144,6 +152,8 @@ export default function LunaAddonsCard({
             label={trafficLabel}
             addLabel={addTrafficLabel}
             trafficUnitLabel={trafficUnitLabel}
+            unlimitedLabel={unlimitedLabel}
+            unavailableLabel={unavailableLabel}
             formatPrice={formatPackagePrice}
             onOpen={onOpenTrafficAddon}
           />
@@ -156,6 +166,8 @@ export default function LunaAddonsCard({
             label={lteLabel}
             addLabel={addLteLabel}
             trafficUnitLabel={trafficUnitLabel}
+            unlimitedLabel={unlimitedLabel}
+            unavailableLabel={unavailableLabel}
             formatPrice={formatPackagePrice}
             onOpen={onOpenLteAddon}
           />

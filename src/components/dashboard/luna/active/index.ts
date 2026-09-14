@@ -1,5 +1,5 @@
 export { default as LunaActiveDashboard } from './LunaActiveDashboard';
-export type { LunaActiveDashboardProps } from './LunaActiveDashboard';
+export type { LunaActiveDashboardProps, LunaActiveLabels } from './LunaActiveDashboard';
 export { default as LunaAddonsCard } from './LunaAddonsCard';
 export type { LunaAddonsCardProps } from './LunaAddonsCard';
 export { default as LunaConnectionActions } from './LunaConnectionActions';

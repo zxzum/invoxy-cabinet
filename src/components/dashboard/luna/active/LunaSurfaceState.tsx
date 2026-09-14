@@ -1,3 +1,5 @@
+import { Skeleton } from '@/components/ui/skeleton';
+
 interface LunaSurfaceStateProps {
   message: string;
   className?: string;
@@ -11,9 +13,9 @@ export function LunaLoadingState({ message, className = '' }: LunaSurfaceStatePr
       aria-label={message}
       className={`glass-surface rounded-3xl p-6 ${className}`}
     >
-      <span className="block h-5 w-2/3 animate-pulse rounded bg-dark-500/40" />
-      <span className="mt-4 block h-3 w-full animate-pulse rounded bg-dark-500/30" />
-      <span className="mt-2 block h-3 w-4/5 animate-pulse rounded bg-dark-500/30" />
+      <Skeleton className="block h-5 w-2/3" />
+      <Skeleton className="mt-4 block h-3 w-full" />
+      <Skeleton className="mt-2 block h-3 w-4/5" />
     </div>
   );
 }

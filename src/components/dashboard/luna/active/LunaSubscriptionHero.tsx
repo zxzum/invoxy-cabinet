@@ -12,6 +12,8 @@ export interface LunaSubscriptionHeroProps {
   manageLabel?: string;
   untilLabel?: string;
   daysLabel?: string;
+  trialLabel?: string;
+  paidLabel?: string;
 }
 
 export default function LunaSubscriptionHero({
@@ -24,6 +26,8 @@ export default function LunaSubscriptionHero({
   manageLabel = 'Manage subscription',
   untilLabel = 'Active until',
   daysLabel = 'days remaining',
+  trialLabel = 'Trial subscription',
+  paidLabel = 'Your subscription',
 }: LunaSubscriptionHeroProps) {
   if (isLoading) return <LunaLoadingState message={loadingMessage} />;
   if (!subscription) return <LunaEmptyState message={emptyMessage} />;
@@ -38,7 +42,7 @@ export default function LunaSubscriptionHero({
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-300">
             <SubscriptionIcon className="h-4 w-4" />
-            <span>{subscription.is_trial ? 'Trial subscription' : 'Your subscription'}</span>
+            <span>{subscription.is_trial ? trialLabel : paidLabel}</span>
           </div>
           <h2 className="mt-3 truncate text-2xl font-semibold tracking-tight text-dark-50 sm:text-3xl">
             {subscription.tariff_name || `Subscription #${subscription.id}`}

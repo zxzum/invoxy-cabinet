@@ -353,7 +353,77 @@
     },
     "manageAll": "Manage all",
     "showAll": "Show all",
-    "subscriptions": "Subscriptions"
+    "subscriptions": "Subscriptions",
+    "luna": {
+      "loading": "Loading subscription…",
+      "empty": "No active subscription",
+      "hero": {
+        "trial": "Trial subscription",
+        "paid": "Your subscription",
+        "manage": "Manage",
+        "until": "Active until"
+      },
+      "traffic": {
+        "regular": "Main traffic",
+        "lte": "LTE traffic",
+        "regularEmpty": "Traffic data unavailable",
+        "lteEmpty": "LTE traffic is not enabled"
+      },
+      "devices": {
+        "title": "Connected devices",
+        "manage": "Manage devices",
+        "disconnect": "Disconnect",
+        "empty": "No connected devices"
+      },
+      "renewal": {
+        "title": "Quick renewal",
+        "allOptions": "All options",
+        "submit": "Renew subscription",
+        "empty": "No renewal options available"
+      },
+      "connection": {
+        "title": "Access and connection",
+        "copy": "Copy link",
+        "copied": "Link copied",
+        "happ": "Connect in HAPP",
+        "incy": "Connect in INCY",
+        "qr": "Show QR code",
+        "empty": "Subscription link unavailable"
+      },
+      "addons": {
+        "title": "Add-ons",
+        "devices": "Extra devices",
+        "traffic": "Main traffic",
+        "lte": "LTE traffic",
+        "addDevices": "Add devices",
+        "addTraffic": "Add traffic",
+        "addLte": "Add LTE traffic",
+        "unavailable": "Unavailable",
+        "empty": "No add-ons available"
+      },
+      "trial": {
+        "eyebrow": "Trial period",
+        "priceLabel": "Price"
+      },
+      "offer": {
+        "title": "Full access without limits",
+        "description": "Pick a plan with the traffic, devices, and duration you need — pay from balance or by card.",
+        "price": "Flexible plans",
+        "priceLabel": "for any scenario"
+      },
+      "referral": {
+        "title": "Invite friends",
+        "description": "Share your link and earn balance bonuses for every payment your referrals make.",
+        "statReferrals": "Invited",
+        "statEarnings": "Available balance",
+        "action": "Open referral program"
+      },
+      "support": {
+        "title": "Need help?",
+        "description": "Our support team will help with connection and payments.",
+        "action": "Contact support"
+      }
+    }
   },
   "subscription": {
     "title": "Subscription",
