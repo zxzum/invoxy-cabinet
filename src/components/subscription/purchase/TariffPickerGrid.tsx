@@ -236,7 +236,7 @@ export function TariffPickerGrid({
                         }
                       : undefined
                   }
-                  className={`tariff-card animate-none h-full rounded-2xl text-left transition-all ${
+                  className={`tariff-card animate-none h-full rounded-[30px] p-5 text-left transition-all ${
                     isCurrentTariff || tariff.is_highlighted
                       ? 'glass-surface-accent'
                       : 'glass-surface'

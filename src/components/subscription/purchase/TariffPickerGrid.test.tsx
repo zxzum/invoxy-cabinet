@@ -138,6 +138,7 @@ describe('TariffPickerGrid card anatomy', () => {
     expect(cards).toHaveLength(2);
 
     for (const card of cards) {
+      expect(card.className).toContain('rounded-[30px]');
       expect(card.querySelector('[data-tariff-summary]')).toBeTruthy();
       const features = card.querySelector('[data-tariff-features]');
       expect(features).toBeTruthy();

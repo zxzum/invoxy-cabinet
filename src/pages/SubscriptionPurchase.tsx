@@ -4,8 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
 import { WebBackButton } from '../components/WebBackButton';
-import { getGlassColors } from '../utils/glassTheme';
-import { useTheme } from '../hooks/useTheme';
 import type { Tariff, ClassicPurchaseOptions } from '../types';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { SwitchTariffSheet } from '../components/subscription/sheets/SwitchTariffSheet';
@@ -23,9 +21,6 @@ export default function SubscriptionPurchase() {
   const subscriptionId = searchParams.get('subscriptionId')
     ? parseInt(searchParams.get('subscriptionId')!, 10)
     : undefined;
-  const { isDark } = useTheme();
-  const g = getGlassColors(isDark);
-
   // Subscription query (shares cache with /subscription page)
   const { data: subscriptionResponse, isLoading } = useQuery({
     queryKey: ['subscription', subscriptionId],
@@ -119,13 +114,7 @@ export default function SubscriptionPurchase() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('subscription.extend')}</h1>
-        <div
-          className="rounded-3xl p-6 text-center"
-          style={{
-            background: g.cardBg,
-            border: `1px solid ${g.cardBorder}`,
-          }}
-        >
+        <div className="glass-surface p-6 text-center">
           <p className="mb-4 text-dark-300">
             {t('subscription.loadError', 'Не удалось загрузить варианты подписки')}
           </p>
@@ -158,15 +147,7 @@ export default function SubscriptionPurchase() {
 
       {/* Tariffs Section */}
       {isTariffsMode && tariffs.length > 0 && (
-        <div
-          className="relative overflow-hidden rounded-2xl"
-          style={{
-            background: g.cardBg,
-            border: `1px solid ${g.cardBorder}`,
-            boxShadow: g.shadow,
-            padding: '24px 28px',
-          }}
-        >
+        <div className="glass-surface relative overflow-hidden rounded-[30px] p-5 sm:p-7">
           {/* Trial upgrade prompt — hidden when expired banner is active */}
           {subscription?.is_trial &&
             !(
@@ -340,13 +321,7 @@ export default function SubscriptionPurchase() {
         !optionsLoading &&
         !(isTariffsMode && tariffs.length > 0) &&
         !(classicOptions && classicOptions.periods.length > 0) && (
-          <div
-            className="rounded-3xl p-6 text-center"
-            style={{
-              background: g.cardBg,
-              border: `1px solid ${g.cardBorder}`,
-            }}
-          >
+          <div className="glass-surface p-6 text-center">
             <p className="mb-4 text-dark-300">
               {t('subscription.noOptionsAvailable', 'Нет доступных вариантов подписки')}
             </p>

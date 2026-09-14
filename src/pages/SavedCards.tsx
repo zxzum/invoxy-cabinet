@@ -183,13 +183,10 @@ export default function SavedCards() {
       {/* Loading state */}
       {isLoading && (
         <motion.div variants={staggerItem}>
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <SkeletonGroup className="space-y-3">
               {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-linear border border-dark-700/30 bg-dark-800/30 p-4"
-                >
+                <div key={i} className="card-inset flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <Skeleton className="h-6 w-6 shrink-0" />
                     <div className="space-y-2">
@@ -208,7 +205,7 @@ export default function SavedCards() {
       {/* Error state */}
       {isError && (
         <motion.div variants={staggerItem}>
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <div className="py-12 text-center">
               <div className="text-error-400">{t('balance.savedCards.loadError')}</div>
             </div>
@@ -219,13 +216,10 @@ export default function SavedCards() {
       {/* Cards List */}
       {!isLoading && !isError && savedCards && savedCards.length > 0 ? (
         <motion.div variants={staggerItem}>
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <div className="space-y-3">
               {savedCards.map((card) => (
-                <div
-                  key={card.id}
-                  className="flex items-center justify-between rounded-linear border border-dark-700/30 bg-dark-800/30 p-4"
-                >
+                <div key={card.id} className="card-inset flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <span className="text-xl">💳</span>
                     <div>
@@ -257,7 +251,7 @@ export default function SavedCards() {
       ) : !isLoading && !isError && savedCards ? (
         /* Empty state - only show when data loaded and empty */
         <motion.div variants={staggerItem}>
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <div className="py-12 text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-linear-lg bg-dark-800">
                 <span className="text-3xl">💳</span>

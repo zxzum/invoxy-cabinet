@@ -212,7 +212,7 @@ export default function Balance() {
           decoration (DESIGN.md Tunable-but-Scarce Rule) and read as the
           SaaS hero-metric template. */}
       <motion.div variants={staggerItem}>
-        <Card>
+        <Card className="glass-surface-accent p-5 sm:p-6">
           <div className="mb-2 text-sm text-dark-400">{t('balance.currentBalance')}</div>
           <div className="text-4xl font-bold text-dark-50 sm:text-5xl">
             {formatAmount(balanceData?.balance_rubles || 0)}
@@ -223,7 +223,7 @@ export default function Balance() {
 
       {/* Promo Code Section */}
       <motion.div variants={staggerItem}>
-        <Card>
+        <Card className="glass-surface p-5 sm:p-6">
           <h2 className="mb-4 text-lg font-semibold text-dark-100">
             {t('balance.promocode.title')}
           </h2>
@@ -315,7 +315,7 @@ export default function Balance() {
           it stuck at opacity 0 */}
       {paymentMethods && paymentMethods.length > 0 && (
         <motion.div variants={staggerItem} initial="initial" animate="animate">
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <h2 className="mb-4 text-lg font-semibold text-dark-100">
               {t('balance.topUpBalance')}
             </h2>
@@ -333,7 +333,7 @@ export default function Balance() {
                   <Card
                     key={method.id}
                     interactive={method.is_available}
-                    className={!method.is_available ? 'cursor-not-allowed opacity-50' : ''}
+                    className={`glass-surface ${!method.is_available ? 'cursor-not-allowed opacity-50' : ''}`}
                     onClick={() => method.is_available && navigate(`/balance/top-up/${method.id}`)}
                   >
                     <div className="font-semibold text-dark-100">
@@ -358,7 +358,7 @@ export default function Balance() {
 
       {/* Transaction History */}
       <motion.div variants={staggerItem}>
-        <Card className="overflow-hidden">
+        <Card className="glass-surface overflow-hidden p-5 sm:p-6">
           <button
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
             className="flex w-full items-center justify-between text-left"
@@ -407,7 +407,7 @@ export default function Balance() {
                           <motion.div
                             key={tx.id}
                             variants={staggerItem}
-                            className="flex items-center justify-between rounded-linear border border-dark-700/30 bg-dark-800/30 p-4"
+                            className="card-inset flex items-center justify-between p-4"
                           >
                             <div className="flex-1">
                               <div className="mb-1 flex items-center gap-3">
@@ -482,7 +482,11 @@ export default function Balance() {
           (see Payment Methods above) */}
       {savedCardsData?.recurrent_enabled && (
         <motion.div variants={staggerItem} initial="initial" animate="animate">
-          <Card interactive onClick={() => navigate('/balance/saved-cards')}>
+          <Card
+            className="glass-surface"
+            interactive
+            onClick={() => navigate('/balance/saved-cards')}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <CreditCardIcon className="h-5 w-5 text-dark-400" />

@@ -146,6 +146,7 @@ describe('TariffPurchaseForm modal mode', () => {
     expect(screen.getByText('Устройства: 2')).toBeTruthy();
     expect(screen.getByText('LTE: 20 ГБ')).toBeTruthy();
     expect(screen.getByText('30 дней')).toBeTruthy();
+    expect(screen.getByText('30 дней').closest('button')?.className).toContain('rounded-2xl');
     expect(screen.getByRole('button', { name: 'Купить' })).toBeTruthy();
 
     await waitFor(() => expect(mocks.scrollIntoView).not.toHaveBeenCalled());

@@ -286,7 +286,7 @@ function LoadingSkeleton() {
   return (
     <SkeletonGroup className="space-y-3">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i}>
+        <Card key={i} className="glass-surface p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Skeleton circle className="h-6 w-6 shrink-0" />
@@ -670,7 +670,7 @@ export default function ConnectedAccounts() {
       {/* Error state */}
       {isError && (
         <motion.div variants={staggerItem}>
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <p className="text-center text-dark-400">{t('common.error')}</p>
           </Card>
         </motion.div>
@@ -679,7 +679,7 @@ export default function ConnectedAccounts() {
       {/* Provider cards */}
       {data?.providers.map((provider) => (
         <motion.div key={provider.provider} variants={staggerItem}>
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <ProviderIcon provider={provider.provider} />

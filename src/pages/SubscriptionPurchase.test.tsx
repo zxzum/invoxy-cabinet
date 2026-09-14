@@ -112,4 +112,26 @@ describe('SubscriptionPurchase cache refresh', () => {
     subscription.resolve(cachedSubscription);
     purchaseOptions.resolve(cachedPurchaseOptions);
   });
+
+  it('keeps tariff choices inside the target glass surface', async () => {
+    const purchaseOptions = {
+      sales_mode: 'tariffs' as const,
+      tariffs: [{ name: 'API tariff' }],
+    };
+    mocks.getSubscription.mockResolvedValue({ has_subscription: false, subscription: null });
+    mocks.getPurchaseOptions.mockResolvedValue(purchaseOptions);
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false });
+
+    const client = createClient();
+    render(
+      <MemoryRouter initialEntries={['/subscription/purchase']}>
+        <QueryClientProvider client={client}>
+          <SubscriptionPurchase />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    const tariff = await screen.findByTestId('cached-options');
+    expect(tariff.closest('.glass-surface')).toBeTruthy();
+  });
 });

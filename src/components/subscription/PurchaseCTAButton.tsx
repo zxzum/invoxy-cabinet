@@ -51,14 +51,17 @@ export default function PurchaseCTAButton({
       : '/subscription/purchase';
 
   return (
-    <Link to={linkTo} className="block">
+    <Link
+      to={linkTo}
+      className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950"
+    >
       <HoverBorderGradient
         accentColor={accentColor}
         duration={4}
         className="group relative w-full cursor-pointer overflow-hidden rounded-2xl"
       >
         <div
-          className="relative flex items-center justify-between rounded-[14px] px-5 py-4 transition-colors duration-300"
+          className="glass-surface-accent relative flex items-center justify-between rounded-[14px] px-5 py-4 transition-colors duration-300"
           style={{
             background: isExpired
               ? 'linear-gradient(135deg, rgba(255,59,92,0.08), rgba(255,107,53,0.06))'

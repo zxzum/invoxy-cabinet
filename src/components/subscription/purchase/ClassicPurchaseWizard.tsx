@@ -3,14 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subscriptionApi } from '../../../api/subscription';
-import { useTheme } from '../../../hooks/useTheme';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { usePromoDiscount } from '../../../hooks/usePromoDiscount';
 import {
   useCloseOnSuccessNotification,
   useSuccessNotification,
 } from '../../../store/successNotification';
-import { getGlassColors } from '../../../utils/glassTheme';
 import { getErrorMessage, type PurchaseStep } from '../../../utils/subscriptionHelpers';
 import { CheckIcon } from '../../icons';
 import InsufficientBalancePrompt from '../../InsufficientBalancePrompt';
@@ -56,8 +54,6 @@ export function ClassicPurchaseWizard({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isDark } = useTheme();
-  const g = getGlassColors(isDark);
   const { formatAmount, currencySymbol } = useCurrency();
   const { activeDiscount, applyPromoDiscount } = usePromoDiscount();
   const showSuccess = useSuccessNotification((state) => state.show);
@@ -214,15 +210,7 @@ export function ClassicPurchaseWizard({
   };
 
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl"
-      style={{
-        background: g.cardBg,
-        border: `1px solid ${g.cardBorder}`,
-        boxShadow: g.shadow,
-        padding: '24px 28px',
-      }}
-    >
+    <div className="glass-surface relative overflow-hidden rounded-[30px] p-5 sm:p-7">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-base font-bold tracking-tight text-dark-50">
           {subscription && !subscription.is_trial

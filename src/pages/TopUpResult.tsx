@@ -333,8 +333,12 @@ export default function TopUpResult() {
   }, [resolvedPaid, resolvedFailed, haptic]);
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-dark-950 px-4">
-      <div className="card w-full max-w-md p-8" aria-live="polite" aria-atomic="true">
+    <div className="flex min-h-dvh items-center justify-center px-4">
+      <div
+        className="glass-surface-elevated w-full max-w-md p-6 sm:p-8"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {resolvedPaid ? (
           <SuccessState amountKopeks={amountKopeks} />
         ) : resolvedFailed ? (

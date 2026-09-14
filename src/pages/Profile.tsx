@@ -278,7 +278,7 @@ export default function Profile() {
     >
       {/* User Info Card */}
       <motion.div variants={staggerItem}>
-        <Card>
+        <Card className="glass-surface p-5 sm:p-6">
           <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('profile.accountInfo')}</h2>
           <div className="space-y-1">
             <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
@@ -307,7 +307,7 @@ export default function Profile() {
 
       {/* Connected Accounts Link */}
       <motion.div variants={staggerItem}>
-        <Card interactive onClick={() => navigate('/profile/accounts')}>
+        <Card className="glass-surface" interactive onClick={() => navigate('/profile/accounts')}>
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-dark-100">
@@ -325,7 +325,7 @@ export default function Profile() {
           would leave it stuck at opacity 0 */}
       {referralTerms?.is_enabled && referralLink && (
         <motion.div variants={staggerItem} initial="initial" animate="animate">
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <h2 className="text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
               <Link
@@ -394,7 +394,7 @@ export default function Profile() {
       {/* Email Section - only show when email auth is enabled */}
       {isEmailAuthEnabled && (
         <motion.div variants={staggerItem}>
-          <Card>
+          <Card className="glass-surface p-5 sm:p-6">
             <h2 className="mb-6 text-lg font-semibold text-dark-100">{t('profile.emailAuth')}</h2>
 
             {user?.email ? (
@@ -619,7 +619,7 @@ export default function Profile() {
 
       {/* Notification Settings */}
       <motion.div variants={staggerItem}>
-        <Card>
+        <Card className="glass-surface p-5 sm:p-6">
           <h2 className="mb-6 text-lg font-semibold text-dark-100">
             {t('profile.notifications.title')}
           </h2>

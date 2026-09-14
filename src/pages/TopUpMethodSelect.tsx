@@ -45,7 +45,7 @@ export default function TopUpMethodSelect() {
       </motion.div>
 
       <motion.div variants={staggerItem}>
-        <Card>
+        <Card className="glass-surface p-5 sm:p-6">
           {isLoading ? (
             <SkeletonGroup className="space-y-3">
               <Skeleton variant="card" count={3} className="h-16" />
@@ -69,7 +69,7 @@ export default function TopUpMethodSelect() {
                   <Card
                     key={method.id}
                     interactive={method.is_available}
-                    className={!method.is_available ? 'cursor-not-allowed opacity-50' : ''}
+                    className={`glass-surface ${!method.is_available ? 'cursor-not-allowed opacity-50' : ''}`}
                     onClick={() => method.is_available && handleMethodClick(method.id)}
                   >
                     <div className="flex items-center gap-3">

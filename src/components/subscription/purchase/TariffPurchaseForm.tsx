@@ -531,7 +531,7 @@ export function TariffPurchaseForm({
                         setSelectedTariffPeriod(period);
                         setUseCustomDays(false);
                       }}
-                      className={`card-interactive relative min-h-[76px] px-3 py-2.5 text-left ${
+                      className={`card-interactive relative min-h-[76px] rounded-2xl px-3 py-2.5 text-left ${
                         selectedTariffPeriod?.days === period.days && !useCustomDays
                           ? 'card-selected'
                           : period.is_highlighted

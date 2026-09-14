@@ -415,7 +415,10 @@ export default function TopUpAmount() {
       animate="animate"
     >
       {/* Header icon and method */}
-      <motion.div variants={staggerItem} className="flex items-center gap-4 pb-1">
+      <motion.div
+        variants={staggerItem}
+        className="glass-surface-accent flex items-center gap-4 rounded-[30px] p-4 pb-5"
+      >
         <div
           className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
             isStarsMethod
@@ -446,7 +449,7 @@ export default function TopUpAmount() {
                 className={`relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
                   selectedOption === opt.id
                     ? 'bg-accent-500/15 text-accent-400 ring-2 ring-accent-500/40'
-                    : 'border border-dark-700/50 bg-dark-800/70 text-dark-300 hover:bg-dark-700/70'
+                    : 'glass-control text-dark-300 hover:border-accent-500/30'
                 }`}
               >
                 {opt.name}
@@ -466,7 +469,7 @@ export default function TopUpAmount() {
         <label className="text-sm font-medium text-dark-400">{t('balance.enterAmount')}</label>
         <div className="flex gap-2">
           <div
-            className={`relative flex-1 rounded-2xl transition-all duration-200 ${
+            className={`glass-control relative flex-1 rounded-2xl transition-all duration-200 ${
               isInputFocused
                 ? 'bg-dark-800 ring-2 ring-accent-500/50'
                 : 'border border-dark-700/50 bg-dark-800/70'
@@ -540,7 +543,7 @@ export default function TopUpAmount() {
                 }}
                 hover
                 glow={isSelected}
-                className={`flex flex-col items-center justify-center px-2 py-3 ${
+                className={`glass-surface flex flex-col items-center justify-center px-2 py-3 ${
                   isSelected ? 'border-accent-500/50 bg-accent-500/10' : ''
                 }`}
               >
