@@ -288,6 +288,27 @@ describe('support and activity flows', () => {
     expect(screen.getByText('support.createTicket')).toBeTruthy();
   });
 
+  it('closes the new ticket form when in-place navigation targets a ticket', async () => {
+    const { default: Support } = await import('./Support');
+    renderPage(
+      <>
+        <Support />
+        <TicketQueryNavigator />
+      </>,
+      '/support',
+    );
+
+    await screen.findAllByText('Ticket 42');
+    fireEvent.click(screen.getByRole('button', { name: 'support.newTicket' }));
+    expect(await screen.findByText('support.createTicket')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'navigate-to-missing-ticket' }));
+
+    await waitFor(() => expect(mocks.getTicket).toHaveBeenCalledWith(99));
+    expect(await screen.findAllByText('Ticket 99')).toHaveLength(1);
+    expect(screen.queryByText('support.createTicket')).toBeNull();
+  });
+
   it('shows a ticket list error instead of treating it as empty', async () => {
     mocks.getTickets.mockRejectedValue(new Error('ticket list failed'));
     const { default: Support } = await import('./Support');

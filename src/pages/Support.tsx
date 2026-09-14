@@ -77,13 +77,15 @@ export default function Support() {
   const parsedTicketId = rawTicketId && /^\d+$/.test(rawTicketId) ? Number(rawTicketId) : null;
   const queryTicketId =
     parsedTicketId !== null && Number.isSafeInteger(parsedTicketId) ? parsedTicketId : null;
+  const ticketQueryBeingCleared = useRef<number | null>(null);
 
   const clearTicketQuery = useCallback(() => {
     if (!searchParams.has('ticket')) return;
+    ticketQueryBeingCleared.current = queryTicketId;
     const nextSearchParams = new URLSearchParams(searchParams);
     nextSearchParams.delete('ticket');
     setSearchParams(nextSearchParams);
-  }, [searchParams, setSearchParams]);
+  }, [queryTicketId, searchParams, setSearchParams]);
 
   useEffect(() => {
     const urls = blobUrlsRef;
@@ -150,7 +152,11 @@ export default function Support() {
     : null;
 
   useEffect(() => {
-    if (showCreateForm || queryTicketId === null) return;
+    if (queryTicketId === null) {
+      ticketQueryBeingCleared.current = null;
+      return;
+    }
+    if (ticketQueryBeingCleared.current === queryTicketId) return;
 
     const listTicket = tickets?.items?.find((item) => item.id === queryTicketId);
     const targetTicket =
@@ -165,7 +171,7 @@ export default function Support() {
     }
 
     if (selectedTicket !== null) setSelectedTicket(null);
-  }, [queryTicketId, selectedTicket?.id, showCreateForm, ticketDetail, tickets?.items]);
+  }, [queryTicketId, selectedTicket?.id, ticketDetail, tickets?.items]);
 
   // Handle file selection (multi-upload)
   const handleFileSelect = async (
