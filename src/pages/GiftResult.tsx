@@ -244,7 +244,7 @@ function DeliveredState({
 
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dashboard')}
         className="flex w-full items-center justify-center rounded-xl bg-accent-500 px-6 py-3 text-sm font-medium text-on-accent transition-colors hover:bg-accent-400"
       >
         {t('gift.backToDashboard', 'Back to dashboard')}
@@ -311,7 +311,7 @@ function PendingActivationState({
 
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dashboard')}
         className="flex w-full items-center justify-center rounded-xl bg-accent-500 px-6 py-3 text-sm font-medium text-on-accent transition-colors hover:bg-accent-400"
       >
         {t('gift.backToDashboard', 'Back to dashboard')}
@@ -380,7 +380,7 @@ function PollErrorState() {
 
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dashboard')}
         className="flex w-full items-center justify-center rounded-xl bg-accent-500 px-6 py-3 text-sm font-medium text-on-accent transition-colors hover:bg-accent-400"
       >
         {t('gift.backToDashboard', 'Back to dashboard')}

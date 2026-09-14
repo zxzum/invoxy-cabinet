@@ -132,6 +132,6 @@ describe('TelegramLoginButton (OIDC): 428 «нужно согласие»', () =
 
     await waitFor(() => expect(loginWithTelegramOIDC).toHaveBeenCalledTimes(2));
     expect(loginWithTelegramOIDC.mock.calls[1]).toEqual(['tok', CONSENT_DOCUMENTS]);
-    expect(navigate).toHaveBeenCalledWith('/');
+    expect(navigate).toHaveBeenCalledWith('/dashboard');
   });
 });

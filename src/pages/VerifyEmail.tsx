@@ -53,7 +53,7 @@ export default function VerifyEmail() {
         checkAdminStatus();
         setStatus('success');
         // Redirect to dashboard after short delay
-        redirectTimer = setTimeout(() => navigate('/', { replace: true }), 1500);
+        redirectTimer = setTimeout(() => navigate('/dashboard', { replace: true }), 1500);
       } catch (err: unknown) {
         setStatus('error');
         setError(getApiErrorMessage(err, t('emailVerification.failed')));

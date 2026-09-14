@@ -101,12 +101,12 @@ export default function OAuthCallback() {
       if (mode === 'login' && provider && state) {
         // Login flow
         if (isAuthenticated) {
-          navigate('/', { replace: true });
+          navigate('/dashboard', { replace: true });
           return;
         }
         try {
           await loginWithOAuth(provider, code, state, deviceId);
-          navigate('/', { replace: true });
+          navigate('/dashboard', { replace: true });
         } catch (err: unknown) {
           const detail = getErrorDetail(err);
           setError(detail || t('auth.oauthError', 'Authorization was denied or failed'));

@@ -272,7 +272,7 @@ export default function NewsArticlePage() {
       <div className="space-y-6">
         {!capabilities.hasBackButton && (
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
             aria-label={t('news.backToHome')}
           >

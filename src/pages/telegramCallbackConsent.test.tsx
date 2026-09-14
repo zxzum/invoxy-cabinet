@@ -83,7 +83,7 @@ describe('TelegramCallback: 428 «нужно согласие»', () => {
     const [data, accepted] = loginWithTelegramWidget.mock.calls[1];
     expect(data).toMatchObject({ id: 1, first_name: 'A', auth_date: 1700000000, hash: 'h' });
     expect(accepted).toEqual(CONSENT_DOCUMENTS);
-    expect(navigate).toHaveBeenCalledWith('/');
+    expect(navigate).toHaveBeenCalledWith('/dashboard');
   });
 
   it('обычную ошибку показывает текстом, а не объектом', async () => {

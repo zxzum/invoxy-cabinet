@@ -96,13 +96,13 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
       setOidcLoading(true);
       setOidcError('');
       await loginWithTelegramOIDC(idToken);
-      if (mountedRef.current) navigate('/');
+      if (mountedRef.current) navigate('/dashboard');
     } catch (err: unknown) {
       if (!mountedRef.current) return;
       // 428 «нужно согласие»: повторяем с тем же id_token — бэк не гасит его на 428.
       const needsConsent = consent.capture(err, async (accepted) => {
         await loginWithTelegramOIDC(idToken, accepted);
-        if (mountedRef.current) navigate('/');
+        if (mountedRef.current) navigate('/dashboard');
       });
       if (needsConsent) return;
       setOidcError(getApiErrorMessage(err, t('common.error')));
@@ -216,13 +216,13 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
       try {
         setWidgetError('');
         await loginWithTelegramWidget(widgetData);
-        navigate('/');
+        navigate('/dashboard');
       } catch (err: unknown) {
         // 428 «нужно согласие»: повторяем тот же payload с галочками. Остальные
         // ошибки раньше глотались молча — стор их не показывает, показываем здесь.
         const needsConsent = consent.capture(err, async (accepted) => {
           await loginWithTelegramWidget(widgetData, accepted);
-          navigate('/');
+          navigate('/dashboard');
         });
         if (needsConsent) return;
         setWidgetError(getApiErrorMessage(err, ''));
@@ -322,7 +322,7 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
           }
           if (mountedRef.current) {
             setDeepLinkPolling(false);
-            navigate('/');
+            navigate('/dashboard');
           }
         } catch (err: unknown) {
           if (!mountedRef.current) return;
@@ -421,7 +421,7 @@ export default function TelegramLoginButton({ referralCode }: TelegramLoginButto
             }
             if (mountedRef.current) {
               setDeepLinkPolling(false);
-              navigate('/');
+              navigate('/dashboard');
             }
           } catch (err: unknown) {
             if (!mountedRef.current) return;

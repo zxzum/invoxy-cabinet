@@ -38,11 +38,17 @@ export function PermissionRoute({
 
   if (!isAuthenticated) {
     saveReturnUrl();
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    );
   }
 
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Check permissions if specified
@@ -61,7 +67,7 @@ export function PermissionRoute({
       // Redirect back to the admin landing — unless we're already there
       // (would loop) or the landing itself is what we lack permission for.
       // Fall back to the user dashboard in that case.
-      const target = location.pathname === '/admin' ? '/' : '/admin';
+      const target = location.pathname === '/admin' ? '/dashboard' : '/admin';
       return <Navigate to={target} replace />;
     }
   }

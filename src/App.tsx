@@ -170,6 +170,7 @@ const AdminLandingStats = lazyWithRetry(() => import('./pages/AdminLandingStats'
 const AdminReferralNetwork = lazyWithRetry(() => import('./pages/ReferralNetwork'));
 
 // News pages
+const News = lazyWithRetry(() => import('./components/news/NewsSection'));
 const NewsArticlePage = lazyWithRetry(() => import('./pages/NewsArticle'));
 const AdminNews = lazyWithRetry(() => import('./pages/AdminNews'));
 const AdminNewsCreate = lazyWithRetry(() => import('./pages/AdminNewsCreate'));
@@ -197,7 +198,13 @@ function ProtectedRoute({
 
   if (!isAuthenticated) {
     saveReturnUrl();
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    );
   }
 
   return withLayout ? (
@@ -221,27 +228,27 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     saveReturnUrl();
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    );
   }
 
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Layout>{children}</Layout>;
 }
 
 function MainTabsRoute() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isLoading = useAuthStore((state) => state.isLoading);
   const location = useLocation();
   const outlet = useOutlet();
 
-  if (isLoading) {
-    return <PageLoader variant="dark" />;
-  }
-
-  if (!isAuthenticated && location.pathname === '/') {
+  if (location.pathname === '/') {
     return <Landing />;
   }
 
@@ -299,9 +306,14 @@ function BlockingOverlay() {
 }
 
 /** Redirect /subscription/:id → /subscriptions/:id preserving the param */
+function LegacyRedirect({ to }: { to: string }) {
+  const { search, hash } = useLocation();
+  return <Navigate to={`${to}${search}${hash}`} replace />;
+}
+
 function LegacySubscriptionRedirect() {
   const { subscriptionId } = useParams<{ subscriptionId: string }>();
-  return <Navigate to={`/subscriptions/${subscriptionId}`} replace />;
+  return <LegacyRedirect to={`/subscriptions/${subscriptionId}`} />;
 }
 
 function App() {
@@ -320,6 +332,7 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Login />} />
         <Route path="/auth/telegram/callback" element={<TelegramCallback />} />
         <Route path="/auth/telegram" element={<TelegramRedirect />} />
         <Route path="/tg" element={<TelegramRedirect />} />
@@ -383,8 +396,9 @@ function App() {
         {/* Protected routes */}
         {/* One shell keeps the outgoing tab mounted throughout its exit animation. */}
         <Route element={<MainTabsRoute />}>
+          <Route path="/" element={null} />
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <LazyPage fallback={null}>
                 <Dashboard />
@@ -416,6 +430,54 @@ function App() {
             }
           />
         </Route>
+        <Route
+          path="/tariffs"
+          element={
+            <ProtectedRoute>
+              <LegacyRedirect to="/subscription/purchase" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/referrals"
+          element={
+            <ProtectedRoute>
+              <LegacyRedirect to="/referral" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/partner"
+          element={
+            <ProtectedRoute>
+              <LegacyRedirect to="/referral" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/account/security"
+          element={
+            <ProtectedRoute>
+              <LegacyRedirect to="/profile/accounts" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/saved-cards"
+          element={
+            <ProtectedRoute>
+              <LegacyRedirect to="/balance/saved-cards" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/saved-cards"
+          element={
+            <ProtectedRoute>
+              <LegacyRedirect to="/balance/saved-cards" />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/subscriptions"
           element={
@@ -452,7 +514,7 @@ function App() {
           path="/subscription"
           element={
             <ProtectedRoute>
-              <Navigate to="/subscriptions" replace />
+              <LegacyRedirect to="/subscriptions" />
             </ProtectedRoute>
           }
         />
@@ -644,6 +706,16 @@ function App() {
             <ProtectedRoute>
               <LazyPage>
                 <ConnectionQR />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/news"
+          element={
+            <ProtectedRoute>
+              <LazyPage>
+                <News />
               </LazyPage>
             </ProtectedRoute>
           }

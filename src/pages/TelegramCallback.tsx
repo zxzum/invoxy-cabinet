@@ -17,7 +17,7 @@ export default function TelegramCallback() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/dashboard');
       return;
     }
 
@@ -58,13 +58,13 @@ export default function TelegramCallback() {
 
       try {
         await loginWithTelegramWidget(widgetData);
-        navigate('/');
+        navigate('/dashboard');
       } catch (err: unknown) {
         // Новый пользователь без согласия: бэк ответил 428, показываем чекбоксы
         // и повторяем тот же payload виджета с галочками.
         const needsConsent = consent.capture(err, async (accepted) => {
           await loginWithTelegramWidget(widgetData, accepted);
-          navigate('/');
+          navigate('/dashboard');
         });
         if (needsConsent) return;
         setError(getApiErrorMessage(err, t('common.error')));

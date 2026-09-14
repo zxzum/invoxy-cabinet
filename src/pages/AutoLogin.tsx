@@ -39,7 +39,7 @@ export default function AutoLogin() {
         setTokens(response.access_token, response.refresh_token);
         setUser(response.user);
         await checkAdminStatus();
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       })
       .catch(() => {
         setError(true);

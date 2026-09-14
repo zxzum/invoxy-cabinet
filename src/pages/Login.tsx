@@ -58,7 +58,7 @@ export default function Login() {
   const referralCode = getPendingReferralCode() || '';
 
   const [authMode, setAuthMode] = useState<'login' | 'register'>(() =>
-    referralCode ? 'register' : 'login',
+    referralCode || location.pathname === '/register' ? 'register' : 'login',
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -108,8 +108,8 @@ export default function Login() {
     if (savedUrl && savedUrl !== '/login') {
       return savedUrl;
     }
-    // По умолчанию на главную
-    return '/';
+    // По умолчанию в защищённый кабинет
+    return '/dashboard';
   }, [location.state]);
 
   // Fetch branding with unified cache

@@ -111,7 +111,7 @@ function CabinetCredentialsState({
       setTokens(response.access_token, response.refresh_token);
       setUser(response.user);
       await checkAdminStatus();
-      navigate('/');
+      navigate('/dashboard');
     } catch {
       setLoginError(true);
       setIsLoggingIn(false);
@@ -349,7 +349,7 @@ function PendingActivationState({
       setTokens(response.access_token, response.refresh_token);
       setUser(response.user);
       await checkAdminStatus();
-      navigate('/');
+      navigate('/dashboard');
     } catch {
       setIsLoggingIn(false);
       navigate('/login');

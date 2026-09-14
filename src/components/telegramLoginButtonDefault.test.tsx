@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { requestDeepLinkToken, translation } = vi.hoisted(() => ({
+const { requestDeepLinkToken, loginWithTelegramWidget, navigate, translation } = vi.hoisted(() => ({
   requestDeepLinkToken: vi.fn(),
+  loginWithTelegramWidget: vi.fn(),
+  navigate: vi.fn(),
   translation: {
     t: (key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : key),
     i18n: { language: 'ru', changeLanguage: () => Promise.resolve() },
@@ -19,14 +21,14 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('react-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-router')>()),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
 }));
 
 vi.mock('../store/auth', () => ({
   useAuthStore: (selector: (state: Record<string, unknown>) => unknown) =>
     selector({
       loginWithTelegramOIDC: vi.fn(),
-      loginWithTelegramWidget: vi.fn(),
+      loginWithTelegramWidget,
       loginWithDeepLink: vi.fn(),
     }),
 }));
@@ -70,6 +72,8 @@ async function renderButton() {
 afterEach(() => {
   cleanup();
   requestDeepLinkToken.mockReset();
+  loginWithTelegramWidget.mockReset();
+  navigate.mockReset();
 });
 
 describe('TelegramLoginButton: штатный Telegram Widget', () => {
@@ -82,5 +86,27 @@ describe('TelegramLoginButton: штатный Telegram Widget', () => {
 
     expect(requestDeepLinkToken).not.toHaveBeenCalled();
     expect(screen.queryByText('auth.loginWithBot')).toBeNull();
+  });
+
+  it('navigates to the protected dashboard after successful widget login', async () => {
+    await renderButton();
+
+    const script = await waitFor(() => {
+      const element = document.querySelector('script[data-telegram-login="bot"]');
+      if (!element) throw new Error('Telegram widget script was not added');
+      return element;
+    });
+    const callbackName = script.getAttribute('data-onauth')?.split('(')[0];
+    expect(callbackName).toBe('__onTelegramWidgetAuth');
+    if (!callbackName) throw new Error('Telegram widget callback was not added');
+
+    await act(async () => {
+      await (window as unknown as Record<string, (user: Record<string, unknown>) => Promise<void>>)[
+        callbackName
+      ]({ id: 1, first_name: 'A', auth_date: 1700000000, hash: 'h' });
+    });
+
+    expect(loginWithTelegramWidget).toHaveBeenCalledOnce();
+    expect(navigate).toHaveBeenCalledWith('/dashboard');
   });
 });
