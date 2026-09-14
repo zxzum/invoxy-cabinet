@@ -13,6 +13,7 @@ import {
   getCachedBranding,
   setCachedBranding,
   preloadLogo,
+  getLogoBlobUrl,
   LOCAL_LOGO_URL,
 } from '@/api/branding';
 import { cn } from '@/lib/utils';
@@ -63,6 +64,8 @@ interface AppHeaderProps {
   hasContests?: boolean;
   hasPolls?: boolean;
   giftEnabled?: boolean;
+  greeting: string;
+  balanceLabel: string;
 }
 
 export function AppHeader({
@@ -79,6 +82,8 @@ export function AppHeader({
   hasContests,
   hasPolls,
   giftEnabled,
+  greeting,
+  balanceLabel,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const location = useLocation();
@@ -106,6 +111,9 @@ export function AppHeader({
   });
 
   const appName = branding ? branding.name : FALLBACK_NAME;
+  const logoUrl = branding?.has_custom_logo
+    ? (getLogoBlobUrl() ?? brandingApi.getLogoUrl(branding))
+    : LOCAL_LOGO_URL;
 
   // Lock scroll when menu is open (works in iframe/Telegram Mini App)
   useEffect(() => {
@@ -174,20 +182,34 @@ export function AppHeader({
             <Link
               to="/dashboard"
               onClick={() => setMobileMenuOpen(false)}
-              className={cn('flex flex-shrink-0 items-center gap-2.5', !appName && 'mr-4')}
+              className={cn('flex min-w-0 flex-shrink-0 items-center gap-2.5', !appName && 'mr-4')}
             >
               <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-linear-lg border border-dark-700/50 bg-dark-800/80 shadow-md">
-                <img
-                  src={LOCAL_LOGO_URL}
-                  alt={appName || 'Invoxy VPN'}
-                  className="h-full w-full object-contain"
-                />
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={appName || 'Invoxy VPN'}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="text-sm font-bold text-accent-300">
+                    {branding?.logo_letter || appName.slice(0, 1)}
+                  </span>
+                )}
               </div>
-              {appName && (
-                <span className="whitespace-nowrap text-base font-semibold text-dark-100">
-                  {appName}
+              <div className="min-w-0">
+                {appName && (
+                  <span className="block truncate text-base font-semibold text-dark-100">
+                    {appName}
+                  </span>
+                )}
+                <span
+                  data-testid="shell-greeting"
+                  className="block truncate text-[11px] text-dark-400"
+                >
+                  {greeting}
                 </span>
-              )}
+              </div>
             </Link>
 
             {/* Right side */}
@@ -205,6 +227,17 @@ export function AppHeader({
                   <SearchIcon className="h-5 w-5" />
                 </button>
               )}
+
+              <Link
+                to="/balance"
+                onClick={() => setMobileMenuOpen(false)}
+                data-testid="shell-header-balance"
+                aria-label={`${t('dashboard.currentBalance', 'Balance')}: ${balanceLabel}`}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent-500/20 bg-accent-500/10 text-xs font-semibold text-accent-300 sm:h-auto sm:w-auto sm:max-w-[7rem] sm:justify-start sm:gap-1.5 sm:px-2.5 sm:py-2"
+              >
+                <WalletIcon className="h-4 w-4 shrink-0" />
+                <span className="hidden truncate sm:inline">{balanceLabel}</span>
+              </Link>
 
               {canToggle && (
                 <button
@@ -296,7 +329,7 @@ export function AppHeader({
               <div className="mx-auto max-w-6xl px-4 pb-4 pt-5">
                 {/* User info */}
                 <div className="mb-4 flex items-center justify-between border-b border-dark-800/50 pb-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     {avatar.src ? (
                       <img
                         src={avatar.src}
@@ -313,11 +346,23 @@ export function AppHeader({
                       <div className="truncate text-sm font-medium text-dark-100">
                         {displayName(user)}
                       </div>
+                      <div className="truncate text-xs text-accent-300">{greeting}</div>
                       <div className="truncate text-xs text-dark-500">
                         @{user?.username || `ID: ${user?.telegram_id}`}
                       </div>
                     </div>
                   </div>
+                  <Link
+                    to="/balance"
+                    onClick={() => setMobileMenuOpen(false)}
+                    data-testid="shell-mobile-balance"
+                    className="glass-surface-accent flex shrink-0 flex-col items-end rounded-2xl px-3 py-2 text-xs"
+                  >
+                    <span className="text-[10px] uppercase tracking-wide text-dark-500">
+                      {t('dashboard.currentBalance', 'Balance')}
+                    </span>
+                    <span className="font-semibold text-accent-300">{balanceLabel}</span>
+                  </Link>
                 </div>
 
                 {/* Nav items */}

@@ -12,6 +12,7 @@ import { useHeaderHeight } from '@/hooks/useHeaderHeight';
 import { useTheme } from '@/hooks/useTheme';
 import { useBranding } from '@/hooks/useBranding';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { resetVirtualKeyboard, useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { balanceApi } from '@/api/balance';
@@ -35,6 +36,7 @@ import {
   LinkIcon,
   UsersIcon,
   InfoIcon,
+  WalletIcon,
 } from '@/components/icons';
 import { LOCAL_LOGO_URL } from '@/api/branding';
 import { AnimatedNumber } from '@/components/motion';
@@ -83,6 +85,7 @@ export function AppShell({ children }: AppShellProps) {
   const headerHeight = mobileCss ?? `${mobile}px`;
   const haptic = useHaptic();
   const { theme, toggleTheme, canToggle } = useTheme();
+  const { formatWithCurrency } = useCurrency();
 
   const { appName, logoLetter, logoUrl } = useBranding();
   const { referralEnabled, wheelEnabled, hasContests, hasPolls, giftEnabled } = useFeatureFlags();
@@ -124,14 +127,19 @@ export function AppShell({ children }: AppShellProps) {
     haptic.impact('light');
   };
 
-  const name = displayName(user) || 'Invoxy';
-  const initials = name
+  const userName = displayName(user);
+  const profileName = userName || appName || logoLetter;
+  const initials = profileName
     .split(' ')
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
   const balanceRubles = balanceData?.balance_rubles ?? (balanceData?.balance_kopeks ?? 0) / 100;
+  const balanceLabel = formatWithCurrency(balanceRubles);
+  const greeting = userName
+    ? t('dashboard.welcome', { name: userName })
+    : t('dashboard.welcomeNoName', 'Welcome!');
 
   const renderSideLink = (
     path: string,
@@ -179,7 +187,7 @@ export function AppShell({ children }: AppShellProps) {
         <div className="ix-sidebar-user">
           <div className="ix-avatar">{initials || logoLetter}</div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-dark-100">{name}</div>
+            <div className="truncate text-sm font-semibold text-dark-100">{profileName}</div>
             <div className="truncate text-[11px] text-dark-500">
               ID: {user?.telegram_id ?? user?.id ?? '—'}
             </div>
@@ -199,7 +207,8 @@ export function AppShell({ children }: AppShellProps) {
             <AnimatedNumber
               className="mt-1 block text-xl font-semibold text-dark-100"
               value={balanceRubles}
-              format={(v) => `${v.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} ₽`}
+              format={formatWithCurrency}
+              testId="sidebar-balance"
             />
             <Link to="/balance" onClick={handleNavClick} className="ix-balance-topup">
               Пополнить
@@ -237,54 +246,77 @@ export function AppShell({ children }: AppShellProps) {
           hasContests={hasContests}
           hasPolls={hasPolls}
           giftEnabled={giftEnabled}
+          greeting={greeting}
+          balanceLabel={balanceLabel}
         />
 
-        <div className="hidden lg:flex lg:items-center lg:justify-end lg:gap-2 lg:px-8 lg:pt-5">
-          <Link
-            to="/dashboard"
-            className="mr-auto flex items-center gap-2.5"
-            onClick={handleNavClick}
-          >
-            <div className="relative h-8 w-8 overflow-hidden rounded-xl bg-accent-500/20">
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={appName || 'Invoxy VPN'}
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <img
-                  src={LOCAL_LOGO_URL}
-                  alt={appName || 'Invoxy VPN'}
-                  className="h-full w-full object-contain"
-                />
-              )}
-            </div>
-            <span className="text-lg font-semibold text-dark-100">{appName || 'Invoxy VPN'}</span>
-          </Link>
-          <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
-          {canToggle && (
-            <button
-              type="button"
-              onClick={() => {
-                haptic.impact('light');
-                toggleTheme();
-              }}
-              className="btn-icon"
-              aria-label={
-                theme === 'dark'
-                  ? t('theme.switchToLight', 'Светлая тема')
-                  : t('theme.switchToDark', 'Тёмная тема')
-              }
-              title={
-                theme === 'dark'
-                  ? t('theme.switchToLight', 'Светлая тема')
-                  : t('theme.switchToDark', 'Тёмная тема')
-              }
+        <div className="hidden lg:flex lg:px-8 lg:pt-5">
+          <div className="glass-surface-elevated flex min-w-0 flex-1 items-center gap-3 rounded-[28px] border border-white/5 px-4 py-3">
+            <Link
+              to="/dashboard"
+              className="flex min-w-0 flex-1 items-center gap-3"
+              onClick={handleNavClick}
             >
-              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-            </button>
-          )}
+              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-2xl bg-accent-500/15">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={appName || 'Invoxy VPN'}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <img
+                    src={LOCAL_LOGO_URL}
+                    alt={appName || 'Invoxy VPN'}
+                    className="h-full w-full object-contain"
+                  />
+                )}
+              </div>
+              <div className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-dark-100">
+                  {appName || 'Invoxy VPN'}
+                </span>
+                <span data-testid="shell-greeting" className="block truncate text-xs text-dark-400">
+                  {greeting}
+                </span>
+              </div>
+            </Link>
+
+            <Link
+              to="/balance"
+              onClick={handleNavClick}
+              data-testid="shell-balance"
+              className="glass-surface-accent flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2 text-xs text-dark-300 transition-colors hover:text-dark-50"
+            >
+              <WalletIcon className="h-4 w-4 text-accent-300" />
+              <span className="hidden xl:inline">{t('dashboard.currentBalance', 'Balance')}</span>
+              <span className="font-semibold text-accent-300">{balanceLabel}</span>
+            </Link>
+
+            <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
+            {canToggle && (
+              <button
+                type="button"
+                onClick={() => {
+                  haptic.impact('light');
+                  toggleTheme();
+                }}
+                className="btn-icon"
+                aria-label={
+                  theme === 'dark'
+                    ? t('theme.switchToLight', 'Светлая тема')
+                    : t('theme.switchToDark', 'Тёмная тема')
+                }
+                title={
+                  theme === 'dark'
+                    ? t('theme.switchToLight', 'Светлая тема')
+                    : t('theme.switchToDark', 'Тёмная тема')
+                }
+              >
+                {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="lg:hidden" style={{ height: `calc(${headerHeight} + 0.75rem)` }} />
@@ -325,7 +357,13 @@ export function AppShell({ children }: AppShellProps) {
         </main>
       </div>
 
-      {showMobileNav && <MobileBottomNav isKeyboardOpen={isKeyboardOpen} />}
+      {showMobileNav && (
+        <MobileBottomNav
+          isKeyboardOpen={isKeyboardOpen}
+          safeAreaInset={safeAreaInset}
+          contentSafeAreaInset={contentSafeAreaInset}
+        />
+      )}
 
       {location.pathname !== '/support' && (
         <Link to="/support" className="ix-fab" aria-label="Поддержка" onClick={handleNavClick}>

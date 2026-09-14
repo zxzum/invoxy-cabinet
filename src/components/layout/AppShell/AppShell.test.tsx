@@ -12,12 +12,21 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: () => ({ data: { balance_rubles: 0 } }),
+  useQuery: () => ({ data: { balance_rubles: 125 } }),
 }));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : key),
+    t: (key: string, fallback?: unknown, options?: { name?: string }) => {
+      const name =
+        options?.name ??
+        (typeof fallback === 'object' && fallback !== null && 'name' in fallback
+          ? (fallback as { name?: string }).name
+          : undefined);
+      if (key === 'dashboard.welcome') return `Welcome, ${name}!`;
+      if (key === 'dashboard.welcomeNoName') return 'Welcome!';
+      return typeof fallback === 'string' ? fallback : key;
+    },
   }),
 }));
 
@@ -45,6 +54,9 @@ vi.mock('@/hooks/useHeaderHeight', () => ({ useHeaderHeight: () => ({ mobile: 0 
 vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({ theme: 'dark', toggleTheme: vi.fn(), canToggle: false }),
 }));
+vi.mock('@/hooks/useCurrency', () => ({
+  useCurrency: () => ({ formatWithCurrency: (amount: number) => `${amount} USD` }),
+}));
 vi.mock('@/hooks/useBranding', () => ({
   useBranding: () => ({ appName: 'Invoxy', logoLetter: 'I', logoUrl: null }),
 }));
@@ -66,7 +78,9 @@ vi.mock('@/components/WebSocketNotifications', () => ({ default: () => null }));
 vi.mock('@/components/CampaignBonusNotifier', () => ({ default: () => null }));
 vi.mock('@/components/SuccessNotificationModal', () => ({ default: () => null }));
 vi.mock('@/components/PromptDialogHost', () => ({ PromptDialogHost: () => null }));
-vi.mock('@/components/TicketNotificationBell', () => ({ default: () => null }));
+vi.mock('@/components/TicketNotificationBell', () => ({
+  default: () => <button data-testid="ticket-notification-bell" type="button" />,
+}));
 vi.mock('./MobileBottomNav', () => ({
   MobileBottomNav: () => <nav data-testid="mobile-bottom-nav" />,
 }));
@@ -150,6 +164,14 @@ describe('AppShell support FAB', () => {
       true,
     );
     expect(screen.getByRole('link', { name: 'Пополнить' })).toBeTruthy();
+  });
+
+  it('renders authenticated shell context from the configured user and balance', () => {
+    renderShell('/dashboard');
+
+    expect(screen.getByTestId('shell-greeting').textContent).toBe('Welcome, Test!');
+    expect(screen.getByTestId('shell-balance').textContent).toContain('125 USD');
+    expect(screen.getByTestId('ticket-notification-bell')).toBeTruthy();
   });
 
   it('links the authenticated home to /dashboard', () => {

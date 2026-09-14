@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/api/branding', () => ({
-  brandingApi: { getBranding: mocks.branding },
+  brandingApi: { getBranding: mocks.branding, getLogoUrl: vi.fn(() => '/logo.png') },
+  getLogoBlobUrl: () => null,
   getCachedBranding: () => null,
   setCachedBranding: vi.fn(),
   preloadLogo: vi.fn(),
@@ -60,6 +61,8 @@ function headerProps(mobileMenuOpen: boolean, setMobileMenuOpen: (open: boolean)
     isFullscreen: false,
     safeAreaInset: { top: 0, bottom: 0, left: 0, right: 0 },
     contentSafeAreaInset: { top: 0, bottom: 0, left: 0, right: 0 },
+    greeting: 'Welcome, Fixture!',
+    balanceLabel: '321 USD',
   } as const;
 }
 
@@ -79,6 +82,15 @@ afterEach(() => {
 });
 
 describe('AppHeader dashboard navigation', () => {
+  it('renders the dynamic greeting and balance in the mobile shell hierarchy', async () => {
+    mocks.branding.mockResolvedValue({ name: 'Fixture VPN' });
+
+    renderHeader();
+
+    expect(screen.getByTestId('shell-greeting').textContent).toBe('Welcome, Fixture!');
+    expect(screen.getByTestId('shell-header-balance').textContent).toContain('321 USD');
+  });
+
   it('links the mobile logo directly to the dashboard', async () => {
     mocks.branding.mockResolvedValue({ name: 'Fixture VPN' });
 
@@ -109,5 +121,26 @@ describe('AppHeader dashboard navigation', () => {
 
     const dashboardLink = await screen.findByRole('link', { name: 'nav.dashboard' });
     expect(dashboardLink.getAttribute('href')).toBe('/dashboard');
+  });
+
+  it('keeps the formatted balance available in the mobile menu', async () => {
+    mocks.branding.mockResolvedValue({ name: 'Fixture VPN' });
+
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return <AppHeader {...headerProps(open, setOpen)} />;
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <QueryClientProvider client={createClient()}>
+          <Harness />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+
+    expect((await screen.findByTestId('shell-mobile-balance')).textContent).toContain('321 USD');
   });
 });

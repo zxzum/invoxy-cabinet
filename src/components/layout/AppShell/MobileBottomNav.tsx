@@ -9,11 +9,24 @@ import { HomeIcon, LinkIcon, SubscriptionIcon, UserIcon } from './icons';
 
 interface MobileBottomNavProps {
   isKeyboardOpen: boolean;
+  safeAreaInset?: Insets;
+  contentSafeAreaInset?: Insets;
+}
+
+interface Insets {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
 }
 
 const MotionLink = motion.create(Link);
 
-export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
+export function MobileBottomNav({
+  isKeyboardOpen,
+  safeAreaInset,
+  contentSafeAreaInset,
+}: MobileBottomNavProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const { haptic } = usePlatform();
@@ -46,6 +59,10 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
       ? location.pathname === '/dashboard'
       : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
   );
+  const safeBottom = Math.max(safeAreaInset?.bottom ?? 0, contentSafeAreaInset?.bottom ?? 0);
+  const safeLeft = Math.max(safeAreaInset?.left ?? 0, contentSafeAreaInset?.left ?? 0);
+  const safeRight = Math.max(safeAreaInset?.right ?? 0, contentSafeAreaInset?.right ?? 0);
+  // Browser-only fallback remains: style={{ bottom: 'var(--mobile-nav-offset)' }}.
 
   return (
     <nav
@@ -56,7 +73,11 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
         'ix-island glass-surface-elevated',
         isKeyboardOpen ? 'pointer-events-none opacity-0' : 'opacity-100',
       )}
-      style={{ bottom: 'var(--mobile-nav-offset)' }}
+      style={{
+        bottom: `max(var(--mobile-nav-offset), ${safeBottom}px)`,
+        left: `max(0.75rem, ${safeLeft}px)`,
+        right: `max(0.75rem, ${safeRight}px)`,
+      }}
     >
       <div
         className="relative grid"

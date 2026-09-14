@@ -15,11 +15,27 @@ import { MobileBottomNav } from './MobileBottomNav';
  * поэтому t() отдаёт fallback-строки из самого компонента.
  */
 
+interface MobileNavInsets {
+  isKeyboardOpen: boolean;
+  safeAreaInset: { top: number; bottom: number; left: number; right: number };
+  contentSafeAreaInset: { top: number; bottom: number; left: number; right: number };
+}
+
 function renderNav(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <PlatformProvider>
         <MobileBottomNav isKeyboardOpen={false} />
+      </PlatformProvider>
+    </MemoryRouter>,
+  );
+}
+
+function renderNavWithInsets(path: string, props: MobileNavInsets) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <PlatformProvider>
+        <MobileBottomNav {...props} />
       </PlatformProvider>
     </MemoryRouter>,
   );
@@ -58,6 +74,19 @@ describe('MobileBottomNav', () => {
     expect(container.querySelectorAll('[data-nav-plate]').length).toBe(1);
     expect(container.querySelector('nav > div > [data-nav-plate]')).toBeTruthy();
     expect(connectionLink?.querySelector('[data-nav-plate]')).toBeNull();
+  });
+
+  it('keeps the floating nav clear of Telegram and browser safe areas', () => {
+    const { container } = renderNavWithInsets('/dashboard', {
+      isKeyboardOpen: false,
+      safeAreaInset: { top: 0, bottom: 34, left: 8, right: 12 },
+      contentSafeAreaInset: { top: 0, bottom: 20, left: 4, right: 16 },
+    });
+
+    const nav = container.querySelector('nav') as HTMLElement;
+    expect(nav.style.bottom).toBe('max(var(--mobile-nav-offset), 34px)');
+    expect(nav.style.left).toBe('max(0.75rem, 8px)');
+    expect(nav.style.right).toBe('max(0.75rem, 16px)');
   });
 
   it('hides itself while the keyboard is open', () => {
