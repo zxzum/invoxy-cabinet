@@ -446,10 +446,10 @@ export default function TopUpAmount() {
                 key={opt.id}
                 type="button"
                 onClick={() => setSelectedOption(opt.id)}
-                className={`relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+                className={`card-interactive relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
                   selectedOption === opt.id
-                    ? 'bg-accent-500/15 text-accent-400 ring-2 ring-accent-500/40'
-                    : 'glass-control text-dark-300 hover:border-accent-500/30'
+                    ? 'card-selected text-accent-400 ring-2 ring-accent-500/40'
+                    : 'text-dark-300 hover:border-accent-500/30'
                 }`}
               >
                 {opt.name}
@@ -469,10 +469,8 @@ export default function TopUpAmount() {
         <label className="text-sm font-medium text-dark-400">{t('balance.enterAmount')}</label>
         <div className="flex gap-2">
           <div
-            className={`glass-control relative flex-1 rounded-2xl transition-all duration-200 ${
-              isInputFocused
-                ? 'bg-dark-800 ring-2 ring-accent-500/50'
-                : 'border border-dark-700/50 bg-dark-800/70'
+            className={`card-inset relative flex-1 rounded-2xl transition-all duration-200 ${
+              isInputFocused ? 'bg-dark-800 ring-2 ring-accent-500/50' : ''
             }`}
           >
             <input

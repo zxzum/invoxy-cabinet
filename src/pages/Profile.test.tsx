@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -72,7 +72,11 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 vi.mock('@/platform', () => ({
-  usePlatform: () => ({ platform: 'web', openTelegramLink: vi.fn() }),
+  usePlatform: () => ({
+    platform: 'web',
+    openTelegramLink: vi.fn(),
+    haptic: { impact: vi.fn() },
+  }),
 }));
 
 function renderProfile() {
@@ -104,7 +108,27 @@ beforeEach(() => {
     promo_offers_enabled: false,
   });
   mocks.updateSettings.mockResolvedValue({});
-  mocks.getMe.mockResolvedValue({});
+  mocks.requestEmailChange.mockResolvedValue({
+    message: 'sent',
+    new_email: 'new@example.test',
+    expires_in_minutes: 10,
+  });
+  mocks.verifyEmailChange.mockResolvedValue({ message: 'changed', email: 'new@example.test' });
+  mocks.getMe.mockResolvedValue({
+    id: 17,
+    telegram_id: 70017,
+    username: 'api_user',
+    first_name: 'API',
+    last_name: 'User',
+    email: 'new@example.test',
+    email_verified: true,
+    balance_kopeks: 32100,
+    balance_rubles: 321,
+    referral_code: null,
+    language: 'ru',
+    created_at: '2026-09-01T00:00:00Z',
+    auth_type: 'telegram',
+  });
 });
 
 afterEach(cleanup);
@@ -125,5 +149,41 @@ describe('Profile target data presentation', () => {
 
     await screen.findByText('@api_user');
     expect(screen.queryByText(/2490|2 490|2000|2 000/)).toBeNull();
+  });
+
+  it('opens connected accounts through a focusable native button', async () => {
+    renderProfile();
+
+    const accountButton = await screen.findByRole('button', {
+      name: /profile.accounts.goToAccounts/,
+    });
+    accountButton.focus();
+    expect(document.activeElement).toBe(accountButton);
+    expect(accountButton.tagName).toBe('BUTTON');
+  });
+
+  it('preserves the request and verify email-change mutations', async () => {
+    renderProfile();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'profile.changeEmail.button' }));
+    fireEvent.change(screen.getByPlaceholderText('new@email.com'), {
+      target: { value: 'new@example.test' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'profile.changeEmail.sendCode' }));
+
+    await waitFor(() => expect(mocks.requestEmailChange).toHaveBeenCalledWith('new@example.test'));
+    fireEvent.change(await screen.findByPlaceholderText('000000'), {
+      target: { value: '123456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'profile.changeEmail.verify' }));
+
+    await waitFor(() => expect(mocks.verifyEmailChange).toHaveBeenCalledWith('123456'));
+    await waitFor(() =>
+      expect(mocks.setUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'new@example.test',
+        }),
+      ),
+    );
   });
 });

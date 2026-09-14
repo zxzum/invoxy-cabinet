@@ -75,7 +75,11 @@ export default function Balance() {
   const [transactionsPage, setTransactionsPage] = useState(1);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
-  const { data: transactions, isLoading } = useQuery<PaginatedResponse<Transaction>>({
+  const {
+    data: transactions,
+    isLoading,
+    isError: isTransactionsError,
+  } = useQuery<PaginatedResponse<Transaction>>({
     queryKey: ['transactions', transactionsPage],
     queryFn: () => balanceApi.getTransactions({ per_page: 20, page: transactionsPage }),
     placeholderData: (previousData) => previousData,
@@ -329,13 +333,8 @@ export default function Balance() {
                   defaultValue: '',
                 });
 
-                return (
-                  <Card
-                    key={method.id}
-                    interactive={method.is_available}
-                    className={`glass-surface ${!method.is_available ? 'cursor-not-allowed opacity-50' : ''}`}
-                    onClick={() => method.is_available && navigate(`/balance/top-up/${method.id}`)}
-                  >
+                const content = (
+                  <>
                     <div className="font-semibold text-dark-100">
                       {method.name || translatedName}
                     </div>
@@ -348,6 +347,22 @@ export default function Balance() {
                       {formatAmount(method.min_amount_kopeks / 100, 0)} {t('common.rangeTo', 'to')}{' '}
                       {formatAmount(method.max_amount_kopeks / 100, 0)} {currencySymbol}
                     </div>
+                  </>
+                );
+
+                return method.is_available ? (
+                  <Card key={method.id} asChild interactive className="glass-surface">
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => navigate(`/balance/top-up/${method.id}`)}
+                    >
+                      {content}
+                    </button>
+                  </Card>
+                ) : (
+                  <Card key={method.id} className="glass-surface cursor-not-allowed opacity-50">
+                    {content}
                   </Card>
                 );
               })}
@@ -385,6 +400,8 @@ export default function Balance() {
                     <SkeletonGroup className="space-y-3">
                       <Skeleton variant="card" count={3} className="h-16" />
                     </SkeletonGroup>
+                  ) : isTransactionsError ? (
+                    <div className="alert-error text-center">{t('common.error')}</div>
                   ) : transactions?.items && transactions.items.length > 0 ? (
                     <motion.div
                       className="space-y-3"
@@ -482,18 +499,20 @@ export default function Balance() {
           (see Payment Methods above) */}
       {savedCardsData?.recurrent_enabled && (
         <motion.div variants={staggerItem} initial="initial" animate="animate">
-          <Card
-            className="glass-surface"
-            interactive
-            onClick={() => navigate('/balance/saved-cards')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CreditCardIcon className="h-5 w-5 text-dark-400" />
-                <span className="font-medium text-dark-100">{t('balance.savedCards.title')}</span>
+          <Card asChild className="glass-surface" interactive>
+            <button
+              type="button"
+              className="w-full text-left"
+              onClick={() => navigate('/balance/saved-cards')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CreditCardIcon className="h-5 w-5 text-dark-400" />
+                  <span className="font-medium text-dark-100">{t('balance.savedCards.title')}</span>
+                </div>
+                <ChevronRightIcon className="h-5 w-5 text-dark-400" />
               </div>
-              <ChevronRightIcon className="h-5 w-5 text-dark-400" />
-            </div>
+            </button>
           </Card>
         </motion.div>
       )}

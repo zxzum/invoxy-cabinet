@@ -65,13 +65,8 @@ export default function TopUpMethodSelect() {
                   defaultValue: '',
                 });
 
-                return (
-                  <Card
-                    key={method.id}
-                    interactive={method.is_available}
-                    className={`glass-surface ${!method.is_available ? 'cursor-not-allowed opacity-50' : ''}`}
-                    onClick={() => method.is_available && handleMethodClick(method.id)}
-                  >
+                const content = (
+                  <>
                     <div className="flex items-center gap-3">
                       <PaymentMethodIcon method={methodKey} className="h-8 w-8 flex-shrink-0" />
                       <div className="font-semibold text-dark-100">
@@ -87,6 +82,22 @@ export default function TopUpMethodSelect() {
                       {formatAmount(method.min_amount_kopeks / 100, 0)} –{' '}
                       {formatAmount(method.max_amount_kopeks / 100, 0)} {currencySymbol}
                     </div>
+                  </>
+                );
+
+                return method.is_available ? (
+                  <Card key={method.id} asChild interactive className="glass-surface">
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => handleMethodClick(method.id)}
+                    >
+                      {content}
+                    </button>
+                  </Card>
+                ) : (
+                  <Card key={method.id} className="glass-surface cursor-not-allowed opacity-50">
+                    {content}
                   </Card>
                 );
               })}

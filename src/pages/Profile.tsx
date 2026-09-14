@@ -307,16 +307,22 @@ export default function Profile() {
 
       {/* Connected Accounts Link */}
       <motion.div variants={staggerItem}>
-        <Card className="glass-surface" interactive onClick={() => navigate('/profile/accounts')}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-dark-100">
-                {t('profile.accounts.goToAccounts')}
-              </h2>
-              <p className="text-sm text-dark-400">{t('profile.accounts.subtitle')}</p>
+        <Card asChild className="glass-surface" interactive>
+          <button
+            type="button"
+            className="w-full text-left"
+            onClick={() => navigate('/profile/accounts')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-dark-100">
+                  {t('profile.accounts.goToAccounts')}
+                </h2>
+                <p className="text-sm text-dark-400">{t('profile.accounts.subtitle')}</p>
+              </div>
+              <ArrowRightIcon className="h-5 w-5 text-dark-400" />
             </div>
-            <ArrowRightIcon className="h-5 w-5 text-dark-400" />
-          </div>
+          </button>
         </Card>
       </motion.div>
 

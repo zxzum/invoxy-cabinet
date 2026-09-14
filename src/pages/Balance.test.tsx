@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Balance from './Balance';
 
@@ -46,11 +46,17 @@ function createClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{location.pathname + location.search}</output>;
+}
+
 function renderBalance() {
   return render(
     <MemoryRouter initialEntries={['/balance']}>
       <QueryClientProvider client={createClient()}>
         <Balance />
+        <LocationProbe />
       </QueryClientProvider>
     </MemoryRouter>,
   );
@@ -97,5 +103,67 @@ describe('Balance target data presentation', () => {
 
     expect(await screen.findByText('0')).toBeTruthy();
     expect(screen.queryByText(/2490|2 490|2000|2 000/)).toBeNull();
+  });
+
+  it('exposes payment and saved-card navigation as focusable native buttons', async () => {
+    mocks.getSavedCards.mockResolvedValue({
+      cards: [],
+      recurrent_enabled: true,
+    });
+    renderBalance();
+
+    const paymentMethod = await screen.findByRole('button', { name: /API card/ });
+    paymentMethod.focus();
+    expect(document.activeElement).toBe(paymentMethod);
+    fireEvent.click(paymentMethod);
+    expect(screen.getByTestId('location').textContent).toBe('/balance/top-up/card');
+
+    const savedCards = await screen.findByRole('button', { name: 'balance.savedCards.title' });
+    savedCards.focus();
+    expect(document.activeElement).toBe(savedCards);
+    fireEvent.click(savedCards);
+    expect(screen.getByTestId('location').textContent).toBe('/balance/saved-cards');
+  });
+
+  it('requests the next transaction page through the existing paginated query', async () => {
+    mocks.getTransactions.mockImplementation(({ page }: { page: number }) =>
+      Promise.resolve({
+        items: [
+          {
+            id: page,
+            type: 'DEPOSIT',
+            amount_kopeks: page * 100,
+            amount_rubles: page,
+            description: `Page ${page}`,
+            payment_method: 'card',
+            is_completed: true,
+            created_at: '2026-09-14T10:00:00Z',
+            completed_at: '2026-09-14T10:00:01Z',
+          },
+        ],
+        page,
+        pages: 2,
+        total: 2,
+      }),
+    );
+    renderBalance();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'balance.transactionHistory' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'common.next' }));
+
+    await waitFor(() =>
+      expect(mocks.getTransactions).toHaveBeenCalledWith({ page: 2, per_page: 20 }),
+    );
+    expect(await screen.findByText('Page 2')).toBeTruthy();
+  });
+
+  it('shows an error instead of an empty history when transaction loading fails', async () => {
+    mocks.getTransactions.mockRejectedValue(new Error('transactions unavailable'));
+    renderBalance();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'balance.transactionHistory' }));
+
+    expect(await screen.findByText('common.error')).toBeTruthy();
+    expect(screen.queryByText('balance.noTransactions')).toBeNull();
   });
 });
