@@ -59,13 +59,12 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-viewport flex items-center justify-center px-4 py-8 sm:py-12">
-        <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
+      <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8 sm:py-12">
         <div className="fixed right-4 top-4 z-50">
           <LanguageSwitcher />
         </div>
         <div className="relative w-full max-w-md text-center">
-          <div className="card">
+          <div className="glass-surface-elevated p-5 sm:p-6">
             <div className="mb-4 text-5xl text-error-400">!</div>
             <h2 className="mb-2 text-xl font-semibold text-dark-50">
               {t('resetPassword.invalidToken', 'Invalid reset link')}
@@ -86,15 +85,13 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-viewport flex items-center justify-center px-4 py-8 sm:py-12">
-      <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent-500/10 via-transparent to-transparent" />
+    <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8 sm:py-12">
       <div className="fixed right-4 top-4 z-50">
         <LanguageSwitcher />
       </div>
 
       <div className="relative w-full max-w-md">
-        <div className="card">
+        <div className="glass-surface-elevated p-5 sm:p-6">
           {status === 'success' ? (
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-success-500/20">

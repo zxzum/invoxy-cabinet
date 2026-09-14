@@ -369,7 +369,7 @@ export default function Login() {
 
   return (
     <div
-      className="ix-login flex min-h-[100dvh] items-center justify-center px-4 sm:px-6 lg:px-8"
+      className="auth-page ix-login flex min-h-[100dvh] items-center justify-center px-4 sm:px-6 lg:px-8"
       style={{
         paddingTop:
           safeTop > 0 ? `${safeTop + 16}px` : 'calc(1rem + env(safe-area-inset-top, 0px))',
@@ -395,7 +395,7 @@ export default function Login() {
       <div className="relative w-full max-w-md space-y-5">
         {/* Logo & branding */}
         <div className="text-center">
-          <div className="relative mx-auto mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-accent-400/30 bg-dark-800/80 shadow-[0_0_32px_rgba(139,92,246,0.35)]">
+          <div className="glass-surface-accent relative mx-auto mb-3 flex h-16 w-16 items-center justify-center overflow-hidden">
             {/* Letter fallback */}
             <span
               className={`absolute text-lg font-bold text-accent-400 transition-opacity duration-200 ${branding?.has_custom_logo && logoLoaded ? 'opacity-0' : 'opacity-100'}`}
@@ -446,7 +446,7 @@ export default function Login() {
           />
         ) : (
           /* Main auth card */
-          <div className="card">
+          <div className="glass-surface-elevated p-5 sm:p-6">
             {error && (
               <div
                 role="alert"

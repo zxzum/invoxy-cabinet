@@ -2547,3 +2547,40 @@ html.light .bento-card-hover:hover {
     transform: none;
   }
 }
+
+/* Public/auth surfaces use the same target-owned tokens as the cabinet shell. */
+@layer components {
+  .landing-page {
+    background-color: rgb(var(--color-dark-950));
+    background-image: radial-gradient(
+      ellipse 90% 55% at 50% -12%,
+      rgba(var(--ix-accent-rgb), 0.14),
+      transparent 62%
+    );
+  }
+
+  .auth-page {
+    min-height: 100dvh;
+    background-color: rgb(var(--color-dark-950));
+    background-image:
+      linear-gradient(180deg, rgba(var(--color-dark-950), 0.18), rgba(var(--color-dark-950), 0.72)),
+      url("/images/auth-background.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  /* Theme variables remain authoritative; this selector only keeps text
+     readable when the same surface contract is used in the light theme. */
+  .light .glass-surface,
+  .light .glass-surface-elevated,
+  .light .glass-surface-accent {
+    color: rgb(var(--color-dark-50));
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-page {
+    background-position: 64% center;
+  }
+}

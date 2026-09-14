@@ -66,13 +66,13 @@ export default function VerifyEmail() {
   }, [searchParams, t, navigate, setTokens, setUser, checkAdminStatus]);
 
   return (
-    <div className="min-h-viewport flex items-center justify-center bg-dark-950 px-4 py-8 sm:py-12">
+    <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8 sm:py-12">
       {/* Language switcher in corner */}
       <div className="fixed right-4 top-4 z-50">
         <LanguageSwitcher />
       </div>
 
-      <div className="w-full max-w-md text-center">
+      <div className="glass-surface-elevated w-full max-w-md p-6 text-center sm:p-8">
         {status === 'loading' && (
           <div>
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-accent-500 border-t-transparent"></div>

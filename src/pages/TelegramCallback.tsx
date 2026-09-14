@@ -76,8 +76,8 @@ export default function TelegramCallback() {
 
   if (consent.pending) {
     return (
-      <div className="min-h-viewport flex items-center justify-center bg-dark-950 px-4 py-8">
-        <div className="w-full max-w-md">
+      <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8">
+        <div className="glass-surface-elevated w-full max-w-md p-6 sm:p-8">
           <LegalConsentGate gate={consent} />
         </div>
       </div>
@@ -86,8 +86,8 @@ export default function TelegramCallback() {
 
   if (error) {
     return (
-      <div className="min-h-viewport flex items-center justify-center bg-dark-950 px-4 py-8">
-        <div className="w-full max-w-md text-center">
+      <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8">
+        <div className="glass-surface-elevated w-full max-w-md p-6 text-center sm:p-8">
           <div className="mb-4 text-5xl text-error-500">✗</div>
           <h2 className="mb-2 text-lg font-semibold text-dark-50">{t('auth.loginFailed')}</h2>
           <p className="mb-6 text-sm text-dark-400">{error}</p>
@@ -100,8 +100,8 @@ export default function TelegramCallback() {
   }
 
   return (
-    <div className="min-h-viewport flex items-center justify-center bg-dark-950">
-      <div className="text-center">
+    <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8">
+      <div className="glass-surface-elevated p-6 text-center sm:p-8">
         <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-accent-500 border-t-transparent"></div>
         <h2 className="text-lg font-semibold text-dark-50">{t('auth.authenticating')}</h2>
         <p className="mt-2 text-sm text-dark-400">{t('common.loading')}</p>
