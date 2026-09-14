@@ -11,6 +11,7 @@ import { AnimatedCheckmark } from '@/components/ui/AnimatedCheckmark';
 import { cn } from '@/lib/utils';
 import { CheckCircleIcon, CheckIcon, CopyIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { getSafeExternalUrl } from '../utils/safeExternalUrl';
 
 const MAX_POLL_MS = 10 * 60 * 1000; // poll an unsettled payment for up to 10 min
 
@@ -76,11 +77,15 @@ export default function GiftClaim() {
 
   const willReplace = gift?.status === 'pending_activation';
 
+  const resultUrl =
+    getSafeExternalUrl(result?.subscription_url) ??
+    getSafeExternalUrl(result?.subscription_crypto_link);
+  const safeBotClaimLink = getSafeExternalUrl(gift?.bot_claim_link);
+
   const handleCopyLink = async () => {
-    const url = result?.subscription_url;
-    if (!url) return;
+    if (!resultUrl) return;
     try {
-      await copyToClipboard(url);
+      await copyToClipboard(resultUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -177,13 +182,13 @@ export default function GiftClaim() {
           <h1 className="text-xl font-bold text-dark-50">
             {t('landing.giftClaim.successTitle', 'Gift activated!')}
           </h1>
-          {result.subscription_url && (
+          {resultUrl && (
             <>
               <p className="text-sm text-dark-300">
                 {t('landing.giftClaim.connectDesc', 'Use this link to connect:')}
               </p>
               <p className="w-full select-all truncate rounded-lg bg-dark-900/60 px-3 py-2 text-sm text-accent-400">
-                {result.subscription_url}
+                {resultUrl}
               </p>
               <button
                 type="button"
@@ -264,9 +269,9 @@ export default function GiftClaim() {
         )}
 
         {/* Telegram arm */}
-        {gift.bot_claim_link && (
+        {safeBotClaimLink && (
           <a
-            href={gift.bot_claim_link}
+            href={safeBotClaimLink}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3.5 text-sm font-bold text-on-accent shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-400 active:scale-[0.98]"
           >
             {t('landing.giftClaim.activateTelegram', 'Activate in Telegram')}

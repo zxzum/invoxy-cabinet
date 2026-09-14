@@ -13,6 +13,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { AnimatedCheckmark } from '@/components/ui/AnimatedCheckmark';
 import { AnimatedCrossmark } from '@/components/ui/AnimatedCrossmark';
 import { cn } from '../lib/utils';
+import { getSafeExternalUrl } from '../utils/safeExternalUrl';
 
 const MAX_POLL_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -200,6 +201,8 @@ function SuccessState({
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const displayUrl = getSafeExternalUrl(subscriptionUrl) ?? getSafeExternalUrl(cryptoLink);
+  const safeBotLink = getSafeExternalUrl(botLink);
 
   useEffect(() => {
     return () => {
@@ -208,20 +211,18 @@ function SuccessState({
   }, []);
 
   const handleCopy = useCallback(async () => {
-    const url = subscriptionUrl ?? cryptoLink;
-    if (!url) return;
+    if (!displayUrl) return;
 
     try {
-      await copyToClipboard(url);
+      await copyToClipboard(displayUrl);
       setCopied(true);
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard write failed silently
     }
-  }, [subscriptionUrl, cryptoLink]);
+  }, [displayUrl]);
 
-  const displayUrl = subscriptionUrl ?? cryptoLink;
   const displayContact = isGift ? recipientContactValue : contactValue;
 
   return (
@@ -263,9 +264,9 @@ function SuccessState({
       </div>
 
       {/* Bot link for telegram gifts where recipient is not in bot */}
-      {isGift && contactType === 'telegram' && recipientInBot !== true && botLink && (
+      {isGift && contactType === 'telegram' && recipientInBot !== true && safeBotLink && (
         <a
-          href={botLink}
+          href={safeBotLink}
           target="_blank"
           rel="noopener noreferrer"
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-sm font-medium text-on-accent transition-colors hover:bg-accent-400"
@@ -449,6 +450,7 @@ function GiftPendingActivationState({
   contactType: string | null;
 }) {
   const { t } = useTranslation();
+  const safeBotLink = getSafeExternalUrl(botLink);
 
   return (
     <motion.div
@@ -487,9 +489,9 @@ function GiftPendingActivationState({
       </div>
 
       {/* Bot link for telegram gifts where recipient is not in bot */}
-      {contactType === 'telegram' && recipientInBot !== true && botLink && (
+      {contactType === 'telegram' && recipientInBot !== true && safeBotLink && (
         <a
-          href={botLink}
+          href={safeBotLink}
           target="_blank"
           rel="noopener noreferrer"
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-sm font-medium text-on-accent transition-colors hover:bg-accent-400"
@@ -570,12 +572,16 @@ function GiftLinkShareState({
 }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const safeClaimUrl = getSafeExternalUrl(claimUrl);
+  const safeBotClaimLink = getSafeExternalUrl(botClaimLink);
 
   const message = [
     t('landing.giftLink.shareText', 'I have a gift for you! Activate it here:'),
     '',
-    claimUrl,
-    botClaimLink ? `${t('landing.giftLink.viaTelegram', 'Telegram:')} ${botClaimLink}` : null,
+    safeClaimUrl,
+    safeBotClaimLink
+      ? `${t('landing.giftLink.viaTelegram', 'Telegram:')} ${safeBotClaimLink}`
+      : null,
   ]
     .filter(Boolean)
     .join('\n');
@@ -615,13 +621,13 @@ function GiftLinkShareState({
         )}
       </p>
 
-      {claimUrl && (
-        <CopyableField label={t('landing.giftLink.linkLabel', 'Gift link')} value={claimUrl} />
+      {safeClaimUrl && (
+        <CopyableField label={t('landing.giftLink.linkLabel', 'Gift link')} value={safeClaimUrl} />
       )}
-      {botClaimLink && (
+      {safeBotClaimLink && (
         <CopyableField
           label={t('landing.giftLink.telegramLabel', 'Telegram link')}
-          value={botClaimLink}
+          value={safeBotClaimLink}
         />
       )}
 

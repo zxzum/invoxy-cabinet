@@ -75,7 +75,7 @@ export default function PublicLegal({ doc }: PublicLegalProps) {
             {t('info.documentUnavailable', 'Документ пока недоступен.')}
           </div>
         ) : (
-          <div className="bento-card prose prose-invert max-w-none">
+          <div className="bento-card prose prose-invert max-w-none" role="document">
             <div dangerouslySetInnerHTML={{ __html: formatContent(data.content) }} />
             {data.updated_at && (
               <p className="mt-4 text-xs text-dark-500">

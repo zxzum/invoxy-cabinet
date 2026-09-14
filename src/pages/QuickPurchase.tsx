@@ -27,6 +27,7 @@ import { readContactPrefill, stripContactFromUrl } from '../utils/contactPrefill
 import { formatPrice } from '../utils/format';
 import { useCurrency } from '../hooks/useCurrency';
 import { safeSession } from '../utils/safeStorage';
+import { getSafeExternalUrl } from '../utils/safeExternalUrl';
 
 function detectContactType(value: string): 'email' | 'telegram' {
   return value.startsWith('@') ? 'telegram' : 'email';
@@ -40,6 +41,51 @@ function isValidContact(value: string): boolean {
     return trimmed.length >= 4;
   }
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+function getUsableTariffs(config: LandingConfig | undefined): LandingTariff[] {
+  if (!Array.isArray(config?.tariffs)) return [];
+
+  return config.tariffs
+    .filter((tariff) => tariff && Number.isInteger(tariff.id) && Array.isArray(tariff.periods))
+    .map((tariff) => ({
+      ...tariff,
+      periods: tariff.periods.filter(
+        (period) =>
+          period &&
+          Number.isInteger(period.days) &&
+          period.days > 0 &&
+          typeof period.price_kopeks === 'number' &&
+          Number.isFinite(period.price_kopeks) &&
+          period.price_kopeks > 0,
+      ),
+    }))
+    .filter((tariff) => tariff.periods.length > 0);
+}
+
+function getUsablePaymentMethods(config: LandingConfig | undefined): LandingPaymentMethod[] {
+  if (!Array.isArray(config?.payment_methods)) return [];
+
+  return config.payment_methods
+    .filter(
+      (method) =>
+        method &&
+        typeof method.method_id === 'string' &&
+        method.method_id.trim().length > 0 &&
+        (method.sub_options === null || Array.isArray(method.sub_options)),
+    )
+    .map((method) => ({
+      ...method,
+      sub_options: Array.isArray(method.sub_options)
+        ? method.sub_options.filter(
+            (option) =>
+              option &&
+              typeof option.id === 'string' &&
+              option.id.trim().length > 0 &&
+              typeof option.name === 'string',
+          )
+        : null,
+    }));
 }
 
 function formatPeriodLabel(
@@ -347,6 +393,7 @@ function PaymentMethodCard({
   onSelectSubOption: (subOptionId: string) => void;
 }) {
   const hasSubOptions = method.sub_options && method.sub_options.length > 1;
+  const iconUrl = getSafeExternalUrl(method.icon_url);
 
   return (
     <div className={cn('card-inset transition-all duration-200', isSelected && 'card-selected')}>
@@ -358,9 +405,9 @@ function PaymentMethodCard({
         className="flex w-full items-center gap-4 p-4 text-start"
       >
         {/* Icon */}
-        {method.icon_url && (
+        {iconUrl && (
           <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-dark-800/50">
-            <img src={method.icon_url} alt="" className="h-6 w-6 object-contain" />
+            <img src={iconUrl} alt="" className="h-6 w-6 object-contain" />
           </div>
         )}
 
@@ -452,6 +499,12 @@ function SummaryCard({
   onSubmit: () => void;
 }) {
   const { t } = useTranslation();
+  const features = Array.isArray(config.features)
+    ? config.features.filter(
+        (feature) =>
+          feature && typeof feature.title === 'string' && typeof feature.description === 'string',
+      )
+    : [];
 
   // Responsive: track mobile for sticky pay button
   const [isMobile, setIsMobile] = useState(
@@ -509,9 +562,9 @@ function SummaryCard({
       </div>
 
       {/* Features */}
-      {config.features.length > 0 && (
+      {features.length > 0 && (
         <div className="space-y-3">
-          {config.features.map((feature, idx) => (
+          {features.map((feature, idx) => (
             <div key={idx} className="flex gap-3">
               <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-500/10">
                 <CheckCircleIcon className="h-3 w-3 text-success-500" />
@@ -639,7 +692,7 @@ function SummaryCard({
       )}
 
       {/* Footer */}
-      {config.footer_text && (
+      {typeof config.footer_text === 'string' && config.footer_text && (
         <SanitizedHtml
           html={config.footer_text}
           className="text-center text-xs leading-relaxed text-dark-500 [&_a]:text-accent-400 [&_a]:underline [&_a]:underline-offset-2"
@@ -835,6 +888,9 @@ export default function QuickPurchase() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  const usableTariffs = useMemo(() => getUsableTariffs(config), [config]);
+  const availablePaymentMethods = useMemo(() => getUsablePaymentMethods(config), [config]);
+
   // Cleanup redirect timeout on unmount
   useEffect(() => {
     return () => {
@@ -844,9 +900,8 @@ export default function QuickPurchase() {
 
   // Collect ALL unique periods across ALL tariffs
   const allPeriods = useMemo(() => {
-    if (!config) return [];
     const periodMap = new Map<number, LandingTariffPeriod>();
-    for (const tariff of config.tariffs) {
+    for (const tariff of usableTariffs) {
       for (const period of tariff.periods) {
         if (!periodMap.has(period.days)) {
           periodMap.set(period.days, period);
@@ -854,22 +909,22 @@ export default function QuickPurchase() {
       }
     }
     return Array.from(periodMap.values()).sort((a, b) => a.days - b.days);
-  }, [config]);
+  }, [usableTariffs]);
 
   // Filter tariffs to only those that have the selected period
   const visibleTariffs = useMemo(() => {
-    if (!config || !selectedPeriodDays) return config?.tariffs ?? [];
-    return config.tariffs.filter((tariff) =>
+    if (!selectedPeriodDays) return usableTariffs;
+    return usableTariffs.filter((tariff) =>
       tariff.periods.some((p) => p.days === selectedPeriodDays),
     );
-  }, [config, selectedPeriodDays]);
+  }, [usableTariffs, selectedPeriodDays]);
 
   // Auto-select first tariff, period, method on config load
   useEffect(() => {
     if (!config) return;
 
     // Auto-select first period from all available periods
-    if (allPeriods.length > 0 && selectedPeriodDays === null) {
+    if (allPeriods.length > 0 && !allPeriods.some((period) => period.days === selectedPeriodDays)) {
       setSelectedPeriodDays(allPeriods[0].days);
     }
 
@@ -878,8 +933,16 @@ export default function QuickPurchase() {
       setSelectedTariffId(visibleTariffs[0].id);
     }
 
-    if (config.payment_methods.length > 0 && selectedMethod === null) {
-      const firstMethod = config.payment_methods[0];
+    const currentMethod = availablePaymentMethods.find(
+      (method) => method.method_id === selectedMethod,
+    );
+    if (!currentMethod && selectedMethod !== null) {
+      setSelectedMethod(null);
+      setSelectedSubOption(null);
+    }
+
+    if (availablePaymentMethods.length > 0 && currentMethod === undefined) {
+      const firstMethod = availablePaymentMethods[0];
       setSelectedMethod(firstMethod.method_id);
       if (firstMethod.sub_options && firstMethod.sub_options.length >= 1) {
         setSelectedSubOption(firstMethod.sub_options[0].id);
@@ -887,7 +950,15 @@ export default function QuickPurchase() {
         setSelectedSubOption(null);
       }
     }
-  }, [config, allPeriods, visibleTariffs, selectedTariffId, selectedPeriodDays, selectedMethod]);
+  }, [
+    config,
+    allPeriods,
+    availablePaymentMethods,
+    visibleTariffs,
+    selectedTariffId,
+    selectedPeriodDays,
+    selectedMethod,
+  ]);
 
   // When period changes, auto-select first visible tariff if current is hidden
   useEffect(() => {
@@ -960,8 +1031,8 @@ export default function QuickPurchase() {
 
   // Derived data
   const selectedTariff = useMemo(
-    () => config?.tariffs.find((tr) => tr.id === selectedTariffId),
-    [config?.tariffs, selectedTariffId],
+    () => usableTariffs.find((tr) => tr.id === selectedTariffId),
+    [usableTariffs, selectedTariffId],
   );
 
   const selectedPeriod = useMemo(
@@ -969,21 +1040,47 @@ export default function QuickPurchase() {
     [selectedTariff, selectedPeriodDays],
   );
 
-  const currentPrice = selectedPeriod?.price_kopeks ?? 0;
+  const currentPrice = selectedPeriod?.price_kopeks ?? null;
 
   // Validation
   const canSubmit = useMemo(() => {
-    if (!selectedTariffId || !selectedPeriodDays || !selectedMethod) return false;
+    if (
+      selectedTariffId === null ||
+      selectedPeriodDays === null ||
+      !selectedMethod ||
+      !selectedTariff ||
+      !selectedPeriod ||
+      currentPrice === null
+    ) {
+      return false;
+    }
     if (!isValidContact(contactValue)) return false;
     if (isGift && !isValidContact(giftRecipient)) return false;
     return true;
-  }, [selectedTariffId, selectedPeriodDays, selectedMethod, contactValue, isGift, giftRecipient]);
+  }, [
+    selectedTariffId,
+    selectedPeriodDays,
+    selectedMethod,
+    selectedTariff,
+    selectedPeriod,
+    currentPrice,
+    contactValue,
+    isGift,
+    giftRecipient,
+  ]);
 
   // Purchase mutation
   const purchaseMutation = useMutation({
     mutationFn: (data: PurchaseRequest) => landingApi.createPurchase(slug!, data),
     onSuccess: (result) => {
-      window.location.href = result.payment_url;
+      const paymentUrl = getSafeExternalUrl(result?.payment_url);
+      if (!paymentUrl) {
+        setSubmitError(t('landing.invalidPaymentUrl', 'Unable to open payment link'));
+        setIsSubmitting(false);
+        return;
+      }
+
+      window.location.href = paymentUrl;
       // If redirect blocked (popup blocker etc.), reset after 5s
       redirectTimeoutRef.current = setTimeout(() => setIsSubmitting(false), 5000);
     },
@@ -1071,6 +1168,12 @@ export default function QuickPurchase() {
   if (error || !config) {
     const errMsg = getApiErrorMessage(error, t('landing.notFound', 'Landing page not found'));
     return <ErrorState message={errMsg} />;
+  }
+
+  if (usableTariffs.length === 0 || availablePaymentMethods.length === 0) {
+    return (
+      <ErrorState message={t('landing.purchaseUnavailable', 'Purchase options unavailable')} />
+    );
   }
 
   const showTariffCards = visibleTariffs.length > 1;
@@ -1190,7 +1293,7 @@ export default function QuickPurchase() {
             )}
 
             {/* Payment methods */}
-            {config.payment_methods.length > 0 && (
+            {availablePaymentMethods.length > 0 && (
               <div>
                 <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-dark-400">
                   {t('landing.paymentMethod', 'Payment method')}
@@ -1200,7 +1303,7 @@ export default function QuickPurchase() {
                   aria-label={t('landing.paymentMethod', 'Payment method')}
                   className="space-y-2"
                 >
-                  {config.payment_methods.map((method) => (
+                  {availablePaymentMethods.map((method) => (
                     <PaymentMethodCard
                       key={method.method_id}
                       method={method}
@@ -1235,17 +1338,19 @@ export default function QuickPurchase() {
               config?.sticky_pay_button && 'mb-20 lg:mb-0',
             )}
           >
-            <SummaryCard
-              config={config}
-              selectedTariff={selectedTariff}
-              selectedPeriod={selectedPeriod}
-              currentPrice={currentPrice}
-              isSubmitting={isSubmitting}
-              canSubmit={canSubmit}
-              submitError={submitError}
-              onSubmit={handleSubmit}
-              stickyPayButton={config?.sticky_pay_button}
-            />
+            {currentPrice !== null && (
+              <SummaryCard
+                config={config}
+                selectedTariff={selectedTariff}
+                selectedPeriod={selectedPeriod}
+                currentPrice={currentPrice}
+                isSubmitting={isSubmitting}
+                canSubmit={canSubmit}
+                submitError={submitError}
+                onSubmit={handleSubmit}
+                stickyPayButton={config?.sticky_pay_button}
+              />
+            )}
           </motion.div>
         </div>
       </div>

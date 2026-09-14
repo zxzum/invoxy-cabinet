@@ -35,7 +35,7 @@ export default function LegalFooter({ className = '' }: LegalFooterProps) {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="transition-colors hover:text-accent-400"
+            className="transition-colors hover:text-accent-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50"
           >
             {t(link.labelKey, link.fallback)}
           </a>

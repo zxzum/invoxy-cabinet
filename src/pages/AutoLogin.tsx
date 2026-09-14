@@ -50,7 +50,7 @@ export default function AutoLogin() {
     <div className="auth-page flex min-h-dvh items-center justify-center px-4">
       <div className="glass-surface-elevated w-full max-w-sm p-8 text-center">
         {error ? (
-          <div className="space-y-4">
+          <div className="space-y-4" role="alert">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-error-500/10">
               <XIcon className="h-8 w-8 text-error-400" />
             </div>
@@ -64,7 +64,7 @@ export default function AutoLogin() {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4" role="status" aria-live="polite">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-dark-600 border-t-accent-500" />
             <p className="text-sm text-dark-300">{t('landing.autoLoginProcessing')}</p>
           </div>

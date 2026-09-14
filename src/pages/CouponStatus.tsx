@@ -9,6 +9,7 @@ import { formatShortDate } from '../utils/format';
 import { AnimatedCheckmark } from '@/components/ui/AnimatedCheckmark';
 import { TicketIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { getSafeExternalUrl } from '../utils/safeExternalUrl';
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -63,6 +64,8 @@ export default function CouponStatus() {
       setRedeemError(redeemErrorText(err, t));
     },
   });
+
+  const safeBotLink = getSafeExternalUrl(coupon?.bot_link);
 
   if (isLoading) {
     return (
@@ -145,9 +148,9 @@ export default function CouponStatus() {
         {redeemError && <div className="alert-error mb-4">{redeemError}</div>}
 
         <div className="space-y-3">
-          {coupon.bot_link && (
+          {safeBotLink && (
             <a
-              href={coupon.bot_link}
+              href={safeBotLink}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primary block w-full text-center"
