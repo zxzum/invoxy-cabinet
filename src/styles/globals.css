@@ -2671,3 +2671,163 @@ html.light .bento-card-hover:hover {
     background-position: 64% center;
   }
 }
+
+/* Luna dashboard contract */
+@layer components {
+  .luna-dashboard {
+    --luna-bg: #0b0c0e;
+    --luna-surface: #17191d;
+    --luna-surface-2: #22252a;
+    --luna-ink: #f3f1ec;
+    --luna-muted: #92949a;
+    --luna-mint: #a5e8c4;
+    --luna-yellow: #f5f17a;
+    --luna-line: #30333a;
+    --luna-panel-bg: rgba(18, 20, 24, 0.66);
+    --luna-control-bg: rgba(34, 37, 42, 0.72);
+    --luna-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --luna-font-family:
+      "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--luna-ink);
+    font-family: var(--luna-font-family);
+    background-color: var(--luna-bg);
+  }
+
+  .luna-dashboard .glass-panel {
+    background: var(--luna-panel-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 18px 55px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    isolation: isolate;
+  }
+
+  .luna-dashboard .glass-control {
+    background: var(--luna-control-bg);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .luna-dashboard .motion-card {
+    position: relative;
+    top: 0;
+    transition:
+      background-color 300ms var(--luna-motion-ease),
+      border-color 300ms var(--luna-motion-ease),
+      box-shadow 300ms var(--luna-motion-ease);
+  }
+
+  .luna-dashboard .button-lift {
+    position: relative;
+    top: 0;
+    transition:
+      top 180ms var(--luna-motion-ease),
+      color 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms var(--luna-motion-ease);
+  }
+
+  .luna-dashboard .luna-dashboard-grid {
+    display: grid;
+    gap: clamp(1.25rem, 1.1vw, 1.5rem);
+  }
+
+  .luna-dashboard .luna-subscription-bg,
+  .luna-dashboard .luna-trial-card-bg,
+  .luna-dashboard .luna-referral-network-bg {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  .luna-dashboard .luna-subscription-bg {
+    background-image: url("/images/subscription-bg-desktop.webp");
+  }
+
+  .luna-dashboard .luna-subscription-orb {
+    background-image: url("/images/subscription-orb.webp");
+  }
+
+  .luna-dashboard .luna-trial-card-bg {
+    background-image: url("/images/trial-card-bg.png");
+  }
+
+  .luna-dashboard .luna-trial-ribbon {
+    background-image: url("/images/trial-ribbon.png");
+  }
+
+  .luna-dashboard .luna-referral-network-bg {
+    background-image: url("/images/referral-network-bg.png");
+  }
+
+  .luna-dashboard .luna-subscription-orb,
+  .luna-dashboard .luna-trial-ribbon,
+  .luna-dashboard .luna-app-happ,
+  .luna-dashboard .luna-app-incy {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+  }
+
+  .luna-dashboard .luna-app-happ {
+    background-image: url("/images/apps/happ.png");
+  }
+
+  .luna-dashboard .luna-app-incy {
+    background-image: url("/images/apps/incy.png");
+  }
+
+  @media (min-width: 1024px) {
+    .luna-dashboard .luna-dashboard-grid {
+      grid-template-columns: minmax(0, 1.15fr) minmax(310px, 0.85fr);
+      align-items: start;
+    }
+  }
+
+  @media (max-width: 1023px), (pointer: coarse) {
+    .luna-dashboard .glass-panel {
+      background: rgba(18, 20, 24, 0.72);
+    }
+
+    .luna-dashboard .glass-control {
+      background: rgba(34, 37, 42, 0.82);
+    }
+  }
+
+  @media (hover: hover) {
+    .luna-dashboard .motion-card:hover {
+      background-color: rgba(22, 25, 29, 0.64);
+      border-color: rgba(165, 232, 196, 0.24);
+      box-shadow:
+        0 24px 52px rgba(0, 0, 0, 0.32),
+        0 0 0 1px rgba(165, 232, 196, 0.07);
+    }
+
+    .luna-dashboard .button-lift:hover {
+      top: -2px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .luna-dashboard .motion-card,
+    .luna-dashboard .button-lift,
+    .luna-dashboard [class*="animate-"] {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    .luna-dashboard .motion-card:hover,
+    .luna-dashboard .button-lift:hover {
+      top: 0;
+      transform: none;
+    }
+  }
+}
+
+/* End Luna dashboard contract */
