@@ -1,7 +1,7 @@
 # Task 4 report
 
-Repository: `cabinet`  
-Branch: `feature/ui-overhaul`  
+Repository: `cabinet`
+Branch: `feature/ui-overhaul`
 Base: `47600cd0`
 
 ## RED
