@@ -70,8 +70,35 @@ export function TariffPurchaseForm({
   const { formatAmount, currencySymbol } = useCurrency();
   const { applyPromoDiscount } = usePromoDiscount();
   const showSuccess = useSuccessNotification((state) => state.show);
+  const usablePeriods = tariff.periods.filter(
+    (period) =>
+      Number.isInteger(period.days) &&
+      period.days > 0 &&
+      typeof period.price_kopeks === 'number' &&
+      Number.isInteger(period.price_kopeks) &&
+      Number.isFinite(period.price_kopeks) &&
+      period.price_kopeks > 0,
+  );
+  const dailyPriceKopeks = tariff.daily_price_kopeks ?? tariff.price_per_day_kopeks;
+  const hasValidDailyPrice =
+    typeof dailyPriceKopeks === 'number' &&
+    Number.isInteger(dailyPriceKopeks) &&
+    Number.isFinite(dailyPriceKopeks) &&
+    dailyPriceKopeks > 0;
+  const isDailyTariff =
+    hasValidDailyPrice && (tariff.is_daily === true || tariff.daily_price_kopeks != null);
+  const hasValidCustomDaysPrice =
+    typeof tariff.price_per_day_kopeks === 'number' &&
+    Number.isInteger(tariff.price_per_day_kopeks) &&
+    Number.isFinite(tariff.price_per_day_kopeks) &&
+    tariff.price_per_day_kopeks > 0;
+  const hasValidCustomTrafficPrice =
+    typeof tariff.traffic_price_per_gb_kopeks === 'number' &&
+    Number.isInteger(tariff.traffic_price_per_gb_kopeks) &&
+    Number.isFinite(tariff.traffic_price_per_gb_kopeks) &&
+    tariff.traffic_price_per_gb_kopeks > 0;
   // Та же котировка, что на карточке тарифа: серверная цена + промокод один раз.
-  const dailyQuote = dailyPriceQuote(tariff, applyPromoDiscount);
+  const dailyQuote = hasValidDailyPrice ? dailyPriceQuote(tariff, applyPromoDiscount) : null;
   const { openLink, platform } = usePlatform();
   const ref = useRef<HTMLDivElement>(null);
   const isEmbedded = !showHeader;
@@ -102,7 +129,7 @@ export function TariffPurchaseForm({
   // Исходную цену считаем от помесячной базы самого короткого периода —
   // бейдж -X% и зачёркнутая цена появляются на всех периодах с реальной
   // скидкой, а не только на тех, где сработала промо-группа.
-  const shortestPeriod = tariff.periods.reduce<TariffPeriod | undefined>(
+  const shortestPeriod = usablePeriods.reduce<TariffPeriod | undefined>(
     (min, period) => (min === undefined || period.days < min.days ? period : min),
     undefined,
   );
@@ -113,7 +140,9 @@ export function TariffPurchaseForm({
 
   const periodQuote = (period: TariffPeriod): PromoDiscountResult => {
     const serverOriginal =
-      period.original_price_kopeks && period.original_price_kopeks > period.price_kopeks
+      typeof period.original_price_kopeks === 'number' &&
+      Number.isFinite(period.original_price_kopeks) &&
+      period.original_price_kopeks > period.price_kopeks
         ? period.original_price_kopeks
         : 0;
     const baseTotal = Math.round(basePerMonthKopeks * Math.max(1, period.months));
@@ -131,7 +160,9 @@ export function TariffPurchaseForm({
       : '';
   const maxDeviceLimit = tariff.max_device_limit ?? tariff.device_limit;
   const deviceAddonLabel =
-    tariff.device_price_kopeks != null && tariff.device_price_kopeks > 0
+    typeof tariff.device_price_kopeks === 'number' &&
+    Number.isFinite(tariff.device_price_kopeks) &&
+    tariff.device_price_kopeks > 0
       ? `${additionalDeviceLabel} ${t('subscription.from', 'от')} ${formatPrice(tariff.device_price_kopeks)}${t('subscription.perMonth', '/мес')}${maxDeviceLimit > 0 ? `, ${t('subscription.additionalOptions.maxDevices', { count: maxDeviceLimit })} ${deviceUnit}` : ''}`
       : null;
 
@@ -146,7 +177,7 @@ export function TariffPurchaseForm({
   // Form-internal state — seeded from the tariff prop. Resets via
   // `key={tariff.id}` on the parent's render.
   const [selectedTariffPeriod, setSelectedTariffPeriod] = useState<TariffPeriod | null>(
-    tariff.periods[0] || null,
+    usablePeriods[0] || null,
   );
   const [customDays, setCustomDays] = useState<number>(30);
   const [customTrafficGb, setCustomTrafficGb] = useState<number>(50);
@@ -156,8 +187,6 @@ export function TariffPurchaseForm({
 
   const purchaseMutation = useMutation({
     mutationFn: () => {
-      const isDailyTariff =
-        tariff.is_daily || (tariff.daily_price_kopeks && tariff.daily_price_kopeks > 0);
       const days = isDailyTariff
         ? 1
         : useCustomDays
@@ -384,7 +413,7 @@ export function TariffPurchaseForm({
       )}
 
       {/* Daily Tariff Purchase */}
-      {tariff.is_daily || (tariff.daily_price_kopeks && tariff.daily_price_kopeks > 0) ? (
+      {isDailyTariff ? (
         <div className="alert-info p-5">
           <div className="mb-4 text-center">
             <div className="mb-2 text-sm text-dark-400">
@@ -515,9 +544,9 @@ export function TariffPurchaseForm({
           <div>
             <div className="mb-3 text-sm text-dark-400">{t('subscription.selectPeriod')}</div>
 
-            {tariff.periods.length > 0 && !useCustomDays && (
+            {usablePeriods.length > 0 && !useCustomDays && (
               <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {tariff.periods.map((period) => {
+                {usablePeriods.map((period) => {
                   const promoPeriod = periodQuote(period);
                   const displayDiscount = promoPeriod.percent;
                   const displayOriginal = promoPeriod.original;
@@ -573,9 +602,9 @@ export function TariffPurchaseForm({
             )}
 
             {/* No periods available fallback */}
-            {tariff.periods.length === 0 &&
+            {usablePeriods.length === 0 &&
               !useCustomDays &&
-              !(tariff.custom_days_enabled && (tariff.price_per_day_kopeks ?? 0) > 0) && (
+              !(tariff.custom_days_enabled && hasValidCustomDaysPrice) && (
                 <div className="alert-warning p-4 text-center">
                   <div className="mb-2 text-sm font-medium text-warning-400">
                     {t('subscription.noPeriodsAvailable')}
@@ -590,7 +619,7 @@ export function TariffPurchaseForm({
               )}
 
             {/* Custom days option */}
-            {tariff.custom_days_enabled && (tariff.price_per_day_kopeks ?? 0) > 0 && (
+            {tariff.custom_days_enabled && hasValidCustomDaysPrice && (
               <div className="card-inset rounded-xl p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="font-medium text-dark-200">
@@ -689,7 +718,7 @@ export function TariffPurchaseForm({
           </div>
 
           {/* Custom traffic option */}
-          {tariff.custom_traffic_enabled && (tariff.traffic_price_per_gb_kopeks ?? 0) > 0 && (
+          {tariff.custom_traffic_enabled && hasValidCustomTrafficPrice && (
             <div>
               <div className="mb-3 text-sm text-dark-400">
                 {t('subscription.customTraffic.label')}

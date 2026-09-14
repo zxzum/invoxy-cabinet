@@ -38,6 +38,12 @@ vi.mock('react-i18next', () => ({
       }
       if (key === 'subscription.additionalDevice') return 'Доп. устройство';
       if (key === 'subscription.free') return 'Бесплатно';
+      if (key === 'subscription.noPeriodsAvailable') {
+        return 'Нет доступных периодов для продления';
+      }
+      if (key === 'subscription.noPeriodsAvailableHint') {
+        return 'Выберите другой тариф.';
+      }
       if (key === 'common.back') return 'Назад';
       if (typeof options === 'string') return options;
       return key;
@@ -110,6 +116,15 @@ const tariff: Tariff = {
   is_current: false,
   is_available: true,
 };
+
+const invalidPrices = [
+  0,
+  -1,
+  0.5,
+  Number.NaN,
+  Number.POSITIVE_INFINITY,
+  Number.NEGATIVE_INFINITY,
+] as const;
 
 beforeEach(() => {
   HTMLElement.prototype.scrollIntoView = mocks.scrollIntoView;
@@ -188,5 +203,29 @@ describe('TariffPurchaseForm modal mode', () => {
     // После выбора периода — баннер и зачёркнутый итог в сводке.
     fireEvent.click(quarterButton);
     expect(screen.getByText(/promo\.discountApplied/).textContent).toContain('-10%');
+  });
+
+  it.each(invalidPrices)('shows an empty state for unusable period price %s', (price) => {
+    renderForm({
+      ...tariff,
+      periods: [{ ...tariff.periods[0], price_kopeks: price }],
+    });
+
+    expect(screen.getByText(/Нет доступных периодов/)).toBeTruthy();
+    expect(screen.queryByText('Бесплатно')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Купить' })).toBeNull();
+  });
+
+  it.each(invalidPrices)('shows an empty state for unusable daily price %s', (price) => {
+    renderForm({
+      ...tariff,
+      periods: [],
+      is_daily: true,
+      daily_price_kopeks: price,
+    });
+
+    expect(screen.getByText(/Нет доступных периодов/)).toBeTruthy();
+    expect(screen.queryByText('Бесплатно')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Купить' })).toBeNull();
   });
 });

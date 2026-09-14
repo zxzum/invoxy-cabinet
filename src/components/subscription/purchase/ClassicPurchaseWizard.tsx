@@ -57,6 +57,15 @@ export function ClassicPurchaseWizard({
   const { formatAmount, currencySymbol } = useCurrency();
   const { activeDiscount, applyPromoDiscount } = usePromoDiscount();
   const showSuccess = useSuccessNotification((state) => state.show);
+  const usablePeriods = classicOptions.periods.filter(
+    (period) =>
+      Number.isInteger(period.period_days) &&
+      period.period_days > 0 &&
+      typeof period.price_kopeks === 'number' &&
+      Number.isInteger(period.price_kopeks) &&
+      Number.isFinite(period.price_kopeks) &&
+      period.price_kopeks > 0,
+  );
 
   const formatPrice = (kopeks: number) =>
     kopeks === 0
@@ -115,8 +124,7 @@ export function ClassicPurchaseWizard({
   useEffect(() => {
     if (!selectedPeriod) {
       const defaultPeriod =
-        classicOptions.periods.find((p) => p.id === classicOptions.selection.period_id) ||
-        classicOptions.periods[0];
+        usablePeriods.find((p) => p.id === classicOptions.selection.period_id) || usablePeriods[0];
       setSelectedPeriod(defaultPeriod);
       setSelectedTraffic(classicOptions.selection.traffic_value);
       const availableServers = getAvailableServers(defaultPeriod);
@@ -209,6 +217,19 @@ export function ClassicPurchaseWizard({
     }
   };
 
+  if (usablePeriods.length === 0) {
+    return (
+      <div className="glass-surface relative overflow-hidden rounded-[30px] p-5 sm:p-7">
+        <div className="alert-warning p-4 text-center">
+          <div className="mb-2 text-sm font-medium text-warning-400">
+            {t('subscription.noPeriodsAvailable')}
+          </div>
+          <div className="text-xs text-dark-400">{t('subscription.noPeriodsAvailableHint')}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="glass-surface relative overflow-hidden rounded-[30px] p-5 sm:p-7">
       <div className="mb-4 flex items-center justify-between">
@@ -250,7 +271,7 @@ export function ClassicPurchaseWizard({
           {/* Step: Period Selection */}
           {currentStep === 'period' && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {classicOptions.periods.map((period) => {
+              {usablePeriods.map((period) => {
                 const promoPeriod = applyPromoDiscount(
                   period.price_kopeks,
                   period.original_price_kopeks,

@@ -56,7 +56,38 @@ export function TariffPickerGrid({
   const { formatAmount, currencySymbol } = useCurrency();
   const { applyPromoDiscount } = usePromoDiscount();
   const [isPromoTierSheetOpen, setIsPromoTierSheetOpen] = useState(false);
-  const currentPromoGroupName = tariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name;
+  const usableTariffs = tariffs.filter((tariff) => {
+    const dailyPrice = tariff.daily_price_kopeks ?? tariff.price_per_day_kopeks;
+    return (
+      tariff.periods.some(
+        (period) =>
+          typeof period.price_kopeks === 'number' &&
+          Number.isInteger(period.days) &&
+          period.days > 0 &&
+          Number.isInteger(period.price_kopeks) &&
+          Number.isFinite(period.price_kopeks) &&
+          period.price_kopeks > 0,
+      ) ||
+      (typeof dailyPrice === 'number' &&
+        Number.isInteger(dailyPrice) &&
+        Number.isFinite(dailyPrice) &&
+        dailyPrice > 0)
+    );
+  });
+  if (isTariffsMode && usableTariffs.length === 0) {
+    return (
+      <div className="glass-surface p-6 text-center">
+        <p className="text-dark-300">
+          {t('subscription.noOptionsAvailable', 'Нет доступных вариантов подписки')}
+        </p>
+      </div>
+    );
+  }
+
+  const visibleTariffs = isTariffsMode ? usableTariffs : tariffs;
+  const currentPromoGroupName = visibleTariffs.find(
+    (tariff) => tariff.promo_group_name,
+  )?.promo_group_name;
   const whiteInternetLabel = t('subscription.whiteInternet');
 
   const formatPrice = (kopeks: number) =>
@@ -67,7 +98,7 @@ export function TariffPickerGrid({
   return (
     <>
       {/* Promo group discount banner */}
-      {tariffs.some((tariff) => tariff.promo_group_name) && (
+      {visibleTariffs.some((tariff) => tariff.promo_group_name) && (
         <div className="alert-success relative mb-4">
           <button
             type="button"
@@ -92,7 +123,7 @@ export function TariffPickerGrid({
             </div>
             <div className="min-w-0 flex-1 truncate text-sm font-medium text-success-400">
               {t('subscription.promoGroup.yourGroup', {
-                name: tariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name,
+                name: visibleTariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name,
               })}
               <span className="font-normal text-dark-400">
                 {' · '}
@@ -148,7 +179,7 @@ export function TariffPickerGrid({
           </div>
         )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {[...tariffs]
+        {[...visibleTariffs]
           .filter((tariff) => {
             // In multi-tariff mode: hide already purchased tariffs
             if (isMultiTariff && tariff.is_purchased) return false;
@@ -313,7 +344,14 @@ export function TariffPickerGrid({
                     className="border-t border-dark-700/50 pt-3 text-sm text-dark-400"
                   >
                     {(() => {
-                      const promoDaily = dailyPriceQuote(tariff, applyPromoDiscount);
+                      const dailyPrice = tariff.daily_price_kopeks ?? tariff.price_per_day_kopeks;
+                      const promoDaily =
+                        typeof dailyPrice === 'number' &&
+                        Number.isInteger(dailyPrice) &&
+                        Number.isFinite(dailyPrice) &&
+                        dailyPrice > 0
+                          ? dailyPriceQuote(tariff, applyPromoDiscount)
+                          : null;
                       if (promoDaily) {
                         return (
                           <span className="flex items-center gap-2">
@@ -340,11 +378,19 @@ export function TariffPickerGrid({
                           </span>
                         );
                       }
-                      if (tariff.periods.length > 0) {
-                        const firstPeriod = tariff.periods[0];
+                      const firstPeriod = tariff.periods.find(
+                        (period) =>
+                          typeof period.price_kopeks === 'number' &&
+                          Number.isInteger(period.days) &&
+                          period.days > 0 &&
+                          Number.isInteger(period.price_kopeks) &&
+                          Number.isFinite(period.price_kopeks) &&
+                          period.price_kopeks > 0,
+                      );
+                      if (firstPeriod) {
                         const promoPeriod = applyPromoDiscount(
-                          firstPeriod?.price_kopeks || 0,
-                          firstPeriod?.original_price_kopeks,
+                          firstPeriod.price_kopeks,
+                          firstPeriod.original_price_kopeks,
                         );
                         return (
                           <span className="flex flex-wrap items-center gap-2">

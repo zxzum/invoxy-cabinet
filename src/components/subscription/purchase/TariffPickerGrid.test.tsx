@@ -17,6 +17,7 @@ vi.mock('react-i18next', () => ({
       }
       if (key === 'subscription.from') return 'от';
       if (key === 'subscription.perMonth') return '/мес';
+      if (key === 'subscription.noOptionsAvailable') return 'Нет доступных вариантов подписки';
       if (key === 'subscription.additionalOptions.maxDevices') {
         return `максимум ${(options as { count: number }).count}`;
       }
@@ -65,10 +66,46 @@ const tariff: Tariff = {
   device_price_kopeks: 5000,
   servers_count: 1,
   servers: [],
-  periods: [],
+  periods: [
+    {
+      days: 30,
+      months: 1,
+      label: '30 дней',
+      price_kopeks: 9900,
+      price_label: '99 ₽',
+      price_per_month_kopeks: 9900,
+      price_per_month_label: '99 ₽',
+    },
+  ],
   is_current: false,
   is_available: true,
 };
+
+const invalidPrices = [
+  0,
+  -1,
+  0.5,
+  Number.NaN,
+  Number.POSITIVE_INFINITY,
+  Number.NEGATIVE_INFINITY,
+] as const;
+
+function tariffWithPrice(price: number): Tariff {
+  return {
+    ...tariff,
+    periods: [
+      {
+        days: 30,
+        months: 1,
+        label: '30 дней',
+        price_kopeks: price,
+        price_label: 'invalid',
+        price_per_month_kopeks: price,
+        price_per_month_label: 'invalid',
+      },
+    ],
+  };
+}
 
 afterEach(cleanup);
 
@@ -115,6 +152,28 @@ describe('TariffPickerGrid quota presentation', () => {
 
     expect(screen.getByText('Без LTE')).toBeTruthy();
     expect(screen.queryByText('LTE 50 ГБ')).toBeNull();
+  });
+});
+
+describe('TariffPickerGrid price boundary', () => {
+  it.each(invalidPrices)('hides a tariff with unusable price %s', (price) => {
+    render(
+      <MemoryRouter>
+        <TariffPickerGrid
+          tariffs={[tariffWithPrice(price)]}
+          subscription={null}
+          purchaseOptions={undefined}
+          isTariffsMode
+          isMultiTariff={false}
+          onSelectTariff={vi.fn()}
+          onSwitchTariff={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Нет доступных вариантов подписки')).toBeTruthy();
+    expect(screen.queryByText('Бесплатно')).toBeNull();
+    expect(document.querySelector('[data-tariff-card]')).toBeNull();
   });
 });
 
