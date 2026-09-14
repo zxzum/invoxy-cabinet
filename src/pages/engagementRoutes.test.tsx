@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useSearchParams } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
@@ -87,6 +87,15 @@ function renderPage(page: ReactNode, path: string) {
   );
 }
 
+function TicketQueryNavigator() {
+  const [, setSearchParams] = useSearchParams();
+  return (
+    <button type="button" onClick={() => setSearchParams({ ticket: '99' })}>
+      navigate-to-missing-ticket
+    </button>
+  );
+}
+
 beforeEach(() => {
   mocks.getSupportConfig.mockResolvedValue({ tickets_enabled: true, support_type: 'tickets' });
   mocks.getTickets.mockResolvedValue({
@@ -108,17 +117,19 @@ beforeEach(() => {
     per_page: 20,
     pages: 1,
   });
-  mocks.getTicket.mockResolvedValue({
-    id: 42,
-    title: 'Ticket 42',
-    status: 'open',
-    priority: 'normal',
-    created_at: '2026-09-14T00:00:00Z',
-    updated_at: '2026-09-14T00:00:00Z',
-    closed_at: null,
-    is_reply_blocked: false,
-    messages: [],
-  });
+  mocks.getTicket.mockImplementation((id: number) =>
+    Promise.resolve({
+      id,
+      title: `Ticket ${id}`,
+      status: 'open',
+      priority: 'normal',
+      created_at: '2026-09-14T00:00:00Z',
+      updated_at: '2026-09-14T00:00:00Z',
+      closed_at: null,
+      is_reply_blocked: false,
+      messages: [],
+    }),
+  );
   mocks.getPolls.mockResolvedValue([
     {
       id: 1,
@@ -176,6 +187,59 @@ describe('support and activity flows', () => {
 
     expect((await screen.findAllByText('Ticket 42')).length).toBeGreaterThan(0);
     await waitFor(() => expect(mocks.getTicket).toHaveBeenCalledWith(42));
+  });
+
+  it('renders ticket media through the signed media URL API seam', async () => {
+    mocks.getMediaUrl.mockReturnValue('/cabinet/media/photo-1?token=signed-token');
+    mocks.getTicket.mockResolvedValue({
+      id: 42,
+      title: 'Ticket 42',
+      status: 'open',
+      priority: 'normal',
+      created_at: '2026-09-14T00:00:00Z',
+      updated_at: '2026-09-14T00:00:00Z',
+      closed_at: null,
+      is_reply_blocked: false,
+      messages: [
+        {
+          id: 5,
+          message_text: 'Attached photo',
+          is_from_admin: true,
+          has_media: true,
+          media_type: 'photo',
+          media_file_id: null,
+          media_token: null,
+          media_caption: null,
+          media_items: [
+            { type: 'photo', file_id: 'photo-1', token: 'signed-token', caption: 'Support photo' },
+          ],
+          created_at: '2026-09-14T00:00:00Z',
+        },
+      ],
+    });
+    const { default: Support } = await import('./Support');
+    renderPage(<Support />, '/support?ticket=42');
+
+    const image = await screen.findByAltText('Support photo');
+    expect(image.getAttribute('src')).toBe('/cabinet/media/photo-1?token=signed-token');
+    expect(mocks.getMediaUrl).toHaveBeenCalledWith('photo-1', 'signed-token');
+  });
+
+  it('lets a later query ticket replace stale selection even when it is absent from the first page', async () => {
+    const { default: Support } = await import('./Support');
+    renderPage(
+      <>
+        <Support />
+        <TicketQueryNavigator />
+      </>,
+      '/support?ticket=42',
+    );
+
+    expect((await screen.findAllByText('Ticket 42')).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'navigate-to-missing-ticket' }));
+
+    await waitFor(() => expect(mocks.getTicket).toHaveBeenCalledWith(99));
+    expect((await screen.findAllByText('Ticket 99')).length).toBeGreaterThan(0);
   });
 
   it('shows a ticket list error instead of treating it as empty', async () => {

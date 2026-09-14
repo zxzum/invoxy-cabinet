@@ -114,6 +114,35 @@ vi.mock('./api/info', () => ({
   infoApi: { getLegalConsentConfig: vi.fn().mockResolvedValue(null) },
 }));
 
+vi.mock('./api/news', () => ({
+  newsApi: {
+    getNews: vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          title: 'Route article',
+          slug: 'route-article',
+          excerpt: null,
+          category: 'updates',
+          category_color: '#a5e8c4',
+          category_id: null,
+          tag: null,
+          tag_id: null,
+          featured_image_url: null,
+          is_published: true,
+          is_featured: false,
+          published_at: null,
+          read_time_minutes: 1,
+          views_count: 0,
+        },
+      ],
+      total: 1,
+      categories: [],
+    }),
+    getArticle: vi.fn(),
+  },
+}));
+
 vi.mock('./components/LanguageSwitcher', () => ({ default: () => null }));
 vi.mock('./components/TelegramLoginButton', () => ({ default: () => null }));
 vi.mock('./components/OAuthProviderIcon', () => ({ default: () => null }));
@@ -349,6 +378,15 @@ describe('cabinet route boundary', () => {
 
     expect(await screen.findByTestId('dashboard-page')).toBeTruthy();
     expect(screen.getByTestId('layout')).toBeTruthy();
+  });
+
+  it('renders the protected /news list route inside the authenticated shell', async () => {
+    auth.state.isAuthenticated = true;
+
+    await renderApp('/news');
+
+    expect(await screen.findByTestId('news-page')).toBeTruthy();
+    expect(screen.getByTestId('location').textContent).toContain('/news');
   });
 
   it('initializes Login in registration mode on /register', async () => {

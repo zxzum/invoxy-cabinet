@@ -41,7 +41,7 @@ export default function Support() {
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const queryClient = useQueryClient();
   const { openTelegramLink, openLink } = usePlatform();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const openSupportContact = useCallback(
     (config: SupportConfig) => {
@@ -118,7 +118,7 @@ export default function Support() {
     enabled: supportConfig?.tickets_enabled === true,
   });
 
-  const activeTicketId = selectedTicket?.id ?? queryTicketId;
+  const activeTicketId = queryTicketId ?? selectedTicket?.id ?? null;
 
   const {
     data: ticketDetail,
@@ -145,11 +145,23 @@ export default function Support() {
   useEffect(() => {
     if (queryTicketId === null || !tickets?.items) return;
     const ticket = tickets.items.find((item) => item.id === queryTicketId);
-    if (!ticket || selectedTicket?.id === ticket.id) return;
+    if (!ticket) {
+      if (selectedTicket !== null) setSelectedTicket(null);
+      return;
+    }
+    if (selectedTicket?.id === ticket.id) return;
     setSelectedTicket(ticket as unknown as TicketDetail);
     setShowCreateForm(false);
     setFormError(null);
-  }, [queryTicketId, selectedTicket?.id, tickets?.items]);
+  }, [queryTicketId, selectedTicket, tickets?.items]);
+
+  useEffect(() => {
+    if (queryTicketId === null || !ticketDetail || ticketDetail.id !== queryTicketId) return;
+    if (selectedTicket?.id === ticketDetail.id) return;
+    setSelectedTicket(ticketDetail);
+    setShowCreateForm(false);
+    setFormError(null);
+  }, [queryTicketId, selectedTicket?.id, ticketDetail]);
 
   // Handle file selection (multi-upload)
   const handleFileSelect = async (
@@ -442,6 +454,9 @@ export default function Support() {
                 <button
                   key={ticket.id}
                   onClick={() => {
+                    const nextSearchParams = new URLSearchParams(searchParams);
+                    nextSearchParams.set('ticket', String(ticket.id));
+                    setSearchParams(nextSearchParams);
                     setSelectedTicket(ticket as unknown as TicketDetail);
                     setShowCreateForm(false);
                     setFormError(null);

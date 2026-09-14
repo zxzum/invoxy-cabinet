@@ -7,6 +7,7 @@ import { newsApi } from '../../api/news';
 import { useHapticFeedback } from '../../platform/hooks/useHaptic';
 import { cn } from '../../lib/utils';
 import { ArrowIcon, NewsIcon } from '@/components/icons';
+import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import type { NewsListItem } from '../../types/news';
 
 // --- Security: hex color validation to prevent CSS injection ---
@@ -348,7 +349,7 @@ export default function NewsSection() {
 
   const categoryParam = filter || undefined;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['news', 'list', categoryParam, limit],
     queryFn: () => newsApi.getNews({ category: categoryParam, limit, offset: 0 }),
     // staleTime: serve cached data for 2 min before background re-fetch.
@@ -396,10 +397,24 @@ export default function NewsSection() {
     if (featuredSlug) handleCardClick(featuredSlug);
   }, [featuredSlug, handleCardClick]);
 
-  // Don't render until we know there are news items.
-  // This prevents the skeleton from briefly flashing when there are no articles.
+  if (isLoading) {
+    return (
+      <SkeletonGroup className="space-y-3">
+        <Skeleton variant="card" count={3} className="h-32" />
+      </SkeletonGroup>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="glass-surface p-8 text-center text-error-400" role="alert">
+        {t('common.error')}
+      </div>
+    );
+  }
+
   if (items.length === 0) {
-    return null;
+    return <div className="glass-surface p-8 text-center text-dark-400">{t('news.noNews')}</div>;
   }
 
   return (

@@ -95,4 +95,58 @@ describe('protected news list', () => {
     renderNews();
     expect(await screen.findByText('news.noNews')).toBeTruthy();
   });
+
+  it('shows an explicit loading state while a filter query replaces the list', async () => {
+    getNews.mockResolvedValueOnce({ items: [article], total: 1, categories: ['updates'] });
+    getNews.mockReturnValueOnce(new Promise(() => {}));
+
+    renderNews();
+    await screen.findByText('API article');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'updates' }));
+
+    await waitFor(() =>
+      expect(getNews).toHaveBeenCalledWith({ category: 'updates', limit: 6, offset: 0 }),
+    );
+    expect(screen.getByRole('status').getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('shows an explicit empty state when a later filter query has no articles', async () => {
+    getNews.mockResolvedValueOnce({ items: [article], total: 1, categories: ['updates'] });
+    getNews.mockResolvedValueOnce({ items: [], total: 0, categories: ['updates'] });
+
+    renderNews();
+    await screen.findByText('API article');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'updates' }));
+
+    expect(await screen.findByText('news.noNews')).toBeTruthy();
+  });
+
+  it('shows an explicit error state when a later load-more query fails', async () => {
+    getNews.mockResolvedValueOnce({ items: [article], total: 7, categories: [] });
+    getNews.mockRejectedValueOnce(new Error('load more failed'));
+
+    renderNews();
+    await screen.findByText('API article');
+
+    fireEvent.click(screen.getByRole('button', { name: 'news.loadMore' }));
+
+    await waitFor(() =>
+      expect(getNews).toHaveBeenCalledWith({ category: undefined, limit: 12, offset: 0 }),
+    );
+    expect(await screen.findByText('common.error')).toBeTruthy();
+  });
+
+  it('shows an explicit empty state when a later load-more query has no articles', async () => {
+    getNews.mockResolvedValueOnce({ items: [article], total: 7, categories: [] });
+    getNews.mockResolvedValueOnce({ items: [], total: 0, categories: [] });
+
+    renderNews();
+    await screen.findByText('API article');
+
+    fireEvent.click(screen.getByRole('button', { name: 'news.loadMore' }));
+
+    expect(await screen.findByText('news.noNews')).toBeTruthy();
+  });
 });
