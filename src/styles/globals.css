@@ -2561,13 +2561,90 @@ html.light .bento-card-hover:hover {
 
   .auth-page {
     min-height: 100dvh;
-    background-color: rgb(var(--color-dark-950));
+    background-color: #0b0c0e;
     background-image:
-      linear-gradient(180deg, rgba(var(--color-dark-950), 0.18), rgba(var(--color-dark-950), 0.72)),
+      linear-gradient(180deg, rgba(4, 8, 10, 0.18), rgba(4, 8, 10, 0.5)),
       url("/images/auth-background.png");
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
+    color: #f3f1ec;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .glass-panel {
+    background: rgba(18, 20, 24, 0.66);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 18px 55px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    isolation: isolate;
+  }
+
+  .auth-page .glass-panel {
+    background-color: rgba(10, 15, 18, 0.54);
+  }
+
+  .glass-control {
+    background: rgba(34, 37, 42, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .auth-page .glass-control:focus-within {
+    border-color: rgba(165, 232, 196, 0.55);
+  }
+
+  .auth-page .glass-control input::placeholder {
+    color: #92949a;
+  }
+
+  .auth-page .text-ink {
+    color: #f3f1ec;
+  }
+
+  .auth-page .text-muted {
+    color: #92949a;
+  }
+
+  .auth-page .text-muted:hover {
+    color: #f3f1ec;
+  }
+
+  .auth-page .text-mint {
+    color: #a5e8c4;
+  }
+
+  .auth-page .text-bg {
+    color: #0b0c0e;
+  }
+
+  .auth-page .bg-mint {
+    background-color: #a5e8c4;
+  }
+
+  .auth-page .bg-mint\/10 {
+    background-color: rgba(165, 232, 196, 0.1);
+  }
+
+  .motion-card {
+    position: relative;
+    top: 0;
+    transition:
+      background-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .auth-page .ix-auth-check-email .card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   /* Theme variables remain authoritative; this selector only keeps text
@@ -2576,6 +2653,16 @@ html.light .bento-card-hover:hover {
   .light .glass-surface-elevated,
   .light .glass-surface-accent {
     color: rgb(var(--color-dark-50));
+  }
+}
+
+@media (max-width: 1023px), (pointer: coarse) {
+  .auth-page .glass-panel {
+    background-color: rgba(18, 20, 24, 0.72);
+  }
+
+  .auth-page .glass-control {
+    background: rgba(34, 37, 42, 0.82);
   }
 }
 
