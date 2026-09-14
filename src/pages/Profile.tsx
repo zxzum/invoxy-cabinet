@@ -86,9 +86,12 @@ export default function Profile() {
   const referralLink = referralInfo?.referral_code
     ? `${window.location.origin}/login?ref=${referralInfo.referral_code}`
     : '';
+  const configuredBotUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME?.trim();
   const botReferralLink = referralInfo?.referral_code
     ? referralInfo.bot_referral_link ||
-      `https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'invoxy_bot'}?start=${encodeURIComponent(referralInfo.referral_code)}`
+      (configuredBotUsername
+        ? `https://t.me/${configuredBotUsername}?start=${encodeURIComponent(referralInfo.referral_code)}`
+        : '')
     : '';
 
   const copyReferralLink = (link: string, type: 'bot' | 'cabinet') => {
