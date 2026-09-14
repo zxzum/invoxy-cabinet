@@ -130,7 +130,7 @@ export function AppHeader({
   }, [mobileMenuOpen]);
 
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/dashboard') return location.pathname === '/dashboard';
     if (path === '/subscriptions' || path === '/subscription/purchase') {
       return location.pathname === path;
     }
@@ -139,7 +139,7 @@ export function AppHeader({
   const isAdminActive = () => location.pathname.startsWith('/admin');
 
   const navItems = [
-    { path: '/', label: t('nav.dashboard'), icon: HomeIcon },
+    { path: '/dashboard', label: t('nav.dashboard'), icon: HomeIcon },
     { path: '/subscription/purchase', label: t('nav.tariffs'), icon: SubscriptionIcon },
     { path: '/connection', label: t('nav.connection', 'Подключение'), icon: LinkIcon },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
@@ -158,7 +158,7 @@ export function AppHeader({
     <>
       {/* Header - only on mobile */}
       <header
-        className="glass fixed left-3 right-3 top-3 z-50 overflow-hidden shadow-lg shadow-black/10 lg:hidden"
+        className="glass glass-surface-elevated app-mobile-header fixed left-3 right-3 top-3 z-50 overflow-hidden shadow-lg shadow-black/10 lg:hidden"
         style={{
           paddingTop: isFullscreen
             ? `${Math.max(safeAreaInset.top, contentSafeAreaInset.top) + (telegramPlatform === 'android' ? 48 : 45)}px`
@@ -172,7 +172,7 @@ export function AppHeader({
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <Link
-              to="/"
+              to="/dashboard"
               onClick={() => setMobileMenuOpen(false)}
               className={cn('flex flex-shrink-0 items-center gap-2.5', !appName && 'mr-4')}
             >
@@ -285,7 +285,7 @@ export function AppHeader({
 
             {/* Menu content */}
             <motion.div
-              className="mobile-menu-content absolute inset-x-0 bottom-0 max-h-full overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-dark-800/50 bg-dark-900/95 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] shadow-2xl"
+              className="mobile-menu-content glass-surface-elevated absolute inset-x-0 bottom-0 max-h-full overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-dark-800/50 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] shadow-2xl"
               style={{ WebkitOverflowScrolling: 'touch' }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}

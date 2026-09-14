@@ -23,7 +23,7 @@ export interface MobileNavFlags {
 }
 
 const HEAD: readonly MobileNavItem[] = [
-  { key: 'dashboard', path: '/' },
+  { key: 'dashboard', path: '/dashboard' },
   { key: 'subscription', path: '/subscriptions' },
   { key: 'balance', path: '/balance' },
 ];

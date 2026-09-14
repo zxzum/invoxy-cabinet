@@ -11,7 +11,7 @@ import { isMobileNavScreen, mobileNavItems } from './mobileNavRoutes';
 describe('mobileNavItems', () => {
   it('без флагов — четыре базовых экрана', () => {
     expect(mobileNavItems({}).map((item) => item.path)).toEqual([
-      '/',
+      '/dashboard',
       '/subscriptions',
       '/balance',
       '/support',
@@ -22,12 +22,12 @@ describe('mobileNavItems', () => {
     const paths = mobileNavItems({ wheelEnabled: true, referralEnabled: true }).map(
       (item) => item.path,
     );
-    expect(paths).toEqual(['/', '/subscriptions', '/balance', '/wheel', '/support']);
+    expect(paths).toEqual(['/dashboard', '/subscriptions', '/balance', '/wheel', '/support']);
   });
 
   it('рефералка получает слот, когда колесо выключено', () => {
     const paths = mobileNavItems({ referralEnabled: true }).map((item) => item.path);
-    expect(paths).toEqual(['/', '/subscriptions', '/balance', '/referral', '/support']);
+    expect(paths).toEqual(['/dashboard', '/subscriptions', '/balance', '/referral', '/support']);
   });
 
   it('ключ пункта совпадает с ключом перевода nav.*', () => {
@@ -45,7 +45,7 @@ describe('isMobileNavScreen', () => {
   const items = mobileNavItems({ wheelEnabled: true });
 
   it('главная и экраны кнопок — да', () => {
-    for (const path of ['/', '/subscriptions', '/balance', '/wheel', '/support']) {
+    for (const path of ['/dashboard', '/subscriptions', '/balance', '/wheel', '/support']) {
       expect(isMobileNavScreen(path, items), path).toBe(true);
     }
   });

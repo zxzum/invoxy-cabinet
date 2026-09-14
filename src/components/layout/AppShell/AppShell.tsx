@@ -62,7 +62,7 @@ export function AppShell({ children }: AppShellProps) {
   const [desktop, setDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
   const [previousPath, setPreviousPath] = useState(location.pathname);
   const [direction, setDirection] = useState(1);
-  const tabs = ['/', '/subscription/purchase', '/connection', '/profile'];
+  const tabs = ['/dashboard', '/subscription/purchase', '/connection', '/profile'];
   const animatePage = !isTelegramWebApp && !reducedMotion;
   if (animatePage && previousPath !== location.pathname) {
     const previousIndex = tabs.indexOf(previousPath);
@@ -104,7 +104,7 @@ export function AppShell({ children }: AppShellProps) {
   const showMobileNav = !location.pathname.startsWith('/admin');
 
   const sidebarNav = [
-    { path: '/', label: 'Кабинет', icon: HomeIcon },
+    { path: '/dashboard', label: 'Кабинет', icon: HomeIcon },
     { path: '/subscription/purchase', label: 'Тарифы', icon: SubscriptionIcon },
     { path: '/connection', label: 'Подключение', icon: LinkIcon },
     { path: '/subscriptions', label: 'Моя подписка', icon: SubscriptionIcon },
@@ -113,7 +113,7 @@ export function AppShell({ children }: AppShellProps) {
   ];
 
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/dashboard') return location.pathname === '/dashboard';
     if (path === '/subscription/purchase') {
       return location.pathname === path;
     }
@@ -192,7 +192,7 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
 
         <div className="mt-auto space-y-3">
-          <div className="ix-balance-card">
+          <div className="ix-balance-card glass-surface">
             <div className="text-[11px] uppercase tracking-wide text-dark-500">Баланс</div>
             {/* Счётчик вместо строки: при пополнении баланс «докручивается» до
                 нового значения. Копеек нет — показываем целые рубли. */}
@@ -240,7 +240,11 @@ export function AppShell({ children }: AppShellProps) {
         />
 
         <div className="hidden lg:flex lg:items-center lg:justify-end lg:gap-2 lg:px-8 lg:pt-5">
-          <Link to="/" className="mr-auto flex items-center gap-2.5" onClick={handleNavClick}>
+          <Link
+            to="/dashboard"
+            className="mr-auto flex items-center gap-2.5"
+            onClick={handleNavClick}
+          >
             <div className="relative h-8 w-8 overflow-hidden rounded-xl bg-accent-500/20">
               {logoUrl ? (
                 <img

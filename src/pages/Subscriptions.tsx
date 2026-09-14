@@ -20,7 +20,7 @@ function EmptyState({ onBuy }: { onBuy: () => void }) {
 
   return (
     <div
-      className="rounded-2xl border p-10 text-center"
+      className="glass-surface rounded-2xl p-10 text-center"
       style={{ background: g.cardBg, borderColor: g.cardBorder }}
     >
       <div
@@ -54,7 +54,7 @@ export default function Subscriptions() {
   const refreshUser = useAuthStore((state) => state.refreshUser);
   const [trialError, setTrialError] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isError, isLoading, refetch } = useQuery({
     queryKey: ['subscriptions-list'],
     queryFn: () => subscriptionApi.getSubscriptions(),
     staleTime: 30_000,
@@ -63,7 +63,7 @@ export default function Subscriptions() {
 
   const subscriptions = data?.subscriptions ?? [];
   const isMultiTariff = data?.multi_tariff_enabled ?? false;
-  const hasNoSubscriptions = !isLoading && subscriptions.length === 0;
+  const hasNoSubscriptions = !isLoading && !isError && subscriptions.length === 0;
   // Есть ли хотя бы одна НАСТОЯЩАЯ (платная, не триал) живая подписка. От этого
   // зависит CTA: «+ Купить ещё» — только если уже есть платная; иначе показываем
   // явную «Посмотреть тарифы и купить подписку» (триал/истёкшие — это ещё не покупка).
@@ -116,7 +116,7 @@ export default function Subscriptions() {
           {t('subscriptions.title', 'Мои подписки')}
         </h1>
         {/* «+ Купить ещё» — только если уже есть платная активная подписка */}
-        {!isLoading && hasActivePaid && (
+        {!isLoading && !isError && hasActivePaid && (
           <button
             onClick={() => navigate('/subscription/purchase')}
             className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-colors"
@@ -132,9 +132,24 @@ export default function Subscriptions() {
         )}
       </div>
 
+      {isError && (
+        <div className="glass-surface space-y-3 p-5" role="alert">
+          <p className="text-sm text-dark-300">
+            {t('subscriptions.loadError', 'Не удалось загрузить подписки')}
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="btn-secondary min-h-10 px-4 py-2 text-xs"
+          >
+            {t('common.retry', 'Повторить')}
+          </button>
+        </div>
+      )}
+
       {/* Есть подписки, но платной активной нет (только триал/истёкшие) —
           даём ЯВНУЮ primary-кнопку покупки: мы продаём подписки. */}
-      {!isLoading && subscriptions.length > 0 && !hasActivePaid && (
+      {!isLoading && !isError && subscriptions.length > 0 && !hasActivePaid && (
         <button
           onClick={() => navigate('/subscription/purchase')}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"

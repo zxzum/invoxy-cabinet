@@ -194,7 +194,7 @@ export default function Connection() {
 
   if (error || !appConfig || !hasApps) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+      <div className="glass-surface flex flex-1 flex-col items-center justify-center p-8 text-center">
         <motion.div
           {...section(0)}
           className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800"
@@ -241,7 +241,7 @@ export default function Connection() {
   // No subscription
   if (!appConfig.hasSubscription) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+      <div className="glass-surface flex flex-1 flex-col items-center justify-center p-8 text-center">
         <motion.div {...section(0)}>
           <h3 className="mb-2 text-xl font-bold text-dark-100">
             {t('subscription.connection.title')}
@@ -260,7 +260,7 @@ export default function Connection() {
   return (
     <motion.div {...section(0)}>
       {subscriptionUrl && !hideSubscriptionUrl && (
-        <motion.section {...section(1)} className="card-inset mb-5 p-4">
+        <motion.section {...section(1)} className="glass-surface mb-5 p-4">
           <div className="text-sm font-semibold text-dark-100">
             {t('subscription.subscriptionUrl', 'Ссылка подписки')}
           </div>

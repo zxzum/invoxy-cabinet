@@ -123,7 +123,7 @@ export default function RenewSubscription() {
 
       {/* Balance */}
       <div
-        className="flex items-center justify-between rounded-2xl p-4"
+        className="glass-surface flex items-center justify-between rounded-2xl p-4"
         style={{ background: g.cardBg, border: `1px solid ${g.cardBorder}` }}
       >
         <span className="text-sm" style={{ color: g.textSecondary }}>
@@ -137,7 +137,7 @@ export default function RenewSubscription() {
       {/* Period options */}
       {!options || options.length === 0 ? (
         <div
-          className="rounded-2xl p-6 text-center"
+          className="glass-surface rounded-2xl p-6 text-center"
           style={{ background: g.cardBg, border: `1px solid ${g.cardBorder}` }}
         >
           <p style={{ color: g.textSecondary }}>
@@ -162,7 +162,7 @@ export default function RenewSubscription() {
                   setSelectedPeriod(option.period_days);
                   setError(null);
                 }}
-                className={`w-full rounded-2xl p-4 text-left transition-all duration-200 ${
+                className={`glass-surface w-full rounded-2xl p-4 text-left transition-all duration-200 ${
                   isBestValue && !isSelected ? 'border-2' : 'border'
                 }`}
                 style={{

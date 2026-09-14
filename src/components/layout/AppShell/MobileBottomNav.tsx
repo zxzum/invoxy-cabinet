@@ -20,7 +20,7 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
 
   const items = [
     {
-      path: '/',
+      path: '/dashboard',
       label: t('nav.dashboard', 'Главная'),
       icon: HomeIcon,
     },
@@ -42,8 +42,8 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
   ];
 
   const activeIndex = items.findIndex((item) =>
-    item.path === '/'
-      ? location.pathname === '/'
+    item.path === '/dashboard'
+      ? location.pathname === '/dashboard'
       : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
   );
 
@@ -80,8 +80,8 @@ export function MobileBottomNav({ isKeyboardOpen }: MobileBottomNavProps) {
         )}
         {items.map((item) => {
           const active =
-            item.path === '/'
-              ? location.pathname === '/'
+            item.path === '/dashboard'
+              ? location.pathname === '/dashboard'
               : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
           const Icon = item.icon;
           return (

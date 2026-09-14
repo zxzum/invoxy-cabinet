@@ -685,7 +685,7 @@ export default function Subscription() {
     <div className="space-y-6">
       {/* Page title */}
       <div className="flex items-center gap-3">
-        <WebBackButton to={isMultiTariff ? '/subscriptions' : '/'} />
+        <WebBackButton to={isMultiTariff ? '/subscriptions' : '/dashboard'} />
         <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
           {isMultiTariff && subscription?.tariff_name
             ? subscription.tariff_name
@@ -705,7 +705,7 @@ export default function Subscription() {
 
           return (
             <div
-              className="relative overflow-hidden rounded-3xl lg:backdrop-blur-xl"
+              className="glass-surface relative overflow-hidden rounded-3xl lg:backdrop-blur-xl"
               style={{
                 background: g.cardBg,
                 border: subscription.is_trial
@@ -1476,7 +1476,7 @@ export default function Subscription() {
         })()
       ) : (
         <div
-          className="relative overflow-hidden rounded-3xl py-12 text-center"
+          className="glass-surface relative overflow-hidden rounded-3xl py-12 text-center"
           style={{
             background: g.cardBg,
             border: `1px solid ${g.cardBorder}`,
@@ -1496,7 +1496,7 @@ export default function Subscription() {
       {/* Daily Subscription Pause */}
       {subscription && subscription.is_daily && !subscription.is_trial && (
         <div
-          className="relative overflow-hidden rounded-3xl"
+          className="glass-surface relative overflow-hidden rounded-3xl"
           style={{
             background: g.cardBg,
             border: `1px solid ${g.cardBorder}`,
@@ -1693,7 +1693,7 @@ export default function Subscription() {
         !subscription.is_trial &&
         subscription.device_limit !== 0 && (
           <div
-            className="relative overflow-hidden rounded-3xl"
+            className="glass-surface relative overflow-hidden rounded-3xl"
             style={{
               background: g.cardBg,
               border: `1px solid ${g.cardBorder}`,
@@ -1773,7 +1773,7 @@ export default function Subscription() {
         (subscription.is_active || subscription.is_limited) &&
         !subscription.is_trial && (
           <div
-            className="relative overflow-hidden rounded-3xl"
+            className="glass-surface relative overflow-hidden rounded-3xl"
             style={{
               background: g.cardBg,
               border: `1px solid ${g.cardBorder}`,
@@ -1830,7 +1830,7 @@ export default function Subscription() {
       {/* My Devices Section */}
       {subscription && (
         <div
-          className="relative overflow-hidden rounded-3xl"
+          className="glass-surface relative overflow-hidden rounded-3xl"
           style={{
             background: g.cardBg,
             border: `1px solid ${g.cardBorder}`,

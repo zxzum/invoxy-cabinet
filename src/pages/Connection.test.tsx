@@ -31,6 +31,8 @@ vi.mock('../api/subscription', () => ({
 vi.mock('../hooks/useTelegramSDK', () => ({
   useTelegramSDK: () => ({ isTelegramWebApp: false }),
 }));
+vi.mock('../hooks/useBranding', () => ({ useBranding: () => ({ appName: 'Invoxy' }) }));
+vi.mock('../components/admin', () => ({ AdminBackButton: () => null }));
 
 vi.mock('@/platform', () => ({ useHaptic: () => ({ impact: vi.fn() }) }));
 vi.mock('../store/auth', () => ({
@@ -50,6 +52,7 @@ function renderConnection() {
 }
 
 import Connection from './Connection';
+import ConnectionQR from './ConnectionQR';
 
 describe('Connection without a subscription', () => {
   afterEach(() => {
@@ -70,4 +73,25 @@ describe('Connection without a subscription', () => {
     expect(buy.getAttribute('href')).toBe('/subscription/purchase');
     expect(screen.queryByRole('button', { name: 'Закрыть' })).toBeNull();
   });
+
+  it.each(['happ://crypt/fixture', 'incy://import/fixture'])(
+    'renders the QR state returned by the connection flow: %s',
+    (url) => {
+      render(
+        <MemoryRouter
+          initialEntries={[
+            {
+              pathname: '/connection/qr',
+              state: { url, hideLink: false, subscriptionId: 42 },
+            },
+          ]}
+        >
+          <ConnectionQR />
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByText(url)).toBeTruthy();
+      expect(document.querySelector('svg')).toBeTruthy();
+    },
+  );
 });

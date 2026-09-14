@@ -118,6 +118,12 @@ async function renderCard(sub: Subscription, balanceKopeks: number) {
 }
 
 describe('обычная истёкшая подписка', () => {
+  it('uses the shared glass surface for the expired card', async () => {
+    await renderCard(subscription(), 500000);
+
+    expect(document.querySelector('.glass-surface')).toBeTruthy();
+  });
+
   it('открывает выбор периода вместо молчаливого списания за месяц', async () => {
     await renderCard(subscription(), 500000);
 

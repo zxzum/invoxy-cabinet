@@ -106,7 +106,7 @@ describe('AppShell support FAB', () => {
   });
 
   it('mounts one support FAB immediately on a normal shell route', () => {
-    renderShell('/');
+    renderShell('/dashboard');
 
     expect(screen.getAllByRole('link', { name: 'Поддержка' })).toHaveLength(1);
   });
@@ -118,7 +118,7 @@ describe('AppShell support FAB', () => {
   });
 
   it('places personal navigation after tariffs in the sidebar', () => {
-    renderShell('/');
+    renderShell('/dashboard');
 
     const tariffs = screen.getByRole('link', { name: 'Тарифы' });
     const subscription = screen.getByRole('link', { name: 'Моя подписка' });
@@ -138,17 +138,27 @@ describe('AppShell support FAB', () => {
   });
 
   it('renders desktop navigation as an island without dropping balance controls', () => {
-    renderShell('/');
+    renderShell('/dashboard');
 
     const sidebar = screen.getByRole('complementary');
 
     expect(sidebar.classList.contains('ix-sidebar-island')).toBe(true);
+    expect(sidebar.classList.contains('glass-surface-elevated')).toBe(true);
     expect(screen.getByRole('link', { name: 'Тарифы' })).toBeTruthy();
     expect(screen.getByText('Баланс')).toBeTruthy();
+    expect(screen.getByText('Баланс').parentElement?.classList.contains('glass-surface')).toBe(
+      true,
+    );
     expect(screen.getByRole('link', { name: 'Пополнить' })).toBeTruthy();
   });
 
-  it.each(['/subscriptions', '/balance', '/referral', '/support', '/info'])(
+  it('links the authenticated home to /dashboard', () => {
+    renderShell('/dashboard');
+
+    expect(screen.getByRole('link', { name: 'Кабинет' }).getAttribute('href')).toBe('/dashboard');
+  });
+
+  it.each(['/dashboard', '/subscriptions', '/balance', '/referral', '/support', '/info'])(
     'keeps the mobile nav on a direct user route: %s',
     (pathname) => {
       renderShell(pathname);

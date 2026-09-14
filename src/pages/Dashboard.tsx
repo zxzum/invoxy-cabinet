@@ -54,7 +54,11 @@ export default function Dashboard() {
   });
 
   // Multi-tariff: check if user has multiple subscriptions
-  const { data: multiSubData } = useQuery({
+  const {
+    data: multiSubData,
+    isError: subscriptionsError,
+    refetch: refetchSubscriptions,
+  } = useQuery({
     queryKey: ['subscriptions-list'],
     queryFn: () => subscriptionApi.getSubscriptions(),
     staleTime: 60_000,
@@ -317,6 +321,21 @@ export default function Dashboard() {
           )}
         </div>
       </motion.div>
+
+      {subscriptionsError && (
+        <motion.div {...section(1)} className="glass-surface space-y-3 p-4" role="alert">
+          <p className="text-sm text-dark-300">
+            {t('dashboard.subscriptionsError', 'Не удалось загрузить подписки')}
+          </p>
+          <button
+            type="button"
+            onClick={() => refetchSubscriptions()}
+            className="btn-secondary min-h-10 px-4 py-2 text-xs"
+          >
+            {t('common.retry', 'Повторить')}
+          </button>
+        </motion.div>
+      )}
 
       {/* Pending Gift Activations */}
       {pendingGifts && pendingGifts.length > 0 && (

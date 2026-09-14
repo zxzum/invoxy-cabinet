@@ -29,11 +29,18 @@ describe('MobileBottomNav', () => {
   afterEach(cleanup);
 
   it('renders four localized items', () => {
-    renderNav('/');
+    const { container } = renderNav('/dashboard');
+    expect(container.querySelector('nav')?.className).toContain('glass-surface-elevated');
     expect(screen.getByText('Главная')).toBeTruthy();
     expect(screen.getByText('Тарифы')).toBeTruthy();
     expect(screen.getByText('Подключение')).toBeTruthy();
     expect(screen.getByText('Профиль')).toBeTruthy();
+  });
+
+  it('links the first item to the authenticated dashboard', () => {
+    renderNav('/dashboard');
+
+    expect(screen.getByRole('link', { name: 'Главная' }).getAttribute('href')).toBe('/dashboard');
   });
 
   it('keeps referrals out of the compact bottom menu', () => {
@@ -55,7 +62,7 @@ describe('MobileBottomNav', () => {
 
   it('hides itself while the keyboard is open', () => {
     const { container } = render(
-      <MemoryRouter initialEntries={['/']}>
+      <MemoryRouter initialEntries={['/dashboard']}>
         <PlatformProvider>
           <MobileBottomNav isKeyboardOpen />
         </PlatformProvider>
