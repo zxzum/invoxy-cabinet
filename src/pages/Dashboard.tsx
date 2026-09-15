@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useQueries, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
@@ -80,6 +80,7 @@ export default function Dashboard() {
   // Multi-tariff: check if user has multiple subscriptions
   const {
     data: multiSubData,
+    isLoading: multiSubLoading,
     isError: subscriptionsError,
     refetch: refetchSubscriptions,
   } = useQuery({
@@ -147,10 +148,19 @@ export default function Dashboard() {
       : null;
   const activeSubId = activeSubscription?.id;
 
+  // В multi-tariff /cabinet/subscription отключён, поэтому subscriptionResponse=undefined.
+  // Пустой список /cabinet/subscriptions/list означает «нет подписок» и открывает TrialHero.
+  const hasNoSubscription = isMultiTariff
+    ? !multiSubLoading &&
+      !subscriptionsError &&
+      multiSubData !== undefined &&
+      (multiSubData.subscriptions?.length ?? 0) === 0
+    : subscriptionResponse?.has_subscription === false && !subLoading;
+
   const { data: trialInfo, isLoading: trialLoading } = useQuery({
     queryKey: ['trial-info'],
     queryFn: () => subscriptionApi.getTrialInfo(),
-    enabled: !isMultiTariff && !subscription && !subLoading,
+    enabled: hasNoSubscription,
   });
 
   const {
@@ -316,49 +326,84 @@ export default function Dashboard() {
   });
 
   // Traffic refresh state and mutation
-  const [trafficRefreshCooldown, setTrafficRefreshCooldown] = useState(0);
+  const [trafficRefreshCooldowns, setTrafficRefreshCooldowns] = useState<Record<number, number>>(
+    {},
+  );
+  const [refreshingTrafficSubId, setRefreshingTrafficSubId] = useState<number | null>(null);
   const [pendingRemovalHwid, setPendingRemovalHwid] = useState<string | null>(null);
-  const [trafficData, setTrafficData] = useState<{
-    traffic_used_gb: number;
-    traffic_used_percent: number;
-    is_unlimited: boolean;
-  } | null>(null);
+  const [trafficDataBySubscription, setTrafficDataBySubscription] = useState<
+    Record<
+      number,
+      {
+        traffic_used_gb: number;
+        traffic_used_percent: number;
+        is_unlimited: boolean;
+      }
+    >
+  >({});
+  const trafficData = activeSubId == null ? null : (trafficDataBySubscription[activeSubId] ?? null);
+  const trafficRefreshCooldown =
+    activeSubId == null ? 0 : (trafficRefreshCooldowns[activeSubId] ?? 0);
 
   const refreshTrafficMutation = useMutation({
-    mutationFn: () => subscriptionApi.refreshTraffic(activeSubId),
-    onSuccess: (data) => {
-      setTrafficData({
-        traffic_used_gb: data.traffic_used_gb,
-        traffic_used_percent: data.traffic_used_percent,
-        is_unlimited: data.is_unlimited,
-      });
-      safeLocal.setItem(`traffic_refresh_ts_${activeSubId ?? 'default'}`, Date.now().toString());
-      if (data.rate_limited && data.retry_after_seconds) {
-        setTrafficRefreshCooldown(data.retry_after_seconds);
-      } else {
-        setTrafficRefreshCooldown(30);
-      }
-      queryClient.invalidateQueries({ queryKey: ['subscription', activeSubId] });
-      queryClient.invalidateQueries({ queryKey: ['subscription', undefined] });
-    },
-    onError: (error: {
-      response?: { status?: number; headers?: { get?: (key: string) => string } };
-    }) => {
-      if (error.response?.status === 429) {
-        const retryAfter = error.response.headers?.get?.('Retry-After');
-        setTrafficRefreshCooldown(retryAfter ? parseInt(retryAfter, 10) : 30);
-      }
-    },
+    mutationFn: (subscriptionId: number) => subscriptionApi.refreshTraffic(subscriptionId),
   });
+
+  const refreshTraffic = useCallback(
+    (subscriptionId: number) => {
+      setRefreshingTrafficSubId(subscriptionId);
+      void refreshTrafficMutation
+        .mutateAsync(subscriptionId)
+        .then((data) => {
+          setTrafficDataBySubscription((previous) => ({
+            ...previous,
+            [subscriptionId]: {
+              traffic_used_gb: data.traffic_used_gb,
+              traffic_used_percent: data.traffic_used_percent,
+              is_unlimited: data.is_unlimited,
+            },
+          }));
+          safeLocal.setItem(`traffic_refresh_ts_${subscriptionId}`, Date.now().toString());
+          const cooldown =
+            data.rate_limited && data.retry_after_seconds ? data.retry_after_seconds : 30;
+          setTrafficRefreshCooldowns((previous) => ({ ...previous, [subscriptionId]: cooldown }));
+          queryClient.invalidateQueries({ queryKey: ['subscription', subscriptionId] });
+          queryClient.invalidateQueries({ queryKey: ['subscription', undefined] });
+        })
+        .catch(
+          (error: {
+            response?: { status?: number; headers?: { get?: (key: string) => string } };
+          }) => {
+            if (error.response?.status === 429) {
+              const retryAfter = error.response.headers?.get?.('Retry-After');
+              const cooldown = retryAfter ? parseInt(retryAfter, 10) : 30;
+              setTrafficRefreshCooldowns((previous) => ({
+                ...previous,
+                [subscriptionId]: cooldown,
+              }));
+            }
+          },
+        )
+        .finally(() => {
+          setRefreshingTrafficSubId((current) => (current === subscriptionId ? null : current));
+        });
+    },
+    [queryClient, refreshTrafficMutation],
+  );
 
   // Cooldown timer
   useEffect(() => {
-    if (trafficRefreshCooldown <= 0) return;
+    if (activeSubId == null || trafficRefreshCooldown <= 0) return;
+    const subscriptionId = activeSubId;
     const timer = setInterval(() => {
-      setTrafficRefreshCooldown((prev) => Math.max(0, prev - 1));
+      setTrafficRefreshCooldowns((previous) => {
+        const current = previous[subscriptionId] ?? 0;
+        const next = Math.max(0, current - 1);
+        return next === current ? previous : { ...previous, [subscriptionId]: next };
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, [trafficRefreshCooldown]);
+  }, [activeSubId, trafficRefreshCooldown]);
 
   // Auto-refresh traffic on mount (with 30s caching)
   const autoRefreshedSubId = useRef<number | null>(null);
@@ -368,7 +413,7 @@ export default function Dashboard() {
     if (autoRefreshedSubId.current === activeSubId) return;
     autoRefreshedSubId.current = activeSubId;
 
-    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${activeSubId ?? 'default'}`);
+    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${activeSubId}`);
     const now = Date.now();
     const cacheMs = API.TRAFFIC_CACHE_MS;
 
@@ -376,20 +421,16 @@ export default function Dashboard() {
       const elapsed = now - parseInt(lastRefresh, 10);
       const remaining = Math.ceil((cacheMs - elapsed) / 1000);
       if (remaining > 0) {
-        setTrafficRefreshCooldown(remaining);
+        setTrafficRefreshCooldowns((previous) => ({
+          ...previous,
+          [activeSubId]: remaining,
+        }));
       }
       return;
     }
 
-    refreshTrafficMutation.mutate();
-  }, [activeSubId, activeSubscription, refreshTrafficMutation]);
-
-  // В multi-tariff /cabinet/subscription отключён, поэтому subscriptionResponse=undefined.
-  // Используем список из /cabinet/subscriptions/list — пустой массив означает «нет подписок»,
-  // и тогда показываем TrialOfferCard. Без этой ветки multi-tariff юзер никогда не видел триал.
-  const hasNoSubscription = isMultiTariff
-    ? multiSubData !== undefined && (multiSubData.subscriptions?.length ?? 0) === 0
-    : subscriptionResponse?.has_subscription === false && !subLoading;
+    refreshTraffic(activeSubId);
+  }, [activeSubId, activeSubscription, refreshTraffic]);
 
   // Есть ли НАСТОЯЩАЯ (платная, не триал) живая подписка — от этого зависит CTA:
   // «+ Купить ещё» только при наличии платной; иначе явная «Посмотреть тарифы».
@@ -559,6 +600,17 @@ export default function Dashboard() {
   // Быстрое продление: цену/оплату не дублируем — подтверждение уводит в
   // существующий flow /subscriptions/:id/renew.
   const [selectedRenewalPeriod, setSelectedRenewalPeriod] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (
+      selectedRenewalPeriod != null &&
+      renewalOptions &&
+      !renewalOptions.some((option) => option.period_days === selectedRenewalPeriod)
+    ) {
+      setSelectedRenewalPeriod(null);
+    }
+  }, [renewalOptions, selectedRenewalPeriod]);
+
   const effectiveRenewalPeriod =
     selectedRenewalPeriod ??
     renewalOptions?.find((option) => option.is_highlighted)?.period_days ??
@@ -570,6 +622,25 @@ export default function Dashboard() {
   const [trafficTopupScope, setTrafficTopupScope] = useState<'regular' | 'whitelist'>('regular');
   const [showDeviceTopup, setShowDeviceTopup] = useState(false);
   const [devicesToAdd, setDevicesToAdd] = useState(1);
+
+  const previousActiveSubId = useRef<number | undefined>(activeSubId);
+  useEffect(() => {
+    if (previousActiveSubId.current === activeSubId) return;
+    previousActiveSubId.current = activeSubId;
+    setSelectedRenewalPeriod(null);
+    setSelectedTrafficPackage(null);
+    setShowTrafficTopup(false);
+    setTrafficTopupScope('regular');
+  }, [activeSubId]);
+
+  useEffect(() => {
+    if (selectedTrafficPackage == null) return;
+    const packages =
+      trafficTopupScope === 'whitelist' ? lteTrafficPackages : regularTrafficPackages;
+    if (packages && !packages.some((pkg) => pkg.gb === selectedTrafficPackage)) {
+      setSelectedTrafficPackage(null);
+    }
+  }, [lteTrafficPackages, regularTrafficPackages, selectedTrafficPackage, trafficTopupScope]);
 
   const openTrafficTopup = (pkg: TrafficPackage, scope: 'regular' | 'whitelist') => {
     setTrafficTopupScope(scope);
@@ -595,9 +666,9 @@ export default function Dashboard() {
   };
 
   const handleRefreshTraffic = () => {
-    if (activeSubId == null || trafficRefreshCooldown > 0 || refreshTrafficMutation.isPending)
+    if (activeSubId == null || trafficRefreshCooldown > 0 || refreshingTrafficSubId === activeSubId)
       return;
-    refreshTrafficMutation.mutate();
+    refreshTraffic(activeSubId);
   };
 
   const formatKopeks = (kopeks: number) => `${formatAmount(kopeks / 100)} ${currencySymbol}`;
@@ -935,7 +1006,7 @@ export default function Dashboard() {
                 isCopied={accessCopied}
                 isRemovingHwid={pendingRemovalHwid}
                 onRefreshTraffic={handleRefreshTraffic}
-                isRefreshingTraffic={refreshTrafficMutation.isPending}
+                isRefreshingTraffic={refreshingTrafficSubId === activeSubId}
                 trafficRefreshCooldown={trafficRefreshCooldown}
                 onManageSubscription={() => navigate(`/subscriptions/${activeSubscription.id}`)}
                 onManageDevices={() => navigate(`/subscriptions/${activeSubscription.id}`)}

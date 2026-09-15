@@ -224,7 +224,17 @@ const secondActiveSubscription: Subscription = {
   id: 43,
   tariff_id: 8,
   tariff_name: 'Fixture second active tariff',
+  traffic_used_gb: 7,
+  traffic_used_percent: 7,
 };
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
 
 function setupResolvedQueries() {
   mocks.getBalance.mockResolvedValue({ balance_rubles: 0, balance_kopeks: 0 });
@@ -365,6 +375,213 @@ describe('Dashboard target states', () => {
     ).toBeTruthy();
     expect(mocks.getSubscription).toHaveBeenCalledWith(43);
     expect(mocks.getDevices).toHaveBeenCalledWith(43);
+  });
+
+  it('isolates traffic data and cooldown when a late refresh crosses subscriptions', async () => {
+    setupResolvedQueries();
+    const refreshA = deferred<{
+      traffic_used_gb: number;
+      traffic_used_percent: number;
+      is_unlimited: boolean;
+      rate_limited: boolean;
+      retry_after_seconds?: number;
+    }>();
+    const refreshB = deferred<{
+      traffic_used_gb: number;
+      traffic_used_percent: number;
+      is_unlimited: boolean;
+      rate_limited: boolean;
+      retry_after_seconds?: number;
+    }>();
+    mocks.getSubscriptions.mockResolvedValue({
+      ...multiSubscription,
+      subscriptions: [
+        multiSubscription.subscriptions[0],
+        {
+          ...multiSubscription.subscriptions[0],
+          id: 43,
+          tariff_id: 8,
+          tariff_name: 'Fixture second dashboard тариф',
+          device_limit: 3,
+        },
+      ],
+    });
+    mocks.getSubscription.mockImplementation((id?: number) =>
+      Promise.resolve({
+        has_subscription: id != null,
+        subscription: id === 43 ? secondActiveSubscription : id === 42 ? activeSubscription : null,
+      }),
+    );
+    mocks.refreshTraffic.mockImplementation((id?: number) =>
+      id === 42
+        ? refreshA.promise
+        : id === 43
+          ? refreshB.promise
+          : Promise.reject(new Error('unexpected id')),
+    );
+    localStorage.removeItem('traffic_refresh_ts_42');
+    localStorage.removeItem('traffic_refresh_ts_43');
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    await vi.waitFor(() => expect(mocks.refreshTraffic).toHaveBeenCalledWith(42));
+    fireEvent.click(screen.getByRole('radio', { name: 'Fixture second dashboard тариф' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Fixture second active tariff' }),
+    ).toBeTruthy();
+    expect(screen.getByText('7.0 GB / 100.0 GB')).toBeTruthy();
+
+    refreshA.resolve({
+      traffic_used_gb: 90,
+      traffic_used_percent: 90,
+      is_unlimited: false,
+      rate_limited: true,
+      retry_after_seconds: 9,
+    });
+    await vi.waitFor(() => expect(screen.queryByText('90.0 GB / 100.0 GB')).toBeNull());
+    expect(screen.getByText('7.0 GB / 100.0 GB')).toBeTruthy();
+
+    refreshB.resolve({
+      traffic_used_gb: 8,
+      traffic_used_percent: 8,
+      is_unlimited: false,
+      rate_limited: true,
+      retry_after_seconds: 17,
+    });
+    expect(await screen.findByRole('button', { name: 'Обновить трафик (17s)' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Fixture dashboard тариф' }));
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    expect(screen.getByText('90.0 GB / 100.0 GB')).toBeTruthy();
+    const firstRefreshButton = await screen.findByRole('button', {
+      name: /Обновить трафик \(\d+s\)/,
+    });
+    const firstCooldown = Number(firstRefreshButton.textContent?.match(/\((\d+)s\)/)?.[1]);
+    expect(firstCooldown).not.toBe(17);
+  });
+
+  it('resets renewal selection when switching subscriptions', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({
+      ...multiSubscription,
+      subscriptions: [
+        multiSubscription.subscriptions[0],
+        {
+          ...multiSubscription.subscriptions[0],
+          id: 43,
+          tariff_id: 8,
+          tariff_name: 'Fixture second dashboard тариф',
+          device_limit: 3,
+        },
+      ],
+    });
+    mocks.getSubscription.mockImplementation((id?: number) =>
+      Promise.resolve({
+        has_subscription: id != null,
+        subscription: id === 43 ? secondActiveSubscription : id === 42 ? activeSubscription : null,
+      }),
+    );
+    mocks.getRenewalOptions.mockImplementation((id?: number) =>
+      Promise.resolve(
+        id === 43
+          ? [
+              {
+                period_days: 7,
+                price_kopeks: 700,
+                price_rubles: 7,
+                discount_percent: 0,
+                original_price_kopeks: null,
+              },
+            ]
+          : [
+              {
+                period_days: 30,
+                price_kopeks: 3000,
+                price_rubles: 30,
+                discount_percent: 0,
+                original_price_kopeks: null,
+              },
+              {
+                period_days: 90,
+                price_kopeks: 9000,
+                price_rubles: 90,
+                discount_percent: 0,
+                original_price_kopeks: null,
+              },
+            ],
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    const longRenewal = screen.getByRole('button', { name: /90 ₽/ });
+    fireEvent.click(longRenewal);
+    expect(longRenewal.getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Fixture second dashboard тариф' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Fixture second active tariff' }),
+    ).toBeTruthy();
+    const shortRenewal = await screen.findByRole('button', { name: /7 ₽/ });
+    expect(shortRenewal.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('closes stale traffic top-up state when switching subscriptions', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({
+      ...multiSubscription,
+      subscriptions: [
+        multiSubscription.subscriptions[0],
+        {
+          ...multiSubscription.subscriptions[0],
+          id: 43,
+          tariff_id: 8,
+          tariff_name: 'Fixture second dashboard тариф',
+          device_limit: 3,
+        },
+      ],
+    });
+    mocks.getSubscription.mockImplementation((id?: number) =>
+      Promise.resolve({
+        has_subscription: id != null,
+        subscription: id === 43 ? secondActiveSubscription : id === 42 ? activeSubscription : null,
+      }),
+    );
+    mocks.getTrafficPackages.mockImplementation((id?: number) =>
+      Promise.resolve([
+        {
+          gb: id === 43 ? 25 : 100,
+          price_kopeks: id === 43 ? 2500 : 5000,
+          price_rubles: id === 43 ? 25 : 50,
+          is_unlimited: false,
+        },
+      ]),
+    );
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить трафик' }));
+    fireEvent.click(await screen.findByRole('button', { name: /100/ }));
+    expect(
+      screen.getByRole('button', { name: 'subscription.additionalOptions.buyTrafficGb' }),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Fixture second dashboard тариф' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Fixture second active tariff' }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'subscription.additionalOptions.buyTrafficGb' }),
+    ).toBeNull();
+    expect(screen.queryByText('100 ГБ')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить трафик' }));
+    const secondPackage = await screen.findByRole('button', { name: /25/ });
+    fireEvent.click(secondPackage);
+    expect(secondPackage.className).toContain('card-selected');
   });
 
   it('opens the LTE top-up flow with the whitelist scope selected', async () => {
@@ -639,6 +856,29 @@ describe('Dashboard target states', () => {
     await vi.waitFor(() => expect(mocks.activateTrial).toHaveBeenCalled());
 
     expect(screen.queryByText(/Travel LTE|2490|750 ГБ|200 ₽|demo/i)).toBeNull();
+  });
+
+  it('loads trial info for an empty multi-tariff dashboard', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({
+      multi_tariff_enabled: true,
+      subscriptions: [],
+    });
+    mocks.getTrialInfo.mockResolvedValue({
+      is_available: true,
+      duration_days: 7,
+      traffic_limit_gb: 50,
+      device_limit: 1,
+      requires_payment: false,
+      price_kopeks: 0,
+      price_rubles: 0,
+      reason_unavailable: null,
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('Пробный период')).toBeTruthy();
+    expect(mocks.getTrialInfo).toHaveBeenCalledTimes(1);
   });
 
   it('keeps source demo fixtures and fixed business values out of production paths', () => {
