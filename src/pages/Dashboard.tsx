@@ -91,7 +91,12 @@ export default function Dashboard() {
   });
   const isMultiTariff = multiSubData?.multi_tariff_enabled ?? false;
 
-  const { data: subscriptionResponse, isLoading: subLoading } = useQuery({
+  const {
+    data: subscriptionResponse,
+    isLoading: subLoading,
+    isError: subscriptionError,
+    refetch: refetchSubscription,
+  } = useQuery({
     queryKey: ['subscription', undefined],
     queryFn: () => subscriptionApi.getSubscription(),
     retry: false,
@@ -831,6 +836,21 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => refetchSubscriptions()}
+            className="btn-secondary min-h-10 px-4 py-2 text-xs"
+          >
+            {t('common.retry', 'Повторить')}
+          </button>
+        </motion.div>
+      )}
+
+      {subscriptionError && !isMultiTariff && (
+        <motion.div {...section(1)} className="glass-surface space-y-3 p-4" role="alert">
+          <p className="text-sm text-dark-300">
+            {t('dashboard.subscriptionError', 'Не удалось загрузить подписку')}
+          </p>
+          <button
+            type="button"
+            onClick={() => refetchSubscription()}
             className="btn-secondary min-h-10 px-4 py-2 text-xs"
           >
             {t('common.retry', 'Повторить')}

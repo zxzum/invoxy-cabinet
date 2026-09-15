@@ -990,6 +990,17 @@ describe('Dashboard target states', () => {
     expect(await screen.findByRole('alert')).toBeTruthy();
   });
 
+  it('surfaces a retry when the single subscription query fails', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockRejectedValue(new Error('fixture subscription failure'));
+
+    renderPage();
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Повторить' })).toBeTruthy();
+  });
+
   it('renders the Luna active dashboard from real subscription API data', async () => {
     setupResolvedQueries();
     mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
