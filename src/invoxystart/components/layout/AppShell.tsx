@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router';
 import { Sidebar } from '@/invoxystart/components/layout/Sidebar';
@@ -18,6 +18,17 @@ function ShellLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const reducedMotion = useReducedMotion();
+  const stageRef = useRef<HTMLDivElement>(null);
+  const routeKey = `${location.pathname}${location.search}`;
+
+  useLayoutEffect(() => {
+    if (reducedMotion || !routeKey) return;
+    stageRef.current
+      ?.querySelectorAll<HTMLElement>('.motion-reveal, .motion-card')
+      .forEach((element, index) => {
+        element.style.setProperty('--motion-delay', `${60 + Math.min(index, 9) * 70}ms`);
+      });
+  }, [routeKey, reducedMotion]);
 
   return (
     <div className="invoxystart-shell relative isolate min-h-screen w-full text-ink">
@@ -32,12 +43,13 @@ function ShellLayout({ children }: { children: ReactNode }) {
           ) : (
             <AnimatePresence mode="wait">
               <m.div
-                key={`${location.pathname}${location.search}`}
+                ref={stageRef}
+                key={routeKey}
                 initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
                 transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                className="min-h-full"
+                className="route-stage is-entering min-h-full"
               >
                 {children}
               </m.div>

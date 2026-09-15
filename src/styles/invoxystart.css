@@ -9,6 +9,13 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Tailwind's default spacing scale has no 13 step; InvoxyStart uses h-13 for
+   its 52px controls, so keep those controls stable instead of collapsing to
+   content height. */
+.invoxystart-shell .h-13 {
+  height: 52px;
+}
+
 .invoxystart-shell .route-stage.is-entering {
   position: relative;
   top: 0;
@@ -33,9 +40,10 @@
 .adaptive-dialog-panel {
   --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --adaptive-dialog-drag-y: 0px;
-  animation: invoxy-dialog-panel-in 320ms var(--motion-ease) both;
+  animation: invoxy-dialog-panel-in 360ms var(--motion-ease) both;
   transform: translate3d(0, var(--adaptive-dialog-drag-y), 0);
   transition: transform 180ms var(--motion-ease);
+  will-change: transform, opacity;
 }
 
 .adaptive-dialog-panel.is-dragging {
@@ -113,6 +121,10 @@
   }
 }
 
+.invoxystart-shell .route-stage.is-entering .scroll-reveal .motion-card {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .invoxystart-shell .motion-card:hover,
   .invoxystart-shell .button-lift:hover {
@@ -146,25 +158,29 @@
 @keyframes invoxy-dialog-panel-in {
   from {
     opacity: 0;
-    top: 16px;
+    transform: translate3d(0, 14px, 0) scale(0.985);
+    filter: blur(4px);
   }
 }
 @keyframes invoxy-dialog-panel-out-left {
   to {
     opacity: 0;
-    transform: translate3d(-24px, var(--adaptive-dialog-drag-y), 0);
+    transform: translate3d(-24px, var(--adaptive-dialog-drag-y), 0) scale(0.985);
+    filter: blur(3px);
   }
 }
 @keyframes invoxy-dialog-sheet-in {
   from {
-    opacity: 0.72;
-    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+    transform: translate3d(0, 100%, 0) scale(0.985);
+    filter: blur(4px);
   }
 }
 @keyframes invoxy-dialog-sheet-out {
   to {
-    opacity: 0.72;
-    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+    transform: translate3d(0, 100%, 0) scale(0.985);
+    filter: blur(3px);
   }
 }
 @keyframes invoxy-form-step-in {
