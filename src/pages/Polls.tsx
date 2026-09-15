@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { pollsApi, type PollInfo, type PollQuestion } from '../api/polls';
 import { useFocusTrap } from '../hooks/useFocusTrap';
-import { ClipboardIcon, GiftIcon, CheckIcon, CloseIcon } from '@/components/icons';
+import {
+  ClipboardIcon,
+  GiftIcon,
+  CheckIcon,
+  CloseIcon,
+  GamepadIcon,
+  WheelIcon,
+} from '@/components/icons';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 export default function Polls() {
@@ -98,18 +106,43 @@ export default function Polls() {
 
   if (error) {
     return (
-      <div className="glass-surface card border-error-500/20 bg-error-500/10">
+      <div className="luna-dashboard glass-panel rounded-[30px] border-error-500/20 bg-error-500/10 p-6">
         <p className="text-error-400">{t('polls.error')}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <div className="flex items-center gap-3">
-        <ClipboardIcon className="h-6 w-6" />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('polls.title')}</h1>
+    <div className="luna-dashboard flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
+      <div className="ix-page-heading">
+        <h1>{t('polls.title')}</h1>
+        <p>{t('polls.subtitle', 'Активности и бонусы InvoxyVPN')}</p>
       </div>
+
+      <nav aria-label="Активности" className="flex gap-2 overflow-x-auto">
+        <Link
+          to="/polls"
+          aria-current="page"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-accent-500 px-4 py-2.5 text-xs font-semibold text-on-accent"
+        >
+          <ClipboardIcon className="h-4 w-4" />
+          {t('polls.title')}
+        </Link>
+        <Link
+          to="/contests"
+          className="glass-control inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold text-dark-400 transition-colors hover:text-dark-50"
+        >
+          <GamepadIcon className="h-4 w-4" />
+          {t('contests.title')}
+        </Link>
+        <Link
+          to="/wheel"
+          className="glass-control inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold text-dark-400 transition-colors hover:text-dark-50"
+        >
+          <WheelIcon className="h-4 w-4" />
+          {t('wheel.title')}
+        </Link>
+      </nav>
 
       {/* Poll Modal */}
       {selectedPoll && (
@@ -125,7 +158,7 @@ export default function Polls() {
             aria-modal="true"
             aria-labelledby="poll-dialog-title"
             tabIndex={-1}
-            className="glass-surface card relative max-h-[80vh] w-full max-w-lg overflow-y-auto"
+            className="glass-panel motion-card relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-[30px] p-5 lg:p-7"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 id="poll-dialog-title" className="text-xl font-bold">
@@ -148,7 +181,7 @@ export default function Polls() {
 
             {completionMessage && (
               <div className="space-y-4">
-                <div className="rounded-lg bg-success-500/20 p-4 text-center text-success-400">
+                <div className="rounded-2xl bg-accent-500/10 p-4 text-center text-accent-400">
                   <CheckIcon className="h-5 w-5" />
                   <p className="mt-2 font-medium">{completionMessage.message}</p>
                   {completionMessage.reward && (
@@ -157,7 +190,10 @@ export default function Polls() {
                     </p>
                   )}
                 </div>
-                <button onClick={handleClosePoll} className="btn-secondary w-full">
+                <button
+                  onClick={handleClosePoll}
+                  className="glass-control flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-dark-200"
+                >
                   {t('common.close')}
                 </button>
               </div>
@@ -183,7 +219,7 @@ export default function Polls() {
                       key={option.id}
                       onClick={() => handleAnswer(option.id)}
                       disabled={answerMutation.isPending}
-                      className="w-full rounded-lg bg-dark-700 p-4 text-left transition-colors hover:bg-dark-600 disabled:opacity-50"
+                      className="glass-control w-full rounded-2xl p-4 text-left transition-colors hover:border-accent-400/40 disabled:opacity-50"
                     >
                       {option.text}
                     </button>
@@ -205,10 +241,10 @@ export default function Polls() {
       {polls && polls.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {polls.map((poll) => (
-            <div key={poll.id} className="glass-surface card">
+            <div key={poll.id} className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="break-words text-lg font-semibold">{poll.title}</h3>
+                  <h3 className="break-words text-lg font-medium">{poll.title}</h3>
                   {poll.description && (
                     <p className="mt-1 text-sm text-dark-400">{poll.description}</p>
                   )}
@@ -229,12 +265,18 @@ export default function Polls() {
 
               <div className="mt-4">
                 {poll.is_completed ? (
-                  <button disabled className="btn-secondary w-full cursor-not-allowed opacity-50">
+                  <button
+                    disabled
+                    className="glass-control flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-bold text-dark-400 opacity-60"
+                  >
                     <CheckIcon className="h-5 w-5" />
                     <span className="ml-2">{t('polls.completed')}</span>
                   </button>
                 ) : (
-                  <button onClick={() => handleStartPoll(poll)} className="btn-primary w-full">
+                  <button
+                    onClick={() => handleStartPoll(poll)}
+                    className="button-lift flex h-12 w-full items-center justify-center rounded-full bg-accent-500 text-sm font-bold text-on-accent"
+                  >
                     {poll.answered_questions > 0 ? t('polls.continue') : t('polls.start')}
                   </button>
                 )}
@@ -243,8 +285,8 @@ export default function Polls() {
           ))}
         </div>
       ) : (
-        <div className="glass-surface card py-12 text-center">
-          <ClipboardIcon className="h-6 w-6" />
+        <div className="glass-panel rounded-[30px] px-6 py-12 text-center">
+          <ClipboardIcon className="mx-auto h-6 w-6 text-accent-400" />
           <p className="mt-4 text-dark-400">{t('polls.noPolls')}</p>
         </div>
       )}

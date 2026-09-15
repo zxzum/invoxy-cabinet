@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { contestsApi, type ContestInfo, type ContestGameData } from '../api/contests';
-import { GamepadIcon, TrophyIcon, XIcon } from '@/components/icons';
+import { ClipboardIcon, GamepadIcon, TrophyIcon, WheelIcon, XIcon } from '@/components/icons';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 
 export default function Contests() {
@@ -65,24 +66,49 @@ export default function Contests() {
 
   if (error) {
     return (
-      <div className="glass-surface card border-error-500/20 bg-error-500/10">
+      <div className="luna-dashboard glass-panel rounded-[30px] border-error-500/20 bg-error-500/10 p-6">
         <p className="text-error-400">{t('contests.error')}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <div className="flex items-center gap-3">
-        <GamepadIcon className="h-6 w-6" />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('contests.title')}</h1>
+    <div className="luna-dashboard flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
+      <div className="ix-page-heading">
+        <h1>{t('contests.title')}</h1>
+        <p>{t('contests.subtitle', 'Активности и бонусы InvoxyVPN')}</p>
       </div>
+
+      <nav aria-label="Активности" className="flex gap-2 overflow-x-auto">
+        <Link
+          to="/polls"
+          className="glass-control inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold text-dark-400 transition-colors hover:text-dark-50"
+        >
+          <ClipboardIcon className="h-4 w-4" />
+          {t('polls.title')}
+        </Link>
+        <Link
+          to="/contests"
+          aria-current="page"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-accent-500 px-4 py-2.5 text-xs font-semibold text-on-accent"
+        >
+          <GamepadIcon className="h-4 w-4" />
+          {t('contests.title')}
+        </Link>
+        <Link
+          to="/wheel"
+          className="glass-control inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold text-dark-400 transition-colors hover:text-dark-50"
+        >
+          <WheelIcon className="h-4 w-4" />
+          {t('wheel.title')}
+        </Link>
+      </nav>
 
       {/* Game Modal */}
       {selectedContest && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-dark-950/70 p-4 backdrop-blur-sm">
           <div
-            className="glass-surface bento-card max-h-[80vh] w-full max-w-lg overflow-y-auto"
+            className="glass-panel motion-card max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-[30px] p-5 lg:p-7"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -100,7 +126,7 @@ export default function Contests() {
 
             {result && (
               <div
-                className={`mb-4 rounded-lg p-4 ${result.is_winner ? 'bg-success-500/20 text-success-400' : 'bg-error-500/20 text-error-400'}`}
+                className={`mb-4 rounded-2xl p-4 ${result.is_winner ? 'bg-accent-500/10 text-accent-400' : 'bg-error-500/10 text-error-400'}`}
               >
                 <p className="font-medium">{result.message}</p>
               </div>
@@ -120,7 +146,7 @@ export default function Contests() {
                         key={i}
                         onClick={() => handleSubmitAnswer(`${i}_${gameData.game_data.secret}`)}
                         disabled={submitAnswerMutation.isPending}
-                        className="flex aspect-square items-center justify-center rounded-lg bg-dark-700 text-2xl transition-colors hover:bg-dark-600"
+                        className="glass-control flex aspect-square items-center justify-center rounded-2xl text-2xl transition-colors hover:border-accent-400/40"
                       >
                         {gameData.game_type === 'locks' ? '🔒' : '🎛'}
                       </button>
@@ -135,7 +161,7 @@ export default function Contests() {
                         key={i}
                         onClick={() => handleSubmitAnswer(flag)}
                         disabled={submitAnswerMutation.isPending}
-                        className="rounded-lg bg-dark-700 p-3 text-2xl transition-colors hover:bg-dark-600"
+                        className="glass-control rounded-2xl p-3 text-2xl transition-colors hover:border-accent-400/40"
                       >
                         {flag}
                       </button>
@@ -147,7 +173,7 @@ export default function Contests() {
                   <button
                     onClick={() => handleSubmitAnswer('blitz')}
                     disabled={submitAnswerMutation.isPending}
-                    className="w-full rounded-lg bg-accent-500 py-4 text-lg font-bold transition-colors hover:bg-accent-600"
+                    className="button-lift h-12 w-full rounded-full bg-accent-500 text-sm font-bold text-on-accent transition-colors hover:bg-accent-600"
                   >
                     {gameData.game_data.button_text || t('contests.imHere')}
                   </button>
@@ -164,19 +190,19 @@ export default function Contests() {
                     }}
                     className="space-y-3"
                   >
-                    <div className="rounded-lg bg-dark-700 p-4 text-center font-mono text-2xl">
+                    <div className="rounded-2xl bg-white/[.04] p-5 text-center font-mono text-2xl">
                       {gameData.game_data.question || gameData.game_data.letters}
                     </div>
                     <input
                       name="answer"
                       type="text"
                       placeholder={t('contests.enterAnswer')}
-                      className="w-full rounded-lg border border-dark-600 bg-dark-700 px-4 py-3 focus:border-accent-500 focus:outline-none"
+                      className="glass-control h-12 w-full rounded-2xl px-4 outline-none focus:border-accent-400/45"
                     />
                     <button
                       type="submit"
                       disabled={submitAnswerMutation.isPending}
-                      className="btn-primary w-full"
+                      className="button-lift h-12 w-full rounded-full bg-accent-500 text-sm font-bold text-on-accent"
                     >
                       {t('contests.submit')}
                     </button>
@@ -186,7 +212,10 @@ export default function Contests() {
             )}
 
             {result && (
-              <button onClick={handleCloseGame} className="btn-secondary mt-4 w-full">
+              <button
+                onClick={handleCloseGame}
+                className="glass-control mt-4 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-dark-200"
+              >
                 {t('common.close')}
               </button>
             )}
@@ -198,10 +227,10 @@ export default function Contests() {
       {contests && contests.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {contests.map((contest) => (
-            <div key={contest.id} className="glass-surface card">
+            <div key={contest.id} className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="break-words text-lg font-semibold">{contest.name}</h3>
+                  <h3 className="break-words text-lg font-medium">{contest.name}</h3>
                   {contest.description && (
                     <p className="mt-1 text-sm text-dark-400">{contest.description}</p>
                   )}
@@ -216,11 +245,17 @@ export default function Contests() {
 
               <div className="mt-4">
                 {contest.already_played ? (
-                  <button disabled className="btn-secondary w-full cursor-not-allowed opacity-50">
+                  <button
+                    disabled
+                    className="glass-control flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full text-sm font-bold text-dark-400 opacity-60"
+                  >
                     {t('contests.alreadyPlayed')}
                   </button>
                 ) : (
-                  <button onClick={() => handlePlayContest(contest)} className="btn-primary w-full">
+                  <button
+                    onClick={() => handlePlayContest(contest)}
+                    className="button-lift h-12 w-full rounded-full bg-accent-500 text-sm font-bold text-on-accent"
+                  >
                     {t('contests.play')}
                   </button>
                 )}
@@ -229,8 +264,8 @@ export default function Contests() {
           ))}
         </div>
       ) : (
-        <div className="glass-surface card py-12 text-center">
-          <GamepadIcon className="h-6 w-6" />
+        <div className="glass-panel rounded-[30px] px-6 py-12 text-center">
+          <GamepadIcon className="mx-auto h-6 w-6 text-accent-400" />
           <p className="mt-4 text-dark-400">{t('contests.noContests')}</p>
         </div>
       )}
