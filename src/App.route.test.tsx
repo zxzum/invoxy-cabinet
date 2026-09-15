@@ -200,9 +200,6 @@ vi.mock('./pages/Profile', () => ({ default: () => <div data-testid="profile-pag
 vi.mock('./pages/Subscriptions', () => ({
   default: () => <div data-testid="subscriptions-page">subscriptions</div>,
 }));
-vi.mock('./pages/Subscription', () => ({
-  default: () => <div data-testid="subscription-page">subscription</div>,
-}));
 vi.mock('./pages/ModernSubscriptionManage', () => ({
   default: () => <div data-testid="modern-subscription-page">modern subscription</div>,
 }));
