@@ -21,31 +21,38 @@ export default function Contests() {
     queryKey: ['contests'],
     queryFn: contestsApi.getContests,
   });
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   const getGameMutation = useMutation({
     mutationFn: contestsApi.getContestGame,
     onSuccess: (data) => {
+      setMutationError(null);
       setGameData(data);
       setResult(null);
     },
+    onError: () => setMutationError(t('contests.error')),
   });
 
   const submitAnswerMutation = useMutation({
     mutationFn: ({ roundId, answer }: { roundId: number; answer: string }) =>
       contestsApi.submitAnswer(roundId, answer),
     onSuccess: (data) => {
+      setMutationError(null);
       setResult(data);
       queryClient.invalidateQueries({ queryKey: ['contests'] });
     },
+    onError: () => setMutationError(t('contests.error')),
   });
 
   const handlePlayContest = async (contest: ContestInfo) => {
     setSelectedContest(contest);
+    setMutationError(null);
     getGameMutation.mutate(contest.id);
   };
 
   const handleSubmitAnswer = (answer: string) => {
     if (gameData) {
+      setMutationError(null);
       submitAnswerMutation.mutate({ roundId: gameData.round_id, answer });
     }
   };
@@ -54,6 +61,7 @@ export default function Contests() {
     setSelectedContest(null);
     setGameData(null);
     setResult(null);
+    setMutationError(null);
   };
 
   if (isLoading) {
@@ -117,6 +125,15 @@ export default function Contests() {
                 <XIcon className="h-6 w-6" />
               </button>
             </div>
+
+            {mutationError && (
+              <p
+                role="alert"
+                className="mb-4 rounded-2xl bg-error-500/10 p-4 text-sm text-error-400"
+              >
+                {mutationError}
+              </p>
+            )}
 
             {getGameMutation.isPending && (
               <div className="flex justify-center py-8">

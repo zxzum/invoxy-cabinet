@@ -125,14 +125,23 @@ describe('AppShell support FAB', () => {
     expect(screen.getAllByRole('link', { name: 'Поддержка' })).toHaveLength(1);
   });
 
-  it.each(['/dashboard', '/news', '/news/sample', '/info', '/info/rules'])(
-    'does not render the legacy support FAB on modern customer route %s',
-    (pathname) => {
-      renderShell(pathname);
+  it.each([
+    '/dashboard',
+    '/news',
+    '/news/sample',
+    '/info',
+    '/info/rules',
+    '/support',
+    '/polls',
+    '/contests',
+    '/wheel',
+    '/balance/saved-cards',
+    '/profile/accounts',
+  ])('does not render the legacy support FAB on modern customer route %s', (pathname) => {
+    renderShell(pathname);
 
-      expect(screen.queryByRole('link', { name: 'Поддержка' })).toBeNull();
-    },
-  );
+    expect(screen.queryByRole('link', { name: 'Поддержка' })).toBeNull();
+  });
 
   it('does not render the support FAB on /support', () => {
     renderShell('/support');
@@ -223,6 +232,23 @@ describe('AppShell support FAB', () => {
       'modern',
     );
     expect(document.documentElement.getAttribute('data-customer-palette')).toBe('mint');
+
+    for (const pathname of [
+      '/support',
+      '/polls',
+      '/contests',
+      '/wheel',
+      '/balance/saved-cards',
+      '/profile/accounts',
+      '/account/security',
+    ]) {
+      cleanup();
+      renderShell(pathname);
+      expect(screen.getByText('page').closest('.ix-app')?.getAttribute('data-customer-ui')).toBe(
+        'modern',
+      );
+      expect(document.documentElement.getAttribute('data-customer-palette')).toBe('mint');
+    }
   });
 
   it.each(['/dashboard', '/subscriptions', '/balance', '/referral', '/support', '/info'])(

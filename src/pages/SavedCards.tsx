@@ -170,7 +170,7 @@ export default function SavedCards() {
       {/* Header */}
       <motion.div variants={staggerItem} className="flex items-start gap-3">
         <button
-          onClick={() => navigate('/balance')}
+          onClick={() => navigate('/profile#top-up')}
           className="glass-control mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-300 transition-colors hover:border-accent-400/35 hover:text-dark-50"
         >
           <BackIcon className="h-5 w-5" />

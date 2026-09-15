@@ -25,6 +25,7 @@ export default function Polls() {
     reward: number | null;
     message: string;
   } | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   const {
     data: polls,
@@ -38,11 +39,13 @@ export default function Polls() {
   const startPollMutation = useMutation({
     mutationFn: pollsApi.startPoll,
     onSuccess: (data) => {
+      setMutationError(null);
       setCurrentQuestion(data.question);
       setQuestionIndex(data.current_question_index);
       setTotalQuestions(data.total_questions);
       setCompletionMessage(null);
     },
+    onError: () => setMutationError(t('polls.error')),
   });
 
   const answerMutation = useMutation({
@@ -56,6 +59,7 @@ export default function Polls() {
       optionId: number;
     }) => pollsApi.answerQuestion(responseId, questionId, optionId),
     onSuccess: (data) => {
+      setMutationError(null);
       if (data.is_completed) {
         setCurrentQuestion(null);
         setCompletionMessage({
@@ -69,15 +73,18 @@ export default function Polls() {
         setTotalQuestions(data.total_questions);
       }
     },
+    onError: () => setMutationError(t('polls.error')),
   });
 
   const handleStartPoll = (poll: PollInfo) => {
     setSelectedPoll(poll);
+    setMutationError(null);
     startPollMutation.mutate(poll.response_id);
   };
 
   const handleAnswer = (optionId: number) => {
     if (selectedPoll && currentQuestion) {
+      setMutationError(null);
       answerMutation.mutate({
         responseId: selectedPoll.response_id,
         questionId: currentQuestion.id,
@@ -90,6 +97,7 @@ export default function Polls() {
     setSelectedPoll(null);
     setCurrentQuestion(null);
     setCompletionMessage(null);
+    setMutationError(null);
   };
 
   const pollDialogRef = useFocusTrap<HTMLDivElement>(!!selectedPoll, {
@@ -172,6 +180,15 @@ export default function Polls() {
                 <CloseIcon className="h-6 w-6" />
               </button>
             </div>
+
+            {mutationError && (
+              <p
+                role="alert"
+                className="mb-4 rounded-2xl bg-error-500/10 p-4 text-sm text-error-400"
+              >
+                {mutationError}
+              </p>
+            )}
 
             {startPollMutation.isPending && (
               <div className="flex justify-center py-8">

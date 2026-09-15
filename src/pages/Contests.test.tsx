@@ -82,4 +82,24 @@ describe('contests API flow', () => {
     );
     expect(await screen.findByText('Contest completed from API')).toBeTruthy();
   });
+
+  it('shows an error when the game request fails', async () => {
+    mocks.getContests.mockResolvedValue([
+      {
+        id: 8,
+        name: 'Unavailable contest',
+        description: null,
+        prize_days: 1,
+        already_played: false,
+      },
+    ]);
+    mocks.getContestGame.mockRejectedValue(new Error('offline'));
+
+    renderContests();
+
+    await screen.findByText('Unavailable contest');
+    fireEvent.click(screen.getByRole('button', { name: 'contests.play' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('contests.error');
+  });
 });

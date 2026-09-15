@@ -58,6 +58,17 @@ export function AppShell({ children }: AppShellProps) {
   const [previousPath, setPreviousPath] = useState(location.pathname);
   const [direction, setDirection] = useState(1);
   const tabs = ['/dashboard', '/tariffs', '/referrals', '/profile'];
+  const modernCustomerRoutes = [
+    '/support',
+    '/polls',
+    '/contests',
+    '/wheel',
+    '/balance/saved-cards',
+    '/saved-cards',
+    '/profile/accounts',
+    '/profile/saved-cards',
+    '/account/security',
+  ];
   const isModernCustomerRoute =
     tabs.includes(location.pathname) ||
     location.pathname === '/subscription/purchase' ||
@@ -67,7 +78,8 @@ export function AppShell({ children }: AppShellProps) {
     location.pathname === '/news' ||
     location.pathname.startsWith('/news/') ||
     location.pathname === '/info' ||
-    location.pathname.startsWith('/info/');
+    location.pathname.startsWith('/info/') ||
+    modernCustomerRoutes.includes(location.pathname);
   const animatePage = !isTelegramWebApp && !reducedMotion;
   if (animatePage && previousPath !== location.pathname) {
     const previousIndex = tabs.indexOf(previousPath);
