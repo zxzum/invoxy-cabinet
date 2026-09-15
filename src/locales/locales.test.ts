@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import en from './en.json';
+import fa from './fa.json';
 import ru from './ru.json';
+import zh from './zh.json';
 
 /**
  * Синхронность en/ru локалей. i18next настроен с fallbackLng: 'ru' — ключ,
@@ -87,5 +89,21 @@ describe('синхронность локалей en/ru', () => {
       }
     }
     expect(mismatches).toEqual([]);
+  });
+});
+
+describe('public legal navigation label', () => {
+  it('is translated in every supported locale', () => {
+    expect({
+      ru: ru.info.legalNavigation,
+      en: en.info.legalNavigation,
+      zh: zh.info.legalNavigation,
+      fa: fa.info.legalNavigation,
+    }).toEqual({
+      ru: 'Разделы информации',
+      en: 'Information sections',
+      zh: '信息分区',
+      fa: 'بخش‌های اطلاعات',
+    });
   });
 });

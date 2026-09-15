@@ -3,7 +3,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PiCaretDown } from 'react-icons/pi';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import DOMPurify from 'dompurify';
 import { infoApi, type FaqPage, type InfoVisibility } from '../api/info';
 import { formatContent } from '../utils/legalContent';
@@ -232,7 +232,11 @@ function ReplacementFaqView({ items }: { items: FaqItem[] }) {
 
 export default function Info() {
   const { t, i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState<string>('faq');
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<string>(() =>
+    requestedTab && BUILTIN_TABS.has(requestedTab) ? requestedTab : 'faq',
+  );
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const locale = i18n.language.split('-')[0];
 
@@ -373,6 +377,14 @@ export default function Info() {
 
     return [...visibleBuiltinTabs, ...customTabs];
   }, [visibility, tabReplacements, extraPages, locale, t]);
+
+  useEffect(() => {
+    if (tabs.length === 0) return;
+    const fallback = tabs.some((tab) => tab.id === 'faq') ? 'faq' : tabs[0].id;
+    const selectedTab =
+      requestedTab && tabs.some((tab) => tab.id === requestedTab) ? requestedTab : fallback;
+    setActiveTab(selectedTab);
+  }, [requestedTab, tabs]);
 
   useEffect(() => {
     if (tabs.length === 0) return;

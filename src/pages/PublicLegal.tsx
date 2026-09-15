@@ -80,7 +80,7 @@ export default function PublicLegal({ doc }: PublicLegalProps) {
         <h1 className="mb-6 text-2xl font-semibold text-dark-100">{title}</h1>
 
         <nav
-          aria-label={t('info.legalNavigation', 'Разделы информации')}
+          aria-label={t('info.legalNavigation')}
           className="scrollbar-hide mb-6 flex gap-2 overflow-x-auto rounded-xl border border-dark-700/70 bg-dark-900/60 p-2"
         >
           {LEGAL_NAV.map((link) => {

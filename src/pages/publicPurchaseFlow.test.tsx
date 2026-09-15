@@ -91,7 +91,12 @@ vi.mock('qrcode.react', () => ({
 }));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : key),
+    t: (key: string, fallback?: unknown) =>
+      key === 'info.legalNavigation'
+        ? 'Разделы информации'
+        : typeof fallback === 'string'
+          ? fallback
+          : key,
   }),
 }));
 vi.mock('framer-motion', () => ({
