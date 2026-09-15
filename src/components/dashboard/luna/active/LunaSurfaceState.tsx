@@ -5,6 +5,11 @@ interface LunaSurfaceStateProps {
   className?: string;
 }
 
+interface LunaErrorStateProps extends LunaSurfaceStateProps {
+  onRetry?: () => void;
+  retryLabel?: string;
+}
+
 export function LunaLoadingState({ message, className = '' }: LunaSurfaceStateProps) {
   return (
     <div
@@ -28,6 +33,31 @@ export function LunaEmptyState({ message, className = '' }: LunaSurfaceStateProp
       className={`glass-surface rounded-3xl p-6 text-center text-sm text-dark-400 ${className}`}
     >
       {message}
+    </div>
+  );
+}
+
+export function LunaErrorState({
+  message,
+  onRetry,
+  retryLabel = 'Retry',
+  className = '',
+}: LunaErrorStateProps) {
+  return (
+    <div
+      role="alert"
+      className={`rounded-xl border border-error-500/30 bg-error-500/10 p-3 text-sm text-error-300 ${className}`}
+    >
+      <p>{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-3 min-h-9 rounded-full border border-error-500/30 px-3 text-xs font-semibold text-error-300 transition-colors hover:bg-error-500/10"
+        >
+          {retryLabel}
+        </button>
+      )}
     </div>
   );
 }

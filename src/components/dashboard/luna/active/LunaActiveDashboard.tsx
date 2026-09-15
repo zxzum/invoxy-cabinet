@@ -76,6 +76,15 @@ export interface LunaActiveDashboardProps {
   regularTrafficPackages: TrafficPackage[];
   lteTrafficPackages: TrafficPackage[];
   devicesConfig: DevicesConfig | null;
+  devicesErrorMessage?: string;
+  renewalErrorMessage?: string;
+  connectionErrorMessage?: string;
+  addonsErrorMessage?: string;
+  retryLabel?: string;
+  onRetryDevices?: () => void;
+  onRetryRenewal?: () => void;
+  onRetryConnection?: () => void;
+  onRetryAddons?: () => void;
   labels?: LunaActiveLabels;
   isLoading?: boolean;
   isCopied?: boolean;
@@ -122,6 +131,15 @@ export default function LunaActiveDashboard({
   regularTrafficPackages,
   lteTrafficPackages,
   devicesConfig,
+  devicesErrorMessage,
+  renewalErrorMessage,
+  connectionErrorMessage,
+  addonsErrorMessage,
+  retryLabel,
+  onRetryDevices,
+  onRetryRenewal,
+  onRetryConnection,
+  onRetryAddons,
   labels,
   isLoading = false,
   isCopied = false,
@@ -186,6 +204,9 @@ export default function LunaActiveDashboard({
         <LunaDevicesCard
           devices={devices}
           deviceLimit={subscription.device_limit}
+          errorMessage={devicesErrorMessage}
+          onRetry={onRetryDevices}
+          retryLabel={retryLabel}
           formatDeviceDate={formatDeviceDate}
           onManageDevices={onManageDevices}
           onRemoveDevice={onRemoveDevice}
@@ -198,6 +219,9 @@ export default function LunaActiveDashboard({
         <LunaRenewalCard
           options={renewalOptions}
           selectedPeriodDays={selectedRenewalPeriod}
+          errorMessage={renewalErrorMessage}
+          onRetry={onRetryRenewal}
+          retryLabel={retryLabel}
           formatPrice={formatPrice}
           formatPeriod={formatPeriod}
           onSelect={onSelectRenewal}
@@ -217,6 +241,9 @@ export default function LunaActiveDashboard({
           incyLink={incyLink}
           incyAvailable={incyAvailable}
           qrAvailable={qrAvailable}
+          errorMessage={connectionErrorMessage}
+          onRetry={onRetryConnection}
+          retryLabel={retryLabel}
           isCopied={isCopied}
           onCopyAccess={onCopyAccess}
           onConnectHapp={onConnectHapp}
@@ -234,6 +261,9 @@ export default function LunaActiveDashboard({
           devicesConfig={devicesConfig}
           regularTrafficPackages={regularTrafficPackages}
           lteTrafficPackages={lteTrafficPackages}
+          errorMessage={addonsErrorMessage}
+          onRetry={onRetryAddons}
+          retryLabel={retryLabel}
           formatPackagePrice={formatPackagePrice}
           onOpenDeviceAddon={onOpenDeviceAddon}
           onOpenTrafficAddon={onOpenTrafficAddon}

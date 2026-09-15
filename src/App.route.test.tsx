@@ -405,6 +405,21 @@ describe('cabinet route boundary', () => {
     expect(screen.queryByTestId('landing-page')).toBeNull();
   });
 
+  it('preserves a Telegram root query and hash when replacing it with the dashboard', async () => {
+    auth.telegram.inTelegram = true;
+    auth.telegram.initData = 'query_id=telegram&auth_date=123&hash=valid';
+    auth.state.loginWithTelegram.mockResolvedValue(undefined);
+
+    await renderApp('/?ref=invite-42#plans');
+
+    await waitFor(() => expect(auth.state.loginWithTelegram).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(screen.getByTestId('location').textContent).toContain(
+        '/dashboard?ref=invite-42#plans[REPLACE]',
+      ),
+    );
+  });
+
   it('keeps a Telegram root without initData on the public landing page', async () => {
     auth.telegram.inTelegram = true;
 

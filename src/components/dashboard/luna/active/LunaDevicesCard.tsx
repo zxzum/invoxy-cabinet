@@ -1,12 +1,15 @@
 import { DevicesIcon, PlusIcon, TrashIcon } from '@/components/icons';
 import type { Device } from '@/types';
-import { LunaEmptyState, LunaLoadingState } from './LunaSurfaceState';
+import { LunaEmptyState, LunaErrorState, LunaLoadingState } from './LunaSurfaceState';
 
 export interface LunaDevicesCardProps {
   devices: Device[];
   deviceLimit: number | null;
   isLoading?: boolean;
   isRemovingHwid?: string | null;
+  errorMessage?: string;
+  onRetry?: () => void;
+  retryLabel?: string;
   onManageDevices?: () => void;
   onRemoveDevice?: (device: Device) => void;
   formatDeviceDate?: (date: string) => string;
@@ -22,6 +25,9 @@ export default function LunaDevicesCard({
   deviceLimit,
   isLoading = false,
   isRemovingHwid = null,
+  errorMessage,
+  onRetry,
+  retryLabel,
   onManageDevices,
   onRemoveDevice,
   formatDeviceDate,
@@ -46,6 +52,15 @@ export default function LunaDevicesCard({
           {devices.length} / {deviceLimit ?? '—'}
         </span>
       </div>
+
+      {errorMessage && (
+        <LunaErrorState
+          message={errorMessage}
+          onRetry={onRetry}
+          retryLabel={retryLabel}
+          className="mt-4"
+        />
+      )}
 
       {devices.length === 0 ? (
         <LunaEmptyState message={emptyMessage} className="mt-4 p-4" />

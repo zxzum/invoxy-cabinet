@@ -117,8 +117,9 @@ export default function Login() {
       return savedUrl;
     }
     // По умолчанию в защищённый кабинет
-    return '/dashboard';
-  }, [location.state]);
+    const rootSuffix = location.pathname === '/' ? `${location.search}${location.hash}` : '';
+    return rootSuffix ? `/dashboard${rootSuffix}` : '/dashboard';
+  }, [location.hash, location.pathname, location.search, location.state]);
 
   // Fetch branding with unified cache
   const cachedBranding = useMemo(() => getCachedBranding(), []);

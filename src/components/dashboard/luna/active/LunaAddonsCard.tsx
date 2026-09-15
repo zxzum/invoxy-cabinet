@@ -1,12 +1,15 @@
 import { DevicesIcon, PlusIcon, TrafficIcon } from '@/components/icons';
 import type { DevicesConfig, TrafficPackage } from '@/types';
-import { LunaEmptyState, LunaLoadingState } from './LunaSurfaceState';
+import { LunaEmptyState, LunaErrorState, LunaLoadingState } from './LunaSurfaceState';
 
 export interface LunaAddonsCardProps {
   devicesConfig: DevicesConfig | null;
   regularTrafficPackages: TrafficPackage[];
   lteTrafficPackages: TrafficPackage[];
   isLoading?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  retryLabel?: string;
   onOpenDeviceAddon?: () => void;
   onOpenTrafficAddon?: (packageOption: TrafficPackage) => void;
   onOpenLteAddon?: (packageOption: TrafficPackage) => void;
@@ -83,6 +86,9 @@ export default function LunaAddonsCard({
   regularTrafficPackages,
   lteTrafficPackages,
   isLoading = false,
+  errorMessage,
+  onRetry,
+  retryLabel,
   onOpenDeviceAddon,
   onOpenTrafficAddon,
   onOpenLteAddon,
@@ -105,17 +111,28 @@ export default function LunaAddonsCard({
   const hasDeviceAddon = Boolean(devicesConfig);
   const hasTrafficAddons = regularTrafficPackages.length > 0 || lteTrafficPackages.length > 0;
 
-  if (!hasDeviceAddon && !hasTrafficAddons) return <LunaEmptyState message={emptyMessage} />;
-
   const canAddDevice = Boolean(
     devicesConfig &&
       (devicesConfig.max === 0 || devicesConfig.current < devicesConfig.max) &&
       onOpenDeviceAddon,
   );
 
+  if (!hasDeviceAddon && !hasTrafficAddons && !errorMessage) {
+    return <LunaEmptyState message={emptyMessage} />;
+  }
+
   return (
     <section className="glass-surface rounded-[28px] p-4 sm:p-5" aria-label={title}>
       <h2 className="text-lg font-semibold text-dark-50">{title}</h2>
+
+      {errorMessage && (
+        <LunaErrorState
+          message={errorMessage}
+          onRetry={onRetry}
+          retryLabel={retryLabel}
+          className="mt-4"
+        />
+      )}
 
       <div className="mt-4 space-y-3">
         {devicesConfig && (

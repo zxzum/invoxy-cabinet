@@ -1,5 +1,5 @@
 import { CheckIcon, CopyIcon, ExternalLinkIcon, KeyIcon, LinkIcon } from '@/components/icons';
-import { LunaEmptyState, LunaLoadingState } from './LunaSurfaceState';
+import { LunaEmptyState, LunaErrorState, LunaLoadingState } from './LunaSurfaceState';
 
 export interface LunaConnectionActionsProps {
   accessLink: string | null;
@@ -7,6 +7,9 @@ export interface LunaConnectionActionsProps {
   incyLink: string | null;
   incyAvailable?: boolean;
   qrAvailable?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  retryLabel?: string;
   isLoading?: boolean;
   isCopied?: boolean;
   onCopyAccess?: () => void;
@@ -29,6 +32,9 @@ export default function LunaConnectionActions({
   incyLink,
   incyAvailable,
   qrAvailable,
+  errorMessage,
+  onRetry,
+  retryLabel,
   isLoading = false,
   isCopied = false,
   onCopyAccess,
@@ -66,6 +72,15 @@ export default function LunaConnectionActions({
         </code>
       ) : (
         <LunaEmptyState message={emptyMessage} className="mt-4 p-4" />
+      )}
+
+      {errorMessage && (
+        <LunaErrorState
+          message={errorMessage}
+          onRetry={onRetry}
+          retryLabel={retryLabel}
+          className="mt-4"
+        />
       )}
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">

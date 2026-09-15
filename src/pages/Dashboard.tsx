@@ -47,7 +47,7 @@ import { isHappCryptolinkMode, resolveConnectionUrlForUi } from '../utils/connec
 import { copyToClipboard } from '../utils/clipboard';
 import { openAppScheme } from '../utils/openAppScheme';
 import { isInTelegramWebApp } from '../hooks/useTelegramSDK';
-import { useNativeDialog } from '@/platform';
+import { useNativeDialog, useNotify } from '@/platform';
 import type { Device, RenewalOption, TrafficPackage } from '../types';
 
 export default function Dashboard() {
@@ -63,6 +63,7 @@ export default function Dashboard() {
   const { formatAmount, currencySymbol } = useCurrency();
   const { isDark } = useTheme();
   const nativeDialog = useNativeDialog();
+  const notify = useNotify();
 
   // Auth bootstrap already provides the user. Avoid a duplicate /me request on
   // every return to the dashboard; refresh only while that bootstrap is empty.
@@ -307,6 +308,8 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['devices', activeSubId] });
       queryClient.invalidateQueries({ queryKey: ['devices'] });
     },
+    onError: (error: unknown) =>
+      notify.error(getApiErrorMessage(error, t('common.error', 'Не удалось выполнить действие'))),
   });
 
   const activateTrialMutation = useMutation({
@@ -758,28 +761,6 @@ export default function Dashboard() {
         happDownloadsLoading ||
         purchaseOptionsLoading),
   );
-  const activeDashboardError = Boolean(
-    activeSubscription &&
-      (devicesError ||
-        renewalError ||
-        regularTrafficPackagesError ||
-        (hasLteTraffic && lteTrafficPackagesError) ||
-        connectionLinkError ||
-        happDownloadsError ||
-        purchaseOptionsError),
-  );
-  const retryActiveDashboard = () => {
-    void Promise.all([
-      refetchDevices(),
-      refetchRenewalOptions(),
-      refetchRegularTrafficPackages(),
-      ...(hasLteTraffic ? [refetchLteTrafficPackages()] : []),
-      refetchConnectionLink(),
-      refetchHappDownloads(),
-      refetchPurchaseOptions(),
-    ]);
-  };
-
   // Stagger-вход секций дашборда: фиксированные индексы (задержка = база + индекс*шаг),
   // взаимоисключающие ветки получают одинаковый индекс. Exit не задаём — уход страницы
   // уже анимирован AnimatePresence в AppShell, второй exit дал бы мигание.
@@ -790,7 +771,7 @@ export default function Dashboard() {
     trialInfo != null && (balanceData?.balance_kopeks ?? 0) >= trialInfo.price_kopeks;
 
   return (
-    <div className="space-y-6">
+    <div className="luna-dashboard space-y-6">
       {/* Header */}
       <motion.div data-onboarding="welcome" {...section(0)}>
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -976,78 +957,111 @@ export default function Dashboard() {
               balanceRubles={balanceData?.balance_rubles ?? 0}
             />
           ) : activeSubscription ? (
-            activeDashboardError ? (
-              <div className="glass-surface space-y-3 p-4" role="alert">
-                <p className="text-sm text-dark-300">
-                  {t('dashboard.activeError', 'Не удалось загрузить данные подписки')}
-                </p>
-                <button
-                  type="button"
-                  onClick={retryActiveDashboard}
-                  className="btn-secondary min-h-10 px-4 py-2 text-xs"
-                >
-                  {t('common.retry', 'Повторить')}
-                </button>
-              </div>
-            ) : (
-              <LunaActiveDashboard
-                subscription={activeSubscription}
-                devices={devicesData?.devices ?? []}
-                regularTraffic={regularTraffic}
-                lteTraffic={lteTraffic}
-                accessLink={accessLink}
-                happLink={happLink}
-                incyLink={null}
-                incyAvailable={Boolean(connectionLink)}
-                qrAvailable={Boolean(qrConnectionUrl ?? accessLink)}
-                renewalOptions={renewalOptions ?? []}
-                selectedRenewalPeriod={effectiveRenewalPeriod}
-                regularTrafficPackages={regularTrafficPackages ?? []}
-                lteTrafficPackages={lteTrafficPackages ?? []}
-                devicesConfig={devicesConfig}
-                labels={lunaLabels}
-                loadingMessage={t('dashboard.luna.loading', 'Загружаем подписку…')}
-                emptyMessage={t('dashboard.luna.empty', 'Нет активной подписки')}
-                formatDate={formatDate}
-                formatDeviceDate={formatDate}
-                formatUsage={(traffic) =>
-                  traffic.isUnlimited
-                    ? t('dashboard.unlimited', 'Безлимит')
-                    : `${formatTraffic(traffic.usedGb)} / ${formatTraffic(traffic.limitGb)}`
-                }
-                formatPrice={(option: RenewalOption) => formatKopeks(option.price_kopeks)}
-                formatPackagePrice={(pkg: TrafficPackage) => formatKopeks(pkg.price_kopeks)}
-                formatPeriod={(periodDays) =>
-                  `${String(periodDays)} ${pluralLabel('subscription.trial.daysLabel', periodDays)}`
-                }
-                isLoading={activeDashboardLoading}
-                isCopied={accessCopied}
-                isRemovingHwid={pendingRemovalHwid}
-                onRefreshTraffic={handleRefreshTraffic}
-                isRefreshingTraffic={isRefreshingTraffic}
-                trafficRefreshCooldown={trafficRefreshCooldown}
-                onManageSubscription={() => navigate(`/subscriptions/${activeSubscription.id}`)}
-                onManageDevices={() => navigate(`/subscriptions/${activeSubscription.id}`)}
-                onRemoveDevice={handleRemoveDevice}
-                onCopyAccess={handleCopyAccess}
-                onConnectHapp={happLink ? () => openDeepLink(happLink) : undefined}
-                onConnectIncy={
-                  connectionLink
-                    ? () => navigate(`/connection?sub=${activeSubscription.id}`)
-                    : undefined
-                }
-                onShowQr={handleShowQr}
-                onSelectRenewal={(option) => setSelectedRenewalPeriod(option.period_days)}
-                onSubmitRenewal={undefined}
-                onOpenRenewalOptions={() =>
-                  navigate(`/subscriptions/${activeSubscription.id}/renew`)
-                }
-                onOpenDeviceAddon={() => setShowDeviceTopup(true)}
-                onOpenTrafficAddon={(pkg) => openTrafficTopup(pkg, 'regular')}
-                onOpenLteAddon={(pkg) => openTrafficTopup(pkg, 'whitelist')}
-                submitRenewalLabel={t('dashboard.luna.renewal.open', 'Open renewal options')}
-              />
-            )
+            <LunaActiveDashboard
+              subscription={activeSubscription}
+              devices={devicesData?.devices ?? []}
+              regularTraffic={regularTraffic}
+              lteTraffic={lteTraffic}
+              accessLink={accessLink}
+              happLink={happLink}
+              incyLink={null}
+              incyAvailable={Boolean(connectionLink)}
+              qrAvailable={Boolean(qrConnectionUrl ?? accessLink)}
+              renewalOptions={renewalOptions ?? []}
+              selectedRenewalPeriod={effectiveRenewalPeriod}
+              regularTrafficPackages={regularTrafficPackages ?? []}
+              lteTrafficPackages={lteTrafficPackages ?? []}
+              devicesConfig={devicesConfig}
+              devicesErrorMessage={
+                devicesError
+                  ? t('dashboard.luna.devices.error', 'Не удалось загрузить устройства')
+                  : undefined
+              }
+              renewalErrorMessage={
+                renewalError
+                  ? t('dashboard.luna.renewal.error', 'Не удалось загрузить варианты продления')
+                  : undefined
+              }
+              connectionErrorMessage={
+                connectionLinkError || happDownloadsError
+                  ? t('dashboard.luna.connection.error', 'Не удалось загрузить данные подключения')
+                  : undefined
+              }
+              addonsErrorMessage={
+                regularTrafficPackagesError ||
+                (hasLteTraffic && lteTrafficPackagesError) ||
+                purchaseOptionsError
+                  ? t('dashboard.luna.addons.error', 'Не удалось загрузить варианты докупки')
+                  : undefined
+              }
+              retryLabel={t('common.retry', 'Повторить')}
+              labels={lunaLabels}
+              loadingMessage={t('dashboard.luna.loading', 'Загружаем подписку…')}
+              emptyMessage={t('dashboard.luna.empty', 'Нет активной подписки')}
+              formatDate={formatDate}
+              formatDeviceDate={formatDate}
+              formatUsage={(traffic) =>
+                traffic.isUnlimited
+                  ? t('dashboard.unlimited', 'Безлимит')
+                  : `${formatTraffic(traffic.usedGb)} / ${formatTraffic(traffic.limitGb)}`
+              }
+              formatPrice={(option: RenewalOption) => formatKopeks(option.price_kopeks)}
+              formatPackagePrice={(pkg: TrafficPackage) => formatKopeks(pkg.price_kopeks)}
+              formatPeriod={(periodDays) =>
+                `${String(periodDays)} ${pluralLabel('subscription.trial.daysLabel', periodDays)}`
+              }
+              isLoading={activeDashboardLoading}
+              isCopied={accessCopied}
+              isRemovingHwid={pendingRemovalHwid}
+              onRefreshTraffic={handleRefreshTraffic}
+              isRefreshingTraffic={isRefreshingTraffic}
+              trafficRefreshCooldown={trafficRefreshCooldown}
+              onManageSubscription={() => navigate(`/subscriptions/${activeSubscription.id}`)}
+              onManageDevices={() => navigate(`/subscriptions/${activeSubscription.id}`)}
+              onRemoveDevice={handleRemoveDevice}
+              onRetryDevices={devicesError ? () => void refetchDevices() : undefined}
+              onRetryRenewal={renewalError ? () => void refetchRenewalOptions() : undefined}
+              onRetryConnection={
+                connectionLinkError || happDownloadsError
+                  ? () => {
+                      void Promise.all([
+                        ...(connectionLinkError ? [refetchConnectionLink()] : []),
+                        ...(happDownloadsError ? [refetchHappDownloads()] : []),
+                      ]);
+                    }
+                  : undefined
+              }
+              onRetryAddons={
+                regularTrafficPackagesError ||
+                (hasLteTraffic && lteTrafficPackagesError) ||
+                purchaseOptionsError
+                  ? () => {
+                      void Promise.all([
+                        ...(regularTrafficPackagesError ? [refetchRegularTrafficPackages()] : []),
+                        ...(hasLteTraffic && lteTrafficPackagesError
+                          ? [refetchLteTrafficPackages()]
+                          : []),
+                        ...(purchaseOptionsError ? [refetchPurchaseOptions()] : []),
+                      ]);
+                    }
+                  : undefined
+              }
+              onCopyAccess={handleCopyAccess}
+              onConnectHapp={happLink ? () => openDeepLink(happLink) : undefined}
+              onConnectIncy={
+                connectionLink
+                  ? () => navigate(`/connection?sub=${activeSubscription.id}`)
+                  : undefined
+              }
+              onShowQr={handleShowQr}
+              onSelectRenewal={(option) => setSelectedRenewalPeriod(option.period_days)}
+              onSubmitRenewal={undefined}
+              onOpenRenewalOptions={() => navigate(`/subscriptions/${activeSubscription.id}/renew`)}
+              onOpenDeviceAddon={() => setShowDeviceTopup(true)}
+              onOpenTrafficAddon={(pkg) => openTrafficTopup(pkg, 'regular')}
+              onOpenLteAddon={(pkg) => openTrafficTopup(pkg, 'whitelist')}
+              submitRenewalLabel={t('dashboard.luna.renewal.open', 'Open renewal options')}
+            />
           ) : null}
         </motion.div>
       )}

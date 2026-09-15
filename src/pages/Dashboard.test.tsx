@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -47,6 +47,7 @@ const mocks = vi.hoisted(() => ({
   getTrialInfo: vi.fn(),
   openAppScheme: vi.fn(),
   confirm: vi.fn(),
+  notifyError: vi.fn(),
   refreshUser: vi.fn(),
 }));
 
@@ -78,6 +79,7 @@ vi.mock('@/platform', async (importOriginal) => {
   return {
     ...actual,
     useNativeDialog: () => ({ confirm: mocks.confirm }),
+    useNotify: () => ({ error: mocks.notifyError }),
   };
 });
 vi.mock('../store/auth', () => ({
@@ -339,6 +341,20 @@ describe('Dashboard target states', () => {
     const traffic = screen.getByRole('region', { name: 'Traffic' });
     expect(traffic.textContent).toContain('18.0');
     expect(traffic.textContent).toContain('100.0');
+  });
+
+  it('mounts the Luna CSS contract on the dashboard product wrapper', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    expect(document.querySelector('.luna-dashboard')).toBeTruthy();
   });
 
   it('keeps the selected subscription id on every target query', async () => {
@@ -789,33 +805,55 @@ describe('Dashboard target states', () => {
     expect(await screen.findByRole('status', { name: 'Загружаем подписку…' })).toBeTruthy();
   });
 
-  it('shows a retry state when active dashboard data fails and retries the target queries', async () => {
+  it('keeps the active dashboard when the optional connection query returns 404', async () => {
     setupResolvedQueries();
     mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
     mocks.getSubscription.mockResolvedValue({
       has_subscription: true,
       subscription: activeSubscription,
     });
-    mocks.getConnectionLink
-      .mockRejectedValueOnce(new Error('connection fixture failure'))
-      .mockResolvedValue({
-        subscription_url: 'https://example.test/subscription',
-        display_link: null,
-        happ_redirect_link: null,
-        happ_scheme_link: 'happ://add/fixture',
-        connect_mode: '',
-        hide_link: false,
-        instructions: { steps: [] },
-      });
+    mocks.getConnectionLink.mockRejectedValueOnce({ response: { status: 404 } }).mockResolvedValue({
+      subscription_url: 'https://example.test/subscription',
+      display_link: null,
+      happ_redirect_link: null,
+      happ_scheme_link: 'happ://add/fixture',
+      connect_mode: '',
+      hide_link: false,
+      instructions: { steps: [] },
+    });
 
     renderPage();
 
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('Не удалось загрузить данные подписки');
-    fireEvent.click(screen.getByRole('button', { name: 'Повторить' }));
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    expect(screen.getByText('18.0 GB / 100.0 GB')).toBeTruthy();
+    expect(screen.getByText('Fixture device')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Быстрое продление' })).toBeTruthy();
+    const connection = screen.getByRole('region', { name: 'Доступ и подключение' });
+    expect(within(connection).getByRole('alert')).toBeTruthy();
+    fireEvent.click(within(connection).getByRole('button', { name: 'Повторить' }));
 
     await vi.waitFor(() => expect(mocks.getConnectionLink).toHaveBeenCalledTimes(2));
     expect(await screen.findByRole('heading', { name: 'Доступ и подключение' })).toBeTruthy();
+  });
+
+  it('notifies when removing a device fails', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+    mocks.confirm.mockResolvedValue(true);
+    mocks.deleteDevice.mockRejectedValue(new Error('device removal fixture failure'));
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: 'Отключить Fixture device' }));
+
+    await vi.waitFor(() =>
+      expect(mocks.notifyError).toHaveBeenCalledWith('Не удалось выполнить действие'),
+    );
   });
 
   it('blocks repeated device removal while the target mutation is pending', async () => {
