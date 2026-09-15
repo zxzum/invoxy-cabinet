@@ -338,7 +338,9 @@
         "regular": "主流量",
         "lte": "LTE 流量",
         "regularEmpty": "流量数据不可用",
-        "lteEmpty": "未开通 LTE 流量"
+        "lteEmpty": "未开通 LTE 流量",
+        "refresh": "刷新流量",
+        "refreshing": "正在刷新流量…"
       },
       "devices": {
         "title": "已连接设备",
@@ -350,6 +352,7 @@
         "title": "快速续费",
         "allOptions": "全部选项",
         "submit": "续费订阅",
+        "open": "打开续费选项",
         "empty": "暂无可用续费选项"
       },
       "connection": {
@@ -489,7 +492,9 @@
       "unavailable": "试用不可用",
       "insufficientBalance": "余额不足以激活试用",
       "payAndActivate": "付费并激活",
-      "topUpToActivate": "充值以激活试用"
+      "topUpToActivate": "充值以激活试用",
+      "daysLabel_other": "天",
+      "devicesLabel_other": "设备"
     },
     "connection": {
       "title": "连接VPN",

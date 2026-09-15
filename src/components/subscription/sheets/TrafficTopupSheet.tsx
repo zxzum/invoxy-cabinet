@@ -24,6 +24,7 @@ export interface TrafficTopupSheetProps {
   onClose: () => void;
   subscription: Subscription;
   subscriptionId: number | undefined;
+  initialScope?: 'regular' | 'whitelist';
   selectedTrafficPackage: number | null;
   onSelectedTrafficPackageChange: (gb: number | null) => void;
   purchaseOptions: PurchaseOptions | undefined;
@@ -36,6 +37,7 @@ export function TrafficTopupSheet({
   onClose,
   subscription,
   subscriptionId,
+  initialScope = 'regular',
   selectedTrafficPackage,
   onSelectedTrafficPackageChange,
   purchaseOptions,
@@ -44,7 +46,7 @@ export function TrafficTopupSheet({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const showSuccess = useSuccessNotification((state) => state.show);
-  const [scope, setScope] = useState<'regular' | 'whitelist'>('regular');
+  const [scope, setScope] = useState<'regular' | 'whitelist'>(initialScope);
   const primaryTrafficLabel = t('subscription.primaryTraffic', 'Основной трафик');
   const primaryTrafficDescription = t(
     'subscription.primaryTrafficDescription',
@@ -58,8 +60,12 @@ export function TrafficTopupSheet({
   );
 
   useEffect(() => {
+    if (open) setScope(initialScope);
+  }, [initialScope, open]);
+
+  useEffect(() => {
     if ((subscription.whitelist_traffic_limit_gb ?? 0) <= 0) setScope('regular');
-  }, [subscription.id, subscription.whitelist_traffic_limit_gb]);
+  }, [subscription.whitelist_traffic_limit_gb]);
 
   const { data: trafficPackages } = useQuery({
     queryKey: ['traffic-packages', subscriptionId, scope],
@@ -187,7 +193,7 @@ export function TrafficTopupSheet({
               >
                 <div className="text-lg font-semibold text-dark-100">
                   {pkg.is_unlimited
-                    ? '♾️ ' + t('subscription.additionalOptions.unlimited')
+                    ? `♾️ ${t('subscription.additionalOptions.unlimited')}`
                     : `${pkg.gb} ${t('common.units.gb')}`}
                 </div>
                 {pkg.discount_percent != null && pkg.discount_percent > 0 && (

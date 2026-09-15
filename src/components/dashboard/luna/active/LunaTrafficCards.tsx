@@ -15,6 +15,11 @@ export interface LunaTrafficCardsProps {
   loadingMessage?: string;
   regularEmptyMessage?: string;
   lteEmptyMessage?: string;
+  onRefreshTraffic?: () => void;
+  isRefreshing?: boolean;
+  trafficRefreshCooldown?: number;
+  refreshLabel?: string;
+  refreshingLabel?: string;
 }
 
 function TrafficCard({
@@ -69,6 +74,11 @@ export default function LunaTrafficCards({
   loadingMessage = 'Loading traffic',
   regularEmptyMessage = 'Main traffic unavailable',
   lteEmptyMessage = 'LTE traffic unavailable',
+  onRefreshTraffic,
+  isRefreshing = false,
+  trafficRefreshCooldown = 0,
+  refreshLabel = 'Refresh traffic',
+  refreshingLabel = 'Refreshing traffic',
 }: LunaTrafficCardsProps) {
   if (isLoading) return <LunaLoadingState message={loadingMessage} />;
 
@@ -77,22 +87,44 @@ export default function LunaTrafficCards({
     ((traffic: LunaTrafficSnapshot) =>
       `${String(traffic.usedGb)} / ${String(traffic.limitGb)} ${trafficUnitLabel}`);
 
+  const refreshDisabled = !onRefreshTraffic || isRefreshing || trafficRefreshCooldown > 0;
+  const refreshButtonLabel = isRefreshing
+    ? refreshingLabel
+    : trafficRefreshCooldown > 0
+      ? `${refreshLabel} (${trafficRefreshCooldown}s)`
+      : refreshLabel;
+
   return (
-    <section aria-label="Traffic" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <TrafficCard
-        icon={<TrafficIcon className="h-4 w-4" />}
-        label={regularLabel}
-        traffic={regularTraffic}
-        formatUsage={usage}
-        emptyMessage={regularEmptyMessage}
-      />
-      <TrafficCard
-        icon={<GlobeIcon className="h-4 w-4" />}
-        label={lteLabel}
-        traffic={lteTraffic}
-        formatUsage={usage}
-        emptyMessage={lteEmptyMessage}
-      />
+    <section aria-label="Traffic">
+      {onRefreshTraffic && (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={onRefreshTraffic}
+            disabled={refreshDisabled}
+            aria-label={refreshButtonLabel}
+            className="min-h-9 rounded-full border border-dark-700/70 bg-dark-800/50 px-3 text-xs font-semibold text-dark-300 transition-colors hover:border-accent-400/30 hover:text-accent-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {refreshButtonLabel}
+          </button>
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <TrafficCard
+          icon={<TrafficIcon className="h-4 w-4" />}
+          label={regularLabel}
+          traffic={regularTraffic}
+          formatUsage={usage}
+          emptyMessage={regularEmptyMessage}
+        />
+        <TrafficCard
+          icon={<GlobeIcon className="h-4 w-4" />}
+          label={lteLabel}
+          traffic={lteTraffic}
+          formatUsage={usage}
+          emptyMessage={lteEmptyMessage}
+        />
+      </div>
     </section>
   );
 }

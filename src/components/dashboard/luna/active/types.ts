@@ -11,6 +11,8 @@ export interface LunaConnectionState {
   accessLink: string | null;
   happLink: string | null;
   incyLink: string | null;
+  incyAvailable?: boolean;
+  qrAvailable?: boolean;
 }
 
 export interface LunaActiveData {

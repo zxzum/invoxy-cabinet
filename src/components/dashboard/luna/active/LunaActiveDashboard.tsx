@@ -23,6 +23,8 @@ export interface LunaActiveLabels {
     unit?: string;
     regularEmpty?: string;
     lteEmpty?: string;
+    refresh?: string;
+    refreshing?: string;
   };
   devices?: {
     title?: string;
@@ -67,6 +69,8 @@ export interface LunaActiveDashboardProps {
   accessLink: string | null;
   happLink: string | null;
   incyLink: string | null;
+  incyAvailable?: boolean;
+  qrAvailable?: boolean;
   renewalOptions: RenewalOption[];
   selectedRenewalPeriod?: number | null;
   regularTrafficPackages: TrafficPackage[];
@@ -74,6 +78,8 @@ export interface LunaActiveDashboardProps {
   devicesConfig: DevicesConfig | null;
   labels?: LunaActiveLabels;
   isLoading?: boolean;
+  isCopied?: boolean;
+  isRemovingHwid?: string | null;
   loadingMessage?: string;
   emptyMessage?: string;
   formatDate?: (date: string) => string;
@@ -92,9 +98,13 @@ export interface LunaActiveDashboardProps {
   onSelectRenewal?: (option: RenewalOption) => void;
   onSubmitRenewal?: (option: RenewalOption) => void;
   onOpenRenewalOptions?: () => void;
+  submitRenewalLabel?: string;
   onOpenDeviceAddon?: () => void;
   onOpenTrafficAddon?: (option: TrafficPackage) => void;
   onOpenLteAddon?: (option: TrafficPackage) => void;
+  onRefreshTraffic?: () => void;
+  isRefreshingTraffic?: boolean;
+  trafficRefreshCooldown?: number;
 }
 
 export default function LunaActiveDashboard({
@@ -105,6 +115,8 @@ export default function LunaActiveDashboard({
   accessLink,
   happLink,
   incyLink,
+  incyAvailable,
+  qrAvailable,
   renewalOptions,
   selectedRenewalPeriod = null,
   regularTrafficPackages,
@@ -112,6 +124,8 @@ export default function LunaActiveDashboard({
   devicesConfig,
   labels,
   isLoading = false,
+  isCopied = false,
+  isRemovingHwid = null,
   loadingMessage = 'Loading active subscription',
   emptyMessage = 'No active subscription',
   formatDate,
@@ -130,9 +144,13 @@ export default function LunaActiveDashboard({
   onSelectRenewal,
   onSubmitRenewal,
   onOpenRenewalOptions,
+  submitRenewalLabel,
   onOpenDeviceAddon,
   onOpenTrafficAddon,
   onOpenLteAddon,
+  onRefreshTraffic,
+  isRefreshingTraffic = false,
+  trafficRefreshCooldown = 0,
 }: LunaActiveDashboardProps) {
   if (isLoading) return <LunaLoadingState message={loadingMessage} />;
   if (!subscription) return <LunaEmptyState message={emptyMessage} />;
@@ -159,6 +177,11 @@ export default function LunaActiveDashboard({
           lteLabel={labels?.traffic?.lte}
           regularEmptyMessage={labels?.traffic?.regularEmpty}
           lteEmptyMessage={labels?.traffic?.lteEmpty}
+          onRefreshTraffic={onRefreshTraffic}
+          isRefreshing={isRefreshingTraffic}
+          trafficRefreshCooldown={trafficRefreshCooldown}
+          refreshLabel={labels?.traffic?.refresh}
+          refreshingLabel={labels?.traffic?.refreshing}
         />
         <LunaDevicesCard
           devices={devices}
@@ -166,6 +189,7 @@ export default function LunaActiveDashboard({
           formatDeviceDate={formatDeviceDate}
           onManageDevices={onManageDevices}
           onRemoveDevice={onRemoveDevice}
+          isRemovingHwid={isRemovingHwid}
           title={labels?.devices?.title}
           manageLabel={labels?.devices?.manage}
           disconnectLabel={labels?.devices?.disconnect}
@@ -181,7 +205,7 @@ export default function LunaActiveDashboard({
           onOpenRenewalOptions={onOpenRenewalOptions}
           title={labels?.renewal?.title}
           allOptionsLabel={labels?.renewal?.allOptions}
-          submitLabel={labels?.renewal?.submit}
+          submitLabel={submitRenewalLabel ?? labels?.renewal?.submit}
           emptyMessage={labels?.renewal?.empty}
         />
       </div>
@@ -191,6 +215,9 @@ export default function LunaActiveDashboard({
           accessLink={accessLink}
           happLink={happLink}
           incyLink={incyLink}
+          incyAvailable={incyAvailable}
+          qrAvailable={qrAvailable}
+          isCopied={isCopied}
           onCopyAccess={onCopyAccess}
           onConnectHapp={onConnectHapp}
           onConnectIncy={onConnectIncy}

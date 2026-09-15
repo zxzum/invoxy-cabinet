@@ -367,7 +367,9 @@
         "regular": "Main traffic",
         "lte": "LTE traffic",
         "regularEmpty": "Traffic data unavailable",
-        "lteEmpty": "LTE traffic is not enabled"
+        "lteEmpty": "LTE traffic is not enabled",
+        "refresh": "Refresh traffic",
+        "refreshing": "Refreshing traffic"
       },
       "devices": {
         "title": "Connected devices",
@@ -379,6 +381,7 @@
         "title": "Quick renewal",
         "allOptions": "All options",
         "submit": "Renew subscription",
+        "open": "Open renewal options",
         "empty": "No renewal options available"
       },
       "connection": {

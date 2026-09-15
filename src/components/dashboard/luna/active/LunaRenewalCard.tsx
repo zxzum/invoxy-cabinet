@@ -93,8 +93,15 @@ export default function LunaRenewalCard({
 
       <button
         type="button"
-        onClick={() => selectedOption && onSubmit?.(selectedOption)}
-        disabled={!selectedOption || !onSubmit || isSubmitting}
+        onClick={() => {
+          if (!selectedOption) return;
+          if (onSubmit) {
+            onSubmit(selectedOption);
+          } else {
+            onOpenRenewalOptions?.();
+          }
+        }}
+        disabled={!selectedOption || (!onSubmit && !onOpenRenewalOptions) || isSubmitting}
         className="mt-4 flex min-h-12 w-full items-center justify-center rounded-full bg-accent-400 px-4 text-sm font-bold text-on-accent transition-colors hover:bg-accent-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitLabel}

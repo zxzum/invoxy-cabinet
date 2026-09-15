@@ -112,6 +112,7 @@ function renderDashboard(
     onOpenDeviceAddon: vi.fn(),
     onOpenTrafficAddon: vi.fn(),
     onOpenLteAddon: vi.fn(),
+    onRefreshTraffic: vi.fn(),
   };
 
   render(
@@ -251,5 +252,54 @@ describe('Luna active dashboard', () => {
       'disabled',
       true,
     );
+  });
+
+  it('keeps target INCY and QR actions available when the connection page owns the link', () => {
+    const callbacks = renderDashboard({
+      accessLink: null,
+      happLink: null,
+      incyLink: null,
+      incyAvailable: true,
+      qrAvailable: true,
+    });
+
+    const incyButton = screen.getByRole('button', { name: 'Connect in INCY' });
+    const qrButton = screen.getByRole('button', { name: 'Show QR code' });
+    expect(incyButton).toHaveProperty('disabled', false);
+    expect(qrButton).toHaveProperty('disabled', false);
+
+    fireEvent.click(incyButton);
+    fireEvent.click(qrButton);
+    expect(callbacks.onConnectIncy).toHaveBeenCalledOnce();
+    expect(callbacks.onShowQr).toHaveBeenCalledOnce();
+  });
+
+  it('passes copied state through to the connection action', () => {
+    renderDashboard({ isCopied: true });
+
+    expect(screen.getByRole('button', { name: 'Access link copied' })).toBeTruthy();
+  });
+
+  it('exposes the manual traffic refresh and respects its cooldown', () => {
+    const callbacks = renderDashboard();
+    const refreshButton = screen.getByRole('button', { name: 'Refresh traffic' });
+
+    fireEvent.click(refreshButton);
+    expect(callbacks.onRefreshTraffic).toHaveBeenCalledOnce();
+
+    cleanup();
+    renderDashboard({ trafficRefreshCooldown: 12 });
+    const cooldownButton = screen.getByRole('button', { name: 'Refresh traffic (12s)' });
+    expect(cooldownButton).toHaveProperty('disabled', true);
+  });
+
+  it('uses an honest renewal navigation CTA when no inline submit flow is provided', () => {
+    const callbacks = renderDashboard({
+      onSubmitRenewal: undefined,
+      submitRenewalLabel: 'Open renewal options',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open renewal options' }));
+    expect(callbacks.onOpenRenewalOptions).toHaveBeenCalledOnce();
   });
 });

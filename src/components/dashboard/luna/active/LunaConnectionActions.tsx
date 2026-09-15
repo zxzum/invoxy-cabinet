@@ -5,6 +5,8 @@ export interface LunaConnectionActionsProps {
   accessLink: string | null;
   happLink: string | null;
   incyLink: string | null;
+  incyAvailable?: boolean;
+  qrAvailable?: boolean;
   isLoading?: boolean;
   isCopied?: boolean;
   onCopyAccess?: () => void;
@@ -25,6 +27,8 @@ export default function LunaConnectionActions({
   accessLink,
   happLink,
   incyLink,
+  incyAvailable,
+  qrAvailable,
   isLoading = false,
   isCopied = false,
   onCopyAccess,
@@ -44,8 +48,8 @@ export default function LunaConnectionActions({
 
   const canCopy = Boolean(accessLink && onCopyAccess);
   const canConnectHapp = Boolean(happLink && onConnectHapp);
-  const canConnectIncy = Boolean(incyLink && onConnectIncy);
-  const canShowQr = Boolean(accessLink && onShowQr);
+  const canConnectIncy = Boolean((incyAvailable ?? Boolean(incyLink)) && onConnectIncy);
+  const canShowQr = Boolean((qrAvailable ?? Boolean(accessLink)) && onShowQr);
 
   return (
     <section className="glass-surface rounded-[28px] p-4 sm:p-5" aria-label={title}>

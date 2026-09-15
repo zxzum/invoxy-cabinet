@@ -338,7 +338,9 @@
         "regular": "ترافیک اصلی",
         "lte": "ترافیک LTE",
         "regularEmpty": "داده‌های ترافیک در دسترس نیست",
-        "lteEmpty": "ترافیک LTE فعال نیست"
+        "lteEmpty": "ترافیک LTE فعال نیست",
+        "refresh": "بازخوانی ترافیک",
+        "refreshing": "در حال بازخوانی ترافیک…"
       },
       "devices": {
         "title": "دستگاه‌های متصل",
@@ -350,6 +352,7 @@
         "title": "تمدید سریع",
         "allOptions": "همه گزینه‌ها",
         "submit": "تمدید اشتراک",
+        "open": "باز کردن گزینه‌های تمدید",
         "empty": "گزینه‌ای برای تمدید موجود نیست"
       },
       "connection": {
@@ -489,7 +492,11 @@
       "unavailable": "دوره آزمایشی در دسترس نیست",
       "insufficientBalance": "موجودی برای فعال‌سازی دوره آزمایشی کافی نیست",
       "payAndActivate": "پرداخت و فعال‌سازی",
-      "topUpToActivate": "برای فعال‌سازی دوره آزمایشی موجودی را افزایش دهید"
+      "topUpToActivate": "برای فعال‌سازی دوره آزمایشی موجودی را افزایش دهید",
+      "daysLabel_one": "روز",
+      "daysLabel_other": "روز",
+      "devicesLabel_one": "دستگاه",
+      "devicesLabel_other": "دستگاه"
     },
     "connection": {
       "title": "اتصال VPN",

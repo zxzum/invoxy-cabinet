@@ -19,8 +19,8 @@ import StatsGrid from '../components/dashboard/StatsGrid';
 import { giftApi } from '../api/gift';
 import { promoApi } from '../api/promo';
 import PendingGiftCard from '../components/dashboard/PendingGiftCard';
-import SubscriptionListCard from '../components/subscription/SubscriptionListCard';
 import { DeviceLimitSheet } from '../components/subscription/DeviceLimitSheet';
+import { DeviceTopupSheet } from '../components/subscription/sheets/DeviceTopupSheet';
 import { TrafficTopupSheet } from '../components/subscription/sheets/TrafficTopupSheet';
 import {
   LunaActiveDashboard,
@@ -43,7 +43,7 @@ import { useCurrency } from '../hooks/useCurrency';
 import { useTheme } from '../hooks/useTheme';
 import { uiLocale } from '../utils/uiLocale';
 import { formatTraffic } from '../utils/formatTraffic';
-import { resolveConnectionUrlForUi } from '../utils/connectionLink';
+import { isHappCryptolinkMode, resolveConnectionUrlForUi } from '../utils/connectionLink';
 import { copyToClipboard } from '../utils/clipboard';
 import { openAppScheme } from '../utils/openAppScheme';
 import { isInTelegramWebApp } from '../hooks/useTelegramSDK';
@@ -99,48 +99,75 @@ export default function Dashboard() {
 
   const subscription = subscriptionResponse?.subscription ?? null;
 
-  // Одиночная живая подписка — единственный случай, когда дашборд рендерит
+  const visibleSubscriptions = useMemo(
+    () => multiSubData?.subscriptions?.slice(0, 3) ?? [],
+    [multiSubData],
+  );
+  const [selectedSubId, setSelectedSubId] = useState<number | null>(null);
+  const selectedSubscriptionId = isMultiTariff
+    ? (selectedSubId ?? visibleSubscriptions[0]?.id)
+    : undefined;
+
+  useEffect(() => {
+    if (!isMultiTariff) return;
+    const firstId = visibleSubscriptions[0]?.id ?? null;
+    if (!visibleSubscriptions.some((item) => item.id === selectedSubId)) {
+      setSelectedSubId(firstId);
+    }
+  }, [isMultiTariff, selectedSubId, visibleSubscriptions]);
+
+  const {
+    data: selectedSubscriptionResponse,
+    isLoading: selectedSubscriptionLoading,
+    isError: selectedSubscriptionError,
+    refetch: refetchSelectedSubscription,
+  } = useQuery({
+    queryKey: ['subscription', selectedSubscriptionId],
+    queryFn: () => subscriptionApi.getSubscription(selectedSubscriptionId),
+    enabled: isMultiTariff && selectedSubscriptionId != null,
+    retry: false,
+    staleTime: API.BALANCE_STALE_TIME_MS,
+  });
+
+  const dashboardSubscription = isMultiTariff
+    ? (selectedSubscriptionResponse?.subscription ?? null)
+    : subscription;
+  const dashboardSubscriptionLoading = isMultiTariff ? selectedSubscriptionLoading : subLoading;
+
+  // Выбранная живая подписка — единственный случай, когда дашборд рендерит
   // Luna-композицию. Expired/disabled/limited уходят в SubscriptionCardExpired
   // с платёжным flow, поэтому тяжёлые запросы (продление, пакеты, ссылки)
   // для них не нужны.
   const activeSubscription =
-    !isMultiTariff &&
-    subscription &&
-    !subscription.is_expired &&
-    subscription.status !== 'disabled' &&
-    !subscription.is_limited
-      ? subscription
+    dashboardSubscription &&
+    !dashboardSubscription.is_expired &&
+    dashboardSubscription.status !== 'disabled' &&
+    !dashboardSubscription.is_limited
+      ? dashboardSubscription
       : null;
   const activeSubId = activeSubscription?.id;
 
   const { data: trialInfo, isLoading: trialLoading } = useQuery({
     queryKey: ['trial-info'],
     queryFn: () => subscriptionApi.getTrialInfo(),
-    enabled: !subscription && !subLoading,
+    enabled: !isMultiTariff && !subscription && !subLoading,
   });
 
-  const { data: devicesData } = useQuery({
-    queryKey: ['devices'],
-    queryFn: () => subscriptionApi.getDevices(),
-    enabled: !!subscription && !isMultiTariff,
+  const {
+    data: devicesData,
+    isLoading: devicesLoading,
+    isError: devicesError,
+    refetch: refetchDevices,
+  } = useQuery({
+    queryKey: ['devices', activeSubId],
+    queryFn: () => subscriptionApi.getDevices(activeSubId),
+    enabled: activeSubId != null,
     staleTime: API.BALANCE_STALE_TIME_MS,
   });
 
-  // Плитка «Подключить устройство» на главной живёт в МУЛЬТИТАРИФНОЙ ветке, а
-  // запрос выше там выключен: он привязан к одиночной подписке (`subscription`
-  // в мультитарифе всегда null). Без отдельного запроса счётчик плитки всегда
-  // показывал бы «0 из N», а лимит устройств не срабатывал бы никогда — то
-  // есть ровно то, ради чего плитку и добавили, не работало бы.
-  // Ключ ['devices', id] — тот же, что на странице подписки, так что кэш общий.
-  // Карточки подписок на главной показывают, сколько устройств подключено, и
-  // дают подключить ещё. Число устройств живёт в панели, поэтому запрос идёт
-  // на каждую показанную подписку; ключ ['devices', id] тот же, что на
-  // странице подписки, так что кэш общий и переход туда не стоит сети.
-  const visibleSubscriptions = useMemo(
-    () => multiSubData?.subscriptions?.slice(0, 3) ?? [],
-    [multiSubData],
-  );
-
+  // В мультитарифной ветке каждая карточка показывает число устройств и
+  // открывает покупку ещё одного, поэтому запрос нужен для каждой подписки.
+  // Ключ ['devices', id] совпадает со страницей подписки — кэш общий.
   const deviceQueries = useQueries({
     queries: visibleSubscriptions.map((sub) => ({
       queryKey: ['devices', sub.id],
@@ -182,18 +209,28 @@ export default function Dashboard() {
     retry: false,
   });
 
-  // ── Luna active dashboard: данные одиночной живой подписки ──────────
+  // ── Luna active dashboard: данные выбранной живой подписки ──────────
   // Ключи совпадают со страницами Subscription/RenewSubscription, чтобы кэш
   // был общим и переходы между экранами не дёргали сеть повторно.
 
-  const { data: renewalOptions } = useQuery({
+  const {
+    data: renewalOptions,
+    isLoading: renewalLoading,
+    isError: renewalError,
+    refetch: refetchRenewalOptions,
+  } = useQuery({
     queryKey: ['renewal-options', activeSubId],
     queryFn: () => subscriptionApi.getRenewalOptions(activeSubId),
     enabled: activeSubId != null,
     staleTime: 60_000,
   });
 
-  const { data: regularTrafficPackages } = useQuery({
+  const {
+    data: regularTrafficPackages,
+    isLoading: regularTrafficPackagesLoading,
+    isError: regularTrafficPackagesError,
+    refetch: refetchRegularTrafficPackages,
+  } = useQuery({
     queryKey: ['traffic-packages', activeSubId, 'regular'],
     queryFn: () => subscriptionApi.getTrafficPackages(activeSubId, 'regular'),
     enabled: activeSubId != null,
@@ -202,14 +239,24 @@ export default function Dashboard() {
 
   const hasLteTraffic = (activeSubscription?.whitelist_traffic_limit_gb ?? 0) > 0;
 
-  const { data: lteTrafficPackages } = useQuery({
+  const {
+    data: lteTrafficPackages,
+    isLoading: lteTrafficPackagesLoading,
+    isError: lteTrafficPackagesError,
+    refetch: refetchLteTrafficPackages,
+  } = useQuery({
     queryKey: ['traffic-packages', activeSubId, 'whitelist'],
     queryFn: () => subscriptionApi.getTrafficPackages(activeSubId, 'whitelist'),
     enabled: activeSubId != null && hasLteTraffic,
     staleTime: 60_000,
   });
 
-  const { data: connectionLink } = useQuery({
+  const {
+    data: connectionLink,
+    isLoading: connectionLinkLoading,
+    isError: connectionLinkError,
+    refetch: refetchConnectionLink,
+  } = useQuery({
     queryKey: ['connection-link', activeSubId],
     queryFn: () => subscriptionApi.getConnectionLink(activeSubId),
     enabled: activeSubId != null,
@@ -219,7 +266,12 @@ export default function Dashboard() {
 
   // Нужен только флаг happ_enabled: если админ выключил HAPP, кнопку
   // «Подключить в HAPP» не показываем даже при наличии deeplink в ответе.
-  const { data: happDownloads } = useQuery({
+  const {
+    data: happDownloads,
+    isLoading: happDownloadsLoading,
+    isError: happDownloadsError,
+    refetch: refetchHappDownloads,
+  } = useQuery({
     queryKey: ['happ-downloads'],
     queryFn: () => subscriptionApi.getHappDownloads(),
     enabled: activeSubId != null,
@@ -227,7 +279,12 @@ export default function Dashboard() {
     staleTime: 300_000,
   });
 
-  const { data: purchaseOptions } = useQuery({
+  const {
+    data: purchaseOptions,
+    isLoading: purchaseOptionsLoading,
+    isError: purchaseOptionsError,
+    refetch: refetchPurchaseOptions,
+  } = useQuery({
     queryKey: ['purchase-options', activeSubId],
     queryFn: () => subscriptionApi.getPurchaseOptions(activeSubId),
     enabled: activeSubId != null,
@@ -237,8 +294,8 @@ export default function Dashboard() {
   const deleteDeviceMutation = useMutation({
     mutationFn: (hwid: string) => subscriptionApi.deleteDevice(hwid, activeSubId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['devices'] });
       queryClient.invalidateQueries({ queryKey: ['devices', activeSubId] });
+      queryClient.invalidateQueries({ queryKey: ['devices'] });
     },
   });
 
@@ -260,6 +317,7 @@ export default function Dashboard() {
 
   // Traffic refresh state and mutation
   const [trafficRefreshCooldown, setTrafficRefreshCooldown] = useState(0);
+  const [pendingRemovalHwid, setPendingRemovalHwid] = useState<string | null>(null);
   const [trafficData, setTrafficData] = useState<{
     traffic_used_gb: number;
     traffic_used_percent: number;
@@ -267,23 +325,21 @@ export default function Dashboard() {
   } | null>(null);
 
   const refreshTrafficMutation = useMutation({
-    mutationFn: () => subscriptionApi.refreshTraffic(subscription?.id),
+    mutationFn: () => subscriptionApi.refreshTraffic(activeSubId),
     onSuccess: (data) => {
       setTrafficData({
         traffic_used_gb: data.traffic_used_gb,
         traffic_used_percent: data.traffic_used_percent,
         is_unlimited: data.is_unlimited,
       });
-      safeLocal.setItem(
-        `traffic_refresh_ts_${subscription?.id ?? 'default'}`,
-        Date.now().toString(),
-      );
+      safeLocal.setItem(`traffic_refresh_ts_${activeSubId ?? 'default'}`, Date.now().toString());
       if (data.rate_limited && data.retry_after_seconds) {
         setTrafficRefreshCooldown(data.retry_after_seconds);
       } else {
         setTrafficRefreshCooldown(30);
       }
-      queryClient.invalidateQueries({ queryKey: ['subscription', subscription?.id] });
+      queryClient.invalidateQueries({ queryKey: ['subscription', activeSubId] });
+      queryClient.invalidateQueries({ queryKey: ['subscription', undefined] });
     },
     onError: (error: {
       response?: { status?: number; headers?: { get?: (key: string) => string } };
@@ -305,14 +361,14 @@ export default function Dashboard() {
   }, [trafficRefreshCooldown]);
 
   // Auto-refresh traffic on mount (with 30s caching)
-  const hasAutoRefreshed = useRef(false);
+  const autoRefreshedSubId = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!subscription) return;
-    if (hasAutoRefreshed.current) return;
-    hasAutoRefreshed.current = true;
+    if (!activeSubscription || activeSubId == null) return;
+    if (autoRefreshedSubId.current === activeSubId) return;
+    autoRefreshedSubId.current = activeSubId;
 
-    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${subscription?.id ?? 'default'}`);
+    const lastRefresh = safeLocal.getItem(`traffic_refresh_ts_${activeSubId ?? 'default'}`);
     const now = Date.now();
     const cacheMs = API.TRAFFIC_CACHE_MS;
 
@@ -326,7 +382,7 @@ export default function Dashboard() {
     }
 
     refreshTrafficMutation.mutate();
-  }, [subscription, refreshTrafficMutation]);
+  }, [activeSubId, activeSubscription, refreshTrafficMutation]);
 
   // В multi-tariff /cabinet/subscription отключён, поэтому subscriptionResponse=undefined.
   // Используем список из /cabinet/subscriptions/list — пустой массив означает «нет подписок»,
@@ -371,7 +427,7 @@ export default function Dashboard() {
       },
     ];
 
-    if (subscription?.subscription_url) {
+    if (dashboardSubscription?.subscription_url) {
       steps.splice(1, 0, {
         target: 'connect-devices',
         title: t('onboarding.steps.connectDevices.title'),
@@ -381,7 +437,7 @@ export default function Dashboard() {
     }
 
     return steps;
-  }, [t, subscription]);
+  }, [dashboardSubscription, t]);
 
   const handleOnboardingComplete = () => {
     completeOnboarding();
@@ -428,11 +484,21 @@ export default function Dashboard() {
   const happLink =
     happDownloads && !happDownloads.happ_enabled
       ? null
-      : (connectionLink?.happ_scheme_link ??
-        connectionLink?.happ_redirect_link ??
-        connectionLink?.happ_link ??
-        null);
-  const incyLink = accessLink ? `incy://import/${accessLink}` : null;
+      : isHappCryptolinkMode(connectionLink?.connect_mode)
+        ? resolveConnectionUrlForUi({
+            mode: connectionLink?.connect_mode,
+            happSchemeLink: connectionLink?.happ_scheme_link,
+            displayLink: connectionLink?.display_link,
+            subscriptionUrl: connectionLink?.subscription_url,
+            happCryptLink: connectionLink?.happ_cryptolink,
+            happCryptoLink: connectionLink?.happ_crypto_link,
+            happLink: connectionLink?.happ_link,
+            fallbackUrl: activeSubscription?.subscription_url,
+          })
+        : (connectionLink?.happ_scheme_link ??
+          connectionLink?.happ_redirect_link ??
+          connectionLink?.happ_link ??
+          null);
 
   const qrConnectionUrl = useMemo(
     () =>
@@ -501,19 +567,37 @@ export default function Dashboard() {
 
   const [showTrafficTopup, setShowTrafficTopup] = useState(false);
   const [selectedTrafficPackage, setSelectedTrafficPackage] = useState<number | null>(null);
-  const [showDeviceAddon, setShowDeviceAddon] = useState(false);
+  const [trafficTopupScope, setTrafficTopupScope] = useState<'regular' | 'whitelist'>('regular');
+  const [showDeviceTopup, setShowDeviceTopup] = useState(false);
+  const [devicesToAdd, setDevicesToAdd] = useState(1);
 
-  const openTrafficTopup = (pkg: TrafficPackage) => {
+  const openTrafficTopup = (pkg: TrafficPackage, scope: 'regular' | 'whitelist') => {
+    setTrafficTopupScope(scope);
     setSelectedTrafficPackage(pkg.gb);
     setShowTrafficTopup(true);
   };
 
   const handleRemoveDevice = (device: Device) => {
+    if (pendingRemovalHwid || deleteDeviceMutation.isPending) return;
+    setPendingRemovalHwid(device.hwid);
     void nativeDialog
       .confirm(t('subscription.deleteDevice', 'Удалить устройство'))
       .then((confirmed) => {
-        if (confirmed) deleteDeviceMutation.mutate(device.hwid);
-      });
+        if (!confirmed) {
+          setPendingRemovalHwid(null);
+          return;
+        }
+        deleteDeviceMutation.mutate(device.hwid, {
+          onSettled: () => setPendingRemovalHwid(null),
+        });
+      })
+      .catch(() => setPendingRemovalHwid(null));
+  };
+
+  const handleRefreshTraffic = () => {
+    if (activeSubId == null || trafficRefreshCooldown > 0 || refreshTrafficMutation.isPending)
+      return;
+    refreshTrafficMutation.mutate();
   };
 
   const formatKopeks = (kopeks: number) => `${formatAmount(kopeks / 100)} ${currencySymbol}`;
@@ -535,6 +619,8 @@ export default function Dashboard() {
       unit: t('common.units.gb', 'ГБ'),
       regularEmpty: t('dashboard.luna.traffic.regularEmpty', 'Данные о трафике недоступны'),
       lteEmpty: t('dashboard.luna.traffic.lteEmpty', 'LTE-трафик не подключён'),
+      refresh: t('dashboard.luna.traffic.refresh', 'Обновить трафик'),
+      refreshing: t('dashboard.luna.traffic.refreshing', 'Обновляем трафик…'),
     },
     devices: {
       title: t('dashboard.luna.devices.title', 'Подключённые устройства'),
@@ -572,6 +658,38 @@ export default function Dashboard() {
   };
 
   const devicesConfig = purchaseOptions?.sales_mode === 'classic' ? purchaseOptions.devices : null;
+
+  const activeDashboardLoading = Boolean(
+    activeSubscription &&
+      (devicesLoading ||
+        renewalLoading ||
+        regularTrafficPackagesLoading ||
+        (hasLteTraffic && lteTrafficPackagesLoading) ||
+        connectionLinkLoading ||
+        happDownloadsLoading ||
+        purchaseOptionsLoading),
+  );
+  const activeDashboardError = Boolean(
+    activeSubscription &&
+      (devicesError ||
+        renewalError ||
+        regularTrafficPackagesError ||
+        (hasLteTraffic && lteTrafficPackagesError) ||
+        connectionLinkError ||
+        happDownloadsError ||
+        purchaseOptionsError),
+  );
+  const retryActiveDashboard = () => {
+    void Promise.all([
+      refetchDevices(),
+      refetchRenewalOptions(),
+      refetchRegularTrafficPackages(),
+      ...(hasLteTraffic ? [refetchLteTrafficPackages()] : []),
+      refetchConnectionLink(),
+      refetchHappDownloads(),
+      refetchPurchaseOptions(),
+    ]);
+  };
 
   // Stagger-вход секций дашборда: фиксированные индексы (задержка = база + индекс*шаг),
   // взаимоисключающие ветки получают одинаковый индекс. Exit не задаём — уход страницы
@@ -649,9 +767,8 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Multi-tariff: show subscription cards (max 3) — только когда подписки
-          реально есть. Пустой случай (нет подписок) ведёт блок ниже (триал/покупка),
-          иначе кнопка покупки дублировалась. */}
+      {/* Multi-tariff selector. The selected item feeds the same Luna composition
+          below, so every subscription keeps its real target queries and actions. */}
       {isMultiTariff && multiSubData?.subscriptions && multiSubData.subscriptions.length > 0 && (
         <motion.div {...section(1)} className="space-y-3">
           <div className="flex items-center justify-between px-1">
@@ -662,18 +779,56 @@ export default function Dashboard() {
               {t('dashboard.manageAll', 'Управление')} →
             </Link>
           </div>
-          {visibleSubscriptions.map((sub, index) => (
-            <SubscriptionListCard
-              key={sub.id}
-              subscription={sub}
-              onClick={() => navigate(`/subscriptions/${sub.id}`)}
-              connect={{
-                connectedDevices: deviceQueries[index]?.data?.total,
-                onConnect: () => navigate(`/connection?sub=${sub.id}`),
-                onManage: () => setDeviceLimitSubId(sub.id),
-              }}
-            />
-          ))}
+          <div
+            role="radiogroup"
+            aria-label={t('dashboard.subscriptionSelector', 'Dashboard subscriptions')}
+            className="grid gap-2 sm:grid-cols-3"
+          >
+            {visibleSubscriptions.map((sub, index) => {
+              const connectedDevices = deviceQueries[index]?.data?.total;
+              const isSelected = sub.id === selectedSubscriptionId;
+              const isAtDeviceLimit =
+                connectedDevices != null &&
+                sub.device_limit > 0 &&
+                connectedDevices >= sub.device_limit;
+
+              return (
+                <div key={sub.id} className="space-y-2">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    aria-label={sub.tariff_name || t('subscription.defaultName', 'Подписка')}
+                    onClick={() => setSelectedSubId(sub.id)}
+                    className={`w-full rounded-2xl border p-3 text-left transition-colors ${
+                      isSelected
+                        ? 'border-accent-400 bg-accent-400/10 text-dark-50'
+                        : 'border-dark-700/70 bg-dark-800/35 text-dark-300 hover:border-accent-400/30'
+                    }`}
+                  >
+                    <span className="block truncate text-sm font-semibold">
+                      {sub.tariff_name || t('subscription.defaultName', 'Подписка')}
+                    </span>
+                    <span className="mt-1 block text-xs text-dark-400">{sub.status}</span>
+                    {connectedDevices != null && (
+                      <span className="mt-1 block text-xs text-dark-400">
+                        {connectedDevices} / {sub.device_limit || '∞'}
+                      </span>
+                    )}
+                  </button>
+                  {isAtDeviceLimit && (
+                    <button
+                      type="button"
+                      onClick={() => setDeviceLimitSubId(sub.id)}
+                      className="w-full rounded-xl border border-warning-400/20 bg-warning-400/10 px-3 py-2 text-xs font-medium text-warning-400"
+                    >
+                      {t('subscription.connectFooter.full', 'Все слоты заняты')}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
           {multiSubData.subscriptions.length > 3 && (
             <Link
               to="/subscriptions"
@@ -702,65 +857,108 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Subscription Status — hidden in multi-tariff (managed via /subscriptions) */}
-      {!isMultiTariff && (
+      {/* Selected subscription status */}
+      {(isMultiTariff ? selectedSubscriptionId != null : true) && (
         <motion.div
           {...section(1)}
-          data-onboarding={subscription?.subscription_url ? 'connect-devices' : undefined}
+          data-onboarding={dashboardSubscription?.subscription_url ? 'connect-devices' : undefined}
         >
-          {subLoading ? (
+          {dashboardSubscriptionLoading ? (
             <LunaLoadingState message={t('dashboard.luna.loading', 'Загружаем подписку…')} />
-          ) : subscription?.is_expired ||
-            subscription?.status === 'disabled' ||
-            subscription?.is_limited ? (
+          ) : isMultiTariff && selectedSubscriptionError ? (
+            <div className="glass-surface space-y-3 p-4" role="alert">
+              <p className="text-sm text-dark-300">
+                {t('dashboard.subscriptionError', 'Не удалось загрузить подписку')}
+              </p>
+              <button
+                type="button"
+                onClick={() => refetchSelectedSubscription()}
+                className="btn-secondary min-h-10 px-4 py-2 text-xs"
+              >
+                {t('common.retry', 'Повторить')}
+              </button>
+            </div>
+          ) : dashboardSubscription?.is_expired ||
+            dashboardSubscription?.status === 'disabled' ||
+            dashboardSubscription?.is_limited ? (
             <SubscriptionCardExpired
-              subscription={subscription}
+              subscription={dashboardSubscription}
               balanceKopeks={balanceData?.balance_kopeks ?? 0}
               balanceRubles={balanceData?.balance_rubles ?? 0}
             />
           ) : activeSubscription ? (
-            <LunaActiveDashboard
-              subscription={activeSubscription}
-              devices={devicesData?.devices ?? []}
-              regularTraffic={regularTraffic}
-              lteTraffic={lteTraffic}
-              accessLink={accessLink}
-              happLink={happLink}
-              incyLink={incyLink}
-              renewalOptions={renewalOptions ?? []}
-              selectedRenewalPeriod={effectiveRenewalPeriod}
-              regularTrafficPackages={regularTrafficPackages ?? []}
-              lteTrafficPackages={lteTrafficPackages ?? []}
-              devicesConfig={devicesConfig}
-              labels={lunaLabels}
-              loadingMessage={t('dashboard.luna.loading', 'Загружаем подписку…')}
-              emptyMessage={t('dashboard.luna.empty', 'Нет активной подписки')}
-              formatDate={formatDate}
-              formatDeviceDate={formatDate}
-              formatUsage={(traffic) =>
-                traffic.isUnlimited
-                  ? t('dashboard.unlimited', 'Безлимит')
-                  : `${formatTraffic(traffic.usedGb)} / ${formatTraffic(traffic.limitGb)}`
-              }
-              formatPrice={(option: RenewalOption) => formatKopeks(option.price_kopeks)}
-              formatPackagePrice={(pkg: TrafficPackage) => formatKopeks(pkg.price_kopeks)}
-              formatPeriod={(periodDays) =>
-                `${String(periodDays)} ${pluralLabel('subscription.trial.daysLabel', periodDays)}`
-              }
-              onManageSubscription={() => navigate(`/subscriptions/${activeSubscription.id}`)}
-              onManageDevices={() => navigate(`/subscriptions/${activeSubscription.id}`)}
-              onRemoveDevice={handleRemoveDevice}
-              onCopyAccess={handleCopyAccess}
-              onConnectHapp={happLink ? () => openDeepLink(happLink) : undefined}
-              onConnectIncy={incyLink ? () => openDeepLink(incyLink) : undefined}
-              onShowQr={handleShowQr}
-              onSelectRenewal={(option) => setSelectedRenewalPeriod(option.period_days)}
-              onSubmitRenewal={() => navigate(`/subscriptions/${activeSubscription.id}/renew`)}
-              onOpenRenewalOptions={() => navigate(`/subscriptions/${activeSubscription.id}/renew`)}
-              onOpenDeviceAddon={() => setShowDeviceAddon(true)}
-              onOpenTrafficAddon={openTrafficTopup}
-              onOpenLteAddon={openTrafficTopup}
-            />
+            activeDashboardError ? (
+              <div className="glass-surface space-y-3 p-4" role="alert">
+                <p className="text-sm text-dark-300">
+                  {t('dashboard.activeError', 'Не удалось загрузить данные подписки')}
+                </p>
+                <button
+                  type="button"
+                  onClick={retryActiveDashboard}
+                  className="btn-secondary min-h-10 px-4 py-2 text-xs"
+                >
+                  {t('common.retry', 'Повторить')}
+                </button>
+              </div>
+            ) : (
+              <LunaActiveDashboard
+                subscription={activeSubscription}
+                devices={devicesData?.devices ?? []}
+                regularTraffic={regularTraffic}
+                lteTraffic={lteTraffic}
+                accessLink={accessLink}
+                happLink={happLink}
+                incyLink={null}
+                incyAvailable={Boolean(connectionLink)}
+                qrAvailable={Boolean(qrConnectionUrl ?? accessLink)}
+                renewalOptions={renewalOptions ?? []}
+                selectedRenewalPeriod={effectiveRenewalPeriod}
+                regularTrafficPackages={regularTrafficPackages ?? []}
+                lteTrafficPackages={lteTrafficPackages ?? []}
+                devicesConfig={devicesConfig}
+                labels={lunaLabels}
+                loadingMessage={t('dashboard.luna.loading', 'Загружаем подписку…')}
+                emptyMessage={t('dashboard.luna.empty', 'Нет активной подписки')}
+                formatDate={formatDate}
+                formatDeviceDate={formatDate}
+                formatUsage={(traffic) =>
+                  traffic.isUnlimited
+                    ? t('dashboard.unlimited', 'Безлимит')
+                    : `${formatTraffic(traffic.usedGb)} / ${formatTraffic(traffic.limitGb)}`
+                }
+                formatPrice={(option: RenewalOption) => formatKopeks(option.price_kopeks)}
+                formatPackagePrice={(pkg: TrafficPackage) => formatKopeks(pkg.price_kopeks)}
+                formatPeriod={(periodDays) =>
+                  `${String(periodDays)} ${pluralLabel('subscription.trial.daysLabel', periodDays)}`
+                }
+                isLoading={activeDashboardLoading}
+                isCopied={accessCopied}
+                isRemovingHwid={pendingRemovalHwid}
+                onRefreshTraffic={handleRefreshTraffic}
+                isRefreshingTraffic={refreshTrafficMutation.isPending}
+                trafficRefreshCooldown={trafficRefreshCooldown}
+                onManageSubscription={() => navigate(`/subscriptions/${activeSubscription.id}`)}
+                onManageDevices={() => navigate(`/subscriptions/${activeSubscription.id}`)}
+                onRemoveDevice={handleRemoveDevice}
+                onCopyAccess={handleCopyAccess}
+                onConnectHapp={happLink ? () => openDeepLink(happLink) : undefined}
+                onConnectIncy={
+                  connectionLink
+                    ? () => navigate(`/connection?sub=${activeSubscription.id}`)
+                    : undefined
+                }
+                onShowQr={handleShowQr}
+                onSelectRenewal={(option) => setSelectedRenewalPeriod(option.period_days)}
+                onSubmitRenewal={undefined}
+                onOpenRenewalOptions={() =>
+                  navigate(`/subscriptions/${activeSubscription.id}/renew`)
+                }
+                onOpenDeviceAddon={() => setShowDeviceTopup(true)}
+                onOpenTrafficAddon={(pkg) => openTrafficTopup(pkg, 'regular')}
+                onOpenLteAddon={(pkg) => openTrafficTopup(pkg, 'whitelist')}
+                submitRenewalLabel={t('dashboard.luna.renewal.open', 'Open renewal options')}
+              />
+            )
           ) : null}
         </motion.div>
       )}
@@ -959,23 +1157,17 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Докупка слотов из Luna add-ons (одиночная подписка): тот же sheet,
-          что и у плитки «Все слоты заняты» в мультитарифной ветке. */}
-      {showDeviceAddon && activeSubscription && (
-        <DeviceLimitSheet
-          isOpen
-          onClose={() => setShowDeviceAddon(false)}
+      {activeSubscription && showDeviceTopup && (
+        <DeviceTopupSheet
+          open={showDeviceTopup}
+          onOpen={() => setShowDeviceTopup(true)}
+          onClose={() => setShowDeviceTopup(false)}
+          subscription={activeSubscription}
           subscriptionId={activeSubscription.id}
-          subscriptionName={
-            activeSubscription.tariff_name || t('subscription.defaultName', 'Подписка')
-          }
-          deviceLimit={activeSubscription.device_limit}
-          isTrial={activeSubscription.is_trial}
-          devices={devicesData?.devices ?? []}
-          onOpenSubscription={() => {
-            setShowDeviceAddon(false);
-            navigate(`/subscriptions/${activeSubscription.id}`);
-          }}
+          devicesToAdd={devicesToAdd}
+          onDevicesToAddChange={setDevicesToAdd}
+          purchaseOptions={purchaseOptions}
+          isDark={isDark}
         />
       )}
 
@@ -983,11 +1175,13 @@ export default function Dashboard() {
           подписки; выбранный пакет прокидываем, scope переключается внутри. */}
       {activeSubscription && (
         <TrafficTopupSheet
+          key={`${activeSubscription.id}-${trafficTopupScope}`}
           open={showTrafficTopup}
           onOpen={() => setShowTrafficTopup(true)}
           onClose={() => setShowTrafficTopup(false)}
           subscription={activeSubscription}
           subscriptionId={activeSubscription.id}
+          initialScope={trafficTopupScope}
           selectedTrafficPackage={selectedTrafficPackage}
           onSelectedTrafficPackageChange={setSelectedTrafficPackage}
           purchaseOptions={purchaseOptions}

@@ -7,6 +7,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlatformProvider } from '../platform/PlatformProvider';
 import type { Subscription } from '../types';
 import type { SubscriptionsListResponse } from '../types';
+import faLocale from '../locales/fa.json';
+import zhLocale from '../locales/zh.json';
 import { uiLocale } from '../utils/uiLocale';
 import Dashboard from './Dashboard';
 
@@ -31,6 +33,7 @@ const mocks = vi.hoisted(() => ({
   getConfig: vi.fn(),
   getConnectionLink: vi.fn(),
   getDevices: vi.fn(),
+  getDevicePrice: vi.fn(),
   getGroupDiscounts: vi.fn(),
   getHappDownloads: vi.fn(),
   getPendingGifts: vi.fn(),
@@ -42,6 +45,8 @@ const mocks = vi.hoisted(() => ({
   getSubscription: vi.fn(),
   getSubscriptions: vi.fn(),
   getTrialInfo: vi.fn(),
+  openAppScheme: vi.fn(),
+  confirm: vi.fn(),
   refreshUser: vi.fn(),
 }));
 
@@ -51,6 +56,7 @@ vi.mock('../api/subscription', () => ({
     deleteDevice: mocks.deleteDevice,
     getConnectionLink: mocks.getConnectionLink,
     getDevices: mocks.getDevices,
+    getDevicePrice: mocks.getDevicePrice,
     getHappDownloads: mocks.getHappDownloads,
     getPurchaseOptions: mocks.getPurchaseOptions,
     getRenewalOptions: mocks.getRenewalOptions,
@@ -66,6 +72,14 @@ vi.mock('../api/referral', () => ({ referralApi: { getReferralInfo: mocks.getRef
 vi.mock('../api/wheel', () => ({ wheelApi: { getConfig: mocks.getConfig } }));
 vi.mock('../api/gift', () => ({ giftApi: { getPendingGifts: mocks.getPendingGifts } }));
 vi.mock('../api/promo', () => ({ promoApi: { getGroupDiscounts: mocks.getGroupDiscounts } }));
+vi.mock('../utils/openAppScheme', () => ({ openAppScheme: mocks.openAppScheme }));
+vi.mock('@/platform', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/platform')>();
+  return {
+    ...actual,
+    useNativeDialog: () => ({ confirm: mocks.confirm }),
+  };
+});
 vi.mock('../store/auth', () => ({
   useAuthStore: (selector: (state: unknown) => unknown) =>
     selector({ user: { id: 1, first_name: 'Fixture' }, refreshUser: mocks.refreshUser }),
@@ -205,6 +219,13 @@ const activeSubscription: Subscription = {
   tariff_name: 'Fixture active tariff',
 };
 
+const secondActiveSubscription: Subscription = {
+  ...activeSubscription,
+  id: 43,
+  tariff_id: 8,
+  tariff_name: 'Fixture second active tariff',
+};
+
 function setupResolvedQueries() {
   mocks.getBalance.mockResolvedValue({ balance_rubles: 0, balance_kopeks: 0 });
   mocks.getConfig.mockResolvedValue({ is_enabled: false });
@@ -228,6 +249,16 @@ function setupResolvedQueries() {
         local_name: 'Fixture device',
       },
     ],
+  });
+  mocks.getDevicePrice.mockResolvedValue({
+    available: true,
+    devices: 1,
+    price_per_device_label: '30 ₽',
+    total_price_kopeks: 3000,
+    total_price_label: '30 ₽',
+    current_device_limit: 3,
+    max_device_limit: 10,
+    days_left: 16,
   });
   mocks.getGroupDiscounts.mockResolvedValue(null);
   mocks.getHappDownloads.mockResolvedValue({ platforms: {}, happ_enabled: true });
@@ -276,15 +307,222 @@ afterEach(() => {
 });
 
 describe('Dashboard target states', () => {
-  it('renders a target multi-subscription fixture and routes to its detail', async () => {
+  it('uses a subscription selector and renders the selected subscription in Luna composition', async () => {
     setupResolvedQueries();
     mocks.getSubscriptions.mockResolvedValue(multiSubscription);
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+    mocks.refreshTraffic.mockResolvedValue({
+      traffic_used_gb: 18,
+      traffic_used_percent: 18,
+      is_unlimited: false,
+      rate_limited: false,
+    });
 
     renderPage();
 
-    fireEvent.click(await screen.findByRole('button', { name: /Fixture dashboard тариф/ }));
+    expect(await screen.findByRole('radiogroup', { name: 'Dashboard subscriptions' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: 'Fixture dashboard тариф' }));
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    const traffic = screen.getByRole('region', { name: 'Traffic' });
+    expect(traffic.textContent).toContain('18.0');
+    expect(traffic.textContent).toContain('100.0');
+  });
 
-    expect((await screen.findByTestId('current-path')).textContent).toBe('/subscriptions/42');
+  it('keeps the selected subscription id on every target query', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({
+      ...multiSubscription,
+      subscriptions: [
+        multiSubscription.subscriptions[0],
+        {
+          ...multiSubscription.subscriptions[0],
+          id: 43,
+          tariff_id: 8,
+          tariff_name: 'Fixture second dashboard тариф',
+          device_limit: 3,
+        },
+      ],
+    });
+    mocks.getSubscription.mockImplementation((id?: number) =>
+      Promise.resolve({
+        has_subscription: true,
+        subscription: id === 43 ? secondActiveSubscription : activeSubscription,
+      }),
+    );
+
+    renderPage();
+
+    expect(
+      await screen.findByRole('radio', { name: 'Fixture second dashboard тариф' }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: 'Fixture second dashboard тариф' }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Fixture second active tariff' }),
+    ).toBeTruthy();
+    expect(mocks.getSubscription).toHaveBeenCalledWith(43);
+    expect(mocks.getDevices).toHaveBeenCalledWith(43);
+  });
+
+  it('opens the LTE top-up flow with the whitelist scope selected', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить LTE-трафик' }));
+
+    expect(await screen.findByText(/LTE сервера: 12\.0/)).toBeTruthy();
+  });
+
+  it('opens the real device top-up flow for the active subscription', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить устройства' }));
+
+    expect(await screen.findByText('subscription.buyDevices')).toBeTruthy();
+    expect(mocks.getDevicePrice).toHaveBeenCalledWith(1, activeSubscription.id);
+  });
+
+  it('uses the target HAPP cryptolink resolver and routes INCY through Connection', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+    mocks.getConnectionLink.mockResolvedValue({
+      subscription_url: 'https://example.test/subscription',
+      display_link: null,
+      happ_redirect_link: null,
+      happ_scheme_link: null,
+      happ_cryptolink: null,
+      happ_crypto_link: null,
+      happ_link: null,
+      connect_mode: 'happ_cryptolink',
+      hide_link: true,
+      instructions: { steps: [] },
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Подключить в HAPP' }));
+    expect(mocks.openAppScheme).toHaveBeenCalledWith(expect.stringMatching(/^happ:\/\/crypt/));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Показать QR-код' }));
+    expect((await screen.findByTestId('current-path')).textContent).toBe('/connection/qr');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Подключить в INCY' }));
+    expect((await screen.findByTestId('current-path')).textContent).toBe('/connection');
+  });
+
+  it('keeps the active dashboard in a loading state while dependent data is pending', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+    mocks.getConnectionLink.mockImplementation(() => new Promise(() => {}));
+
+    renderPage();
+
+    expect(await screen.findByRole('status', { name: 'Загружаем подписку…' })).toBeTruthy();
+  });
+
+  it('shows a retry state when active dashboard data fails and retries the target queries', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+    mocks.getConnectionLink
+      .mockRejectedValueOnce(new Error('connection fixture failure'))
+      .mockResolvedValue({
+        subscription_url: 'https://example.test/subscription',
+        display_link: null,
+        happ_redirect_link: null,
+        happ_scheme_link: 'happ://add/fixture',
+        connect_mode: '',
+        hide_link: false,
+        instructions: { steps: [] },
+      });
+
+    renderPage();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Не удалось загрузить данные подписки');
+    fireEvent.click(screen.getByRole('button', { name: 'Повторить' }));
+
+    await vi.waitFor(() => expect(mocks.getConnectionLink).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('heading', { name: 'Доступ и подключение' })).toBeTruthy();
+  });
+
+  it('blocks repeated device removal while the target mutation is pending', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+    mocks.deleteDevice.mockImplementation(() => new Promise(() => {}));
+    mocks.confirm.mockResolvedValue(true);
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    const removeButton = await screen.findByRole('button', {
+      name: 'Отключить Fixture device',
+    });
+    fireEvent.click(removeButton);
+    await vi.waitFor(() => expect(mocks.deleteDevice).toHaveBeenCalledOnce());
+
+    expect(removeButton).toHaveProperty('disabled', true);
+    fireEvent.click(removeButton);
+    expect(mocks.deleteDevice).toHaveBeenCalledOnce();
+  });
+
+  it('provides plural fallback keys for Persian and Chinese dashboard labels', () => {
+    expect(faLocale.subscription.trial.daysLabel_one).toBe('روز');
+    expect(faLocale.subscription.trial.daysLabel_other).toBe('روز');
+    expect(faLocale.subscription.trial.devicesLabel_one).toBe('دستگاه');
+    expect(faLocale.subscription.trial.devicesLabel_other).toBe('دستگاه');
+    expect(zhLocale.subscription.trial.daysLabel_other).toBe('天');
+    expect(zhLocale.subscription.trial.devicesLabel_other).toBe('设备');
+  });
+
+  it('renders a target multi-subscription fixture and selects its detail', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue(multiSubscription);
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('radio', { name: 'Fixture dashboard тариф' }));
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    expect((await screen.findByTestId('current-path')).textContent).toBe('/dashboard');
     expect(screen.queryByText(/2490|200 ₽|750 ГБ|demo/i)).toBeNull();
   });
 
@@ -295,7 +533,6 @@ describe('Dashboard target states', () => {
     renderPage();
 
     expect(await screen.findByText('Fixture dashboard тариф')).toBeTruthy();
-    expect(screen.getByText('12.0 / 100 ГБ')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: /Все слоты заняты/ }));
 
@@ -365,7 +602,9 @@ describe('Dashboard target states', () => {
     expect(screen.getByText('Fixture device')).toBeTruthy();
 
     // Renewal options из API: цена форматируется из price_kopeks фикстуры.
-    expect(screen.getByRole('button', { name: /30/ })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /subscription\.trial\.daysLabel_many/ }),
+    ).toBeTruthy();
     expect(screen.getByText('199 ₽')).toBeTruthy();
 
     // Никаких demo-значений из визуального референса.
