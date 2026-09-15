@@ -190,6 +190,14 @@ describe('AppShell support FAB', () => {
       'modern',
     );
     expect(document.documentElement.getAttribute('data-customer-palette')).toBe('mint');
+
+    cleanup();
+    renderShell('/referral');
+
+    expect(screen.getByText('page').closest('.ix-app')?.getAttribute('data-customer-ui')).toBe(
+      'modern',
+    );
+    expect(document.documentElement.getAttribute('data-customer-palette')).toBe('mint');
   });
 
   it.each(['/dashboard', '/subscriptions', '/balance', '/referral', '/support', '/info'])(

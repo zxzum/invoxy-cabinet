@@ -61,6 +61,7 @@ export function AppShell({ children }: AppShellProps) {
   const isModernCustomerRoute =
     tabs.includes(location.pathname) ||
     location.pathname === '/subscription/purchase' ||
+    location.pathname === '/referral' ||
     location.pathname === '/subscriptions' ||
     location.pathname.startsWith('/subscriptions/');
   const animatePage = !isTelegramWebApp && !reducedMotion;
