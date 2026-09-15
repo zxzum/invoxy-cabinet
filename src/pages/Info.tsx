@@ -17,7 +17,7 @@ const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
   <PiCaretDown className={`h-5 w-5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
 );
 
-const BUILTIN_TABS = new Set<string>(['faq', 'rules', 'privacy', 'offer', 'loyalty']);
+const BUILTIN_TABS = new Set<string>(['faq', 'rules', 'privacy', 'offer', 'recurrent', 'loyalty']);
 
 // Rich sanitizer for custom InfoPage content (TipTap editor output with media)
 const ALLOWED_IFRAME_HOSTS = new Set([
@@ -346,6 +346,14 @@ export default function Info() {
     refetchOnMount: 'always',
   });
 
+  const { data: recurrentPayments, isLoading: recurrentLoading } = useQuery({
+    queryKey: ['recurrent-payments'],
+    queryFn: infoApi.getRecurrentPayments,
+    enabled: activeTab === 'recurrent' && !currentTabSlug && replacementsLoaded,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
   const { data: loyaltyData, isLoading: loyaltyLoading } = useQuery({
     queryKey: ['loyalty-tiers'],
     queryFn: promoApi.getLoyaltyTiers,
@@ -360,6 +368,11 @@ export default function Info() {
       { id: 'rules', label: t('info.rules'), icon: DocumentIcon },
       { id: 'privacy', label: t('info.privacy'), icon: ShieldIcon },
       { id: 'offer', label: t('info.offer'), icon: DocumentIcon },
+      {
+        id: 'recurrent',
+        label: t('footer.recurrent', 'Рекуррентные платежи'),
+        icon: DocumentIcon,
+      },
       { id: 'loyalty', label: t('info.loyalty'), icon: StarIcon },
     ];
 
@@ -561,6 +574,35 @@ export default function Info() {
           {offer.updated_at && (
             <p className="mt-6 border-t border-dark-700 pt-4 text-sm text-dark-400">
               {t('info.updatedAt')}: {new Date(offer.updated_at).toLocaleDateString(uiLocale())}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    if (activeTab === 'recurrent') {
+      if (recurrentLoading) {
+        return (
+          <SkeletonGroup className="space-y-3">
+            <Skeleton variant="card" count={3} className="h-16" />
+          </SkeletonGroup>
+        );
+      }
+
+      if (!recurrentPayments?.content) {
+        return <div className="py-8 text-center text-dark-400">{t('info.noContent')}</div>;
+      }
+
+      return (
+        <div className="glass-surface bento-card prose prose-invert max-w-none">
+          <div
+            className="overflow-x-auto"
+            dangerouslySetInnerHTML={{ __html: formatContent(recurrentPayments.content) }}
+          />
+          {recurrentPayments.updated_at && (
+            <p className="mt-6 border-t border-dark-700 pt-4 text-sm text-dark-400">
+              {t('info.updatedAt')}:{' '}
+              {new Date(recurrentPayments.updated_at).toLocaleDateString(uiLocale())}
             </p>
           )}
         </div>

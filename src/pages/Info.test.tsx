@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   getRules: vi.fn(),
   getPrivacyPolicy: vi.fn(),
   getPublicOffer: vi.fn(),
+  getRecurrentPayments: vi.fn(),
   getVisibility: vi.fn(),
   getTabReplacements: vi.fn(),
   getPages: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('../api/info', () => ({
     getRules: mocks.getRules,
     getPrivacyPolicy: mocks.getPrivacyPolicy,
     getPublicOffer: mocks.getPublicOffer,
+    getRecurrentPayments: mocks.getRecurrentPayments,
     getVisibility: mocks.getVisibility,
   },
 }));
@@ -43,6 +45,7 @@ vi.mock('react-i18next', () => ({
         'info.privacy': 'Privacy',
         'info.offer': 'Offer',
         'info.loyalty': 'Loyalty',
+        'footer.recurrent': 'Recurring payments',
         'info.title': 'Information',
       })[key] ??
       fallback ??
@@ -90,6 +93,10 @@ beforeEach(() => {
     updated_at: null,
   });
   mocks.getPublicOffer.mockResolvedValue({ content: '<p>Offer API content</p>', updated_at: null });
+  mocks.getRecurrentPayments.mockResolvedValue({
+    content: '<p>Recurring API content</p>',
+    updated_at: null,
+  });
   mocks.getVisibility.mockResolvedValue({
     faq: true,
     rules: true,
@@ -125,5 +132,16 @@ describe('Info tab query deep links', () => {
     expect(await screen.findByText('FAQ API question')).toBeTruthy();
     expect(mocks.getFaqPages).toHaveBeenCalledTimes(1);
     expect(mocks.getRules).not.toHaveBeenCalled();
+  });
+
+  it('opens the recurrent payments tab from its deep link', async () => {
+    renderInfo('/info?tab=recurrent');
+
+    expect(await screen.findByText('Recurring API content')).toBeTruthy();
+    expect(mocks.getRecurrentPayments).toHaveBeenCalledTimes(1);
+    expect(mocks.getFaqPages).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Recurring payments' }).className).toContain(
+      'bg-accent-500',
+    );
   });
 });
