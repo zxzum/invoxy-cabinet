@@ -43,6 +43,12 @@ function reportBlocking(status: number, data: unknown) {
 
 let memoryAccessToken: string | null = null;
 let memoryRefreshToken: string | null = null;
+const GET_CACHE_TTL_MS = 30_000;
+const responseCache = new Map<string, { expiresAt: number; value: unknown }>();
+
+function clearResponseCache() {
+  responseCache.clear();
+}
 
 function storage(name: 'localStorage' | 'sessionStorage'): Storage | null {
   try {
@@ -73,6 +79,7 @@ export const tokenStorage = {
   },
   setTokens(accessToken: string, refreshToken: string) {
     if (!accessToken || !refreshToken) throw new Error('Cannot store empty credentials');
+    clearResponseCache();
     memoryAccessToken = accessToken;
     memoryRefreshToken = refreshToken;
     try {
@@ -90,6 +97,7 @@ export const tokenStorage = {
     } catch {}
   },
   clearTokens() {
+    clearResponseCache();
     memoryAccessToken = null;
     memoryRefreshToken = null;
     try {
@@ -212,6 +220,18 @@ export async function request<T>(
   retried = false,
 ): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
+  const token = tokenStorage.getAccessToken();
+  const shouldCache = method === 'GET' && options.cache !== 'no-store';
+  const cacheKey = shouldCache
+    ? `${options.skipAuth ? 'public' : 'private'}:${token || 'anonymous'}:${makeUrl(path, options.params)}`
+    : null;
+  if (cacheKey) {
+    const cached = responseCache.get(cacheKey);
+    if (cached) {
+      if (cached.expiresAt > Date.now()) return cached.value as T;
+      responseCache.delete(cacheKey);
+    }
+  }
   const headers = new Headers(options.headers);
   headers.set('Accept', 'application/json');
 
@@ -220,7 +240,6 @@ export async function request<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const token = tokenStorage.getAccessToken();
   if (token && !options.skipAuth && !isAuthPath(path))
     headers.set('Authorization', `Bearer ${token}`);
   const telegramInitData = getTelegramInitData();
@@ -270,6 +289,11 @@ export async function request<T>(
         ? String((data as { detail?: unknown }).detail)
         : undefined;
     throw new ApiError(response.status, data, message);
+  }
+  if (cacheKey) {
+    responseCache.set(cacheKey, { value: data, expiresAt: Date.now() + GET_CACHE_TTL_MS });
+  } else if (method !== 'GET') {
+    clearResponseCache();
   }
   return data as T;
 }

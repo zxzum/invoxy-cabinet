@@ -180,7 +180,9 @@ export function StandardOfferCard({
           <p className="flex items-center gap-2 text-[10px] font-bold tracking-[.17em] text-mint sm:text-[11px]">
             <CalendarDays size={14} /> БЫСТРОЕ ОФОРМЛЕНИЕ
           </p>
-          <h2 className="mt-3 text-2xl font-medium tracking-[-.045em] sm:text-3xl">Стандарт</h2>
+          <h2 className="mt-3 text-2xl font-medium tracking-[-.045em] sm:text-3xl">
+            {tariff?.name ?? 'Стандарт'}
+          </h2>
           <p className="mt-1 text-xs text-muted sm:text-sm">
             Оптимальный тариф для ежедневного доступа
           </p>
@@ -191,7 +193,7 @@ export function StandardOfferCard({
             Все тарифы <ArrowRight size={13} />
           </Link>
         </div>
-        <span className="absolute -right-px -top-px z-20 rounded-bl-2xl rounded-tr-[31px] bg-mint px-3 py-2 text-[9px] font-bold text-bg shadow-[0_0_18px_rgba(165,232,196,.16)] sm:px-4 sm:py-2.5 sm:text-[10px]">
+        <span className="recommended-badge absolute -right-px -top-px z-20 rounded-bl-2xl bg-mint px-3 py-2 text-[9px] font-bold text-bg shadow-[0_0_18px_rgba(165,232,196,.16)] sm:px-4 sm:py-2.5 sm:text-[10px]">
           РЕКОМЕНДУЕМ
         </span>
       </div>

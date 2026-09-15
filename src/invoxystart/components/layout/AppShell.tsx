@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router';
 import { Sidebar } from '@/invoxystart/components/layout/Sidebar';
 import { MobileNav } from '@/invoxystart/components/layout/MobileNav';
 import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShapes';
@@ -14,7 +15,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function ShellLayout({ children }: { children: ReactNode }) {
+  const location = useLocation();
   const navigate = useNavigate();
+  const reducedMotion = useReducedMotion();
 
   return (
     <div className="invoxystart-shell relative isolate min-h-screen w-full text-ink">
@@ -24,7 +27,22 @@ function ShellLayout({ children }: { children: ReactNode }) {
         <Sidebar onTopUp={() => navigate('/profile#top-up')} onHelp={() => navigate('/support')} />
 
         <main className="flex min-w-0 w-full max-w-[560px] flex-1 flex-col lg:max-w-none lg:pt-[1.1vw] lg:pb-[1.1vw]">
-          {children}
+          {reducedMotion ? (
+            children
+          ) : (
+            <AnimatePresence mode="wait" initial={false}>
+              <m.div
+                key={`${location.pathname}${location.search}`}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                className="min-h-full"
+              >
+                {children}
+              </m.div>
+            </AnimatePresence>
+          )}
         </main>
       </div>
 

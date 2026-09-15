@@ -18,6 +18,7 @@ export default function ReferralsPage() {
   const [terms, setTerms] = useState<ReferralTerms | null>(null);
   const [invited, setInvited] = useState<ReferralItem[]>([]);
   const [income, setIncome] = useState<ReferralEarning[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -32,6 +33,7 @@ export default function ReferralsPage() {
       if (termsResult.status === 'fulfilled') setTerms(termsResult.value);
       if (invitedResult.status === 'fulfilled') setInvited(invitedResult.value.items);
       if (earningsResult.status === 'fulfilled') setIncome(earningsResult.value.items);
+      setLoading(false);
     });
     return () => {
       mounted = false;
@@ -65,6 +67,22 @@ export default function ReferralsPage() {
     const data = { title: 'Invoxy', text: 'Присоединяйся к Invoxy', url };
     if (navigator.share) await navigator.share(data).catch(() => undefined);
     else await copy(url);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-w-0 max-w-full flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
+        <PageHeader title="Приглашения" subtitle="Приглашайте и зарабатывайте!" />
+        <div className="grid min-w-0 max-w-full gap-5 xl:grid-cols-2" aria-busy="true">
+          <div className="glass-panel h-[200px] animate-pulse rounded-[30px] lg:h-[270px]" />
+          <div className="glass-panel h-[200px] animate-pulse rounded-[32px]" />
+        </div>
+        <div className="grid min-w-0 max-w-full gap-5 xl:grid-cols-2">
+          <div className="glass-panel h-48 animate-pulse rounded-[30px]" />
+          <div className="glass-panel h-48 animate-pulse rounded-[30px]" />
+        </div>
+      </div>
+    );
   }
 
   return (

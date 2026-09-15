@@ -20,29 +20,30 @@
   animation-delay: var(--motion-delay, 60ms);
 }
 
-.invoxystart-shell .adaptive-dialog-backdrop {
+.adaptive-dialog-backdrop {
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   animation: invoxy-dialog-backdrop-in 220ms ease-out both;
 }
 
-.invoxystart-shell .adaptive-dialog-backdrop.is-closing {
+.adaptive-dialog-backdrop.is-closing {
   animation: invoxy-dialog-backdrop-out 200ms ease-in both;
 }
 
-.invoxystart-shell .adaptive-dialog-panel {
+.adaptive-dialog-panel {
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --adaptive-dialog-drag-y: 0px;
   animation: invoxy-dialog-panel-in 320ms var(--motion-ease) both;
   transform: translate3d(0, var(--adaptive-dialog-drag-y), 0);
   transition: transform 180ms var(--motion-ease);
 }
 
-.invoxystart-shell .adaptive-dialog-panel.is-dragging {
+.adaptive-dialog-panel.is-dragging {
   transition: none;
   will-change: transform;
 }
 
-.invoxystart-shell .adaptive-dialog-panel.is-closing {
+.adaptive-dialog-panel.is-closing {
   animation: invoxy-dialog-panel-out-left 200ms ease-in both;
   transition: none;
 }
@@ -68,11 +69,55 @@
 }
 
 @media (max-width: 1023px) {
-  .invoxystart-shell .adaptive-dialog-panel {
+  .adaptive-dialog-panel {
     animation-name: invoxy-dialog-sheet-in;
   }
-  .invoxystart-shell .adaptive-dialog-panel.is-closing {
+  .adaptive-dialog-panel.is-closing {
     animation-name: invoxy-dialog-sheet-out;
+  }
+}
+
+.invoxystart-shell .recommended-badge {
+  border-top-right-radius: 30px;
+}
+
+@media (hover: hover) {
+  .invoxystart-shell .motion-card {
+    transition:
+      transform 260ms var(--motion-ease),
+      background-color 300ms var(--motion-ease),
+      border-color 300ms var(--motion-ease),
+      box-shadow 300ms var(--motion-ease);
+  }
+
+  .invoxystart-shell .motion-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(165, 232, 196, 0.24);
+    box-shadow:
+      0 24px 52px rgba(0, 0, 0, 0.32),
+      0 0 0 1px rgba(165, 232, 196, 0.07);
+  }
+
+  .invoxystart-shell .button-lift {
+    transition:
+      transform 180ms var(--motion-ease),
+      color 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms var(--motion-ease);
+  }
+
+  .invoxystart-shell .button-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invoxystart-shell .motion-card:hover,
+  .invoxystart-shell .button-lift:hover {
+    transform: none;
+    box-shadow: none;
   }
 }
 

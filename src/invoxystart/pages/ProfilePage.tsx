@@ -368,7 +368,7 @@ function InfoRow({
     <button
       type="button"
       onClick={onClick}
-      className="account-action group mt-1 flex w-full items-center gap-3 rounded-xl border-b border-white/8 px-2 py-3 text-left last:border-0"
+      className="account-action group mt-1 flex w-full items-center gap-3 border-b border-white/[.08] px-2 py-3.5 text-left last:border-0"
     >
       <span className="text-mint transition-transform duration-500 group-hover:scale-110">
         {icon}

@@ -53,12 +53,14 @@ function adaptPlan(value: Record<string, unknown>): Plan {
   });
   const month = adaptedPeriods.find((period) => period.days === 30) ??
     adaptedPeriods[0] ?? { days: 30, months: 1, price: 0, discount: 0 };
+  const lteTraffic = Number(value.whitelist_traffic_limit_gb ?? 0) || null;
+  const rawName = String(value.name ?? 'Тариф').trim();
   return {
     id: String(value.id),
-    name: String(value.name ?? 'Тариф'),
+    name: lteTraffic && !/\blte\b/i.test(rawName) ? `${rawName} LTE` : rawName,
     price: month.price,
     mainTraffic: Number(value.traffic_limit_gb ?? 0),
-    lteTraffic: Number(value.whitelist_traffic_limit_gb ?? 0) || null,
+    lteTraffic,
     devices: Number(value.device_limit ?? 0),
     devicePrice: Number(value.device_price_kopeks ?? 0) / 100,
     icon: Number(value.whitelist_traffic_limit_gb ?? 0) > 0 ? Globe2 : ShieldCheck,

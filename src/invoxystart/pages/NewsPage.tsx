@@ -87,20 +87,21 @@ export default function NewsPage({ load = loadNews }: { load?: NewsLoader }) {
         notifications
         mobileNotifications
       />
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <label className="glass-control flex h-12 min-w-0 flex-1 items-center rounded-2xl px-4">
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+        <label className="glass-control flex h-14 min-w-0 w-full items-center rounded-[20px] px-5">
           <span className="sr-only">Поиск новостей</span>
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Найти новость"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
+            aria-label="Поиск новостей"
+            className="w-full min-w-0 bg-transparent text-base outline-none placeholder:text-muted"
           />
         </label>
         <select
           value={category}
           onChange={(event) => setCategory(event.target.value)}
-          className="glass-control h-12 rounded-2xl px-4 text-sm outline-none sm:w-52"
+          className="glass-control h-14 w-full rounded-[20px] px-5 text-base outline-none"
         >
           <option value="" className="bg-surface">
             Все категории
