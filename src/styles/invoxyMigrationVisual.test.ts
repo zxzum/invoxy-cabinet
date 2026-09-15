@@ -36,6 +36,35 @@ describe('Invoxy visual migration', () => {
     expect(lunaCss).toContain('--luna-control-bg: var(--glass-fill-elevated);');
   });
 
+  it('repaints inline-image welcome surfaces in light mode', () => {
+    const start = css.indexOf('/* Luna dashboard contract */');
+    const end = css.indexOf('/* End Luna dashboard contract */', start);
+    const lunaCss = start >= 0 && end > start ? css.slice(start, end) : '';
+
+    expect(lunaCss).toContain(
+      `.light .luna-dashboard article[style*="trial-card-bg.png"] {
+    background-image:
+      linear-gradient(
+        115deg,
+        rgba(var(--color-champagne-50), 0.96),
+        rgba(var(--color-champagne-100), 0.86)
+      ),
+      url("/images/trial-card-bg.png") !important;
+  }`,
+    );
+    expect(lunaCss).toContain(
+      `.light .luna-dashboard article[style*="referral-network-bg.png"] {
+    background-image:
+      linear-gradient(
+        110deg,
+        rgba(var(--color-champagne-50), 0.96),
+        rgba(var(--color-champagne-100), 0.86)
+      ),
+      url("/images/referral-network-bg.png") !important;
+  }`,
+    );
+  });
+
   it('keeps raised sheet/dialog surfaces explicit', () => {
     const sheet = readFileSync(new URL('../components/ui/Sheet.tsx', import.meta.url), 'utf8');
     const responsiveSheet = readFileSync(

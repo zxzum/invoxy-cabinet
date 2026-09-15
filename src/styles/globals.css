@@ -2772,6 +2772,26 @@ html.light .bento-card-hover:hover {
     background-image: url("/images/referral-network-bg.png");
   }
 
+  .light .luna-dashboard article[style*="trial-card-bg.png"] {
+    background-image:
+      linear-gradient(
+        115deg,
+        rgba(var(--color-champagne-50), 0.96),
+        rgba(var(--color-champagne-100), 0.86)
+      ),
+      url("/images/trial-card-bg.png") !important;
+  }
+
+  .light .luna-dashboard article[style*="referral-network-bg.png"] {
+    background-image:
+      linear-gradient(
+        110deg,
+        rgba(var(--color-champagne-50), 0.96),
+        rgba(var(--color-champagne-100), 0.86)
+      ),
+      url("/images/referral-network-bg.png") !important;
+  }
+
   .luna-dashboard .luna-subscription-orb,
   .luna-dashboard .luna-trial-ribbon,
   .luna-dashboard .luna-app-happ,
