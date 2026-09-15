@@ -1,4 +1,11 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import { useQueries, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
@@ -111,6 +118,7 @@ export default function Dashboard() {
     [multiSubData],
   );
   const [selectedSubId, setSelectedSubId] = useState<number | null>(null);
+  const subscriptionButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selectedSubscriptionId = isMultiTariff
     ? (selectedSubId ?? visibleSubscriptions[0]?.id)
     : undefined;
@@ -507,6 +515,32 @@ export default function Dashboard() {
 
   const userName = displayName(user);
 
+  const handleSubscriptionKeyDown = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (!visibleSubscriptions.length) return;
+
+    let nextIndex: number;
+    if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = visibleSubscriptions.length - 1;
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (index + 1) % visibleSubscriptions.length;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (index - 1 + visibleSubscriptions.length) % visibleSubscriptions.length;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    const nextSubscription = visibleSubscriptions[nextIndex];
+    if (!nextSubscription) return;
+    setSelectedSubId(nextSubscription.id);
+    subscriptionButtonRefs.current[nextIndex]?.focus();
+  };
+
   // Подпись под числом с правильным склонением: «1 день», «2 дня», «5 дней».
   const pluralLabel = (baseKey: string, count: number) => {
     const form = new Intl.PluralRules(i18n.language).select(count);
@@ -868,72 +902,84 @@ export default function Dashboard() {
       {/* Multi-tariff selector. The selected item feeds the same Luna composition
           below, so every subscription keeps its real target queries and actions. */}
       {isMultiTariff && multiSubData?.subscriptions && multiSubData.subscriptions.length > 0 && (
-        <motion.div {...section(1)} className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-sm font-medium text-dark-400">
-              {t('dashboard.subscriptions', 'Подписки')}
+        <motion.div
+          {...section(1)}
+          className="glass-panel grid gap-2 rounded-[24px] p-2.5 sm:flex sm:flex-wrap sm:items-center"
+        >
+          <div className="flex items-center justify-between gap-3 px-2 sm:contents">
+            <span className="text-[10px] font-bold uppercase tracking-[.12em] text-dark-400">
+              {t('nav.subscription', 'Подписка')}
             </span>
-            <Link to="/subscriptions" className="text-xs text-accent-400 hover:underline">
-              {t('dashboard.manageAll', 'Управление')} →
+            <Link
+              to="/subscriptions"
+              className="rounded-full py-2 text-xs font-bold text-accent-400 transition-colors hover:text-accent-300 sm:order-last sm:ml-auto sm:px-4"
+            >
+              {t('dashboard.allSubscriptions', 'Все подписки')} →
             </Link>
           </div>
           <div
             role="radiogroup"
             aria-label={t('dashboard.subscriptionSelector', 'Dashboard subscriptions')}
-            className="grid gap-2 sm:grid-cols-3"
+            className="grid grid-cols-2 gap-2 sm:contents"
           >
             {visibleSubscriptions.map((sub, index) => {
-              const connectedDevices = deviceQueries[index]?.data?.total;
               const isSelected = sub.id === selectedSubscriptionId;
-              const isAtDeviceLimit =
-                connectedDevices != null &&
-                sub.device_limit > 0 &&
-                connectedDevices >= sub.device_limit;
 
               return (
-                <div key={sub.id} className="space-y-2">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    aria-label={sub.tariff_name || t('subscription.defaultName', 'Подписка')}
-                    onClick={() => setSelectedSubId(sub.id)}
-                    className={`w-full rounded-2xl border p-3 text-left transition-colors ${
-                      isSelected
-                        ? 'border-accent-400 bg-accent-400/10 text-dark-50'
-                        : 'border-dark-700/70 bg-dark-800/35 text-dark-300 hover:border-accent-400/30'
-                    }`}
-                  >
-                    <span className="block truncate text-sm font-semibold">
-                      {sub.tariff_name || t('subscription.defaultName', 'Подписка')}
-                    </span>
-                    <span className="mt-1 block text-xs text-dark-400">{sub.status}</span>
-                    {connectedDevices != null && (
-                      <span className="mt-1 block text-xs text-dark-400">
-                        {connectedDevices} / {sub.device_limit || '∞'}
-                      </span>
-                    )}
-                  </button>
-                  {isAtDeviceLimit && (
-                    <button
-                      type="button"
-                      onClick={() => setDeviceLimitSubId(sub.id)}
-                      className="w-full rounded-xl border border-warning-400/20 bg-warning-400/10 px-3 py-2 text-xs font-medium text-warning-400"
-                    >
-                      {t('subscription.connectFooter.full', 'Все слоты заняты')}
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  key={sub.id}
+                  role="radio"
+                  aria-checked={isSelected}
+                  aria-label={sub.tariff_name || t('subscription.defaultName', 'Подписка')}
+                  tabIndex={isSelected ? 0 : -1}
+                  ref={(button) => {
+                    subscriptionButtonRefs.current[index] = button;
+                  }}
+                  onClick={() => setSelectedSubId(sub.id)}
+                  onKeyDown={(event) => handleSubscriptionKeyDown(event, index)}
+                  className={`min-w-0 truncate rounded-full px-3 py-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 ${
+                    isSelected
+                      ? 'bg-accent-400 text-dark-950'
+                      : 'glass-control text-dark-400 hover:text-dark-50'
+                  }`}
+                >
+                  {sub.tariff_name || t('subscription.defaultName', 'Подписка')}
+                </button>
               );
             })}
           </div>
-          {multiSubData.subscriptions.length > 3 && (
-            <Link
-              to="/subscriptions"
-              className="flex w-full items-center justify-center rounded-2xl border border-dashed border-white/15 p-3 text-xs opacity-50 transition-opacity hover:opacity-80"
-            >
-              {t('dashboard.showAll', 'Показать все')} ({multiSubData.subscriptions.length})
-            </Link>
+          {visibleSubscriptions.some((sub, index) => {
+            const connectedDevices = deviceQueries[index]?.data?.total;
+            return (
+              connectedDevices != null &&
+              sub.device_limit > 0 &&
+              connectedDevices >= sub.device_limit
+            );
+          }) && (
+            <div className="flex flex-wrap gap-2 px-2 sm:w-full sm:px-0">
+              {visibleSubscriptions.map((sub, index) => {
+                const connectedDevices = deviceQueries[index]?.data?.total;
+                if (
+                  connectedDevices == null ||
+                  sub.device_limit <= 0 ||
+                  connectedDevices < sub.device_limit
+                ) {
+                  return null;
+                }
+                return (
+                  <button
+                    type="button"
+                    key={`device-limit-${sub.id}`}
+                    onClick={() => setDeviceLimitSubId(sub.id)}
+                    className="rounded-full border border-warning-400/20 bg-warning-400/10 px-3 py-2 text-xs font-medium text-warning-400"
+                  >
+                    {t('subscription.connectFooter.full', 'Все слоты заняты')}
+                    <span className="sr-only">: {sub.tariff_name}</span>
+                  </button>
+                );
+              })}
+            </div>
           )}
           {hasActivePaid ? (
             <Link

@@ -344,6 +344,55 @@ describe('Dashboard target states', () => {
     expect(traffic.textContent).toContain('100.0');
   });
 
+  it('matches the source pill bar and supports keyboard subscription selection', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({
+      ...multiSubscription,
+      subscriptions: [
+        multiSubscription.subscriptions[0],
+        {
+          ...multiSubscription.subscriptions[0],
+          id: 43,
+          tariff_id: 8,
+          tariff_name: 'Fixture second dashboard тариф',
+          device_limit: 3,
+        },
+      ],
+    });
+    mocks.getSubscription.mockImplementation((id?: number) =>
+      Promise.resolve({
+        has_subscription: true,
+        subscription: id === 43 ? secondActiveSubscription : activeSubscription,
+      }),
+    );
+
+    renderPage();
+
+    const group = await screen.findByRole('radiogroup', { name: 'Dashboard subscriptions' });
+    expect(group.parentElement?.className).toContain('glass-panel');
+    expect(screen.getByText('Подписка', { exact: true })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Все подписки →' }).getAttribute('href')).toBe(
+      '/subscriptions',
+    );
+
+    const first = screen.getByRole('radio', { name: 'Fixture dashboard тариф' });
+    const second = screen.getByRole('radio', { name: 'Fixture second dashboard тариф' });
+    expect(first.getAttribute('tabindex')).toBe('0');
+    expect(second.getAttribute('tabindex')).toBe('-1');
+
+    fireEvent.keyDown(first, { key: 'ArrowRight' });
+    await vi.waitFor(() => expect(second.getAttribute('aria-checked')).toBe('true'));
+    expect(document.activeElement).toBe(second);
+    expect(second.getAttribute('tabindex')).toBe('0');
+
+    fireEvent.keyDown(second, { key: 'ArrowLeft' });
+    await vi.waitFor(() => expect(first.getAttribute('aria-checked')).toBe('true'));
+    expect(document.activeElement).toBe(first);
+
+    fireEvent.click(screen.getByRole('link', { name: 'Все подписки →' }));
+    expect(screen.getByTestId('current-path').textContent).toBe('/subscriptions');
+  });
+
   it('mounts the Luna CSS contract on the dashboard product wrapper', async () => {
     setupResolvedQueries();
     mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
