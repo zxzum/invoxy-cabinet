@@ -120,7 +120,7 @@ describe('AppShell support FAB', () => {
   });
 
   it('mounts one support FAB immediately on a normal shell route', () => {
-    renderShell('/balance');
+    renderShell('/legacy');
 
     expect(screen.getAllByRole('link', { name: 'Поддержка' })).toHaveLength(1);
   });
@@ -141,6 +141,17 @@ describe('AppShell support FAB', () => {
     '/profile/saved-cards',
     '/partner',
     '/subscription',
+    '/connection',
+    '/connection/qr',
+    '/balance',
+    '/balance/top-up',
+    '/balance/top-up/card',
+    '/balance/top-up/result',
+    '/balance/top-up/result/stripe',
+    '/referral/partner/apply',
+    '/referral/withdrawal/request',
+    '/gift',
+    '/gift/result',
   ])('does not render the legacy support FAB on modern customer route %s', (pathname) => {
     renderShell(pathname);
 
@@ -249,6 +260,17 @@ describe('AppShell support FAB', () => {
       '/account/security',
       '/partner',
       '/subscription',
+      '/connection',
+      '/connection/qr',
+      '/balance',
+      '/balance/top-up',
+      '/balance/top-up/card',
+      '/balance/top-up/result',
+      '/balance/top-up/result/stripe',
+      '/referral/partner/apply',
+      '/referral/withdrawal/request',
+      '/gift',
+      '/gift/result',
     ]) {
       cleanup();
       renderShell(pathname);
@@ -257,6 +279,13 @@ describe('AppShell support FAB', () => {
       );
       expect(document.documentElement.getAttribute('data-customer-palette')).toBe('mint');
     }
+  });
+
+  it.each(['/legacy', '/admin'])('keeps legacy palette semantics on %s', (pathname) => {
+    const { container } = renderShell(pathname);
+
+    expect(container.querySelector('.ix-app')?.getAttribute('data-customer-ui')).toBe('legacy');
+    expect(document.documentElement.getAttribute('data-customer-palette')).toBeNull();
   });
 
   it.each(['/dashboard', '/subscriptions', '/balance', '/referral', '/support', '/info'])(

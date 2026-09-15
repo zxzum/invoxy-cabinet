@@ -70,6 +70,15 @@ export function AppShell({ children }: AppShellProps) {
     '/account/security',
     '/partner',
     '/subscription',
+    '/connection',
+    '/connection/qr',
+    '/balance',
+    '/balance/top-up',
+    '/balance/top-up/result',
+    '/referral/partner/apply',
+    '/referral/withdrawal/request',
+    '/gift',
+    '/gift/result',
   ];
   const isModernCustomerRoute =
     tabs.includes(location.pathname) ||
@@ -81,7 +90,8 @@ export function AppShell({ children }: AppShellProps) {
     location.pathname.startsWith('/news/') ||
     location.pathname === '/info' ||
     location.pathname.startsWith('/info/') ||
-    modernCustomerRoutes.includes(location.pathname);
+    modernCustomerRoutes.includes(location.pathname) ||
+    location.pathname.startsWith('/balance/top-up/');
   const animatePage = !isTelegramWebApp && !reducedMotion;
   if (animatePage && previousPath !== location.pathname) {
     const previousIndex = tabs.indexOf(previousPath);
