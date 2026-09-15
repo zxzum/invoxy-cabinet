@@ -162,31 +162,35 @@ export default function SavedCards() {
     // stay stuck at their initial variant (opacity 0) after a hard refresh
     <motion.div
       key={isLoading ? 'loading' : 'ready'}
-      className="space-y-6"
+      className="luna-dashboard flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0"
       variants={staggerContainer}
       initial="initial"
       animate="animate"
     >
       {/* Header */}
-      <motion.div variants={staggerItem} className="flex items-center gap-3">
+      <motion.div variants={staggerItem} className="flex items-start gap-3">
         <button
           onClick={() => navigate('/balance')}
-          className="flex h-10 w-10 items-center justify-center rounded-linear border border-dark-700/30 bg-dark-800/50 text-dark-300 transition-colors hover:bg-dark-700/50 hover:text-dark-100"
+          className="glass-control mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-300 transition-colors hover:border-accent-400/35 hover:text-dark-50"
         >
           <BackIcon className="h-5 w-5" />
         </button>
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {t('balance.savedCards.pageTitle')}
-        </h1>
+        <div className="ix-page-heading">
+          <h1>{t('balance.savedCards.pageTitle')}</h1>
+          <p>{t('balance.savedCards.subtitle', 'Способы оплаты для автопродления')}</p>
+        </div>
       </motion.div>
 
       {/* Loading state */}
       {isLoading && (
         <motion.div variants={staggerItem}>
-          <Card className="glass-surface p-5 sm:p-6">
+          <Card className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <SkeletonGroup className="space-y-3">
               {[1, 2].map((i) => (
-                <div key={i} className="card-inset flex items-center justify-between p-4">
+                <div
+                  key={i}
+                  className="glass-control flex items-center justify-between rounded-2xl p-4"
+                >
                   <div className="flex items-center gap-3">
                     <Skeleton className="h-6 w-6 shrink-0" />
                     <div className="space-y-2">
@@ -205,7 +209,7 @@ export default function SavedCards() {
       {/* Error state */}
       {isError && (
         <motion.div variants={staggerItem}>
-          <Card className="glass-surface p-5 sm:p-6">
+          <Card className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <div className="py-12 text-center">
               <div className="text-error-400">{t('balance.savedCards.loadError')}</div>
             </div>
@@ -216,12 +220,17 @@ export default function SavedCards() {
       {/* Cards List */}
       {!isLoading && !isError && savedCards && savedCards.length > 0 ? (
         <motion.div variants={staggerItem}>
-          <Card className="glass-surface p-5 sm:p-6">
+          <Card className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <div className="space-y-3">
               {savedCards.map((card) => (
-                <div key={card.id} className="card-inset flex items-center justify-between p-4">
+                <div
+                  key={card.id}
+                  className="glass-control flex items-center justify-between gap-3 rounded-2xl p-4"
+                >
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">💳</span>
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-accent-500/10 text-xl text-accent-300">
+                      💳
+                    </span>
                     <div>
                       <div className="font-medium text-dark-100">
                         {card.title ||
@@ -239,7 +248,7 @@ export default function SavedCards() {
                     size="sm"
                     onClick={() => handleDeleteCard(card.id)}
                     loading={deletingCardId === card.id}
-                    className="text-error-400 hover:text-error-300"
+                    className="button-lift rounded-full border-error-500/25 bg-transparent text-error-300 hover:border-error-400/35 hover:bg-error-500/10 hover:text-error-200"
                   >
                     {t('balance.savedCards.unlink')}
                   </Button>
@@ -251,9 +260,9 @@ export default function SavedCards() {
       ) : !isLoading && !isError && savedCards ? (
         /* Empty state - only show when data loaded and empty */
         <motion.div variants={staggerItem}>
-          <Card className="glass-surface p-5 sm:p-6">
+          <Card className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <div className="py-12 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-linear-lg bg-dark-800">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/10">
                 <span className="text-3xl">💳</span>
               </div>
               <div className="text-dark-400">{t('balance.savedCards.empty')}</div>
@@ -268,8 +277,8 @@ export default function SavedCards() {
           hidden entirely when the feature is off or nothing is bound. */}
       {sbpBindings.length > 0 && (
         <motion.div variants={staggerItem}>
-          <Card>
-            <h2 className="mb-3 text-sm font-semibold text-dark-100">
+          <Card className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
+            <h2 className="mb-3 text-lg font-medium text-dark-50">
               {t('balance.savedCards.sbpSection')}
             </h2>
             <div className="space-y-3">
@@ -278,7 +287,7 @@ export default function SavedCards() {
                 return (
                   <div
                     key={sub.id}
-                    className="flex items-center justify-between rounded-linear border border-dark-700/30 bg-dark-800/30 p-4"
+                    className="glass-control flex items-center justify-between gap-3 rounded-2xl p-4"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-xl">🔁</span>
@@ -306,7 +315,7 @@ export default function SavedCards() {
                       size="sm"
                       onClick={() => handleUnlinkSbp(sub.id)}
                       loading={unlinkingSubId === sub.id}
-                      className="text-error-400 hover:text-error-300"
+                      className="button-lift rounded-full border-error-500/25 bg-transparent text-error-300 hover:border-error-400/35 hover:bg-error-500/10 hover:text-error-200"
                     >
                       {t('balance.savedCards.sbpUnlink')}
                     </Button>

@@ -80,7 +80,7 @@ describe('SavedCards target data presentation', () => {
     renderSavedCards();
 
     const card = await screen.findByText('Visa *4242');
-    expect(card.closest('.glass-surface')).toBeTruthy();
+    expect(card.closest('.glass-panel')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'balance.savedCards.unlink' }));
     await waitFor(() => expect(mocks.deleteSavedCard).toHaveBeenCalledWith(42));

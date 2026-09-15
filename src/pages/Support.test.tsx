@@ -26,9 +26,15 @@ vi.mock('../api/tickets', () => ({
     getMediaUrl: mocks.getMediaUrl,
   },
 }));
+vi.mock('../components/Toast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}));
+vi.mock('../components/TicketNotificationBell', () => ({
+  default: () => null,
+}));
 vi.mock('../store/auth', () => ({
-  useAuthStore: (selector: (state: { isAdmin: boolean }) => unknown) =>
-    selector({ isAdmin: false }),
+  useAuthStore: (selector: (state: { isAdmin: boolean; isAuthenticated: boolean }) => unknown) =>
+    selector({ isAdmin: false, isAuthenticated: false }),
 }));
 vi.mock('../platform', () => ({
   usePlatform: () => ({

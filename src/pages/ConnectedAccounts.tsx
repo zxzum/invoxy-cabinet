@@ -286,7 +286,7 @@ function LoadingSkeleton() {
   return (
     <SkeletonGroup className="space-y-3">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i} className="glass-surface p-5 sm:p-6">
+        <Card key={i} className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Skeleton circle className="h-6 w-6 shrink-0" />
@@ -594,6 +594,7 @@ export default function ConnectedAccounts() {
         <Button
           variant="primary"
           size="sm"
+          className="button-lift rounded-full px-4 text-xs font-bold"
           onClick={() => {
             setEmailFormOpen((prev) => !prev);
             setEmailError(null);
@@ -612,6 +613,7 @@ export default function ConnectedAccounts() {
           <Button
             variant="primary"
             size="sm"
+            className="button-lift rounded-full px-4 text-xs font-bold"
             disabled={linkingProvider !== null || waitingExternalLink}
             loading={linkingProvider === 'telegram'}
             onClick={() => handleLink('telegram')}
@@ -629,6 +631,7 @@ export default function ConnectedAccounts() {
         <Button
           variant="primary"
           size="sm"
+          className="button-lift rounded-full px-4 text-xs font-bold"
           disabled={linkingProvider !== null || waitingExternalLink}
           loading={linkingProvider === provider.provider}
           onClick={() => handleLink(provider.provider)}
@@ -647,17 +650,15 @@ export default function ConnectedAccounts() {
     // otherwise stay stuck at their initial variant (opacity 0) after a hard refresh
     <motion.div
       key={isLoading ? 'loading' : 'ready'}
-      className="space-y-6"
+      className="luna-dashboard flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0"
       variants={staggerContainer}
       initial="initial"
       animate="animate"
     >
       {/* Page title */}
-      <motion.div variants={staggerItem}>
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
-          {t('profile.accounts.title')}
-        </h1>
-        <p className="mt-1 text-dark-400">{t('profile.accounts.subtitle')}</p>
+      <motion.div variants={staggerItem} className="ix-page-heading">
+        <h1>{t('profile.accounts.title')}</h1>
+        <p>{t('profile.accounts.subtitle')}</p>
       </motion.div>
 
       {/* Loading state */}
@@ -670,7 +671,7 @@ export default function ConnectedAccounts() {
       {/* Error state */}
       {isError && (
         <motion.div variants={staggerItem}>
-          <Card className="glass-surface p-5 sm:p-6">
+          <Card className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <p className="text-center text-dark-400">{t('common.error')}</p>
           </Card>
         </motion.div>
@@ -679,10 +680,12 @@ export default function ConnectedAccounts() {
       {/* Provider cards */}
       {data?.providers.map((provider) => (
         <motion.div key={provider.provider} variants={staggerItem}>
-          <Card className="glass-surface p-5 sm:p-6">
+          <Card className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <ProviderIcon provider={provider.provider} />
+                <span className="glass-control grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-accent-300">
+                  <ProviderIcon provider={provider.provider} className="h-5 w-5" />
+                </span>
                 <div className="min-w-0">
                   <p className="truncate font-medium text-dark-100">
                     {t(`profile.accounts.providers.${provider.provider}`)}
@@ -695,11 +698,12 @@ export default function ConnectedAccounts() {
               <div className="flex shrink-0 flex-col items-end gap-1.5">
                 {provider.linked ? (
                   <>
-                    <span className="text-sm text-success-500">{t('profile.accounts.linked')}</span>
+                    <span className="text-sm text-accent-300">{t('profile.accounts.linked')}</span>
                     {canUnlink(provider) && (
                       <Button
                         variant={confirmingUnlink === provider.provider ? 'destructive' : 'outline'}
                         size="sm"
+                        className="button-lift rounded-full"
                         disabled={unlinkMutation.isPending}
                         loading={
                           unlinkMutation.isPending && unlinkMutation.variables === provider.provider
@@ -735,7 +739,7 @@ export default function ConnectedAccounts() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-4 border-t border-dark-700/30 pt-4">
+                    <div className="mt-4 border-t border-white/8 pt-4">
                       <p className="mb-4 text-sm text-dark-400">
                         {emailMergeCodePending
                           ? t('profile.emailMergeCodeDescription')
@@ -755,7 +759,7 @@ export default function ConnectedAccounts() {
                               value={emailMergeCode}
                               onChange={(e) => setEmailMergeCode(e.target.value.replace(/\D/g, ''))}
                               placeholder="000000"
-                              className="input tracking-[0.5em]"
+                              className="glass-control h-12 w-full rounded-2xl px-4 tracking-[0.5em] outline-none focus:border-accent-400/45"
                               autoComplete="one-time-code"
                             />
                           </div>
@@ -788,7 +792,7 @@ export default function ConnectedAccounts() {
                               value={emailValue}
                               onChange={(e) => setEmailValue(e.target.value)}
                               placeholder="email@example.com"
-                              className="input"
+                              className="glass-control h-12 w-full rounded-2xl px-4 outline-none focus:border-accent-400/45"
                               autoComplete="email"
                             />
                           </div>
@@ -802,7 +806,7 @@ export default function ConnectedAccounts() {
                               value={emailPassword}
                               onChange={(e) => setEmailPassword(e.target.value)}
                               placeholder={t('profile.passwordPlaceholder')}
-                              className="input"
+                              className="glass-control h-12 w-full rounded-2xl px-4 outline-none focus:border-accent-400/45"
                               autoComplete="new-password"
                             />
                             <p className="mt-1 text-xs text-dark-500">
@@ -819,7 +823,7 @@ export default function ConnectedAccounts() {
                               value={emailConfirmPassword}
                               onChange={(e) => setEmailConfirmPassword(e.target.value)}
                               placeholder={t('profile.confirmPasswordPlaceholder')}
-                              className="input"
+                              className="glass-control h-12 w-full rounded-2xl px-4 outline-none focus:border-accent-400/45"
                               autoComplete="new-password"
                             />
                           </div>

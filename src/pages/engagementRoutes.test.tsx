@@ -29,6 +29,9 @@ vi.mock('../api/tickets', () => ({
     getMediaUrl: mocks.getMediaUrl,
   },
 }));
+vi.mock('../components/TicketNotificationBell', () => ({
+  default: () => null,
+}));
 vi.mock('../api/polls', () => ({
   pollsApi: {
     getPolls: mocks.getPolls,

@@ -21,6 +21,7 @@ import { usePlatform } from '@/platform';
 import { linkifyText } from '../utils/linkify';
 import { resolveSupportContact } from '../utils/supportContact';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import TicketNotificationBell from '../components/TicketNotificationBell';
 
 const log = logger.createLogger('Support');
 
@@ -306,8 +307,8 @@ export default function Support() {
 
   if (configError) {
     return (
-      <div className="mx-auto mt-12 max-w-md">
-        <Card className="glass-surface text-center">
+      <div className="luna-dashboard mx-auto mt-12 max-w-md">
+        <Card className="glass-panel motion-card rounded-[30px] p-6 text-center">
           <div role="alert" className="alert-error mb-4">
             {getApiErrorMessage(configQueryError, t('common.error'))}
           </div>
@@ -357,12 +358,12 @@ export default function Support() {
     const supportMessage = getSupportMessage();
 
     return (
-      <div className="mx-auto mt-12 max-w-md">
-        <Card className="glass-surface text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
-            <ChatIcon className="h-8 w-8 text-dark-400" />
+      <div className="luna-dashboard mx-auto mt-12 max-w-md">
+        <Card className="glass-panel motion-card rounded-[30px] p-6 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/10">
+            <ChatIcon className="h-8 w-8 text-accent-300" />
           </div>
-          <h2 className="mb-2 text-xl font-semibold text-dark-100">{supportMessage.title}</h2>
+          <h2 className="mb-2 text-xl font-medium text-dark-50">{supportMessage.title}</h2>
           <p className="mb-6 text-dark-400">{supportMessage.message}</p>
           {contact && supportMessage.buttonText && (
             <Button onClick={() => openSupportContact(supportConfig)} fullWidth>
@@ -391,27 +392,27 @@ export default function Support() {
                 src={att.preview}
                 alt="Preview"
                 loading="lazy"
-                className="h-16 w-16 rounded-lg border border-dark-700 object-cover"
+                className="h-16 w-16 rounded-2xl border border-white/10 object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-dark-700 text-xs text-dark-400">
+              <div className="glass-control flex h-16 w-16 items-center justify-center rounded-2xl text-xs text-dark-400">
                 {att.file.name.slice(-6)}
               </div>
             )}
             {att.uploading && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-dark-950/50">
+              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-dark-950/50">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
               </div>
             )}
             {att.error && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-error-500/30">
+              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-error-500/30">
                 <span className="text-xs text-error-300">!</span>
               </div>
             )}
             <button
               type="button"
               onClick={() => onRemove(idx)}
-              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-dark-600 text-dark-300 hover:bg-error-500 hover:text-white"
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-dark-700 text-dark-300 hover:bg-error-500 hover:text-white"
             >
               <CloseIcon className="h-4 w-4" />
             </button>
@@ -422,7 +423,7 @@ export default function Support() {
 
   return (
     <motion.div
-      className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0"
+      className="luna-dashboard flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0"
       variants={staggerContainer}
       initial="initial"
       animate="animate"
@@ -431,19 +432,26 @@ export default function Support() {
         variants={staggerItem}
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('support.title')}</h1>
-        <Button
-          onClick={() => {
-            clearTicketQuery();
-            setShowCreateForm(true);
-            setSelectedTicket(null);
-            setFormError(null);
-            clearCreateAttachments();
-          }}
-        >
-          <PlusIcon />
-          <span className="ml-2">{t('support.newTicket')}</span>
-        </Button>
+        <div className="ix-page-heading min-w-0">
+          <h1>{t('support.title')}</h1>
+          <p>{t('support.subtitle', 'Ответим и поможем решить вопрос')}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <TicketNotificationBell />
+          <Button
+            onClick={() => {
+              clearTicketQuery();
+              setShowCreateForm(true);
+              setSelectedTicket(null);
+              setFormError(null);
+              clearCreateAttachments();
+            }}
+            className="button-lift h-12 w-full rounded-2xl px-5 text-sm font-bold sm:w-auto sm:rounded-full"
+          >
+            <PlusIcon className="h-4 w-4" />
+            <span>{t('support.newTicket')}</span>
+          </Button>
+        </div>
       </motion.div>
 
       {/* Contact support card for "both" mode — self-animated: mounts after the
@@ -453,19 +461,21 @@ export default function Support() {
         supportConfig.support_username &&
         resolveSupportContact(supportConfig) && (
           <motion.div variants={staggerItem} initial="initial" animate="animate">
-            <Card className="glass-surface flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-dark-800">
-                  <ChatIcon className="h-5 w-5 text-dark-400" />
+            <Card className="glass-panel motion-card flex flex-wrap items-center justify-between gap-4 rounded-[28px] p-5 lg:p-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="glass-control flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl">
+                  <ChatIcon className="h-5 w-5 text-accent-300" />
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-dark-100">{t('support.contactUs')}</div>
-                  <div className="text-xs text-dark-400">{supportConfig.support_username}</div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-dark-50">{t('support.contactUs')}</div>
+                  <div className="truncate text-xs text-dark-400">
+                    {supportConfig.support_username}
+                  </div>
                 </div>
               </div>
               <Button
                 variant="secondary"
-                className="shrink-0 whitespace-nowrap"
+                className="button-lift shrink-0 rounded-full border-white/10 bg-transparent whitespace-nowrap text-dark-100 hover:border-accent-400/35 hover:bg-accent-500/10"
                 onClick={() => openSupportContact(supportConfig)}
               >
                 {t('support.writeButton', 'Написать')}
@@ -474,10 +484,17 @@ export default function Support() {
           </motion.div>
         )}
 
-      <motion.div variants={staggerItem} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <motion.div variants={staggerItem} className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Tickets List */}
-        <Card className="glass-surface lg:col-span-1">
-          <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('support.yourTickets')}</h2>
+        <Card className="glass-panel motion-card min-w-0 rounded-[30px] p-5 lg:col-span-1 lg:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-medium text-dark-50">{t('support.yourTickets')}</h2>
+            {tickets?.items && (
+              <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] text-dark-400">
+                {tickets.items.length}
+              </span>
+            )}
+          </div>
 
           {isLoading ? (
             <SkeletonGroup className="space-y-3">
@@ -499,10 +516,10 @@ export default function Support() {
                     setFormError(null);
                     clearReplyAttachments();
                   }}
-                  className={`w-full rounded-bento border p-4 text-left transition-all ${
+                  className={`glass-control w-full rounded-2xl border p-4 text-left transition-all ${
                     activeTicketId === ticket.id
-                      ? 'border-accent-500 bg-accent-500/10'
-                      : 'border-dark-700/50 bg-dark-800/30 hover:border-dark-600'
+                      ? 'border-accent-400/40 bg-accent-500/10'
+                      : 'border-white/8 bg-white/[.025] hover:border-accent-400/25'
                   }`}
                 >
                   <div className="mb-2 flex items-start justify-between gap-2">
@@ -519,8 +536,8 @@ export default function Support() {
             </div>
           ) : (
             <div className="py-12 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
-                <ChatIcon className="h-8 w-8 text-dark-500" />
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/10">
+                <ChatIcon className="h-8 w-8 text-accent-300" />
               </div>
               <div className="text-dark-400">{t('support.noTickets')}</div>
             </div>
@@ -528,12 +545,10 @@ export default function Support() {
         </Card>
 
         {/* Ticket Detail / Create Form */}
-        <Card className="glass-surface lg:col-span-2">
+        <Card className="glass-panel motion-card min-w-0 rounded-[30px] p-5 lg:col-span-2 lg:p-7">
           {showCreateForm ? (
             <div>
-              <h2 className="mb-6 text-lg font-semibold text-dark-100">
-                {t('support.createTicket')}
-              </h2>
+              <h2 className="mb-6 text-xl font-medium text-dark-50">{t('support.createTicket')}</h2>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -549,13 +564,13 @@ export default function Support() {
                 className="space-y-4"
               >
                 <div>
-                  <label htmlFor="support-subject" className="label">
+                  <label htmlFor="support-subject" className="block text-sm text-dark-400">
                     {t('support.subject')}
                   </label>
                   <input
                     id="support-subject"
                     type="text"
-                    className="input"
+                    className="glass-control mt-2 h-12 w-full rounded-2xl px-4 outline-none focus:border-accent-400/45"
                     placeholder={t('support.subjectPlaceholder')}
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
@@ -565,12 +580,12 @@ export default function Support() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="support-message" className="label">
+                  <label htmlFor="support-message" className="block text-sm text-dark-400">
                     {t('support.message')}
                   </label>
                   <textarea
                     id="support-message"
-                    className="input min-h-[150px]"
+                    className="glass-control mt-2 min-h-[150px] w-full resize-y rounded-2xl p-4 outline-none focus:border-accent-400/45"
                     placeholder={t('support.messagePlaceholder')}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
@@ -609,7 +624,7 @@ export default function Support() {
                       type="button"
                       onClick={() => createFileInputRef.current?.click()}
                       disabled={createAttachments.some((a) => a.uploading)}
-                      className="mt-2 flex items-center gap-2 text-sm text-dark-400 transition-colors hover:text-dark-200 disabled:opacity-50"
+                      className="button-lift mt-2 flex items-center gap-2 rounded-full px-3 py-2 text-sm text-dark-400 transition-colors hover:text-dark-50 disabled:opacity-50"
                     >
                       <ImageIcon />
                       {t('support.attachImage')}{' '}
@@ -625,6 +640,7 @@ export default function Support() {
                     type="submit"
                     disabled={createAttachments.some((a) => a.uploading)}
                     loading={createMutation.isPending}
+                    className="button-lift h-12 rounded-full px-5 text-sm font-bold"
                   >
                     <SendIcon className="h-4 w-4" />
                     <span className="ml-2">{t('support.send')}</span>
@@ -632,6 +648,7 @@ export default function Support() {
                   <Button
                     type="button"
                     variant="secondary"
+                    className="button-lift h-12 rounded-full border-white/10 bg-transparent px-5 text-dark-300 hover:border-accent-400/35 hover:bg-accent-500/10"
                     onClick={() => {
                       setShowCreateForm(false);
                       setFormError(null);
@@ -645,9 +662,9 @@ export default function Support() {
             </div>
           ) : activeTicketId !== null ? (
             <div className="flex h-full flex-col">
-              <div className="mb-6 flex flex-col gap-2 border-b border-dark-800/50 pb-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="mb-6 flex flex-col gap-2 border-b border-white/8 pb-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-dark-100">
+                  <h2 className="text-xl font-medium text-dark-50">
                     {ticketDetail?.title || selectedTicket?.title || `#${activeTicketId}`}
                   </h2>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -682,10 +699,10 @@ export default function Support() {
                   {ticketDetail.messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`rounded-xl p-4 ${
+                      className={`rounded-2xl border p-4 ${
                         msg.is_from_admin
-                          ? 'ml-4 border border-accent-500/20 bg-accent-500/10'
-                          : 'mr-4 border border-dark-700/30 bg-dark-800/50'
+                          ? 'ml-4 border-accent-400/20 bg-accent-500/10'
+                          : 'mr-4 border-white/8 bg-white/[.04]'
                       }`}
                     >
                       <div className="mb-2 flex items-center justify-between">
@@ -728,12 +745,12 @@ export default function Support() {
                     }
                     replyMutation.mutate();
                   }}
-                  className="border-t border-dark-800/50 pt-4"
+                  className="border-t border-white/8 pt-4"
                 >
                   <div className="space-y-3">
                     <div className="flex gap-3">
                       <textarea
-                        className="input min-h-[80px] flex-1"
+                        className="glass-control min-h-[80px] flex-1 resize-y rounded-2xl p-4 outline-none focus:border-accent-400/45"
                         placeholder={t('support.replyPlaceholder')}
                         value={replyMessage}
                         onChange={(e) => setReplyMessage(e.target.value)}
@@ -772,7 +789,7 @@ export default function Support() {
                           type="button"
                           onClick={() => replyFileInputRef.current?.click()}
                           disabled={replyAttachments.some((a) => a.uploading)}
-                          className="flex items-center gap-2 text-sm text-dark-400 transition-colors hover:text-dark-200 disabled:opacity-50"
+                          className="button-lift flex items-center gap-2 rounded-full px-3 py-2 text-sm text-dark-400 transition-colors hover:text-dark-50 disabled:opacity-50"
                         >
                           <ImageIcon />
                           {t('support.attachImage')}{' '}
@@ -788,12 +805,13 @@ export default function Support() {
                           replyAttachments.some((a) => a.uploading)
                         }
                         loading={replyMutation.isPending}
+                        className="button-lift h-12 rounded-full px-5 text-sm font-bold"
                       >
                         <SendIcon className="h-4 w-4" />
                       </Button>
                     </div>
                     {formError && (
-                      <div className="mt-2 rounded-lg border border-error-500/30 bg-error-500/10 p-2 text-sm text-error-400">
+                      <div className="mt-2 rounded-2xl border border-error-500/30 bg-error-500/10 p-3 text-sm text-error-400">
                         {formError}
                       </div>
                     )}
@@ -802,16 +820,16 @@ export default function Support() {
               )}
 
               {ticketDetail?.is_reply_blocked && (
-                <div className="border-t border-dark-800/50 py-4 text-center text-sm text-dark-500">
+                <div className="border-t border-white/8 py-4 text-center text-sm text-dark-500">
                   {t('support.repliesDisabled')}
                 </div>
               )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-dark-800">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/10">
                 <svg
-                  className="h-8 w-8 text-dark-500"
+                  className="h-8 w-8 text-accent-300"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
