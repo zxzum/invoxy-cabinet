@@ -269,11 +269,11 @@ export default function NewsArticlePage() {
 
   if (isError || !article) {
     return (
-      <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
+      <div className="luna-dashboard flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
         {!capabilities.hasBackButton && (
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-dark-700 bg-dark-800 transition-colors hover:border-dark-600"
+            className="glass-control flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition-colors hover:border-accent-400/40"
             aria-label={t('news.backToHome')}
           >
             <BackIcon />
@@ -287,12 +287,12 @@ export default function NewsArticlePage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
+    <div className="luna-dashboard flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       {/* Back button */}
       {!capabilities.hasBackButton && (
         <button
           onClick={() => navigate(-1)}
-          className="flex min-h-[44px] items-center gap-2 rounded-xl border border-dark-700 bg-dark-800 px-4 text-sm text-dark-400 transition-colors hover:border-dark-600 hover:text-dark-200"
+          className="glass-control flex min-h-[44px] items-center gap-2 self-start rounded-full px-4 text-sm text-dark-300 transition-colors hover:border-accent-400/40 hover:text-dark-50"
           aria-label={t('news.backToHome')}
         >
           <BackIcon />
@@ -313,20 +313,9 @@ export default function NewsArticlePage() {
             return (
               <>
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-widest"
-                  style={{
-                    color,
-                    background: `${color}15`,
-                    border: `1px solid ${color}30`,
-                  }}
+                  className="text-[10px] font-bold uppercase tracking-[.13em]"
+                  style={{ color }}
                 >
-                  <span
-                    className="h-1.5 w-1.5 animate-pulse rounded-full"
-                    style={{
-                      background: color,
-                      boxShadow: `0 0 8px ${color}`,
-                    }}
-                  />
                   {article.category}
                 </span>
                 {article.tag && (
@@ -347,7 +336,7 @@ export default function NewsArticlePage() {
         </div>
 
         {/* Title */}
-        <h1 className="mb-4 text-2xl font-extrabold leading-tight text-dark-50 sm:text-3xl">
+        <h1 className="mb-4 text-3xl font-medium leading-tight tracking-[-.05em] text-dark-50 lg:text-5xl">
           {article.title}
         </h1>
 
@@ -372,12 +361,12 @@ export default function NewsArticlePage() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="glass-surface overflow-hidden rounded-xl"
+          className="glass-panel motion-card overflow-hidden rounded-[32px]"
         >
           <img
             src={article.featured_image_url}
             alt={article.title}
-            className="max-h-96 w-full rounded-xl object-cover"
+            className="max-h-[420px] w-full object-cover"
             loading="eager"
             fetchPriority="high"
           />
@@ -389,7 +378,7 @@ export default function NewsArticlePage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="glass-surface prose max-w-none p-6 lg:max-w-3xl"
+        className="glass-panel motion-card prose max-w-none rounded-[32px] p-6 lg:max-w-3xl lg:p-9"
         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
       />
     </div>
