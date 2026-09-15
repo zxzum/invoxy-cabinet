@@ -9,7 +9,6 @@ import { useAuthStore } from '@/store/auth';
 import { useHaptic } from '@/platform';
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 import { useHeaderHeight } from '@/hooks/useHeaderHeight';
-import { useTheme } from '@/hooks/useTheme';
 import { useBranding } from '@/hooks/useBranding';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -24,19 +23,13 @@ import WebSocketNotifications from '@/components/WebSocketNotifications';
 import CampaignBonusNotifier from '@/components/CampaignBonusNotifier';
 import SuccessNotificationModal from '@/components/SuccessNotificationModal';
 import { PromptDialogHost } from '@/components/PromptDialogHost';
-import TicketNotificationBell from '@/components/TicketNotificationBell';
 import {
   SubscriptionIcon,
   HomeIcon,
   UserIcon,
   ShieldIcon,
-  LogoutIcon,
-  SunIcon,
-  MoonIcon,
-  LinkIcon,
   UsersIcon,
   InfoIcon,
-  WalletIcon,
 } from '@/components/icons';
 import { LOCAL_LOGO_URL } from '@/api/branding';
 import { AnimatedNumber } from '@/components/motion';
@@ -79,15 +72,13 @@ export function AppShell({ children }: AppShellProps) {
     return () => media.removeEventListener('change', update);
   }, []);
   const isAdmin = useAuthStore((state) => state.isAdmin);
-  const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const { mobile, mobileCss } = useHeaderHeight();
   const headerHeight = mobileCss ?? `${mobile}px`;
   const haptic = useHaptic();
-  const { theme, toggleTheme, canToggle } = useTheme();
   const { formatWithCurrency } = useCurrency();
 
-  const { appName, logoLetter, logoUrl } = useBranding();
+  const { appName, logoUrl } = useBranding();
   const { referralEnabled, wheelEnabled, hasContests, hasPolls, giftEnabled } = useFeatureFlags();
   useScrollRestoration();
   useBackgroundConsumer();
@@ -109,9 +100,7 @@ export function AppShell({ children }: AppShellProps) {
   const sidebarNav = [
     { path: '/dashboard', label: 'Кабинет', icon: HomeIcon },
     { path: '/subscription/purchase', label: 'Тарифы', icon: SubscriptionIcon },
-    { path: '/connection', label: 'Подключение', icon: LinkIcon },
-    { path: '/subscriptions', label: 'Моя подписка', icon: SubscriptionIcon },
-    ...(referralEnabled ? [{ path: '/referral', label: 'Приглашенные', icon: UsersIcon }] : []),
+    ...(referralEnabled ? [{ path: '/referral', label: 'Рефералы', icon: UsersIcon }] : []),
     { path: '/info', label: 'Информация', icon: InfoIcon },
   ];
 
@@ -128,13 +117,6 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   const userName = displayName(user);
-  const profileName = userName || appName || logoLetter;
-  const initials = profileName
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
   const balanceRubles = balanceData?.balance_rubles ?? (balanceData?.balance_kopeks ?? 0) / 100;
   const balanceLabel = formatWithCurrency(balanceRubles);
   const greeting = userName
@@ -184,14 +166,15 @@ export function AppShell({ children }: AppShellProps) {
       <PromptDialogHost />
 
       <aside className="ix-sidebar ix-sidebar-island glass-surface-elevated hidden lg:flex">
-        <div className="ix-sidebar-user">
-          <div className="ix-avatar">{initials || logoLetter}</div>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-dark-100">{profileName}</div>
-            <div className="truncate text-[11px] text-dark-500">
-              ID: {user?.telegram_id ?? user?.id ?? '—'}
-            </div>
+        <div className="flex items-center gap-3 px-2 py-1">
+          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-accent-500/10">
+            <img
+              src={logoUrl || LOCAL_LOGO_URL}
+              alt={appName || 'Invoxy VPN'}
+              className="h-full w-full object-contain"
+            />
           </div>
+          <div className="truncate text-xl font-bold text-dark-50">{appName || 'Invoxy VPN'}</div>
         </div>
 
         <nav className="ix-sidebar-nav">
@@ -200,6 +183,12 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
 
         <div className="mt-auto space-y-3">
+          <Link to="/support" className="ix-help-card glass-surface" onClick={handleNavClick}>
+            <InfoIcon className="h-5 w-5 text-accent-300" />
+            <strong>{t('support.needHelp', 'Нужна помощь?')}</strong>
+            <span>{t('support.available247', 'Мы на связи 24/7')}</span>
+          </Link>
+
           <div className="ix-balance-card glass-surface">
             <div className="text-[11px] uppercase tracking-wide text-dark-500">Баланс</div>
             {/* Счётчик вместо строки: при пополнении баланс «докручивается» до
@@ -210,116 +199,38 @@ export function AppShell({ children }: AppShellProps) {
               format={formatWithCurrency}
               testId="sidebar-balance"
             />
-            <Link to="/balance" onClick={handleNavClick} className="ix-balance-topup">
+            <Link to="/profile#top-up" onClick={handleNavClick} className="ix-balance-topup">
               Пополнить
             </Link>
           </div>
 
           {renderSideLink('/profile', 'Профиль', UserIcon)}
-
-          <button
-            type="button"
-            onClick={() => {
-              haptic.impact('light');
-              logout();
-            }}
-            className="ix-side-link w-full text-left"
-          >
-            <LogoutIcon className="h-5 w-5 shrink-0" />
-            <span>Выйти</span>
-          </button>
         </div>
       </aside>
 
       <div className="ix-content isolate">
-        <AppHeader
-          mobileMenuOpen={mobileMenuOpen}
-          setMobileMenuOpen={setMobileMenuOpen}
-          onCommandPaletteOpen={() => {}}
-          headerHeight={headerHeight}
-          isFullscreen={isMobileFullscreen}
-          safeAreaInset={safeAreaInset}
-          contentSafeAreaInset={contentSafeAreaInset}
-          telegramPlatform={platform}
-          wheelEnabled={wheelEnabled}
-          referralEnabled={referralEnabled}
-          hasContests={hasContests}
-          hasPolls={hasPolls}
-          giftEnabled={giftEnabled}
-          greeting={greeting}
-          balanceLabel={balanceLabel}
-        />
-
-        <div className="hidden lg:flex lg:px-8 lg:pt-5">
-          <div className="glass-surface-elevated flex min-w-0 flex-1 items-center gap-3 rounded-[28px] border border-white/5 px-4 py-3">
-            <Link
-              to="/dashboard"
-              className="flex min-w-0 flex-1 items-center gap-3"
-              onClick={handleNavClick}
-            >
-              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-2xl bg-accent-500/15">
-                {logoUrl ? (
-                  <img
-                    src={logoUrl}
-                    alt={appName || 'Invoxy VPN'}
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <img
-                    src={LOCAL_LOGO_URL}
-                    alt={appName || 'Invoxy VPN'}
-                    className="h-full w-full object-contain"
-                  />
-                )}
-              </div>
-              <div className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-dark-100">
-                  {appName || 'Invoxy VPN'}
-                </span>
-                <span data-testid="shell-greeting" className="block truncate text-xs text-dark-400">
-                  {greeting}
-                </span>
-              </div>
-            </Link>
-
-            <Link
-              to="/balance"
-              onClick={handleNavClick}
-              data-testid="shell-balance"
-              className="glass-surface-accent flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2 text-xs text-dark-300 transition-colors hover:text-dark-50"
-            >
-              <WalletIcon className="h-4 w-4 text-accent-300" />
-              <span className="hidden xl:inline">{t('dashboard.currentBalance', 'Balance')}</span>
-              <span className="font-semibold text-accent-300">{balanceLabel}</span>
-            </Link>
-
-            <TicketNotificationBell isAdmin={location.pathname.startsWith('/admin')} />
-            {canToggle && (
-              <button
-                type="button"
-                onClick={() => {
-                  haptic.impact('light');
-                  toggleTheme();
-                }}
-                className="btn-icon"
-                aria-label={
-                  theme === 'dark'
-                    ? t('theme.switchToLight', 'Светлая тема')
-                    : t('theme.switchToDark', 'Тёмная тема')
-                }
-                title={
-                  theme === 'dark'
-                    ? t('theme.switchToLight', 'Светлая тема')
-                    : t('theme.switchToDark', 'Тёмная тема')
-                }
-              >
-                {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="lg:hidden" style={{ height: `calc(${headerHeight} + 0.75rem)` }} />
+        {location.pathname.startsWith('/admin') && (
+          <>
+            <AppHeader
+              mobileMenuOpen={mobileMenuOpen}
+              setMobileMenuOpen={setMobileMenuOpen}
+              onCommandPaletteOpen={() => {}}
+              headerHeight={headerHeight}
+              isFullscreen={isMobileFullscreen}
+              safeAreaInset={safeAreaInset}
+              contentSafeAreaInset={contentSafeAreaInset}
+              telegramPlatform={platform}
+              wheelEnabled={wheelEnabled}
+              referralEnabled={referralEnabled}
+              hasContests={hasContests}
+              hasPolls={hasPolls}
+              giftEnabled={giftEnabled}
+              greeting={greeting}
+              balanceLabel={balanceLabel}
+            />
+            <div className="lg:hidden" style={{ height: `calc(${headerHeight} + 0.75rem)` }} />
+          </>
+        )}
 
         <main className="ix-main" style={{ position: 'relative', overflowX: 'clip' }}>
           {animatePage ? (

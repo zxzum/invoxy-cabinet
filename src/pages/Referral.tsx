@@ -674,11 +674,57 @@ export default function Referral() {
   return (
     <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <motion.div {...section(0)}>
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('referral.title')}</h1>
+        <div className="ix-page-heading">
+          <h1>{t('referral.title', 'Приглашения')}</h1>
+          <p>{t('referral.subtitle', 'Приглашайте и зарабатывайте!')}</p>
+        </div>
       </motion.div>
 
+      <motion.section
+        {...section(1)}
+        className="ix-referral-hero glass-surface relative overflow-hidden rounded-[32px] p-6 sm:p-8"
+      >
+        <img
+          src="/images/referral-robot.webp"
+          alt=""
+          className="absolute bottom-0 right-0 h-[88%] w-auto object-contain"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-dark-950 via-dark-950/80 to-transparent" />
+        <div className="relative z-10 max-w-lg">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-300">
+            {t('referral.programme', 'Реферальная программа')}
+          </p>
+          <h2 className="mt-4 text-3xl font-semibold leading-tight text-dark-50 sm:text-4xl">
+            {t('referral.heroTitle', 'Приглашайте друзей и получайте бонусы')}
+          </h2>
+          <p className="mt-2 text-dark-300">
+            {t('referral.heroSubtitle', 'Получайте бонусы вместе с друзьями')}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <div className="glass-surface min-w-36 rounded-2xl p-4">
+              <strong className="text-2xl text-accent-300">
+                +{info?.commission_percent || 0}%
+              </strong>
+              <p className="mt-1 text-xs text-dark-400">
+                {t('referral.fromTopups', 'от пополнений')}
+              </p>
+            </div>
+            {(terms?.first_topup_bonus_rubles ?? 0) > 0 && (
+              <div className="glass-surface min-w-36 rounded-2xl p-4">
+                <strong className="text-2xl text-accent-300">
+                  +{formatAmount(terms?.first_topup_bonus_rubles || 0)} {currencySymbol}
+                </strong>
+                <p className="mt-1 text-xs text-dark-400">
+                  {t('referral.forStart', 'обоим за старт')}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.section>
+
       {/* Stats Cards */}
-      <motion.div {...section(1)} className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+      <motion.div {...section(2)} className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
         <div className="col-span-2 md:col-span-1">
           <StatCard
             label={t('referral.stats.totalReferrals')}
@@ -725,7 +771,7 @@ export default function Referral() {
       </motion.div>
 
       {/* Referral Links */}
-      <motion.div {...section(2)} className="glass-surface bento-card animate-none">
+      <motion.div {...section(3)} className="glass-surface bento-card animate-none rounded-[30px]">
         <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
         <div className="space-y-3">
           {/* Bot link */}

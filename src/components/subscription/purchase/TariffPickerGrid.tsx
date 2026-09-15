@@ -99,7 +99,7 @@ export function TariffPickerGrid({
     <>
       {/* Promo group discount banner */}
       {visibleTariffs.some((tariff) => tariff.promo_group_name) && (
-        <div className="alert-success relative mb-4">
+        <div className="ix-promo-group glass-surface relative mb-5 overflow-hidden rounded-[30px] p-5 sm:p-7">
           <button
             type="button"
             aria-expanded={isPromoTierSheetOpen}
@@ -178,7 +178,7 @@ export function TariffPickerGrid({
             </button>
           </div>
         )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {[...visibleTariffs]
           .filter((tariff) => {
             // In multi-tariff mode: hide already purchased tariffs

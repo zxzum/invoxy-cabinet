@@ -6,9 +6,9 @@ import { PlatformProvider } from '@/platform/PlatformProvider';
 import { MobileBottomNav } from './MobileBottomNav';
 
 /**
- * Навбар на мобильных: четыре локализованных пункта, активный помечен
- * aria-current и несёт единственную скользящую плашку (data-nav-plate),
- * при открытой клавиатуре навбар скрывается aria-hidden.
+ * Навбар InvoxyStart: четыре пункта, активный раскрывается с подписью,
+ * неактивные остаются круглыми icon-only кнопками. При открытой клавиатуре
+ * навбар скрывается aria-hidden.
  *
  * Провайдеры: usePlatform (haptic) бросает без PlatformProvider — тот же
  * хелпер, что в PaletteSwitcher.test.tsx. i18n в граф теста не попадает,
@@ -48,9 +48,9 @@ describe('MobileBottomNav', () => {
     const { container } = renderNav('/dashboard');
     expect(container.querySelector('nav')?.className).toContain('glass-surface-elevated');
     expect(screen.getByText('Главная')).toBeTruthy();
-    expect(screen.getByText('Тарифы')).toBeTruthy();
-    expect(screen.getByText('Подключение')).toBeTruthy();
-    expect(screen.getByText('Профиль')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Тарифы' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Рефералы' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Профиль' })).toBeTruthy();
   });
 
   it('links the first item to the authenticated dashboard', () => {
@@ -59,21 +59,17 @@ describe('MobileBottomNav', () => {
     expect(screen.getByRole('link', { name: 'Главная' }).getAttribute('href')).toBe('/dashboard');
   });
 
-  it('keeps referrals out of the compact bottom menu', () => {
+  it('uses referrals as the third InvoxyStart tab', () => {
     renderNav('/referral');
-    expect(screen.queryByText('Рефералы')).toBeNull();
+    expect(screen.getByText('Рефералы')).toBeTruthy();
   });
 
-  it('marks the active item and renders the sliding plate', () => {
-    const { container } = renderNav('/connection');
-    const connectionLink = screen.getByText('Подключение').closest('a');
-    expect(connectionLink?.getAttribute('aria-current')).toBe('page');
-    expect(connectionLink?.className).toContain('min-w-0');
-    expect(screen.getByText('Подключение').className).toContain('whitespace-nowrap');
-    // Плашка активного таба — единственный data-nav-plate в дереве
-    expect(container.querySelectorAll('[data-nav-plate]').length).toBe(1);
-    expect(container.querySelector('nav > div > [data-nav-plate]')).toBeTruthy();
-    expect(connectionLink?.querySelector('[data-nav-plate]')).toBeNull();
+  it('marks and expands the active item', () => {
+    renderNav('/referral');
+    const referralLink = screen.getByRole('link', { name: 'Рефералы' });
+    expect(referralLink.getAttribute('aria-current')).toBe('page');
+    expect(referralLink.className).toContain('w-[122px]');
+    expect(screen.getByText('Рефералы').className).toContain('whitespace-nowrap');
   });
 
   it('keeps the floating nav clear of Telegram and browser safe areas', () => {
@@ -85,8 +81,7 @@ describe('MobileBottomNav', () => {
 
     const nav = container.querySelector('nav') as HTMLElement;
     expect(nav.style.bottom).toBe('max(var(--mobile-nav-offset), 34px)');
-    expect(nav.style.left).toBe('max(0.75rem, 8px)');
-    expect(nav.style.right).toBe('max(0.75rem, 16px)');
+    expect(nav.style.left).toBe('calc(50% + 0.5 * (8px - 16px))');
   });
 
   it('hides itself while the keyboard is open', () => {

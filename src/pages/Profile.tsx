@@ -39,6 +39,7 @@ import {
   WalletIcon,
 } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
@@ -61,6 +62,7 @@ export default function Profile() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [copied, setCopied] = useState<'bot' | 'cabinet' | null>(null);
+  const [topUpAmount, setTopUpAmount] = useState('1000');
 
   // Inline email change flow
   const [changeEmailStep, setChangeEmailStep] = useState<'email' | 'code' | 'success' | null>(null);
@@ -92,6 +94,12 @@ export default function Profile() {
     queryFn: balanceApi.getBalance,
     staleTime: API.BALANCE_STALE_TIME_MS,
     refetchOnMount: 'always',
+  });
+
+  const { data: paymentMethods } = useQuery({
+    queryKey: ['payment-methods'],
+    queryFn: balanceApi.getPaymentMethods,
+    staleTime: 60_000,
   });
 
   const {
@@ -340,51 +348,113 @@ export default function Profile() {
       initial="initial"
       animate="animate"
     >
+      <motion.header variants={staggerItem} className="ix-page-heading">
+        <h1>{t('nav.profile', 'Профиль')}</h1>
+        <p>{t('profile.subtitle', 'Баланс, данные и поддержка')}</p>
+      </motion.header>
+
       <motion.div variants={staggerItem} data-testid="profile-financial-overview">
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="glass-surface-accent p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-4 flex items-center gap-3 text-sm text-dark-400">
-                  <WalletIcon className="h-5 w-5 text-accent-400" />
-                  {t('balance.currentBalance')}
+          <Card className="ix-profile-balance glass-surface-accent relative overflow-hidden p-6 sm:p-8">
+            <img
+              src="/images/profile-balance-bg.webp"
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-dark-950/90 via-dark-950/35 to-transparent" />
+            <div className="relative z-10">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-4 flex items-center gap-3 text-sm text-dark-400">
+                    <WalletIcon className="h-5 w-5 text-accent-400" />
+                    {t('balance.currentBalance')}
+                  </div>
+                  {balanceLoading ? (
+                    <SkeletonGroup>
+                      <Skeleton className="h-10 w-36" />
+                    </SkeletonGroup>
+                  ) : balanceError ? (
+                    <p role="alert" className="text-sm text-error-400">
+                      {t('common.error')}
+                    </p>
+                  ) : validBalanceData ? (
+                    <p className="text-4xl font-bold text-dark-50 sm:text-5xl">
+                      {formatAmount(validBalanceData.balance_rubles)}{' '}
+                      <span className="text-2xl text-dark-400">{currencySymbol}</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-dark-400">{t('common.noData')}</p>
+                  )}
                 </div>
-                {balanceLoading ? (
-                  <SkeletonGroup>
-                    <Skeleton className="h-10 w-36" />
-                  </SkeletonGroup>
-                ) : balanceError ? (
-                  <p role="alert" className="text-sm text-error-400">
-                    {t('common.error')}
-                  </p>
-                ) : validBalanceData ? (
-                  <p className="text-4xl font-bold text-dark-50 sm:text-5xl">
-                    {formatAmount(validBalanceData.balance_rubles)}{' '}
-                    <span className="text-2xl text-dark-400">{currencySymbol}</span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-dark-400">{t('common.noData')}</p>
-                )}
               </div>
+              <Button
+                type="button"
+                className="mt-5 w-full sm:w-auto"
+                onClick={() => navigate('/balance')}
+              >
+                {t('balance.topUpBalance')}
+              </Button>
+              <button
+                type="button"
+                className="mt-4 flex items-center gap-1 text-sm text-accent-400 hover:text-accent-300"
+                onClick={() => navigate('/balance')}
+              >
+                {t('balance.transactionHistory')}
+                <ArrowRightIcon className="h-4 w-4" />
+              </button>
             </div>
-            <Button
-              type="button"
-              className="mt-5 w-full sm:w-auto"
-              onClick={() => navigate('/balance')}
-            >
-              {t('balance.topUpBalance')}
-            </Button>
-            <button
-              type="button"
-              className="mt-4 flex items-center gap-1 text-sm text-accent-400 hover:text-accent-300"
-              onClick={() => navigate('/balance')}
-            >
-              {t('balance.transactionHistory')}
-              <ArrowRightIcon className="h-4 w-4" />
-            </button>
           </Card>
 
-          <Card className="glass-surface p-5 sm:p-6">
+          <Card id="top-up" className="ix-profile-topup glass-surface p-5 sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-medium text-dark-50">{t('balance.topUpBalance')}</h2>
+                <p className="mt-1 text-sm text-dark-400">{t('balance.enterAmount')}</p>
+              </div>
+              <WalletIcon className="h-5 w-5 text-accent-300" />
+            </div>
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              {[500, 1000, 2500].map((amount) => (
+                <button
+                  key={amount}
+                  type="button"
+                  onClick={() => setTopUpAmount(String(amount))}
+                  className={cn(
+                    'h-12 rounded-full border text-sm transition-colors',
+                    topUpAmount === String(amount)
+                      ? 'border-accent-300 bg-accent-300 font-bold text-dark-950'
+                      : 'border-white/10 bg-white/[.04] text-dark-100',
+                  )}
+                >
+                  {formatAmount(amount, 0)} {currencySymbol}
+                </button>
+              ))}
+            </div>
+            <input
+              inputMode="numeric"
+              aria-label={t('balance.enterAmount')}
+              value={topUpAmount}
+              onChange={(event) => setTopUpAmount(event.target.value.replace(/\D/g, ''))}
+              className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 text-center text-lg text-dark-50 outline-none focus:border-accent-300"
+            />
+            <Button
+              type="button"
+              fullWidth
+              className="mt-4"
+              disabled={!topUpAmount || !paymentMethods?.some((method) => method.is_available)}
+              onClick={() => {
+                const method = paymentMethods?.find((item) => item.is_available);
+                if (!method) return;
+                navigate(
+                  `/balance/top-up/${method.id}?amount=${encodeURIComponent(topUpAmount)}&returnTo=%2Fprofile`,
+                );
+              }}
+            >
+              {t('balance.topUp')}
+            </Button>
+          </Card>
+
+          <Card className="glass-surface p-5 sm:p-6 lg:col-span-2">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-400">

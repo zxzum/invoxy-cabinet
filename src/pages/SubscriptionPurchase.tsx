@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
-import { WebBackButton } from '../components/WebBackButton';
 import type { Tariff, ClassicPurchaseOptions } from '../types';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { SwitchTariffSheet } from '../components/subscription/sheets/SwitchTariffSheet';
@@ -18,9 +17,8 @@ import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 export default function SubscriptionPurchase() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const subscriptionId = searchParams.get('subscriptionId')
-    ? parseInt(searchParams.get('subscriptionId')!, 10)
-    : undefined;
+  const subscriptionIdParam = searchParams.get('subscriptionId');
+  const subscriptionId = subscriptionIdParam ? parseInt(subscriptionIdParam, 10) : undefined;
   // Subscription query (shares cache with /subscription page)
   const { data: subscriptionResponse, isLoading } = useQuery({
     queryKey: ['subscription', subscriptionId],
@@ -130,24 +128,22 @@ export default function SubscriptionPurchase() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 lg:pb-0">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <WebBackButton to={subscriptionId ? '/subscription/purchase' : '/subscriptions'} />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">
+      <div className="ix-page-heading">
+        <h1>
           {isMultiTariff && !subscriptionId
-            ? t('subscription.newTariff', 'Новый тариф')
+            ? t('nav.tariffs', 'Тарифы')
             : !isMultiTariff && subscription?.is_daily && !subscription?.is_trial
               ? t('subscription.switchTariff.title')
-              : subscription && !subscription.is_trial
-                ? t('subscription.extend')
-                : t('subscription.getSubscription')}
+              : t('nav.tariffs', 'Тарифы')}
         </h1>
+        <p>{t('subscription.choosePlan', 'Выберите подходящий план')}</p>
       </div>
 
       {/* Tariffs Section */}
       {isTariffsMode && tariffs.length > 0 && (
-        <div className="glass-surface relative overflow-hidden rounded-[30px] p-5 sm:p-7">
+        <div className="relative space-y-5">
           {/* Trial upgrade prompt — hidden when expired banner is active */}
           {subscription?.is_trial &&
             !(
