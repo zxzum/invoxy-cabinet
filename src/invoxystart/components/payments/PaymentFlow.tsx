@@ -1,0 +1,410 @@
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router';
+import {
+  Bot,
+  CreditCard,
+  Globe2,
+  Landmark,
+  Send,
+  Sparkles,
+  Wallet,
+} from '@/invoxystart/components/ui/RuneIcon';
+import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
+import { useToast } from '@/invoxystart/components/layout/ToastProvider';
+import {
+  ApiError,
+  balanceApi,
+  subscriptionApi,
+  type Balance,
+  type PaymentMethod,
+} from '@/invoxystart/api';
+
+export interface PaymentRequest {
+  amount: number;
+  purpose: string;
+  allowBalance?: boolean;
+  topUp?: boolean;
+  tariffId?: number;
+  periodDays?: number;
+  subscriptionId?: number;
+  trafficGb?: number;
+  addonType?: 'devices' | 'traffic' | 'lte';
+  addonValue?: number;
+  onComplete?: () => void;
+}
+
+type PayHandler = (methodId: string, paymentOption?: string) => void;
+
+const PaymentContext = createContext<{
+  openPayment: (request: PaymentRequest) => void;
+  pay: (method: string, payment?: PaymentRequest, paymentOption?: string) => void;
+  topUp: () => void;
+} | null>(null);
+
+export function PaymentProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const [request, setRequest] = useState<PaymentRequest | null>(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  function openPayment(nextRequest: PaymentRequest) {
+    setRequest(nextRequest);
+    setOpen(true);
+  }
+
+  async function pay(method: string, payment = request ?? undefined, paymentOption?: string) {
+    if (!payment || busy) return;
+    setBusy(true);
+    try {
+      if (method === 'balance') {
+        if (payment.addonType === 'devices') {
+          await subscriptionApi.purchaseDevices(payment.addonValue ?? 1, payment.subscriptionId);
+        } else if (payment.addonType === 'traffic' || payment.addonType === 'lte') {
+          await subscriptionApi.purchaseTraffic(
+            payment.addonValue ?? 0,
+            payment.subscriptionId,
+            payment.addonType === 'lte' ? 'whitelist' : 'regular',
+          );
+        } else if (payment.tariffId && payment.periodDays) {
+          await subscriptionApi.purchaseTariff(
+            payment.tariffId,
+            payment.periodDays,
+            payment.trafficGb,
+            payment.subscriptionId,
+          );
+        } else if (payment.periodDays) {
+          await subscriptionApi.renewSubscription(payment.periodDays, payment.subscriptionId);
+        } else {
+          throw new Error('Недостаточно данных для оплаты с баланса');
+        }
+        showToast('Оплачено с баланса');
+        payment.onComplete?.();
+        setOpen(false);
+        return;
+      }
+
+      const result = payment.topUp
+        ? await balanceApi.createTopUp(Math.round(payment.amount * 100), method, paymentOption)
+        : payment.tariffId && payment.periodDays
+          ? await subscriptionApi.createTariffInvoice({
+              tariff_id: payment.tariffId,
+              period_days: payment.periodDays,
+              traffic_gb: payment.trafficGb,
+              subscription_id: payment.subscriptionId,
+              payment_method: method,
+              payment_option: paymentOption,
+            })
+          : await createBalanceBackedPayment(payment, method, paymentOption);
+
+      if (!result) {
+        showToast('Оплачено с баланса');
+        payment.onComplete?.();
+        setOpen(false);
+        return;
+      }
+
+      if (!result || !isExternalUrl(result.payment_url))
+        throw new Error('Платёжная ссылка недоступна');
+      window.location.assign(result.payment_url);
+    } catch {
+      showToast('Не удалось создать платёж');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function topUp() {
+    setOpen(false);
+    navigate('/profile#top-up');
+  }
+
+  return (
+    <PaymentContext.Provider value={{ openPayment, pay, topUp }}>
+      {children}
+      <PaymentDialog
+        busy={busy}
+        open={open}
+        request={request}
+        onClose={() => setOpen(false)}
+        onPay={(method, option) => void pay(method, request ?? undefined, option)}
+        onTopUp={topUp}
+      />
+    </PaymentContext.Provider>
+  );
+}
+
+async function createBalanceBackedPayment(
+  request: PaymentRequest,
+  method: string,
+  paymentOption?: string,
+): Promise<{ payment_url: string } | null> {
+  try {
+    if (request.addonType === 'devices') {
+      await subscriptionApi.purchaseDevices(request.addonValue ?? 1, request.subscriptionId);
+    } else if (request.addonType === 'traffic' || request.addonType === 'lte') {
+      await subscriptionApi.purchaseTraffic(
+        request.addonValue ?? 0,
+        request.subscriptionId,
+        request.addonType === 'lte' ? 'whitelist' : 'regular',
+      );
+    } else if (request.periodDays) {
+      await subscriptionApi.renewSubscription(request.periodDays, request.subscriptionId);
+    } else {
+      throw new Error('Недостаточно данных для оплаты');
+    }
+    return null;
+  } catch (error) {
+    const missingAmount = getMissingAmount(error);
+    if (missingAmount == null) throw error;
+    const result = await balanceApi.createTopUp(missingAmount, method, paymentOption);
+    return { payment_url: result.payment_url };
+  }
+}
+
+function getMissingAmount(error: unknown): number | null {
+  if (
+    !(error instanceof ApiError) ||
+    error.status !== 402 ||
+    !error.data ||
+    typeof error.data !== 'object'
+  )
+    return null;
+  const body = error.data as { detail?: unknown };
+  const detail = body.detail;
+  if (!detail || typeof detail !== 'object') return null;
+  const values = detail as Record<string, unknown>;
+  const amount = values.missing_amount ?? values.missing_kopeks;
+  return typeof amount === 'number' && Number.isFinite(amount) && amount > 0
+    ? Math.ceil(amount)
+    : null;
+}
+
+export function usePayment() {
+  const context = useContext(PaymentContext);
+  if (!context) throw new Error('usePayment must be used inside PaymentProvider');
+  return context;
+}
+
+function isExternalUrl(value: string | null | undefined): value is string {
+  if (!value) return false;
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+function PaymentDialog({
+  open,
+  request,
+  busy,
+  onClose,
+  onPay,
+  onTopUp,
+}: {
+  open: boolean;
+  request: PaymentRequest | null;
+  busy: boolean;
+  onClose: () => void;
+  onPay: PayHandler;
+  onTopUp: () => void;
+}) {
+  return (
+    <AdaptiveDialog open={open} onClose={onClose} titleId="payment-title" maxWidth="max-w-2xl">
+      <div className="lg:pr-12">
+        <p className="text-[10px] font-bold tracking-[.15em] text-mint">ОПЛАТА</p>
+        <h2 id="payment-title" className="mt-2 text-2xl font-medium">
+          Выберите способ оплаты
+        </h2>
+      </div>
+      <div className="form-step-enter mt-6">
+        <div className="max-w-full overflow-hidden rounded-2xl bg-white/5 p-4 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-[.12em] text-muted">Назначение</p>
+          <p className="mt-1 break-words text-sm font-medium">{request?.purpose}</p>
+          <strong className="mt-3 block text-3xl font-medium">
+            {request?.amount.toLocaleString('ru-RU')} ₽
+          </strong>
+        </div>
+        {request && (
+          <PaymentMethods busy={busy} request={request} onPay={onPay} onTopUp={onTopUp} />
+        )}
+      </div>
+    </AdaptiveDialog>
+  );
+}
+
+export function PaymentMethods({
+  request,
+  busy = false,
+  onPay,
+  onTopUp,
+}: {
+  request: PaymentRequest;
+  busy?: boolean;
+  onPay: PayHandler;
+  onTopUp: () => void;
+}) {
+  const [balance, setBalance] = useState<Balance | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    void Promise.allSettled([balanceApi.getBalance(), balanceApi.getPaymentMethods()]).then(
+      ([balanceResult, methodsResult]) => {
+        if (!mounted) return;
+        if (balanceResult.status === 'fulfilled') setBalance(balanceResult.value);
+        if (methodsResult.status === 'fulfilled')
+          setPaymentMethods(methodsResult.value.filter((method) => method.is_available));
+        setLoading(false);
+      },
+    );
+    return () => {
+      mounted = false;
+    };
+  }, [request.amount, request.topUp, request.tariffId]);
+
+  const canUseBalance = (balance?.balance_kopeks ?? 0) >= Math.round(request.amount * 100);
+  const showBalance = request.allowBalance !== false && !request.topUp;
+  const platega = paymentMethods.find(
+    (method) =>
+      method.id.toLowerCase().includes('platega') || method.name.toLowerCase().includes('platega'),
+  );
+  const externalMethods = paymentMethods.filter((method) => method !== platega);
+
+  return (
+    <div className="mt-4 grid min-w-0 gap-2">
+      {showBalance && (
+        <div
+          className={`rounded-2xl border p-4 ${canUseBalance ? 'border-mint/60 bg-mint/[.12] shadow-[0_0_28px_rgba(165,232,196,.08)]' : 'border-amber-200/20 bg-amber-200/[.05]'}`}
+        >
+          <button
+            type="button"
+            disabled={!canUseBalance || busy}
+            onClick={() => onPay('balance')}
+            className="flex w-full items-center gap-3 text-left disabled:cursor-default"
+          >
+            <span
+              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${canUseBalance ? 'bg-mint text-bg' : 'glass-control text-muted'}`}
+            >
+              <Wallet size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <strong className="text-sm">С баланса</strong>
+              <span
+                className={`mt-1 block text-xs ${canUseBalance ? 'text-mint' : 'text-amber-100/70'}`}
+              >
+                {canUseBalance ? 'Средств достаточно' : 'Нужно пополнить баланс'}
+              </span>
+            </span>
+            <strong className="shrink-0 text-sm">
+              {balance ? `${balance.balance_rubles.toLocaleString('ru-RU')} ₽` : '—'}
+            </strong>
+          </button>
+          {!canUseBalance && (
+            <button
+              type="button"
+              onClick={onTopUp}
+              className="mt-3 h-10 w-full rounded-full bg-ink text-xs font-bold text-bg"
+            >
+              Пополнить баланс
+            </button>
+          )}
+        </div>
+      )}
+      {loading ? (
+        <p className="rounded-2xl bg-white/[.035] p-4 text-center text-xs text-muted">
+          Загрузка способов оплаты…
+        </p>
+      ) : (
+        externalMethods.map((method) => (
+          <PaymentMethodButton key={method.id} method={method} busy={busy} onPay={onPay} />
+        ))
+      )}
+      {platega && (
+        <div className="rounded-2xl border border-white/8 bg-white/[.035] p-3.5">
+          <div className="flex items-center gap-3 px-1">
+            <span className="glass-control grid h-10 w-10 place-items-center rounded-xl text-mint">
+              <Landmark size={18} />
+            </span>
+            <span>
+              <strong className="text-sm">{platega.name}</strong>
+              <span className="mt-0.5 block text-[11px] text-muted">
+                {platega.description || 'Банковские платежи и крипта'}
+              </span>
+            </span>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {(platega.options || []).map((option) => (
+              <button
+                type="button"
+                disabled={busy}
+                key={option.id}
+                onClick={() => onPay(platega.id, option.id)}
+                className="button-lift glass-control flex min-w-0 items-center gap-2.5 rounded-xl p-3 text-left hover:border-mint/35 disabled:opacity-50"
+              >
+                <CreditCard size={16} className="text-mint" />
+                <span className="min-w-0">
+                  <strong className="block truncate text-xs">{option.name}</strong>
+                  <span className="mt-0.5 block text-[10px] text-muted">
+                    {option.description || 'Оплата через Platega'}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {!loading && paymentMethods.length === 0 && (
+        <p className="rounded-2xl bg-white/[.035] p-4 text-center text-xs text-muted">
+          Способы оплаты недоступны
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PaymentMethodButton({
+  method,
+  busy,
+  onPay,
+}: {
+  method: PaymentMethod;
+  busy: boolean;
+  onPay: PayHandler;
+}) {
+  const icon = method.id.toLowerCase().includes('crypto')
+    ? Bot
+    : method.id.toLowerCase().includes('star')
+      ? Sparkles
+      : method.id.toLowerCase().includes('card')
+        ? CreditCard
+        : method.id.toLowerCase().includes('bank') || method.id.toLowerCase().includes('sbp')
+          ? Landmark
+          : method.id.toLowerCase().includes('international')
+            ? Globe2
+            : Send;
+  const Icon = icon;
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => onPay(method.id, method.options?.[0]?.id)}
+      className="button-lift group flex min-w-0 items-center gap-3 rounded-2xl border border-white/8 bg-white/[.035] p-4 text-left transition-colors hover:border-mint/40 hover:bg-mint/[.08] disabled:opacity-50"
+    >
+      <span className="glass-control grid h-11 w-11 shrink-0 place-items-center rounded-full text-mint">
+        <Icon size={18} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <strong className="block truncate text-sm">{method.name}</strong>
+        <span className="mt-1 block truncate text-xs text-muted">
+          {method.description || 'Онлайн-оплата'}
+        </span>
+      </span>
+    </button>
+  );
+}

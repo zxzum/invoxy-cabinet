@@ -16,6 +16,16 @@ export default {
   theme: {
     extend: {
       colors: {
+        // InvoxyStart customer surfaces. Kept as explicit tokens so the
+        // transplanted customer UI does not inherit the admin palette.
+        bg: '#0b0c0e',
+        surface: '#17191d',
+        'surface-2': '#22252a',
+        ink: '#f3f1ec',
+        muted: '#92949a',
+        mint: '#a5e8c4',
+        yellow: '#f5f17a',
+        line: '#30333a',
         // Modern neutral palette
         dark: {
           50: withOpacity('--color-dark-50'),

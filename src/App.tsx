@@ -24,6 +24,12 @@ function lazyWithRetry<T extends ComponentType<unknown>>(factory: () => Promise<
     }),
   );
 }
+
+function isInvoxyStartCustomerPath(pathname: string) {
+  return /^\/(dashboard|tariffs|referrals|profile|support|subscriptions(?:\/|$)|info(?:\/|$)|news(?:\/|$)|polls|contests|wheel|partner|referral(?:\/|$)|account\/security|saved-cards|balance(?:\/|$)|connection(?:\/|$)|gift(?:\/|$)|subscription(?:\/|$))/.test(
+    pathname,
+  );
+}
 import { useBlockingStore } from './store/blocking';
 import Layout from './components/layout/Layout';
 import { MainPagesReady } from './components/layout/MainPagesReady';
@@ -43,6 +49,22 @@ import { useAnalyticsCounters } from './hooks/useAnalyticsCounters';
 import { useSiteVerification } from './hooks/useSiteVerification';
 import { useDoneKey } from './hooks/useDoneKey';
 import { getTelegramInitData, isInTelegramWebApp } from './hooks/useTelegramSDK';
+import { InvoxyStartShell } from './invoxystart/InvoxyStartShell';
+import { DashboardPage as InvoxyDashboardPage } from './invoxystart/pages/DashboardPage';
+import InvoxyTariffsPage from './invoxystart/pages/TariffsPage';
+import InvoxyReferralsPage from './invoxystart/pages/ReferralsPage';
+import InvoxyProfilePage from './invoxystart/pages/ProfilePage';
+import InvoxySubscriptionsPage from './invoxystart/pages/SubscriptionsPage';
+import InvoxySubscriptionManagePage from './invoxystart/pages/SubscriptionManagePage';
+import InvoxySupportPage from './invoxystart/pages/SupportPage';
+import InvoxyInfoPage from './invoxystart/pages/InfoPage';
+import InvoxyNewsPage, {
+  NewsArticlePage as InvoxyNewsArticlePage,
+} from './invoxystart/pages/NewsPage';
+import InvoxyActivitiesPage from './invoxystart/pages/ActivitiesPage';
+import InvoxyPartnerPage from './invoxystart/pages/PartnerPage';
+import InvoxyAccountSecurityPage from './invoxystart/pages/AccountSecurityPage';
+import InvoxySavedCardsPage from './invoxystart/pages/SavedCardsPage';
 // Auth pages - load immediately (small)
 import Login from './pages/Login';
 import TelegramCallback from './pages/TelegramCallback';
@@ -54,30 +76,11 @@ import PublicLegal from './pages/PublicLegal';
 import OAuthCallback from './pages/OAuthCallback';
 import Landing from './pages/Landing';
 
-// Dashboard - load eagerly (default route, LCP-critical)
-import Dashboard from './pages/Dashboard';
-
-// Primary authenticated pages are part of the shell bundle. Their data is
-// warmed by MainPagesReady, so switching the main tabs never shows a second
-// viewport loader while a route chunk is being fetched.
-import SubscriptionPurchase from './pages/SubscriptionPurchase';
-import Connection from './pages/Connection';
-import Profile from './pages/Profile';
+// Legacy connection page remains available from the customer dashboard.
 
 // Secondary user pages - lazy load
-const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'));
-const ModernSubscriptionManage = lazyWithRetry(() => import('./pages/ModernSubscriptionManage'));
-const Balance = lazyWithRetry(() => import('./pages/Balance'));
-const SavedCards = lazyWithRetry(() => import('./pages/SavedCards'));
-const Referral = lazyWithRetry(() => import('./pages/Referral'));
-const Support = lazyWithRetry(() => import('./pages/Support'));
-const Contests = lazyWithRetry(() => import('./pages/Contests'));
-const Polls = lazyWithRetry(() => import('./pages/Polls'));
-const Info = lazyWithRetry(() => import('./pages/Info'));
-const Wheel = lazyWithRetry(() => import('./pages/Wheel'));
 const GiftSubscription = lazyWithRetry(() => import('./pages/GiftSubscription'));
 const GiftResult = lazyWithRetry(() => import('./pages/GiftResult'));
-const News = lazyWithRetry(() => import('./pages/News'));
 const ConnectionQR = lazyWithRetry(() => import('./pages/ConnectionQR'));
 const QuickPurchase = lazyWithRetry(() => import('./pages/QuickPurchase'));
 const PurchaseSuccess = lazyWithRetry(() => import('./pages/PurchaseSuccess'));
@@ -87,7 +90,6 @@ const AutoLogin = lazyWithRetry(() => import('./pages/AutoLogin'));
 const TopUpMethodSelect = lazyWithRetry(() => import('./pages/TopUpMethodSelect'));
 const TopUpAmount = lazyWithRetry(() => import('./pages/TopUpAmount'));
 const TopUpResult = lazyWithRetry(() => import('./pages/TopUpResult'));
-const ConnectedAccounts = lazyWithRetry(() => import('./pages/ConnectedAccounts'));
 const LinkTelegramCallback = lazyWithRetry(() => import('./pages/LinkTelegramCallback'));
 const MergeAccounts = lazyWithRetry(() => import('./pages/MergeAccounts'));
 
@@ -172,12 +174,10 @@ const AdminLandingStats = lazyWithRetry(() => import('./pages/AdminLandingStats'
 const AdminReferralNetwork = lazyWithRetry(() => import('./pages/ReferralNetwork'));
 
 // News pages
-const NewsArticlePage = lazyWithRetry(() => import('./pages/NewsArticle'));
 const AdminNews = lazyWithRetry(() => import('./pages/AdminNews'));
 const AdminNewsCreate = lazyWithRetry(() => import('./pages/AdminNewsCreate'));
 
 // Info pages
-const InfoPageView = lazyWithRetry(() => import('./pages/InfoPageView'));
 const AdminInfoPages = lazyWithRetry(() => import('./pages/AdminInfoPages'));
 const AdminInfoPageEditor = lazyWithRetry(() => import('./pages/AdminInfoPageEditor'));
 const AdminLegalPages = lazyWithRetry(() => import('./pages/AdminLegalPages'));
@@ -206,6 +206,10 @@ function ProtectedRoute({
         state={{ from: `${location.pathname}${location.search}${location.hash}` }}
       />
     );
+  }
+
+  if (withLayout && isInvoxyStartCustomerPath(location.pathname)) {
+    return <InvoxyStartShell>{children}</InvoxyStartShell>;
   }
 
   return withLayout ? (
@@ -407,7 +411,7 @@ function App() {
             path="/dashboard"
             element={
               <LazyPage fallback={null}>
-                <Dashboard />
+                <InvoxyDashboardPage />
               </LazyPage>
             }
           />
@@ -416,7 +420,7 @@ function App() {
             path="/tariffs"
             element={
               <LazyPage fallback={null}>
-                <SubscriptionPurchase />
+                <InvoxyTariffsPage />
               </LazyPage>
             }
           />
@@ -424,23 +428,16 @@ function App() {
             path="/referrals"
             element={
               <LazyPage fallback={null}>
-                <Referral />
+                <InvoxyReferralsPage />
               </LazyPage>
             }
           />
-          <Route
-            path="/connection"
-            element={
-              <LazyPage fallback={null}>
-                <Connection />
-              </LazyPage>
-            }
-          />
+          <Route path="/connection" element={<Navigate to="/dashboard" replace />} />
           <Route
             path="/profile"
             element={
               <LazyPage fallback={null}>
-                <Profile />
+                <InvoxyProfilePage />
               </LazyPage>
             }
           />
@@ -449,7 +446,7 @@ function App() {
           path="/partner"
           element={
             <ProtectedRoute>
-              <LegacyRedirect to="/referral" />
+              <InvoxyPartnerPage />
             </ProtectedRoute>
           }
         />
@@ -457,7 +454,7 @@ function App() {
           path="/account/security"
           element={
             <ProtectedRoute>
-              <LegacyRedirect to="/profile/accounts" />
+              <InvoxyAccountSecurityPage />
             </ProtectedRoute>
           }
         />
@@ -481,9 +478,7 @@ function App() {
           path="/subscriptions"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <Subscriptions />
-              </LazyPage>
+              <InvoxySubscriptionsPage />
             </ProtectedRoute>
           }
         />
@@ -491,9 +486,7 @@ function App() {
           path="/subscriptions/:subscriptionId"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <ModernSubscriptionManage />
-              </LazyPage>
+              <InvoxySubscriptionManagePage />
             </ProtectedRoute>
           }
         />
@@ -521,9 +514,7 @@ function App() {
           path="/balance"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <Balance />
-              </LazyPage>
+              <Navigate to="/profile#top-up" replace />
             </ProtectedRoute>
           }
         />
@@ -531,9 +522,7 @@ function App() {
           path="/balance/saved-cards"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <SavedCards />
-              </LazyPage>
+              <InvoxySavedCardsPage />
             </ProtectedRoute>
           }
         />
@@ -583,9 +572,7 @@ function App() {
           path="/referral"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <Referral />
-              </LazyPage>
+              <Navigate to="/referrals" replace />
             </ProtectedRoute>
           }
         />
@@ -613,9 +600,7 @@ function App() {
           path="/support"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <Support />
-              </LazyPage>
+              <InvoxySupportPage />
             </ProtectedRoute>
           }
         />
@@ -623,9 +608,7 @@ function App() {
           path="/profile/accounts"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <ConnectedAccounts />
-              </LazyPage>
+              <InvoxyAccountSecurityPage />
             </ProtectedRoute>
           }
         />
@@ -643,9 +626,7 @@ function App() {
           path="/contests"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <Contests />
-              </LazyPage>
+              <InvoxyActivitiesPage mode="contests" />
             </ProtectedRoute>
           }
         />
@@ -653,9 +634,7 @@ function App() {
           path="/polls"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <Polls />
-              </LazyPage>
+              <InvoxyActivitiesPage mode="polls" />
             </ProtectedRoute>
           }
         />
@@ -663,9 +642,7 @@ function App() {
           path="/info"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <Info />
-              </LazyPage>
+              <InvoxyInfoPage />
             </ProtectedRoute>
           }
         />
@@ -673,9 +650,7 @@ function App() {
           path="/wheel"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <Wheel />
-              </LazyPage>
+              <InvoxyActivitiesPage mode="wheel" />
             </ProtectedRoute>
           }
         />
@@ -713,9 +688,7 @@ function App() {
           path="/news"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <News />
-              </LazyPage>
+              <InvoxyNewsPage />
             </ProtectedRoute>
           }
         />
@@ -723,9 +696,7 @@ function App() {
           path="/news/:slug"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <NewsArticlePage />
-              </LazyPage>
+              <InvoxyNewsArticlePage />
             </ProtectedRoute>
           }
         />
@@ -733,9 +704,7 @@ function App() {
           path="/info/:slug"
           element={
             <ProtectedRoute>
-              <LazyPage>
-                <InfoPageView />
-              </LazyPage>
+              <InvoxyInfoPage />
             </ProtectedRoute>
           }
         />

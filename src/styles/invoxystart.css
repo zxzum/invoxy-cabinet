@@ -1,0 +1,145 @@
+/* InvoxyStart customer surfaces. Admin and legacy pages keep globals.css. */
+.invoxystart-shell {
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: #0b0c0e;
+  color: #f3f1ec;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.invoxystart-shell .route-stage.is-entering {
+  position: relative;
+  top: 0;
+  animation: invoxy-route-enter 420ms var(--motion-ease) backwards;
+}
+
+.invoxystart-shell .route-stage.is-entering :is(.motion-reveal, .motion-card) {
+  animation: invoxy-card-enter 620ms var(--motion-ease) backwards;
+  animation-delay: var(--motion-delay, 60ms);
+}
+
+.invoxystart-shell .adaptive-dialog-backdrop {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: invoxy-dialog-backdrop-in 220ms ease-out both;
+}
+
+.invoxystart-shell .adaptive-dialog-backdrop.is-closing {
+  animation: invoxy-dialog-backdrop-out 200ms ease-in both;
+}
+
+.invoxystart-shell .adaptive-dialog-panel {
+  --adaptive-dialog-drag-y: 0px;
+  animation: invoxy-dialog-panel-in 320ms var(--motion-ease) both;
+  transform: translate3d(0, var(--adaptive-dialog-drag-y), 0);
+  transition: transform 180ms var(--motion-ease);
+}
+
+.invoxystart-shell .adaptive-dialog-panel.is-dragging {
+  transition: none;
+  will-change: transform;
+}
+
+.invoxystart-shell .adaptive-dialog-panel.is-closing {
+  animation: invoxy-dialog-panel-out-left 200ms ease-in both;
+  transition: none;
+}
+
+.invoxystart-shell .form-step-enter {
+  position: relative;
+  animation: invoxy-form-step-in 320ms var(--motion-ease) both;
+}
+.invoxystart-shell .ticket-enter {
+  animation: invoxy-ticket-enter 320ms var(--motion-ease) both;
+}
+.invoxystart-shell .nav-button {
+  transition:
+    width 360ms var(--motion-ease),
+    padding 360ms var(--motion-ease),
+    scale 180ms var(--motion-ease),
+    background-color 240ms ease,
+    color 240ms ease,
+    box-shadow 300ms var(--motion-ease);
+}
+.invoxystart-shell .mobile-nav-safe {
+  bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 1023px) {
+  .invoxystart-shell .adaptive-dialog-panel {
+    animation-name: invoxy-dialog-sheet-in;
+  }
+  .invoxystart-shell .adaptive-dialog-panel.is-closing {
+    animation-name: invoxy-dialog-sheet-out;
+  }
+}
+
+@keyframes invoxy-route-enter {
+  from {
+    opacity: 0;
+    top: 10px;
+  }
+}
+@keyframes invoxy-card-enter {
+  from {
+    opacity: 0;
+    top: 20px;
+  }
+}
+@keyframes invoxy-dialog-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes invoxy-dialog-backdrop-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes invoxy-dialog-panel-in {
+  from {
+    opacity: 0;
+    top: 16px;
+  }
+}
+@keyframes invoxy-dialog-panel-out-left {
+  to {
+    opacity: 0;
+    transform: translate3d(-24px, var(--adaptive-dialog-drag-y), 0);
+  }
+}
+@keyframes invoxy-dialog-sheet-in {
+  from {
+    opacity: 0.72;
+    transform: translate3d(0, 100%, 0);
+  }
+}
+@keyframes invoxy-dialog-sheet-out {
+  to {
+    opacity: 0.72;
+    transform: translate3d(0, 100%, 0);
+  }
+}
+@keyframes invoxy-form-step-in {
+  from {
+    opacity: 0;
+    top: 10px;
+  }
+}
+@keyframes invoxy-ticket-enter {
+  from {
+    opacity: 0;
+    top: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .invoxystart-shell *,
+  .invoxystart-shell *::before,
+  .invoxystart-shell *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
