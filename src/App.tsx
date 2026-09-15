@@ -66,7 +66,7 @@ import Profile from './pages/Profile';
 
 // Secondary user pages - lazy load
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'));
-const Subscription = lazyWithRetry(() => import('./pages/Subscription'));
+const ModernSubscriptionManage = lazyWithRetry(() => import('./pages/ModernSubscriptionManage'));
 const Balance = lazyWithRetry(() => import('./pages/Balance'));
 const SavedCards = lazyWithRetry(() => import('./pages/SavedCards'));
 const Referral = lazyWithRetry(() => import('./pages/Referral'));
@@ -492,7 +492,7 @@ function App() {
           element={
             <ProtectedRoute>
               <LazyPage>
-                <Subscription />
+                <ModernSubscriptionManage />
               </LazyPage>
             </ProtectedRoute>
           }

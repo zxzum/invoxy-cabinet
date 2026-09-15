@@ -203,6 +203,9 @@ vi.mock('./pages/Subscriptions', () => ({
 vi.mock('./pages/Subscription', () => ({
   default: () => <div data-testid="subscription-page">subscription</div>,
 }));
+vi.mock('./pages/ModernSubscriptionManage', () => ({
+  default: () => <div data-testid="modern-subscription-page">modern subscription</div>,
+}));
 vi.mock('./pages/SavedCards', () => ({
   default: () => <div data-testid="saved-cards-page">saved cards</div>,
 }));
@@ -528,7 +531,7 @@ describe('cabinet route boundary', () => {
     [
       '/subscription/42?source=old#detail',
       '/subscriptions/42?source=old#detail',
-      'subscription-page',
+      'modern-subscription-page',
     ],
   ])('replaces %s with %s and preserves route state', async (from, to, pageTestId) => {
     auth.state.isAuthenticated = true;
