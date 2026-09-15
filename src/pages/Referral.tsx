@@ -830,7 +830,7 @@ export default function Referral() {
             type="button"
             onClick={() => shareLink(botReferralLink || referralLink)}
             disabled={!botReferralLink && !referralLink}
-            className="ix-referral-share-mobile btn-primary mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold"
+            className="ix-referral-share-mobile mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-dark-700/70 bg-dark-950 text-sm font-bold text-dark-50 transition-colors hover:bg-dark-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ShareIcon className="h-4 w-4" />
             {t('referral.shareButton')}

@@ -850,7 +850,7 @@ describe('Dashboard target states', () => {
     expect(screen.getByRole('button', { name: 'Добавить' })).toBeTruthy();
   });
 
-  it('uses the target HAPP cryptolink resolver and routes INCY through Connection', async () => {
+  it('uses the target HAPP cryptolink resolver and falls back to Connection when INCY access is hidden', async () => {
     setupResolvedQueries();
     mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
     mocks.getSubscription.mockResolvedValue({

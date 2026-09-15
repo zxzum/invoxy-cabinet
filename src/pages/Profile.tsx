@@ -448,7 +448,7 @@ export default function Profile() {
               <Button
                 type="button"
                 fullWidth
-                className="mt-4"
+                className="mt-4 border border-dark-700/70 bg-dark-950 text-dark-50 shadow-none hover:bg-dark-900 active:bg-dark-800"
                 disabled={!topUpAmount || !paymentMethods?.some((method) => method.is_available)}
                 onClick={() => {
                   const method = paymentMethods?.find((item) => item.is_available);

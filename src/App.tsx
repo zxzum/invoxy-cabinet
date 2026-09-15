@@ -317,6 +317,11 @@ function LegacySubscriptionRedirect() {
   return <LegacyRedirect to={`/subscriptions/${subscriptionId}`} />;
 }
 
+function PurchaseRedirect() {
+  const { search, hash } = useLocation();
+  return <Navigate to={`/tariffs${search}${hash}`} replace />;
+}
+
 function App() {
   useAnalyticsCounters();
   // Pulls site-verification tokens (Antilopay apay-tag etc.) from the bot
@@ -406,14 +411,7 @@ function App() {
               </LazyPage>
             }
           />
-          <Route
-            path="/subscription/purchase"
-            element={
-              <LazyPage fallback={null}>
-                <SubscriptionPurchase />
-              </LazyPage>
-            }
-          />
+          <Route path="/subscription/purchase" element={<PurchaseRedirect />} />
           <Route
             path="/tariffs"
             element={

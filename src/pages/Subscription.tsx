@@ -682,7 +682,7 @@ export default function Subscription() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="luna-dashboard space-y-6">
       {/* Page title */}
       <div className="flex items-center gap-3">
         <WebBackButton to={isMultiTariff ? '/subscriptions' : '/dashboard'} />

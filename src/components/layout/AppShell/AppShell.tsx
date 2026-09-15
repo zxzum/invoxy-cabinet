@@ -58,7 +58,11 @@ export function AppShell({ children }: AppShellProps) {
   const [previousPath, setPreviousPath] = useState(location.pathname);
   const [direction, setDirection] = useState(1);
   const tabs = ['/dashboard', '/tariffs', '/referrals', '/profile'];
-  const isModernCustomerRoute = tabs.includes(location.pathname);
+  const isModernCustomerRoute =
+    tabs.includes(location.pathname) ||
+    location.pathname === '/subscription/purchase' ||
+    location.pathname === '/subscriptions' ||
+    location.pathname.startsWith('/subscriptions/');
   const animatePage = !isTelegramWebApp && !reducedMotion;
   if (animatePage && previousPath !== location.pathname) {
     const previousIndex = tabs.indexOf(previousPath);
@@ -174,12 +178,20 @@ export function AppShell({ children }: AppShellProps) {
         <div className="flex items-center gap-3 px-2 py-1">
           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-accent-500/10">
             <img
-              src={logoUrl || LOCAL_LOGO_URL}
-              alt={appName || 'Invoxy VPN'}
+              src={isModernCustomerRoute ? '/images/brand-mark.png' : logoUrl || LOCAL_LOGO_URL}
+              alt={isModernCustomerRoute ? 'InvoxyVPN' : appName || 'Invoxy VPN'}
               className="h-full w-full object-contain"
             />
           </div>
-          <div className="truncate text-xl font-bold text-dark-50">{appName || 'Invoxy VPN'}</div>
+          <div className="truncate text-xl font-bold text-dark-50">
+            {isModernCustomerRoute ? (
+              <>
+                Invoxy<span className="text-accent-400">VPN</span>
+              </>
+            ) : (
+              appName || 'Invoxy VPN'
+            )}
+          </div>
         </div>
 
         <nav className="ix-sidebar-nav">

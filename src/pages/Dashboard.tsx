@@ -576,6 +576,7 @@ export default function Dashboard() {
       connectionLink?.display_link ??
       activeSubscription?.subscription_url ??
       null);
+  const incyLink = accessLink ? `incy://import/${accessLink}` : null;
   const happLink =
     happDownloads && !happDownloads.happ_enabled
       ? null
@@ -1038,7 +1039,7 @@ export default function Dashboard() {
               lteTraffic={lteTraffic}
               accessLink={accessLink}
               happLink={happLink}
-              incyLink={null}
+              incyLink={incyLink}
               incyAvailable={Boolean(connectionLink)}
               qrAvailable={Boolean(qrConnectionUrl ?? accessLink)}
               renewalOptions={renewalOptions ?? []}
@@ -1123,9 +1124,11 @@ export default function Dashboard() {
               onCopyAccess={handleCopyAccess}
               onConnectHapp={happLink ? () => openDeepLink(happLink) : undefined}
               onConnectIncy={
-                connectionLink
-                  ? () => navigate(`/connection?sub=${activeSubscription.id}`)
-                  : undefined
+                incyLink
+                  ? () => openDeepLink(incyLink)
+                  : connectionLink
+                    ? () => navigate(`/connection?sub=${activeSubscription.id}`)
+                    : undefined
               }
               onShowQr={handleShowQr}
               onSelectRenewal={(option) => setSelectedRenewalPeriod(option.period_days)}

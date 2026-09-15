@@ -187,9 +187,9 @@ describe('AppShell support FAB', () => {
     renderShell('/subscriptions');
 
     expect(screen.getByText('page').closest('.ix-app')?.getAttribute('data-customer-ui')).toBe(
-      'legacy',
+      'modern',
     );
-    expect(document.documentElement.getAttribute('data-customer-palette')).toBeNull();
+    expect(document.documentElement.getAttribute('data-customer-palette')).toBe('mint');
   });
 
   it.each(['/dashboard', '/subscriptions', '/balance', '/referral', '/support', '/info'])(

@@ -2,16 +2,36 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ClipboardIcon, PlusIcon } from '@/components/icons';
+import {
+  CalendarIcon,
+  CheckIcon,
+  ClipboardIcon,
+  ChevronRightIcon,
+  DevicesIcon,
+  PlusIcon,
+  SubscriptionIcon,
+} from '@/components/icons';
 import { subscriptionApi } from '../api/subscription';
 import { balanceApi } from '../api/balance';
 import { useTheme } from '../hooks/useTheme';
 import { getGlassColors } from '../utils/glassTheme';
 import { useAuthStore } from '../store/auth';
 import { getApiErrorMessage } from '../utils/api-error';
-import SubscriptionListCard from '../components/subscription/SubscriptionListCard';
 import TrialOfferCard from '../components/dashboard/TrialOfferCard';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+
+function formatDate(iso: string | null, locale: string) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleDateString(locale, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  } catch {
+    return '—';
+  }
+}
 
 function EmptyState({ onBuy }: { onBuy: () => void }) {
   const { t } = useTranslation();
@@ -46,7 +66,7 @@ function EmptyState({ onBuy }: { onBuy: () => void }) {
 }
 
 export default function Subscriptions() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const g = getGlassColors(isDark);
@@ -109,22 +129,16 @@ export default function Subscriptions() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="luna-dashboard space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="truncate text-xl font-bold" style={{ color: g.text }}>
-          {t('subscriptions.title', 'Мои подписки')}
-        </h1>
+      <div className="ix-page-heading">
+        <h1>{t('subscriptions.title', 'Мои подписки')}</h1>
+        <p>{t('subscriptions.subtitle', 'Все тарифы и подключённые сервисы')}</p>
         {/* «+ Купить ещё» — только если уже есть платная активная подписка */}
         {!isLoading && !isError && hasActivePaid && (
           <button
-            onClick={() => navigate('/subscription/purchase')}
-            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-colors"
-            style={{
-              background: 'rgba(var(--color-accent-400), 0.1)',
-              color: 'rgb(var(--color-accent-400))',
-              border: '1px solid rgba(var(--color-accent-400), 0.2)',
-            }}
+            onClick={() => navigate('/tariffs')}
+            className="button-lift mt-4 flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-accent-400 px-4 py-2 text-sm font-bold text-on-accent transition-colors"
           >
             <PlusIcon className="h-4 w-4" />
             {t('subscriptions.buyAnother', 'Новый тариф')}
@@ -151,7 +165,7 @@ export default function Subscriptions() {
           даём ЯВНУЮ primary-кнопку покупки: мы продаём подписки. */}
       {!isLoading && !isError && subscriptions.length > 0 && !hasActivePaid && (
         <button
-          onClick={() => navigate('/subscription/purchase')}
+          onClick={() => navigate('/tariffs')}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
         >
           <PlusIcon className="h-5 w-5" />
@@ -189,7 +203,7 @@ export default function Subscriptions() {
               доступном триале это был единственный экран без кнопки «Купить»
               (Telegram-баг #605056/#605063). */}
           <button
-            onClick={() => navigate('/subscription/purchase')}
+            onClick={() => navigate('/tariffs')}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-500 px-6 py-3 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
           >
             <PlusIcon className="h-5 w-5" />
@@ -198,19 +212,120 @@ export default function Subscriptions() {
         </div>
       )}
       {hasNoSubscriptions && !trialLoading && !trialInfo?.is_available && (
-        <EmptyState onBuy={() => navigate('/subscription/purchase')} />
+        <EmptyState onBuy={() => navigate('/tariffs')} />
       )}
 
       {/* Subscription grid */}
       {subscriptions.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
-          {subscriptions.map((sub) => (
-            <SubscriptionListCard
-              key={sub.id}
-              subscription={sub}
-              onClick={() => navigate(`/subscriptions/${sub.id}`)}
-            />
-          ))}
+        <div className="grid gap-5 xl:grid-cols-2">
+          {subscriptions.map((sub) => {
+            const isExpired = sub.status === 'expired' || sub.status === 'disabled';
+            const isLimited = sub.status === 'limited';
+            const trafficPercent =
+              sub.traffic_limit_gb > 0
+                ? Math.min(100, (sub.traffic_used_gb / sub.traffic_limit_gb) * 100)
+                : 0;
+            const statusLabel = sub.is_trial
+              ? t('subscription.statusTrial', 'Пробный период')
+              : isExpired
+                ? t('subscription.statusExpired', 'Завершена')
+                : isLimited
+                  ? t('subscription.statusLimited', 'Ограничена')
+                  : t('subscription.statusActive', 'Активна');
+
+            return (
+              <button
+                type="button"
+                key={sub.id}
+                onClick={() => navigate(`/subscriptions/${sub.id}`)}
+                className="glass-panel motion-card group rounded-[30px] p-5 text-left transition-transform hover:-translate-y-0.5 lg:p-7"
+                aria-label={sub.tariff_name || `Подписка #${sub.id}`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="glass-control grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-accent-400">
+                      <SubscriptionIcon className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-lg font-medium text-dark-50">
+                        {sub.tariff_name || `Подписка #${sub.id}`}
+                      </p>
+                      <p className="mt-1 text-xs text-dark-400">ID {sub.id}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-bold ${
+                      isExpired
+                        ? 'bg-error-500/15 text-error-300'
+                        : isLimited
+                          ? 'bg-warning-500/15 text-warning-300'
+                          : 'bg-accent-400 text-on-accent'
+                    }`}
+                  >
+                    {statusLabel}
+                  </span>
+                </div>
+
+                <div className="mt-6 grid grid-cols-2 gap-3 text-sm">
+                  <div className="min-w-0 rounded-2xl bg-white/5 px-3 py-3">
+                    <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[.1em] text-dark-400">
+                      <CalendarIcon className="h-3.5 w-3.5" /> До
+                    </p>
+                    <p className="mt-1 truncate font-medium text-dark-50">
+                      {formatDate(sub.end_date, i18n.language)}
+                    </p>
+                  </div>
+                  <div className="min-w-0 rounded-2xl bg-white/5 px-3 py-3">
+                    <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[.1em] text-dark-400">
+                      <CheckIcon className="h-3.5 w-3.5" /> Автопродление
+                    </p>
+                    <p className="mt-1 truncate font-medium text-dark-50">
+                      {sub.autopay_enabled ? 'Включено' : 'Выключено'}
+                    </p>
+                  </div>
+                  <div className="min-w-0 rounded-2xl bg-white/5 px-3 py-3">
+                    <p className="text-[10px] uppercase tracking-[.1em] text-dark-400">Трафик</p>
+                    <p className="mt-1 truncate font-medium text-dark-50">
+                      {sub.traffic_limit_gb > 0
+                        ? `${Number(sub.traffic_used_gb).toFixed(1)} / ${sub.traffic_limit_gb} ГБ`
+                        : 'Безлимит'}
+                    </p>
+                  </div>
+                  <div className="min-w-0 rounded-2xl bg-white/5 px-3 py-3">
+                    <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[.1em] text-dark-400">
+                      <DevicesIcon className="h-3.5 w-3.5" /> Устройства
+                    </p>
+                    <p className="mt-1 truncate font-medium text-dark-50">
+                      {sub.device_limit ? `${sub.device_limit} макс.` : '—'}
+                    </p>
+                  </div>
+                </div>
+                {sub.traffic_limit_gb > 0 && (
+                  <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-accent-400"
+                      style={{ width: `${trafficPercent}%` }}
+                    />
+                  </div>
+                )}
+                <div className="mt-5 flex items-center justify-end gap-1 text-xs font-bold text-accent-400">
+                  Управление{' '}
+                  <ChevronRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              </button>
+            );
+          })}
+          {isMultiTariff && (
+            <div className="glass-panel flex min-h-44 items-center justify-center rounded-[30px] border-dashed">
+              <button
+                type="button"
+                onClick={() => navigate('/tariffs?mode=add')}
+                className="flex min-h-16 items-center gap-2 rounded-full px-6 text-sm font-bold text-accent-400"
+              >
+                <PlusIcon className="h-4 w-4" /> Подключить ещё тариф
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
