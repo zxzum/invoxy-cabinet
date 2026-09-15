@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/auth';
 import { usePermissionStore } from '../../store/permissions';
 import { saveReturnUrl } from '../../utils/token';
 import PageLoader from '../common/PageLoader';
-import Layout from '../layout/Layout';
+import { InvoxyStartShell } from '@/invoxystart/InvoxyStartShell';
 
 interface PermissionRouteProps {
   children: React.ReactNode;
@@ -72,5 +72,5 @@ export function PermissionRoute({
     }
   }
 
-  return <Layout>{children}</Layout>;
+  return <InvoxyStartShell>{children}</InvoxyStartShell>;
 }

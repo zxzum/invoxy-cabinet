@@ -246,7 +246,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Layout>{children}</Layout>;
+  return <InvoxyStartShell>{children}</InvoxyStartShell>;
 }
 
 function MainTabsRoute() {
