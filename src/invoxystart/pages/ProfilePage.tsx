@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { usePlatform } from '@/platform';
 import { useNavigate } from 'react-router';
 import {
   Check,
@@ -25,12 +26,15 @@ import {
   type Transaction,
 } from '@/invoxystart/api';
 import { formatDate, formatMoney } from '@/invoxystart/components/account/AccountPrimitives';
+import { infoApi } from '@/api/info';
+import { resolveSupportContact, type SupportContactTarget } from '@/utils/supportContact';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { openPayment } = usePayment();
   const { user, logout } = useAuth();
+  const { openLink, openTelegramLink } = usePlatform();
   const [emailLinkSent, setEmailLinkSent] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -39,6 +43,7 @@ export default function ProfilePage() {
   const [balance, setBalance] = useState(user?.balance_rubles ?? 0);
   const [history, setHistory] = useState<Transaction[]>([]);
   const [loyalty, setLoyalty] = useState<LoyaltyTiersResponse | null>(null);
+  const [supportTarget, setSupportTarget] = useState<SupportContactTarget | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -46,16 +51,26 @@ export default function ProfilePage() {
       balanceApi.getBalance(),
       balanceApi.getTransactions({ per_page: 4 }),
       promoApi.getLoyaltyTiers(),
-    ]).then(([balanceResult, historyResult, loyaltyResult]) => {
+      infoApi.getSupportConfig(),
+    ]).then(([balanceResult, historyResult, loyaltyResult, supportResult]) => {
       if (!mounted) return;
       if (balanceResult.status === 'fulfilled') setBalance(balanceResult.value.balance_rubles);
       if (historyResult.status === 'fulfilled') setHistory(historyResult.value.items);
       if (loyaltyResult.status === 'fulfilled') setLoyalty(loyaltyResult.value);
+      if (supportResult.status === 'fulfilled') {
+        setSupportTarget(resolveSupportContact(supportResult.value));
+      }
     });
     return () => {
       mounted = false;
     };
   }, []);
+
+  function openSupport() {
+    const target = supportTarget ?? { kind: 'telegram' as const, url: 'https://t.me/invoxyvpn' };
+    if (target.kind === 'telegram') openTelegramLink(target.url);
+    else openLink(target.url);
+  }
 
   function topUp() {
     const amount = Number(topUpAmount);
@@ -188,7 +203,9 @@ export default function ProfilePage() {
                       <p className="text-sm">{item.description || item.type}</p>
                       <p className="mt-1 text-xs text-muted">{formatDate(item.created_at)}</p>
                     </div>
-                    <strong className={positive ? 'text-sm text-mint' : 'text-sm'}>
+                    <strong
+                      className={`shrink-0 whitespace-nowrap text-sm ${positive ? 'text-mint' : ''}`}
+                    >
                       {positive ? '+' : '−'}
                       {formatMoney(Math.abs(item.amount_kopeks))}
                     </strong>
@@ -310,8 +327,8 @@ export default function ProfilePage() {
             <h2 className="text-lg font-medium">Поддержка</h2>
             <button
               type="button"
-              onClick={() => showToast('Открываем чат поддержки…')}
-              className="mt-4 flex h-13 w-full items-center justify-between rounded-2xl bg-white/5 px-4 text-sm active:scale-[.99]"
+              onClick={openSupport}
+              className="button-lift mt-4 flex h-13 w-full items-center justify-between rounded-2xl bg-white/5 px-4 text-sm active:scale-[.99]"
             >
               <span className="flex items-center gap-3">
                 <MessageCircle size={18} className="text-mint" /> Написать в Telegram

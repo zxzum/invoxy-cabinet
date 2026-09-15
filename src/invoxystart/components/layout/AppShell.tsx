@@ -30,13 +30,13 @@ function ShellLayout({ children }: { children: ReactNode }) {
           {reducedMotion ? (
             children
           ) : (
-            <AnimatePresence mode="wait" initial={false}>
+            <AnimatePresence mode="wait">
               <m.div
                 key={`${location.pathname}${location.search}`}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+                transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
                 className="min-h-full"
               >
                 {children}
