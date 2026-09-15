@@ -2087,3 +2087,7 @@ export default function Subscription() {
     </div>
   );
 }
+
+// Kept as an explicit named export while the modern detail route moves to
+// ModernSubscriptionManage. Existing consumers can retain the legacy page.
+export { Subscription as LegacySubscription };
