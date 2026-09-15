@@ -35,6 +35,7 @@ import {
   PencilIcon,
   TelegramIcon,
   LinkIcon,
+  LogoutIcon,
   StarIcon,
   WalletIcon,
 } from '@/components/icons';
@@ -51,6 +52,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
+  const logout = useAuthStore((state) => state.logout);
   const queryClient = useQueryClient();
   const { currencySymbol, formatAmount } = useCurrency();
 
@@ -135,9 +137,11 @@ export default function Profile() {
   const isEmailVerificationEnabled = emailAuthConfig?.verification_enabled ?? true;
 
   // Build referral link for cabinet
-  const referralLink = referralInfo?.referral_code
-    ? `${window.location.origin}/login?ref=${referralInfo.referral_code}`
-    : '';
+  const referralLink =
+    referralInfo?.referral_link ||
+    (referralInfo?.referral_code
+      ? `${window.location.origin}/login?ref=${referralInfo.referral_code}`
+      : '');
   const configuredBotUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME?.trim();
   const botReferralLink = referralInfo?.referral_code
     ? referralInfo.bot_referral_link ||
@@ -517,7 +521,7 @@ export default function Profile() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-5">
-            <Card className="glass-surface p-5 sm:p-6 lg:col-span-2">
+            <Card className="glass-surface p-5 sm:p-6">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-400">
@@ -590,72 +594,132 @@ export default function Profile() {
                       {t('info.allStatusesAchieved')}
                     </p>
                   )}
+                  {validLoyaltyData.tiers.length > 0 && (
+                    <div
+                      className="relative mt-5 grid grid-cols-3 gap-2 text-center"
+                      role="list"
+                      aria-label={t('subscription.promoGroup.tiersTitle')}
+                    >
+                      {validLoyaltyData.tiers.map((tier) => {
+                        const discountValues = [
+                          tier.server_discount_percent,
+                          tier.traffic_discount_percent,
+                          tier.device_discount_percent,
+                          ...Object.values(tier.period_discounts ?? {}),
+                        ].filter(isFiniteNumber);
+                        const discount = discountValues.length ? Math.max(...discountValues) : 0;
+                        const reached = tier.is_current || tier.is_achieved;
+                        return (
+                          <div
+                            key={tier.id}
+                            role="listitem"
+                            className={cn(
+                              'min-w-0 rounded-xl border p-2 text-left sm:rounded-2xl sm:p-3',
+                              reached
+                                ? 'border-accent-300/25 bg-accent-500/10'
+                                : 'border-white/10 bg-white/[.04]',
+                            )}
+                          >
+                            <p
+                              className={cn(
+                                'truncate text-[10px] font-bold sm:text-xs',
+                                reached ? 'text-accent-300' : 'text-dark-400',
+                              )}
+                            >
+                              {tier.name} · {discount}%
+                            </p>
+                            <p className="mt-1 truncate text-[9px] text-dark-400 sm:text-[10px]">
+                              {t('subscription.promoGroup.threshold')}:{' '}
+                              {formatAmount(tier.threshold_rubles, 0)} {currencySymbol}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </>
               ) : (
                 <p className="text-sm text-dark-400">{t('info.noLoyaltyTiers')}</p>
               )}
             </Card>
+
+            {/* Source profile keeps account, support, and exit actions in the
+                desktop right rail. They remain in this stack on mobile, after
+                the financial cards, so the existing mobile flow is unchanged. */}
+            <Card className="glass-surface p-5 sm:p-6">
+              <h2 className="mb-4 text-lg font-semibold text-dark-100">
+                {t('profile.accountInfo')}
+              </h2>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
+                  <span className="text-dark-400">{t('profile.telegramId')}</span>
+                  <span className="font-medium text-dark-100">{user?.telegram_id}</span>
+                </div>
+                {user?.username && (
+                  <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
+                    <span className="text-dark-400">{t('profile.username')}</span>
+                    <span className="font-medium text-dark-100">@{user.username}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
+                  <span className="text-dark-400">{t('profile.name')}</span>
+                  <span className="font-medium text-dark-100">{displayName(user)}</span>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-dark-400">{t('profile.registeredAt')}</span>
+                  <span className="font-medium text-dark-100">
+                    {user?.created_at
+                      ? new Date(user.created_at).toLocaleDateString(uiLocale())
+                      : '-'}
+                  </span>
+                </div>
+              </div>
+            </Card>
+
+            <Card asChild className="glass-surface" interactive>
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => navigate('/profile/accounts')}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-dark-100">
+                      {t('profile.accounts.goToAccounts')}
+                    </h2>
+                    <p className="text-sm text-dark-400">{t('profile.accounts.subtitle')}</p>
+                  </div>
+                  <ArrowRightIcon className="h-5 w-5 text-dark-400" />
+                </div>
+              </button>
+            </Card>
+
+            <Card className="glass-surface p-5 sm:p-6">
+              <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('nav.support')}</h2>
+              <Button
+                type="button"
+                variant="secondary"
+                fullWidth
+                onClick={() => navigate('/support')}
+              >
+                {t('nav.support')}
+                <ArrowRightIcon className="h-4 w-4" />
+              </Button>
+            </Card>
+
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                navigate('/login', { replace: true });
+              }}
+              className="glass-surface flex h-14 items-center justify-center gap-2 rounded-full text-sm text-error-300 transition-colors hover:text-error-200"
+            >
+              <LogoutIcon className="h-4 w-4" />
+              {t('nav.logout')}
+            </button>
           </div>
         </div>
-      </motion.div>
-
-      {/* User Info Card */}
-      <motion.div variants={staggerItem}>
-        <Card className="glass-surface p-5 sm:p-6">
-          <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('profile.accountInfo')}</h2>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
-              <span className="text-dark-400">{t('profile.telegramId')}</span>
-              <span className="font-medium text-dark-100">{user?.telegram_id}</span>
-            </div>
-            {user?.username && (
-              <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
-                <span className="text-dark-400">{t('profile.username')}</span>
-                <span className="font-medium text-dark-100">@{user.username}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between border-b border-dark-800/50 py-2.5">
-              <span className="text-dark-400">{t('profile.name')}</span>
-              <span className="font-medium text-dark-100">{displayName(user)}</span>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <span className="text-dark-400">{t('profile.registeredAt')}</span>
-              <span className="font-medium text-dark-100">
-                {user?.created_at ? new Date(user.created_at).toLocaleDateString(uiLocale()) : '-'}
-              </span>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* Connected Accounts Link */}
-      <motion.div variants={staggerItem}>
-        <Card asChild className="glass-surface" interactive>
-          <button
-            type="button"
-            className="w-full text-left"
-            onClick={() => navigate('/profile/accounts')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-dark-100">
-                  {t('profile.accounts.goToAccounts')}
-                </h2>
-                <p className="text-sm text-dark-400">{t('profile.accounts.subtitle')}</p>
-              </div>
-              <ArrowRightIcon className="h-5 w-5 text-dark-400" />
-            </div>
-          </button>
-        </Card>
-      </motion.div>
-
-      <motion.div variants={staggerItem}>
-        <Card className="glass-surface p-5 sm:p-6">
-          <Button type="button" variant="secondary" fullWidth onClick={() => navigate('/support')}>
-            {t('nav.support')}
-            <ArrowRightIcon className="h-4 w-4" />
-          </Button>
-        </Card>
       </motion.div>
 
       {/* Referral Link Widget — self-animated: mounts after the referral queries

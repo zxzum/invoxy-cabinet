@@ -235,6 +235,25 @@ describe('приглашение в партнёры', () => {
   });
 });
 
+describe('source-like referral layout', () => {
+  it('keeps the hero and links side by side on desktop with round copy controls', async () => {
+    await renderReferral();
+
+    const linksHeading = await screen.findByText(resolveRu('referral.yourLink') as string);
+    const linksCard = linksHeading.closest('.ix-referral-links');
+    const hero = screen.getByText('referral.programme').closest('.ix-referral-hero');
+    const copyButton = linksCard?.querySelector('.ix-referral-copy-button');
+    const shareButton = screen.getByRole('button', {
+      name: resolveRu('referral.shareButton') as string,
+    });
+
+    expect(linksCard?.parentElement?.className).toContain('xl:grid-cols-2');
+    expect(hero?.querySelector('svg')).toBeTruthy();
+    expect(copyButton?.className).toContain('rounded-full');
+    expect(shareButton.className).not.toContain('sm:hidden');
+  });
+});
+
 describe('вывод средств включён', () => {
   it('показывает раздел как прежде', async () => {
     await renderReferral();

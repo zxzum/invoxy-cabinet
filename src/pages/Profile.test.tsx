@@ -7,6 +7,7 @@ import Profile from './Profile';
 
 const mocks = vi.hoisted(() => ({
   setUser: vi.fn(),
+  logout: vi.fn(),
   getBalance: vi.fn(),
   getTransactions: vi.fn(),
   getPaymentMethods: vi.fn(),
@@ -61,6 +62,7 @@ vi.mock('../store/auth', () => ({
         auth_type: 'telegram',
       },
       setUser: mocks.setUser,
+      logout: mocks.logout,
     }),
 }));
 vi.mock('../api/referral', () => ({
@@ -188,7 +190,7 @@ describe('Profile target data presentation', () => {
     expect(document.getElementById('top-up')).toBeTruthy();
   });
 
-  it('puts live balance and loyalty before account details with discoverable routes', async () => {
+  it('keeps live finance first and puts the source right rail in the overview', async () => {
     renderProfile();
 
     const balance = await screen.findByText((_, element) => element?.textContent === '321 ₽');
@@ -199,7 +201,8 @@ describe('Profile target data presentation', () => {
     expect(balance).toBeTruthy();
     expect(screen.getByText('Friends')).toBeTruthy();
     expect(screen.getByRole('progressbar', { name: 'info.yourProgress' })).toBeTruthy();
-    expect(overview.compareDocumentPosition(accountInfo)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(overview.contains(accountInfo)).toBe(true);
+    expect(screen.getByRole('button', { name: 'nav.logout' })).toBeTruthy();
 
     expect(document.getElementById('top-up')?.querySelector('button')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'balance.topUpBalance' })).toBeNull();
@@ -261,6 +264,72 @@ describe('Profile target data presentation', () => {
     expect(
       screen.getByText('profile.accounts.goToAccounts').closest('.glass-surface'),
     ).toBeTruthy();
+  });
+
+  it('uses the canonical referral_link returned by the API', async () => {
+    const canonicalLink = 'https://invoxy.app/r/canonical';
+    mocks.getReferralInfo.mockResolvedValue({
+      referral_code: 'legacy-code',
+      referral_link: canonicalLink,
+    });
+    mocks.getReferralTerms.mockResolvedValue({ is_enabled: true });
+
+    renderProfile();
+
+    expect(await screen.findByDisplayValue(canonicalLink)).toBeTruthy();
+    expect(screen.queryByDisplayValue('http://localhost/login?ref=legacy-code')).toBeNull();
+  });
+
+  it('renders real loyalty tiers in the right rail', async () => {
+    mocks.getLoyaltyTiers.mockResolvedValue({
+      tiers: [
+        {
+          id: 1,
+          name: 'Base',
+          threshold_rubles: 0,
+          server_discount_percent: 0,
+          traffic_discount_percent: 0,
+          device_discount_percent: 0,
+          period_discounts: {},
+          is_current: false,
+          is_achieved: true,
+        },
+        {
+          id: 2,
+          name: 'Friends',
+          threshold_rubles: 2500,
+          server_discount_percent: 5,
+          traffic_discount_percent: 5,
+          device_discount_percent: 0,
+          period_discounts: {},
+          is_current: true,
+          is_achieved: true,
+        },
+      ],
+      current_spent_rubles: 3200,
+      current_tier_name: 'Friends',
+      next_tier_name: 'VIP',
+      next_tier_threshold_rubles: 5000,
+      progress_percent: 64,
+    });
+
+    renderProfile();
+
+    const tiers = await screen.findByRole('list', {
+      name: 'subscription.promoGroup.tiersTitle',
+    });
+    expect(tiers.textContent).toContain('Base · 0%');
+    expect(tiers.textContent).toContain('Friends · 5%');
+    expect(tiers.textContent).toContain('subscription.promoGroup.threshold: 2500 ₽');
+  });
+
+  it('logs out from the source-style right rail action', async () => {
+    renderProfile();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'nav.logout' }));
+
+    expect(mocks.logout).toHaveBeenCalledOnce();
+    expect(screen.getByTestId('location').textContent).toBe('/login');
   });
 
   it('does not render a fixed source balance', async () => {

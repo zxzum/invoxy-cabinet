@@ -31,6 +31,7 @@ import {
   PartnerIcon,
   PercentIcon,
   ShareIcon,
+  SparklesIcon,
   TelegramIcon,
   UserPlusIcon,
   UsersIcon,
@@ -701,155 +702,146 @@ export default function Referral() {
         </div>
       </motion.div>
 
-      <motion.section
-        {...section(1)}
-        className="ix-referral-hero glass-surface relative h-[200px] overflow-hidden rounded-[30px] p-[22px] lg:h-auto lg:min-h-[270px] lg:rounded-[32px] lg:p-8"
-      >
-        <img
-          src="/images/referral-robot.webp"
-          alt=""
-          className="pointer-events-none absolute right-[-20px] top-[22px] h-[165px] w-[165px] object-contain opacity-90 lg:bottom-0 lg:right-4 lg:top-auto lg:h-auto lg:w-[330px]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-dark-950 via-dark-950/80 to-transparent" />
-        <div className="relative z-10 max-w-[212px] lg:max-w-[39%]">
-          <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-accent-300 lg:gap-2 lg:text-[11px]">
-            {t('referral.programme', 'Реферальная программа')}
-          </p>
-          <h2 className="mt-2 text-xl font-bold leading-[1.15] tracking-[-0.035em] text-dark-50 lg:mt-5 lg:text-[28px] lg:font-medium lg:leading-[1.06] lg:tracking-[-0.045em]">
-            {heroTitleBreak >= 0 ? (
-              <>
-                {heroTitle.slice(0, heroTitleBreak)}
-                <br />
-                {heroTitle.slice(heroTitleBreak + 1)}
-              </>
-            ) : (
-              heroTitle
-            )}
-          </h2>
-          <p className="mt-1.5 text-[11px] text-dark-300 lg:hidden">
-            {t('referral.heroSubtitle', 'Получайте бонусы вместе с друзьями')}
-          </p>
-          <div className="mt-2.5 flex gap-2 lg:mt-7 lg:gap-3">
-            <div className="glass-surface h-[58px] w-[88px] rounded-2xl p-2 lg:h-auto lg:w-auto lg:px-4 lg:py-3">
-              <strong className="block text-[17px] leading-none text-accent-300 lg:text-xl">
-                +{info?.commission_percent || 0}%
-              </strong>
-              <p className="mt-1 text-[9px] leading-[1.1] text-dark-400 lg:text-[10px]">
-                {t('referral.fromTopups', 'от пополнений')}
-              </p>
-            </div>
-            {(terms?.first_topup_bonus_rubles ?? 0) > 0 && (
+      <div className="grid min-w-0 max-w-full gap-5 xl:grid-cols-2">
+        <motion.section
+          {...section(1)}
+          className="ix-referral-hero glass-surface relative h-[200px] min-w-0 max-w-full overflow-hidden rounded-[30px] p-[22px] lg:h-auto lg:min-h-[270px] lg:rounded-[32px] lg:p-8"
+        >
+          <img
+            src="/images/referral-robot.webp"
+            alt=""
+            className="pointer-events-none absolute right-[-20px] top-[22px] h-[165px] w-[165px] object-contain opacity-90 lg:bottom-0 lg:right-4 lg:top-auto lg:h-auto lg:w-[330px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-dark-950 via-dark-950/80 to-transparent" />
+          <div className="relative z-10 max-w-[212px] lg:max-w-[39%]">
+            <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-accent-300 lg:gap-2 lg:text-[11px]">
+              <SparklesIcon className="h-3.5 w-3.5" aria-hidden="true" />
+              {t('referral.programme', 'Реферальная программа')}
+            </p>
+            <h2 className="mt-2 text-xl font-bold leading-[1.15] tracking-[-0.035em] text-dark-50 lg:mt-5 lg:text-[28px] lg:font-medium lg:leading-[1.06] lg:tracking-[-0.045em]">
+              {heroTitleBreak >= 0 ? (
+                <>
+                  {heroTitle.slice(0, heroTitleBreak)}
+                  <br />
+                  {heroTitle.slice(heroTitleBreak + 1)}
+                </>
+              ) : (
+                heroTitle
+              )}
+            </h2>
+            <p className="mt-1.5 text-[11px] text-dark-300 lg:hidden">
+              {t('referral.heroSubtitle', 'Получайте бонусы вместе с друзьями')}
+            </p>
+            <div className="mt-2.5 flex gap-2 lg:mt-7 lg:gap-3">
               <div className="glass-surface h-[58px] w-[88px] rounded-2xl p-2 lg:h-auto lg:w-auto lg:px-4 lg:py-3">
                 <strong className="block text-[17px] leading-none text-accent-300 lg:text-xl">
-                  +{formatAmount(terms?.first_topup_bonus_rubles || 0)} {currencySymbol}
+                  +{info?.commission_percent || 0}%
                 </strong>
                 <p className="mt-1 text-[9px] leading-[1.1] text-dark-400 lg:text-[10px]">
-                  {t('referral.forStart', 'обоим за старт')}
+                  {t('referral.fromTopups', 'от пополнений')}
                 </p>
               </div>
-            )}
+              {(terms?.first_topup_bonus_rubles ?? 0) > 0 && (
+                <div className="glass-surface h-[58px] w-[88px] rounded-2xl p-2 lg:h-auto lg:w-auto lg:px-4 lg:py-3">
+                  <strong className="block text-[17px] leading-none text-accent-300 lg:text-xl">
+                    +{formatAmount(terms?.first_topup_bonus_rubles || 0)} {currencySymbol}
+                  </strong>
+                  <p className="mt-1 text-[9px] leading-[1.1] text-dark-400 lg:text-[10px]">
+                    {t('referral.forStart', 'обоим за старт')}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </motion.section>
+        </motion.section>
 
-      {/* Referral Links */}
-      <motion.div
-        {...section(2)}
-        className="ix-referral-links glass-surface bento-card animate-none rounded-[30px]"
-      >
-        <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
-        <div className="space-y-3">
-          {/* Bot link */}
-          {botReferralLink && (
-            <div className="ix-referral-link-row">
-              <div className="ix-referral-link-label mb-1.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.12em] text-dark-300">
+        {/* Referral Links */}
+        <motion.div
+          {...section(2)}
+          className="ix-referral-links glass-surface bento-card animate-none min-w-0 max-w-full rounded-[30px]"
+        >
+          <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
+          <div className="divide-y divide-white/10">
+            {/* Bot link */}
+            {botReferralLink && (
+              <div className="ix-referral-link-row flex min-w-0 items-center gap-3 py-4">
                 <span className="ix-referral-link-icon grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-500/10">
                   <TelegramIcon className="h-4 w-4 text-accent-400" />
                 </span>
-                {t('referral.botLink')}
-              </div>
-              <div className="ix-referral-link-value flex flex-col gap-2 sm:flex-row">
-                <input
-                  type="text"
-                  readOnly
-                  value={botReferralLink}
-                  className="input flex-1 text-sm"
-                />
-                <div className="ix-referral-link-actions flex flex-wrap gap-2">
-                  <button
-                    onClick={() => copyLink(botReferralLink, 'bot')}
-                    className={`ix-referral-copy-button btn-primary shrink-0 px-4 ${
-                      copiedLink === 'bot' ? 'bg-success-500 hover:bg-success-500' : ''
-                    }`}
-                  >
-                    {copiedLink === 'bot' ? <CheckIcon /> : <CopyIcon />}
-                    <span className="ml-2">
-                      {copiedLink === 'bot' ? t('referral.copied') : t('referral.copyLink')}
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => shareLink(botReferralLink)}
-                    className="btn-secondary flex shrink-0 items-center px-4"
-                  >
-                    <ShareIcon className="h-4 w-4" />
-                    <span className="ml-2">{t('referral.shareButton')}</span>
-                  </button>
+                <div className="min-w-0 flex-1">
+                  <p className="ix-referral-link-label text-[10px] font-bold uppercase tracking-[.12em] text-dark-300">
+                    {t('referral.botLink')}
+                  </p>
+                  <input
+                    type="text"
+                    readOnly
+                    value={botReferralLink}
+                    className="ix-referral-link-value mt-1.5 h-auto min-h-0 w-full min-w-0 border-0 bg-transparent p-0 font-mono text-[13px] text-dark-100 shadow-none outline-none"
+                  />
                 </div>
+                <button
+                  type="button"
+                  aria-label={copiedLink === 'bot' ? t('referral.copied') : t('referral.copyLink')}
+                  onClick={() => copyLink(botReferralLink, 'bot')}
+                  className={`ix-referral-copy-button grid h-12 w-12 shrink-0 place-items-center rounded-full text-accent-300 transition-transform active:scale-90 ${
+                    copiedLink === 'bot'
+                      ? 'bg-success-500 text-dark-950'
+                      : 'bg-dark-800/80 hover:bg-dark-700'
+                  }`}
+                >
+                  {copiedLink === 'bot' ? <CheckIcon /> : <CopyIcon />}
+                </button>
               </div>
-            </div>
-          )}
-          {/* Cabinet link */}
-          <div className="ix-referral-link-row">
-            <div className="ix-referral-link-label mb-1.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.12em] text-dark-300">
+            )}
+            {/* Cabinet link */}
+            <div className="ix-referral-link-row flex min-w-0 items-center gap-3 py-4">
               <span className="ix-referral-link-icon grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-500/10">
                 <LinkIcon className="h-4 w-4 text-accent-400" />
               </span>
-              {t('referral.cabinetLink')}
-            </div>
-            <div className="ix-referral-link-value flex flex-col gap-2 sm:flex-row">
-              <input type="text" readOnly value={referralLink} className="input flex-1 text-sm" />
-              <div className="ix-referral-link-actions flex flex-wrap gap-2">
-                <button
-                  onClick={() => copyLink(referralLink, 'cabinet')}
-                  disabled={!referralLink}
-                  className={`ix-referral-copy-button btn-primary shrink-0 px-4 ${
-                    copiedLink === 'cabinet' ? 'bg-success-500 hover:bg-success-500' : ''
-                  } ${!referralLink ? 'cursor-not-allowed opacity-50' : ''}`}
-                >
-                  {copiedLink === 'cabinet' ? <CheckIcon /> : <CopyIcon />}
-                  <span className="ml-2">
-                    {copiedLink === 'cabinet' ? t('referral.copied') : t('referral.copyLink')}
-                  </span>
-                </button>
-                <button
-                  onClick={() => shareLink(referralLink)}
-                  disabled={!referralLink}
-                  className={`btn-secondary flex shrink-0 items-center px-4 ${
-                    !referralLink ? 'cursor-not-allowed opacity-50' : ''
-                  }`}
-                >
-                  <ShareIcon className="h-4 w-4" />
-                  <span className="ml-2">{t('referral.shareButton')}</span>
-                </button>
+              <div className="min-w-0 flex-1">
+                <p className="ix-referral-link-label text-[10px] font-bold uppercase tracking-[.12em] text-dark-300">
+                  {t('referral.cabinetLink')}
+                </p>
+                <input
+                  type="text"
+                  readOnly
+                  value={referralLink}
+                  className="ix-referral-link-value mt-1.5 h-auto min-h-0 w-full min-w-0 border-0 bg-transparent p-0 font-mono text-[13px] text-dark-100 shadow-none outline-none"
+                />
               </div>
+              <button
+                type="button"
+                aria-label={
+                  copiedLink === 'cabinet' ? t('referral.copied') : t('referral.copyLink')
+                }
+                onClick={() => copyLink(referralLink, 'cabinet')}
+                disabled={!referralLink}
+                className={`ix-referral-copy-button grid h-12 w-12 shrink-0 place-items-center rounded-full text-accent-300 transition-transform active:scale-90 ${
+                  copiedLink === 'cabinet'
+                    ? 'bg-success-500 text-dark-950'
+                    : 'bg-dark-800/80 hover:bg-dark-700'
+                } ${!referralLink ? 'cursor-not-allowed opacity-50' : ''}`}
+              >
+                {copiedLink === 'cabinet' ? <CheckIcon /> : <CopyIcon />}
+              </button>
             </div>
           </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => shareLink(botReferralLink || referralLink)}
-          disabled={!botReferralLink && !referralLink}
-          className="ix-referral-share-mobile btn-primary mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold sm:hidden"
-        >
-          <ShareIcon className="h-4 w-4" />
-          {t('referral.shareButton')}
-        </button>
-        <p className="mt-3 text-sm text-dark-500">
-          {isLevelsScheme
-            ? t('referral.shareHintLevels')
-            : t('referral.shareHint', { percent: info?.commission_percent || 0 })}
-        </p>
-      </motion.div>
+          <button
+            type="button"
+            onClick={() => shareLink(botReferralLink || referralLink)}
+            disabled={!botReferralLink && !referralLink}
+            className="ix-referral-share-mobile btn-primary mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold"
+          >
+            <ShareIcon className="h-4 w-4" />
+            {t('referral.shareButton')}
+          </button>
+          <p className="mt-3 text-sm text-dark-500">
+            {isLevelsScheme
+              ? t('referral.shareHintLevels')
+              : t('referral.shareHint', { percent: info?.commission_percent || 0 })}
+          </p>
+        </motion.div>
+      </div>
 
       {/* Stats Cards */}
       <motion.div {...section(3)} className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
