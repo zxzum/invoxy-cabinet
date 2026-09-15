@@ -18,13 +18,16 @@
 
 /* Tailwind has no numeric opacity tokens for 8/12/15. Without the arbitrary
    value form these classes fall back to the preflight border color (#e5e7eb). */
-.invoxystart-shell [class~="border-white/8"] {
+.invoxystart-shell [class~="border-white/8"],
+.adaptive-dialog-panel [class~="border-white/8"] {
   border-color: rgba(255, 255, 255, 0.08);
 }
-.invoxystart-shell [class~="border-white/12"] {
+.invoxystart-shell [class~="border-white/12"],
+.adaptive-dialog-panel [class~="border-white/12"] {
   border-color: rgba(255, 255, 255, 0.12);
 }
-.invoxystart-shell [class~="border-white/15"] {
+.invoxystart-shell [class~="border-white/15"],
+.adaptive-dialog-panel [class~="border-white/15"] {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
