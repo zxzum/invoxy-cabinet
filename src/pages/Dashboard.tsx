@@ -17,7 +17,6 @@ import NewsSection from '../components/news/NewsSection';
 import SubscriptionCardExpired from '../components/dashboard/SubscriptionCardExpired';
 import StatsGrid from '../components/dashboard/StatsGrid';
 import { giftApi } from '../api/gift';
-import { promoApi } from '../api/promo';
 import PendingGiftCard from '../components/dashboard/PendingGiftCard';
 import { DeviceLimitSheet } from '../components/subscription/DeviceLimitSheet';
 import { DeviceTopupSheet } from '../components/subscription/sheets/DeviceTopupSheet';
@@ -35,7 +34,7 @@ import {
   TrialHero,
 } from '../components/dashboard/luna/welcome';
 import { API } from '../config/constants';
-import { ChevronRightIcon, StarIcon } from '@/components/icons';
+import { ChevronRightIcon, WalletIcon } from '@/components/icons';
 import { staggerEntrance } from '@/components/motion';
 import { safeLocal } from '../utils/safeStorage';
 import { getApiErrorMessage } from '../utils/api-error';
@@ -45,6 +44,7 @@ import { uiLocale } from '../utils/uiLocale';
 import { formatTraffic } from '../utils/formatTraffic';
 import { isHappCryptolinkMode, resolveConnectionUrlForUi } from '../utils/connectionLink';
 import { copyToClipboard } from '../utils/clipboard';
+import TicketNotificationBell from '../components/TicketNotificationBell';
 import { openAppScheme } from '../utils/openAppScheme';
 import { isInTelegramWebApp } from '../hooks/useTelegramSDK';
 import { useNativeDialog, useNotify } from '@/platform';
@@ -210,13 +210,6 @@ export default function Dashboard() {
     queryKey: ['pending-gifts'],
     queryFn: giftApi.getPendingGifts,
     staleTime: 30_000,
-    retry: false,
-  });
-
-  const { data: promoGroupData } = useQuery({
-    queryKey: ['promo-group-discounts'],
-    queryFn: promoApi.getGroupDiscounts,
-    staleTime: 60_000,
     retry: false,
   });
 
@@ -727,8 +720,8 @@ export default function Dashboard() {
       empty: t('dashboard.luna.renewal.empty', 'Нет доступных вариантов продления'),
     },
     connection: {
-      title: t('dashboard.luna.connection.title', 'Доступ и подключение'),
-      copy: t('dashboard.luna.connection.copy', 'Скопировать ссылку'),
+      title: t('dashboard.luna.connection.title', 'Ключ доступа'),
+      copy: t('dashboard.luna.connection.copy', 'Скопировать ключ'),
       copied: t('dashboard.luna.connection.copied', 'Ссылка скопирована'),
       happ: t('dashboard.luna.connection.happ', 'Подключить в HAPP'),
       incy: t('dashboard.luna.connection.incy', 'Подключить в INCY'),
@@ -769,6 +762,12 @@ export default function Dashboard() {
   const trialIsFree = trialInfo ? !trialInfo.requires_payment : true;
   const trialCanAfford =
     trialInfo != null && (balanceData?.balance_kopeks ?? 0) >= trialInfo.price_kopeks;
+  const greeting = (() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t('dashboard.greetingMorning', 'Доброе утро');
+    if (hour < 18) return t('dashboard.greetingAfternoon', 'Добрый день');
+    return t('dashboard.greetingEvening', 'Добрый вечер');
+  })();
 
   return (
     <div className="luna-dashboard space-y-6">
@@ -776,42 +775,27 @@ export default function Dashboard() {
       <motion.div data-onboarding="welcome" {...section(0)}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-3xl font-bold tracking-tight text-dark-50 sm:text-4xl">
-              {t('dashboard.title', 'Кабинет')}
+            <h1 className="text-[28px] font-medium leading-[1.05] tracking-[-0.04em] text-dark-50 lg:text-[clamp(30px,2.2vw,44px)]">
+              {greeting}
+              {userName ? `, ${userName}!` : '!'}
             </h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p className="text-dark-400">
-                {userName
-                  ? t('dashboard.welcome', { name: userName })
-                  : t('dashboard.welcomeNoName', 'Ваша подписка и подключённые устройства')}
-              </p>
-              {promoGroupData?.group_name && (
-                <span
-                  className="inline-flex max-w-[160px] items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                  style={{
-                    background: 'rgba(var(--color-accent-400), 0.1)',
-                    border: '1px solid rgba(var(--color-accent-400), 0.2)',
-                    color: 'rgb(var(--color-accent-400))',
-                  }}
-                >
-                  <StarIcon filled className="h-2.5 w-2.5 shrink-0" />
-                  <span className="truncate">{promoGroupData.group_name}</span>
-                </span>
-              )}
-            </div>
+            <p className="mt-1 text-xs tracking-[0.01em] text-dark-400 lg:text-base">
+              {t('dashboard.controlSubtitle', 'Ваш кабинет · всё под контролем')}
+            </p>
           </div>
           <Link
-            to="/balance"
+            to="/profile#top-up"
             data-onboarding="balance"
-            className="glass-surface flex shrink-0 flex-col rounded-2xl px-4 py-2 transition-colors hover:border-accent-400/30"
+            className="glass-surface flex shrink-0 items-center gap-2 rounded-full px-3 py-2.5 transition-colors hover:border-accent-400/30 lg:hidden"
           >
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-dark-400">
-              {t('dashboard.currentBalance', 'Текущий баланс')}
-            </span>
-            <span className="mt-0.5 text-lg font-bold leading-tight text-dark-50">
+            <WalletIcon className="h-5 w-5 text-accent-300" />
+            <span className="text-sm font-bold leading-tight text-dark-50">
               {formatAmount(balanceData?.balance_rubles ?? 0)} {currencySymbol}
             </span>
           </Link>
+          <div className="hidden lg:block">
+            <TicketNotificationBell />
+          </div>
         </div>
       </motion.div>
 
@@ -909,7 +893,7 @@ export default function Dashboard() {
           )}
           {hasActivePaid ? (
             <Link
-              to="/subscription/purchase"
+              to="/tariffs"
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500/15 p-3.5 text-sm font-medium text-accent-400 transition-all hover:bg-accent-500/25"
             >
               <span className="text-base">+</span>{' '}
@@ -917,7 +901,7 @@ export default function Dashboard() {
             </Link>
           ) : (
             <Link
-              to="/subscription/purchase"
+              to="/tariffs"
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent-500 p-3.5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-600"
             >
               <span className="text-base">+</span>{' '}
@@ -1149,7 +1133,7 @@ export default function Dashboard() {
               priceLabel={t('dashboard.luna.offer.priceLabel', 'на любой сценарий')}
               action={{
                 label: t('subscriptions.browsePlans', 'Посмотреть тарифы и купить подписку'),
-                to: '/subscription/purchase',
+                to: '/tariffs',
               }}
             />
 
@@ -1172,7 +1156,7 @@ export default function Dashboard() {
               loading={refLoading}
               action={{
                 label: t('dashboard.luna.referral.action', 'Открыть реферальную программу'),
-                to: '/referral',
+                to: '/referrals',
               }}
             />
           </div>

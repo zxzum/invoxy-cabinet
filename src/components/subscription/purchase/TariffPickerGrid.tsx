@@ -11,6 +11,7 @@ import { dailyPriceQuote } from './dailyPrice';
 import { getGlassColors } from '../../../utils/glassTheme';
 import { ArrowDownIcon, DevicesIcon, InfoIcon, RestartIcon } from '@/components/icons';
 import { FeatureBadge } from '@/components/ui/FeatureBadge';
+import type { LoyaltyTierInfo, LoyaltyTiersResponse } from '../../../api/promo';
 import type { Tariff, Subscription, PurchaseOptions } from '../../../types';
 import { getTariffCustomerFacingName, getTariffMarketingDescription } from './tariffPresentation';
 import { PromoTierSheet } from './PromoTierSheet';
@@ -36,6 +37,7 @@ export interface TariffPickerGridProps {
   purchaseOptions: PurchaseOptions | undefined;
   isTariffsMode: boolean;
   isMultiTariff: boolean;
+  loyaltyTiers?: LoyaltyTiersResponse | null;
   onSelectTariff: (tariff: Tariff) => void;
   onSwitchTariff: (tariffId: number) => void;
 }
@@ -46,6 +48,7 @@ export function TariffPickerGrid({
   purchaseOptions,
   isTariffsMode,
   isMultiTariff,
+  loyaltyTiers,
   onSelectTariff,
   onSwitchTariff,
 }: TariffPickerGridProps) {
@@ -88,6 +91,32 @@ export function TariffPickerGrid({
   const currentPromoGroupName = visibleTariffs.find(
     (tariff) => tariff.promo_group_name,
   )?.promo_group_name;
+  const basicTier: LoyaltyTierInfo = {
+    id: 0,
+    name: t('subscription.promoGroup.basicName'),
+    threshold_rubles: 0,
+    server_discount_percent: 0,
+    traffic_discount_percent: 0,
+    device_discount_percent: 0,
+    period_discounts: {},
+    is_current: !loyaltyTiers?.current_tier_name,
+    is_achieved: true,
+  };
+  const loyaltyTierBoxes = loyaltyTiers ? [basicTier, ...(loyaltyTiers.tiers ?? [])] : [];
+  const hasLoyaltyProgress = Boolean(
+    loyaltyTiers &&
+      (loyaltyTierBoxes.length > 1 ||
+        loyaltyTiers.current_tier_name ||
+        loyaltyTiers.next_tier_name),
+  );
+  const promoGroupName = loyaltyTiers?.current_tier_name ?? currentPromoGroupName ?? basicTier.name;
+  const progressPercent = loyaltyTiers
+    ? Math.min(100, Math.max(0, Number(loyaltyTiers.progress_percent) || 0))
+    : 0;
+  const remainingToNextTier =
+    loyaltyTiers?.next_tier_threshold_rubles == null
+      ? null
+      : Math.max(0, loyaltyTiers.next_tier_threshold_rubles - loyaltyTiers.current_spent_rubles);
   const whiteInternetLabel = t('subscription.whiteInternet');
 
   const formatPrice = (kopeks: number) =>
@@ -95,59 +124,190 @@ export function TariffPickerGrid({
       ? t('subscription.free', 'Бесплатно')
       : `${formatAmount(kopeks / 100)} ${currencySymbol}`;
 
+  const formatRubles = (rubles: number) => `${formatAmount(rubles, 0)} ${currencySymbol}`;
+
+  const tierMaxDiscount = (tier: LoyaltyTierInfo) => {
+    const discounts = [
+      tier.server_discount_percent,
+      tier.traffic_discount_percent,
+      tier.device_discount_percent,
+      ...Object.values(tier.period_discounts ?? {}),
+    ].filter((percent): percent is number => Number.isFinite(percent) && percent > 0);
+    return discounts.length > 0
+      ? `-${Math.max(...discounts)}%`
+      : t('subscription.promoGroup.noDiscounts');
+  };
+
+  const tierStatusLabel = (tier: LoyaltyTierInfo) => {
+    if (tier.is_current) return t('subscription.promoGroup.statusCurrent');
+    if (tier.is_achieved) return t('subscription.promoGroup.statusAchieved');
+    return t('subscription.promoGroup.statusLocked');
+  };
+  const currentTier = loyaltyTierBoxes.find((tier) => tier.is_current);
+  const currentTierDiscount = currentTier ? tierMaxDiscount(currentTier) : null;
+  const noDiscountsLabel = t('subscription.promoGroup.noDiscounts');
+  const currentDiscountText = currentTierDiscount?.replace(/^-/, '');
+
   return (
     <>
-      {/* Promo group discount banner */}
-      {visibleTariffs.some((tariff) => tariff.promo_group_name) && (
-        <div className="ix-promo-group glass-surface relative mb-5 overflow-hidden rounded-[30px] p-5 sm:p-7">
-          <button
-            type="button"
-            aria-expanded={isPromoTierSheetOpen}
-            onClick={() => setIsPromoTierSheetOpen(true)}
-            className="flex w-full cursor-pointer items-center gap-3 pr-10 text-left"
-          >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success-500/20 text-success-400">
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
-                />
-              </svg>
-            </div>
-            <div className="min-w-0 flex-1 truncate text-sm font-medium text-success-400">
-              {t('subscription.promoGroup.yourGroup', {
-                name: visibleTariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name,
-              })}
-              <span className="font-normal text-dark-400">
-                {' · '}
-                {t('subscription.promoGroup.personalDiscountsApplied')}
-              </span>
-            </div>
-          </button>
+      {/* Promo group progress. The compact banner remains the loading/fallback state. */}
+      {hasLoyaltyProgress ? (
+        <section
+          className="ix-promo-group glass-panel motion-card relative mb-5 overflow-hidden rounded-[30px] p-4 sm:p-6 lg:p-8"
+          aria-labelledby="promo-progress-title"
+        >
+          <img
+            src="/images/promo-group-bg.webp"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-80"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-dark-950/90 via-dark-950/75 to-dark-950/45" />
           <button
             type="button"
             aria-expanded={isPromoTierSheetOpen}
             aria-label={t('subscription.promoGroup.aboutGroups', 'Что это за группа?')}
             onClick={() => setIsPromoTierSheetOpen(true)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-success-400 transition-colors hover:bg-success-500/20"
+            className="absolute right-3 top-3 z-20 rounded-lg p-2 text-success-400 transition-colors hover:bg-success-500/20 sm:right-5 sm:top-5"
           >
             <InfoIcon className="h-5 w-5" />
           </button>
-        </div>
+          <div className="relative z-10 grid gap-5 lg:grid-cols-[minmax(0,.85fr)_minmax(360px,1.15fr)] lg:items-center lg:gap-10">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold tracking-[0.16em] text-success-400">
+                {t('subscription.promoGroup.title', 'ПРОМО-ГРУППА')}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-3 pr-8">
+                <h2
+                  id="promo-progress-title"
+                  className="truncate text-2xl font-medium text-dark-50"
+                >
+                  {promoGroupName}
+                  {currentDiscountText && currentTierDiscount !== noDiscountsLabel
+                    ? ` · скидка ${currentDiscountText}`
+                    : ''}
+                </h2>
+                <span className="rounded-full bg-success-400 px-3 py-1 text-[10px] font-bold text-dark-950">
+                  {t('subscription.promoGroup.statusCurrent')}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-dark-300">
+                {t('subscription.promoGroup.totalSpent')}:{' '}
+                {formatRubles(loyaltyTiers?.current_spent_rubles ?? 0)}
+                {' · '}
+                {remainingToNextTier != null && loyaltyTiers?.next_tier_name
+                  ? `${t('subscription.promoGroup.toNextStatus')}: ${formatRubles(remainingToNextTier)}`
+                  : t('subscription.promoGroup.allStatusesAchieved')}
+              </p>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center justify-between gap-3 text-xs text-dark-300">
+                <span className="truncate">
+                  {loyaltyTiers?.next_tier_name
+                    ? `${t('subscription.promoGroup.progressTo', 'Прогресс до')} ${loyaltyTiers.next_tier_name}`
+                    : t('subscription.promoGroup.allStatusesAchieved')}
+                </span>
+                <strong className="shrink-0 text-success-400">{progressPercent.toFixed(0)}%</strong>
+              </div>
+              <div
+                className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"
+                role="progressbar"
+                aria-label={t('subscription.promoGroup.yourProgress')}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progressPercent}
+              >
+                <div
+                  className="h-full rounded-full bg-success-400 transition-[width] duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-1 sm:gap-2" role="list">
+                {loyaltyTierBoxes.map((tier) => (
+                  <div
+                    key={tier.id}
+                    role="listitem"
+                    className={`min-w-0 rounded-xl border p-2 sm:rounded-2xl sm:p-3 ${
+                      tier.is_current
+                        ? 'border-success-400/40 bg-success-400/10'
+                        : tier.is_achieved
+                          ? 'border-success-400/20 bg-success-400/5'
+                          : 'border-white/10 bg-white/5'
+                    }`}
+                  >
+                    <p
+                      className={`truncate text-[10px] font-bold sm:text-xs ${
+                        tier.is_current || tier.is_achieved ? 'text-success-400' : 'text-dark-400'
+                      }`}
+                      title={tier.name}
+                    >
+                      {tier.name} · {tierMaxDiscount(tier)}
+                    </p>
+                    <p className="mt-1 truncate text-[9px] text-dark-400 sm:text-[10px]">
+                      {t('subscription.promoGroup.threshold')}:{' '}
+                      {formatRubles(tier.threshold_rubles)}
+                    </p>
+                    <p className="mt-1 truncate text-[9px] text-dark-500 sm:text-[10px]">
+                      {tierStatusLabel(tier)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : (
+        visibleTariffs.some((tariff) => tariff.promo_group_name) && (
+          <div className="ix-promo-group glass-surface relative mb-5 overflow-hidden rounded-[30px] p-5 sm:p-7">
+            <button
+              type="button"
+              aria-expanded={isPromoTierSheetOpen}
+              onClick={() => setIsPromoTierSheetOpen(true)}
+              className="flex w-full cursor-pointer items-center gap-3 pr-10 text-left"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success-500/20 text-success-400">
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
+                  />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1 truncate text-sm font-medium text-success-400">
+                {t('subscription.promoGroup.yourGroup', {
+                  name: visibleTariffs.find((tariff) => tariff.promo_group_name)?.promo_group_name,
+                })}
+                <span className="font-normal text-dark-400">
+                  {' · '}
+                  {t('subscription.promoGroup.personalDiscountsApplied')}
+                </span>
+              </div>
+            </button>
+            <button
+              type="button"
+              aria-expanded={isPromoTierSheetOpen}
+              aria-label={t('subscription.promoGroup.aboutGroups', 'Что это за группа?')}
+              onClick={() => setIsPromoTierSheetOpen(true)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-success-400 transition-colors hover:bg-success-500/20"
+            >
+              <InfoIcon className="h-5 w-5" />
+            </button>
+          </div>
+        )
       )}
 
-      {currentPromoGroupName && (
+      {(currentPromoGroupName || hasLoyaltyProgress) && (
         <PromoTierSheet
           isOpen={isPromoTierSheetOpen}
           onClose={() => setIsPromoTierSheetOpen(false)}
-          currentGroupName={currentPromoGroupName}
+          currentGroupName={currentPromoGroupName ?? loyaltyTiers?.current_tier_name}
         />
       )}
 

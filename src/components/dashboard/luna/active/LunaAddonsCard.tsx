@@ -1,4 +1,4 @@
-import { DevicesIcon, PlusIcon, TrafficIcon } from '@/components/icons';
+import { DevicesIcon, TrafficIcon } from '@/components/icons';
 import type { DevicesConfig, TrafficPackage } from '@/types';
 import { LunaEmptyState, LunaErrorState, LunaLoadingState } from './LunaSurfaceState';
 
@@ -29,7 +29,7 @@ export interface LunaAddonsCardProps {
 }
 
 function PackageCard({
-  packageOption,
+  packages,
   label,
   addLabel,
   trafficUnitLabel,
@@ -38,7 +38,7 @@ function PackageCard({
   formatPrice,
   onOpen,
 }: {
-  packageOption: TrafficPackage;
+  packages: TrafficPackage[];
   label: string;
   addLabel: string;
   trafficUnitLabel: string;
@@ -47,29 +47,32 @@ function PackageCard({
   formatPrice: (packageOption: TrafficPackage) => string;
   onOpen?: (packageOption: TrafficPackage) => void;
 }) {
-  const unavailable = packageOption.is_available === false;
-  const packageLabel = packageOption.is_unlimited
+  const packageOption = packages.find((item) => item.is_available !== false) ?? packages[0];
+  const unavailable = !packageOption || packageOption.is_available === false;
+  const packageLabel = packageOption?.is_unlimited
     ? unlimitedLabel
-    : `${String(packageOption.gb)} ${trafficUnitLabel}`;
+    : packageOption
+      ? `${packageOption.gb} ${trafficUnitLabel}`
+      : unavailableLabel;
+  const priceLabel = packageOption ? formatPrice(packageOption) : unavailableLabel;
 
   return (
-    <article className="rounded-2xl border border-dark-700/70 bg-dark-800/35 p-3">
-      <div className="flex items-start gap-2">
+    <article className="glass-surface motion-card flex items-center gap-3 rounded-2xl p-3 lg:rounded-[clamp(14px,0.8vw,18px)] lg:p-[clamp(12px,0.8vw,16px)]">
+      <div className="flex min-w-0 flex-1 items-start gap-2">
         <TrafficIcon className="mt-0.5 h-4 w-4 shrink-0 text-accent-300" />
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold text-dark-50">{label}</h3>
           <p className="mt-1 text-base font-bold text-dark-100">{packageLabel}</p>
-          <p className="mt-1 text-xs text-accent-300">{formatPrice(packageOption)}</p>
+          <p className="mt-1 text-xs font-semibold text-accent-300">от {priceLabel}</p>
         </div>
       </div>
       <button
         type="button"
-        onClick={() => onOpen?.(packageOption)}
-        disabled={unavailable || !onOpen}
+        onClick={() => packageOption && onOpen?.(packageOption)}
+        disabled={unavailable || !onOpen || !packageOption}
         aria-label={addLabel}
-        className="mt-3 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border border-accent-400/25 bg-accent-400/10 px-3 text-xs font-semibold text-accent-300 transition-colors hover:border-accent-400/45 hover:bg-accent-400/15 disabled:cursor-not-allowed disabled:opacity-50"
+        className="button-lift flex h-9 shrink-0 items-center justify-center rounded-full bg-accent-400 px-4 text-[11px] font-bold text-on-accent transition-colors hover:bg-accent-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <PlusIcon className="h-4 w-4" />
         {addLabel}
       </button>
       {unavailable && (
@@ -123,7 +126,9 @@ export default function LunaAddonsCard({
 
   return (
     <section className="glass-surface rounded-[28px] p-4 sm:p-5" aria-label={title}>
-      <h2 className="text-lg font-semibold text-dark-50">{title}</h2>
+      <h2 className="text-[17px] font-bold text-dark-50 lg:text-[clamp(17px,1.1vw,22px)]">
+        {title}
+      </h2>
 
       {errorMessage && (
         <LunaErrorState
@@ -136,16 +141,18 @@ export default function LunaAddonsCard({
 
       <div className="mt-4 space-y-3">
         {devicesConfig && (
-          <article className="rounded-2xl border border-dark-700/70 bg-dark-800/35 p-3">
-            <div className="flex items-start gap-2">
+          <article className="glass-surface motion-card flex items-center gap-3 rounded-2xl p-3 lg:rounded-[clamp(14px,0.8vw,18px)] lg:p-[clamp(12px,0.8vw,16px)]">
+            <div className="flex min-w-0 flex-1 items-start gap-2">
               <DevicesIcon className="mt-0.5 h-4 w-4 shrink-0 text-accent-300" />
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-dark-50">{devicesLabel}</h3>
                 <p className="mt-1 text-xs text-dark-400">
-                  {devicesConfig.current} / {devicesConfig.max || '∞'}
+                  {devicesConfig.max
+                    ? `До ${Math.max(0, devicesConfig.max - devicesConfig.current)} дополнительных`
+                    : 'Без ограничений'}
                 </p>
-                <p className="mt-1 text-xs text-accent-300">
-                  {devicesConfig.price_per_device_label}
+                <p className="mt-1 text-xs font-semibold text-accent-300">
+                  от {devicesConfig.price_per_device_label} / мес
                 </p>
               </div>
             </div>
@@ -154,18 +161,17 @@ export default function LunaAddonsCard({
               onClick={onOpenDeviceAddon}
               disabled={!canAddDevice}
               aria-label={addDevicesLabel}
-              className="mt-3 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border border-accent-400/25 bg-accent-400/10 px-3 text-xs font-semibold text-accent-300 transition-colors hover:border-accent-400/45 hover:bg-accent-400/15 disabled:cursor-not-allowed disabled:opacity-50"
+              className="button-lift flex h-9 shrink-0 items-center justify-center rounded-full bg-accent-400 px-4 text-[11px] font-bold text-on-accent transition-colors hover:bg-accent-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <PlusIcon className="h-4 w-4" />
               {addDevicesLabel}
             </button>
           </article>
         )}
 
-        {regularTrafficPackages.map((packageOption) => (
+        {regularTrafficPackages.length > 0 && (
           <PackageCard
-            key={`regular-${packageOption.gb}`}
-            packageOption={packageOption}
+            key="regular"
+            packages={regularTrafficPackages}
             label={trafficLabel}
             addLabel={addTrafficLabel}
             trafficUnitLabel={trafficUnitLabel}
@@ -174,12 +180,12 @@ export default function LunaAddonsCard({
             formatPrice={formatPackagePrice}
             onOpen={onOpenTrafficAddon}
           />
-        ))}
+        )}
 
-        {lteTrafficPackages.map((packageOption) => (
+        {lteTrafficPackages.length > 0 && (
           <PackageCard
-            key={`lte-${packageOption.gb}`}
-            packageOption={packageOption}
+            key="lte"
+            packages={lteTrafficPackages}
             label={lteLabel}
             addLabel={addLteLabel}
             trafficUnitLabel={trafficUnitLabel}
@@ -188,7 +194,7 @@ export default function LunaAddonsCard({
             formatPrice={formatPackagePrice}
             onOpen={onOpenLteAddon}
           />
-        ))}
+        )}
       </div>
     </section>
   );

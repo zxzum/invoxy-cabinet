@@ -135,20 +135,19 @@ describe('AppShell support FAB', () => {
     renderShell('/dashboard');
 
     const tariffs = screen.getByRole('link', { name: 'Тарифы' });
-    const subscription = screen.getByRole('link', { name: 'Моя подписка' });
-    const referral = screen.getByRole('link', { name: 'Приглашенные' });
+    const referral = screen.getByRole('link', { name: 'Рефералы' });
     const info = screen.getByRole('link', { name: 'Информация' });
-    const connection = screen.getByRole('link', { name: 'Подключение' });
+    const profile = screen.getByRole('link', { name: 'Профиль' });
 
     for (const [before, after] of [
-      [tariffs, connection],
-      [connection, subscription],
-      [subscription, referral],
+      [tariffs, referral],
       [referral, info],
+      [info, profile],
     ]) {
       expect(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
-    expect(screen.queryByRole('link', { name: 'Мои ключи' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Моя подписка' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Подключение' })).toBeNull();
   });
 
   it('renders desktop navigation as an island without dropping balance controls', () => {
@@ -166,12 +165,10 @@ describe('AppShell support FAB', () => {
     expect(screen.getByRole('link', { name: 'Пополнить' })).toBeTruthy();
   });
 
-  it('renders authenticated shell context from the configured user and balance', () => {
+  it('renders the configured user balance in the authenticated shell', () => {
     renderShell('/dashboard');
 
-    expect(screen.getByTestId('shell-greeting').textContent).toBe('Welcome, Test!');
-    expect(screen.getByTestId('shell-balance').textContent).toContain('125 USD');
-    expect(screen.getByTestId('ticket-notification-bell')).toBeTruthy();
+    expect(screen.getByTestId('sidebar-balance').textContent).toContain('125 USD');
   });
 
   it('links the authenticated home to /dashboard', () => {

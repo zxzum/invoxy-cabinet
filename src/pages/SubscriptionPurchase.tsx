@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
+import { balanceApi } from '../api/balance';
+import { promoApi } from '../api/promo';
 import type { Tariff, ClassicPurchaseOptions } from '../types';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { SwitchTariffSheet } from '../components/subscription/sheets/SwitchTariffSheet';
@@ -11,11 +13,13 @@ import { TariffPickerGrid } from '../components/subscription/purchase/TariffPick
 import { getTariffCustomerFacingName } from '../components/subscription/purchase/tariffPresentation';
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { ResponsiveSheet } from '../components/ui/ResponsiveSheet';
-import { ExclamationIcon, SparklesIcon } from '@/components/icons';
+import { ExclamationIcon, SparklesIcon, WalletIcon } from '@/components/icons';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function SubscriptionPurchase() {
   const { t } = useTranslation();
+  const { formatWithCurrency } = useCurrency();
   const [searchParams] = useSearchParams();
   const subscriptionIdParam = searchParams.get('subscriptionId');
   const subscriptionId = subscriptionIdParam ? parseInt(subscriptionIdParam, 10) : undefined;
@@ -28,6 +32,13 @@ export default function SubscriptionPurchase() {
     refetchOnMount: 'always',
   });
   const subscription = subscriptionResponse?.subscription ?? null;
+
+  const { data: balanceData } = useQuery({
+    queryKey: ['balance'],
+    queryFn: balanceApi.getBalance,
+    staleTime: 60_000,
+  });
+  const balanceRubles = balanceData?.balance_rubles ?? (balanceData?.balance_kopeks ?? 0) / 100;
 
   // Purchase options
   const {
@@ -47,6 +58,14 @@ export default function SubscriptionPurchase() {
   const classicOptions = !isTariffsMode ? (purchaseOptions as ClassicPurchaseOptions) : null;
   const tariffs =
     isTariffsMode && purchaseOptions && 'tariffs' in purchaseOptions ? purchaseOptions.tariffs : [];
+
+  const { data: loyaltyTiers } = useQuery({
+    queryKey: ['loyalty-tiers'],
+    queryFn: promoApi.getLoyaltyTiers,
+    enabled: isTariffsMode,
+    retry: false,
+    staleTime: 60_000,
+  });
 
   // Multi-tariff: check via subscriptions list query
   const { data: multiSubData } = useQuery({
@@ -130,15 +149,25 @@ export default function SubscriptionPurchase() {
   return (
     <div className="space-y-6 pb-28 lg:pb-0">
       {/* Header */}
-      <div className="ix-page-heading">
-        <h1>
-          {isMultiTariff && !subscriptionId
-            ? t('nav.tariffs', 'Тарифы')
-            : !isMultiTariff && subscription?.is_daily && !subscription?.is_trial
-              ? t('subscription.switchTariff.title')
-              : t('nav.tariffs', 'Тарифы')}
-        </h1>
-        <p>{t('subscription.choosePlan', 'Выберите подходящий план')}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="ix-page-heading">
+          <h1>
+            {isMultiTariff && !subscriptionId
+              ? t('nav.tariffs', 'Тарифы')
+              : !isMultiTariff && subscription?.is_daily && !subscription?.is_trial
+                ? t('subscription.switchTariff.title')
+                : t('nav.tariffs', 'Тарифы')}
+          </h1>
+          <p>{t('subscription.choosePlan', 'Выберите подходящий план')}</p>
+        </div>
+        <Link
+          to="/profile#top-up"
+          aria-label={t('balance.topUpBalance')}
+          className="ix-mobile-balance-pill glass-surface-elevated flex shrink-0 items-center gap-2 rounded-full px-3 py-2.5 text-[13px] font-bold lg:hidden"
+        >
+          <WalletIcon className="h-[18px] w-[18px] text-accent-300" />
+          {formatWithCurrency(balanceRubles, 0)}
+        </Link>
       </div>
 
       {/* Tariffs Section */}
@@ -256,6 +285,7 @@ export default function SubscriptionPurchase() {
             purchaseOptions={purchaseOptions}
             isTariffsMode={isTariffsMode}
             isMultiTariff={isMultiTariff}
+            loyaltyTiers={loyaltyTiers}
             onSelectTariff={(tariff) => {
               setSelectedTariff(tariff);
               setShowTariffPurchase(true);

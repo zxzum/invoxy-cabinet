@@ -97,6 +97,7 @@ vi.mock('../components/Onboarding', () => ({
   default: () => null,
   useOnboarding: () => ({ isCompleted: true, complete: vi.fn() }),
 }));
+vi.mock('../components/TicketNotificationBell', () => ({ default: () => null }));
 vi.mock('../components/PromoOffersSection', () => ({ default: () => null }));
 vi.mock('../components/news/NewsSection', () => ({ default: () => null }));
 vi.mock('../components/dashboard/StatsGrid', () => ({ default: () => null }));
@@ -828,12 +829,12 @@ describe('Dashboard target states', () => {
     expect(screen.getByText('18.0 GB / 100.0 GB')).toBeTruthy();
     expect(screen.getByText('Fixture device')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Быстрое продление' })).toBeTruthy();
-    const connection = screen.getByRole('region', { name: 'Доступ и подключение' });
+    const connection = screen.getByRole('region', { name: 'Ключ доступа' });
     expect(within(connection).getByRole('alert')).toBeTruthy();
     fireEvent.click(within(connection).getByRole('button', { name: 'Повторить' }));
 
     await vi.waitFor(() => expect(mocks.getConnectionLink).toHaveBeenCalledTimes(2));
-    expect(await screen.findByRole('heading', { name: 'Доступ и подключение' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Ключ доступа' })).toBeTruthy();
   });
 
   it('notifies when removing a device fails', async () => {

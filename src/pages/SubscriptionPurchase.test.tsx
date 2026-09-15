@@ -19,12 +19,22 @@ vi.mock('../api/subscription', () => ({
     getSubscriptions: mocks.getSubscriptions,
   },
 }));
+vi.mock('../api/balance', () => ({
+  balanceApi: {
+    getBalance: vi.fn().mockResolvedValue({ balance_rubles: 0, balance_kopeks: 0 }),
+  },
+}));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : key),
+    i18n: { language: 'ru' },
   }),
+  initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 vi.mock('../hooks/useTheme', () => ({ useTheme: () => ({ isDark: true }) }));
+vi.mock('../hooks/useCurrency', () => ({
+  useCurrency: () => ({ formatWithCurrency: (amount: number) => `${amount} ₽` }),
+}));
 vi.mock('../utils/glassTheme', () => ({
   getGlassColors: () => ({ cardBg: '', cardBorder: '', shadow: '' }),
 }));
@@ -40,7 +50,9 @@ vi.mock('../components/subscription/purchase/TariffPurchaseForm', () => ({
 }));
 vi.mock('../components/subscription/purchase/TariffPickerGrid', () => ({
   TariffPickerGrid: ({ tariffs }: { tariffs: Array<{ name: string }> }) => (
-    <div data-testid="cached-options">{tariffs[0]?.name}</div>
+    <div className="glass-surface">
+      <div data-testid="cached-options">{tariffs[0]?.name}</div>
+    </div>
   ),
 }));
 vi.mock('../components/subscription/purchase/ClassicPurchaseWizard', () => ({
@@ -50,6 +62,7 @@ vi.mock('../components/ui/ResponsiveSheet', () => ({ ResponsiveSheet: () => null
 vi.mock('@/components/icons', () => ({
   ExclamationIcon: () => null,
   SparklesIcon: () => null,
+  WalletIcon: () => null,
 }));
 vi.mock('@/components/ui/skeleton', () => ({
   PageSkeleton: ({ children }: { children?: ReactNode }) => <div>{children}</div>,

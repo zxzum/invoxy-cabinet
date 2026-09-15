@@ -13,11 +13,37 @@ const LUNA_ASSETS = [
   'apps/incy.png',
 ] as const;
 
-const RUNTIME_ASSETS = [
+const MIGRATED_ASSETS = [
   'auth-background.png',
   'brand-mark.png',
   'landing-hero.png',
   'landing-shield.png',
+  'desktop-shape-1.webp',
+  'desktop-shape-2.webp',
+  'desktop-shape-3.webp',
+  'profile-balance-bg.webp',
+  'promo-group-bg.webp',
+  'referral-robot.webp',
+  'shape-1.webp',
+  'shape-2.webp',
+  'shape-3.webp',
+  'shape-4.webp',
+  'shape-5.webp',
+  'subscription-status-bg.webp',
+  'trial-gift.png',
+  ...LUNA_ASSETS,
+] as const;
+
+const WIRED_RUNTIME_ASSETS = [
+  'auth-background.png',
+  'brand-mark.png',
+  'landing-hero.png',
+  'landing-shield.png',
+  'desktop-shape-1.webp',
+  'desktop-shape-2.webp',
+  'profile-balance-bg.webp',
+  'promo-group-bg.webp',
+  'referral-robot.webp',
   ...LUNA_ASSETS,
 ] as const;
 
@@ -39,6 +65,8 @@ const TARGET_SOURCE_FILES = [
   './pages/ResetPassword.tsx',
   './pages/TelegramCallback.tsx',
   './pages/AutoLogin.tsx',
+  './pages/Profile.tsx',
+  './pages/Referral.tsx',
   './styles/globals.css',
 ];
 
@@ -51,17 +79,17 @@ function listFiles(directory: string, prefix = ''): string[] {
 }
 
 describe('migrated visual assets', () => {
-  it('keeps only runtime-used assets in the public image tree', () => {
+  it('keeps the migrated source assets in the public image tree', () => {
     const imageRoot = fileURLToPath(new URL('../public/images/', import.meta.url));
 
-    expect(listFiles(imageRoot).sort()).toEqual([...RUNTIME_ASSETS].sort());
+    expect(listFiles(imageRoot).sort()).toEqual([...MIGRATED_ASSETS].sort());
 
-    for (const asset of RUNTIME_ASSETS) {
+    for (const asset of MIGRATED_ASSETS) {
       expect(existsSync(new URL(`../public/images/${asset}`, import.meta.url))).toBe(true);
     }
   });
 
-  it('resolves exactly the runtime image references in task-owned source files', () => {
+  it('resolves exactly the wired runtime image references in task-owned source files', () => {
     const references = new Set<string>();
 
     for (const sourceFile of TARGET_SOURCE_FILES) {
@@ -71,7 +99,7 @@ describe('migrated visual assets', () => {
       }
     }
 
-    expect([...references].sort()).toEqual([...RUNTIME_ASSETS].sort());
+    expect([...references].sort()).toEqual([...WIRED_RUNTIME_ASSETS].sort());
     for (const asset of references) {
       expect(existsSync(new URL(`../public/images/${asset}`, import.meta.url))).toBe(true);
     }

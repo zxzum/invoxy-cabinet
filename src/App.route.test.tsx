@@ -512,12 +512,6 @@ describe('cabinet route boundary', () => {
   });
 
   it.each([
-    [
-      '/tariffs?ref=abc#plans',
-      '/subscription/purchase?ref=abc#plans',
-      'subscription-purchase-page',
-    ],
-    ['/referrals?ref=abc#referral', '/referral?ref=abc#referral', 'referral-page'],
     ['/partner?ref=abc#partner', '/referral?ref=abc#partner', 'referral-page'],
     [
       '/account/security?tab=oauth#accounts',
@@ -544,6 +538,18 @@ describe('cabinet route boundary', () => {
     await waitFor(() =>
       expect(screen.getByTestId('location').textContent).toContain(`${to}[REPLACE]`),
     );
+    expect(await screen.findByTestId(pageTestId)).toBeTruthy();
+  });
+
+  it.each([
+    ['/tariffs?ref=abc#plans', 'subscription-purchase-page'],
+    ['/referrals?ref=abc#referral', 'referral-page'],
+  ])('keeps canonical InvoxyStart route %s', async (path, pageTestId) => {
+    auth.state.isAuthenticated = true;
+
+    await renderApp(path);
+
+    expect(screen.getByTestId('location').textContent).toContain(`${path}[POP]`);
     expect(await screen.findByTestId(pageTestId)).toBeTruthy();
   });
 

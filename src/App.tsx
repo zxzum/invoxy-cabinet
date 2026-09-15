@@ -415,6 +415,22 @@ function App() {
             }
           />
           <Route
+            path="/tariffs"
+            element={
+              <LazyPage fallback={null}>
+                <SubscriptionPurchase />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/referrals"
+            element={
+              <LazyPage fallback={null}>
+                <Referral />
+              </LazyPage>
+            }
+          />
+          <Route
             path="/connection"
             element={
               <LazyPage fallback={null}>
@@ -431,22 +447,6 @@ function App() {
             }
           />
         </Route>
-        <Route
-          path="/tariffs"
-          element={
-            <ProtectedRoute>
-              <LegacyRedirect to="/subscription/purchase" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/referrals"
-          element={
-            <ProtectedRoute>
-              <LegacyRedirect to="/referral" />
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/partner"
           element={

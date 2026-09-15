@@ -47,7 +47,7 @@ describe('MobileBottomNav', () => {
   it('renders four localized items', () => {
     const { container } = renderNav('/dashboard');
     expect(container.querySelector('nav')?.className).toContain('glass-surface-elevated');
-    expect(screen.getByText('Главная')).toBeTruthy();
+    expect(screen.getByText('Кабинет')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Тарифы' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Рефералы' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Профиль' })).toBeTruthy();
@@ -56,19 +56,19 @@ describe('MobileBottomNav', () => {
   it('links the first item to the authenticated dashboard', () => {
     renderNav('/dashboard');
 
-    expect(screen.getByRole('link', { name: 'Главная' }).getAttribute('href')).toBe('/dashboard');
+    expect(screen.getByRole('link', { name: 'Кабинет' }).getAttribute('href')).toBe('/dashboard');
   });
 
   it('uses referrals as the third InvoxyStart tab', () => {
-    renderNav('/referral');
+    renderNav('/referrals');
     expect(screen.getByText('Рефералы')).toBeTruthy();
   });
 
   it('marks and expands the active item', () => {
-    renderNav('/referral');
+    renderNav('/referrals');
     const referralLink = screen.getByRole('link', { name: 'Рефералы' });
     expect(referralLink.getAttribute('aria-current')).toBe('page');
-    expect(referralLink.className).toContain('w-[122px]');
+    expect(referralLink.className).toContain('w-[124px]');
     expect(screen.getByText('Рефералы').className).toContain('whitespace-nowrap');
   });
 

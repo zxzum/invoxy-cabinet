@@ -168,7 +168,7 @@ describe('ссылки для приглашения', () => {
 
       expect(inputs).toHaveLength(1);
       expect(copyButtons).toHaveLength(1);
-      expect(shareButtons).toHaveLength(1);
+      expect(shareButtons).toHaveLength(2);
       expect(screen.queryByDisplayValue(/invoxy_bot/)).toBeNull();
 
       fireEvent.click(shareButtons[0]);
@@ -190,7 +190,7 @@ describe('ссылки для приглашения', () => {
     expect(await screen.findByDisplayValue('https://t.me/configured_bot?start=ABC')).toBeTruthy();
     expect(screen.getAllByRole('textbox')).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'referral.copyLink' })).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: 'referral.shareButton' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'referral.shareButton' })).toHaveLength(3);
   });
 });
 

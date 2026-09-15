@@ -57,7 +57,7 @@ export function AppShell({ children }: AppShellProps) {
   const [desktop, setDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
   const [previousPath, setPreviousPath] = useState(location.pathname);
   const [direction, setDirection] = useState(1);
-  const tabs = ['/dashboard', '/subscription/purchase', '/connection', '/profile'];
+  const tabs = ['/dashboard', '/tariffs', '/referrals', '/profile'];
   const animatePage = !isTelegramWebApp && !reducedMotion;
   if (animatePage && previousPath !== location.pathname) {
     const previousIndex = tabs.indexOf(previousPath);
@@ -98,17 +98,20 @@ export function AppShell({ children }: AppShellProps) {
   const showMobileNav = !location.pathname.startsWith('/admin');
 
   const sidebarNav = [
-    { path: '/dashboard', label: 'Кабинет', icon: HomeIcon },
-    { path: '/subscription/purchase', label: 'Тарифы', icon: SubscriptionIcon },
-    ...(referralEnabled ? [{ path: '/referral', label: 'Рефералы', icon: UsersIcon }] : []),
-    { path: '/info', label: 'Информация', icon: InfoIcon },
+    { path: '/dashboard', label: t('nav.dashboard', 'Кабинет'), icon: HomeIcon },
+    { path: '/tariffs', label: t('nav.tariffs', 'Тарифы'), icon: SubscriptionIcon },
+    ...(referralEnabled
+      ? [{ path: '/referrals', label: t('nav.referral', 'Рефералы'), icon: UsersIcon }]
+      : []),
+    { path: '/info', label: t('nav.info', 'Информация'), icon: InfoIcon },
   ];
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return location.pathname === '/dashboard';
-    if (path === '/subscription/purchase') {
-      return location.pathname === path;
-    }
+    if (path === '/tariffs')
+      return location.pathname === path || location.pathname === '/subscription/purchase';
+    if (path === '/referrals')
+      return location.pathname === path || location.pathname.startsWith('/referral');
     return location.pathname.startsWith(path);
   };
 
@@ -135,23 +138,8 @@ export function AppShell({ children }: AppShellProps) {
         key={path}
         to={path}
         onClick={handleNavClick}
-        className={cn('ix-side-link relative', active && 'ix-side-link-active')}
+        className={cn('ix-side-link', active && 'ix-side-link-active')}
       >
-        {/* Пилл активного пункта: layoutId ровно один в дереве — только у активного.
-            Центрирование через top: calc(...), а не -translate-y-1/2: framer-motion
-            пишет transform inline (layout-анимация пилла) и перебивает translate
-            из класса — пилл уезжал на полвысоты ниже центра. */}
-        {active && (
-          <motion.span
-            layoutId="ix-side-pill"
-            aria-hidden="true"
-            className="absolute left-0 top-[calc(50%-12px)] h-6 w-1 rounded-full"
-            style={{
-              background: 'rgb(var(--color-accent-400))',
-              boxShadow: '0 0 12px var(--ix-glow)',
-            }}
-          />
-        )}
         <Icon className="h-5 w-5 shrink-0" />
         <span>{label}</span>
       </Link>

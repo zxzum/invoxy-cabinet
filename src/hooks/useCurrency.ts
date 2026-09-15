@@ -52,7 +52,10 @@ export function useCurrency() {
     (rubAmount: number, decimals?: number): string => {
       const fractionDigits = decimals ?? (isRussian || targetCurrency === 'IRR' ? 0 : 2);
       if (isRussian) {
-        return rubAmount.toFixed(fractionDigits);
+        return rubAmount.toLocaleString('ru-RU', {
+          minimumFractionDigits: fractionDigits,
+          maximumFractionDigits: fractionDigits,
+        });
       }
 
       // Convert to target currency

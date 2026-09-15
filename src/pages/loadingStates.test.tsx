@@ -26,6 +26,7 @@ vi.mock('react-i18next', () => ({
   Trans: ({ children }: { children?: unknown }) => children ?? null,
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
+vi.mock('../components/TicketNotificationBell', () => ({ default: () => null }));
 
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('@tanstack/react-query');

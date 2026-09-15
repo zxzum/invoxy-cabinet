@@ -40,6 +40,7 @@ import {
 } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import TicketNotificationBell from '../components/TicketNotificationBell';
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
@@ -55,9 +56,9 @@ export default function Profile() {
 
   useEffect(() => {
     if (location.hash !== '#top-up') return;
-
-    navigate(`/balance/top-up${location.search}`, { replace: true });
-  }, [location.hash, location.search, navigate]);
+    const target = document.getElementById('top-up');
+    target?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }, [location.hash]);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -94,6 +95,12 @@ export default function Profile() {
     queryFn: balanceApi.getBalance,
     staleTime: API.BALANCE_STALE_TIME_MS,
     refetchOnMount: 'always',
+  });
+
+  const { data: recentTransactions } = useQuery({
+    queryKey: ['profile-transactions'],
+    queryFn: () => balanceApi.getTransactions({ page: 1, per_page: 4 }),
+    staleTime: 60_000,
   });
 
   const { data: paymentMethods } = useQuery({
@@ -348,190 +355,247 @@ export default function Profile() {
       initial="initial"
       animate="animate"
     >
-      <motion.header variants={staggerItem} className="ix-page-heading">
-        <h1>{t('nav.profile', 'Профиль')}</h1>
-        <p>{t('profile.subtitle', 'Баланс, данные и поддержка')}</p>
+      <motion.header
+        variants={staggerItem}
+        className="flex items-start justify-between gap-4"
+        data-testid="profile-header"
+      >
+        <div className="ix-page-heading">
+          <h1>{t('nav.profile', 'Профиль')}</h1>
+          <p>{t('profile.subtitle', 'Баланс, данные и поддержка')}</p>
+        </div>
+        <TicketNotificationBell />
       </motion.header>
 
       <motion.div variants={staggerItem} data-testid="profile-financial-overview">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="ix-profile-balance glass-surface-accent relative overflow-hidden p-6 sm:p-8">
-            <img
-              src="/images/profile-balance-bg.webp"
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-dark-950/90 via-dark-950/35 to-transparent" />
-            <div className="relative z-10">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="mb-4 flex items-center gap-3 text-sm text-dark-400">
-                    <WalletIcon className="h-5 w-5 text-accent-400" />
-                    {t('balance.currentBalance')}
+        <div className="ix-profile-grid grid gap-5 xl:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-5">
+            <Card className="ix-profile-balance glass-surface-accent relative overflow-hidden p-6 sm:p-8">
+              <img
+                src="/images/profile-balance-bg.webp"
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-dark-950/90 via-dark-950/35 to-transparent" />
+              <div className="relative z-10">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[.06] text-accent-300">
+                    <WalletIcon className="h-5 w-5" />
                   </div>
-                  {balanceLoading ? (
+                  <span className="text-xs text-dark-400">Баланс Invoxy</span>
+                </div>
+                {balanceLoading ? (
+                  <div className="mt-8">
                     <SkeletonGroup>
                       <Skeleton className="h-10 w-36" />
                     </SkeletonGroup>
-                  ) : balanceError ? (
-                    <p role="alert" className="text-sm text-error-400">
-                      {t('common.error')}
-                    </p>
-                  ) : validBalanceData ? (
-                    <p className="text-4xl font-bold text-dark-50 sm:text-5xl">
-                      {formatAmount(validBalanceData.balance_rubles)}{' '}
-                      <span className="text-2xl text-dark-400">{currencySymbol}</span>
-                    </p>
-                  ) : (
-                    <p className="text-sm text-dark-400">{t('common.noData')}</p>
-                  )}
+                  </div>
+                ) : balanceError ? (
+                  <p role="alert" className="mt-8 text-sm text-error-400">
+                    {t('common.error')}
+                  </p>
+                ) : validBalanceData ? (
+                  <p className="mt-8 text-5xl font-light tracking-[-0.055em] text-dark-50 sm:text-6xl">
+                    {formatAmount(validBalanceData.balance_rubles)}{' '}
+                    <span className="text-3xl text-dark-50">{currencySymbol}</span>
+                  </p>
+                ) : (
+                  <p className="mt-8 text-sm text-dark-400">{t('common.noData')}</p>
+                )}
+                <div className="mt-6 flex items-center justify-between rounded-2xl bg-black/25 px-4 py-3 text-sm">
+                  <span className="text-dark-400">•••• 4821</span>
+                  <span className="font-bold tracking-[.18em] text-dark-100">VOXY</span>
                 </div>
               </div>
+            </Card>
+
+            <Card id="top-up" className="ix-profile-topup glass-surface p-5 sm:p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-medium text-dark-50">{t('balance.topUpBalance')}</h2>
+                  <p className="mt-1 text-sm text-dark-400">{t('balance.enterAmount')}</p>
+                </div>
+                <WalletIcon className="h-5 w-5 text-accent-300" />
+              </div>
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                {[500, 1000, 2500].map((amount) => (
+                  <button
+                    key={amount}
+                    type="button"
+                    onClick={() => setTopUpAmount(String(amount))}
+                    className={cn(
+                      'h-12 rounded-full border text-sm transition-colors',
+                      topUpAmount === String(amount)
+                        ? 'border-accent-300 bg-accent-300 font-bold text-dark-950'
+                        : 'border-white/10 bg-white/[.04] text-dark-100',
+                    )}
+                  >
+                    {formatAmount(amount, 0)} {currencySymbol}
+                  </button>
+                ))}
+              </div>
+              <input
+                inputMode="numeric"
+                aria-label={t('balance.enterAmount')}
+                value={topUpAmount}
+                onChange={(event) => setTopUpAmount(event.target.value.replace(/\D/g, ''))}
+                className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 text-center text-lg text-dark-50 outline-none focus:border-accent-300"
+              />
               <Button
                 type="button"
-                className="mt-5 w-full sm:w-auto"
-                onClick={() => navigate('/balance')}
+                fullWidth
+                className="mt-4"
+                disabled={!topUpAmount || !paymentMethods?.some((method) => method.is_available)}
+                onClick={() => {
+                  const method = paymentMethods?.find((item) => item.is_available);
+                  if (!method) return;
+                  navigate(
+                    `/balance/top-up/${method.id}?amount=${encodeURIComponent(topUpAmount)}&returnTo=%2Fprofile`,
+                  );
+                }}
               >
-                {t('balance.topUpBalance')}
+                {t('balance.topUp')}
               </Button>
-              <button
-                type="button"
-                className="mt-4 flex items-center gap-1 text-sm text-accent-400 hover:text-accent-300"
-                onClick={() => navigate('/balance')}
-              >
-                {t('balance.transactionHistory')}
-                <ArrowRightIcon className="h-4 w-4" />
-              </button>
-            </div>
-          </Card>
+            </Card>
 
-          <Card id="top-up" className="ix-profile-topup glass-surface p-5 sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-medium text-dark-50">{t('balance.topUpBalance')}</h2>
-                <p className="mt-1 text-sm text-dark-400">{t('balance.enterAmount')}</p>
-              </div>
-              <WalletIcon className="h-5 w-5 text-accent-300" />
-            </div>
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              {[500, 1000, 2500].map((amount) => (
-                <button
-                  key={amount}
-                  type="button"
-                  onClick={() => setTopUpAmount(String(amount))}
-                  className={cn(
-                    'h-12 rounded-full border text-sm transition-colors',
-                    topUpAmount === String(amount)
-                      ? 'border-accent-300 bg-accent-300 font-bold text-dark-950'
-                      : 'border-white/10 bg-white/[.04] text-dark-100',
-                  )}
-                >
-                  {formatAmount(amount, 0)} {currencySymbol}
-                </button>
-              ))}
-            </div>
-            <input
-              inputMode="numeric"
-              aria-label={t('balance.enterAmount')}
-              value={topUpAmount}
-              onChange={(event) => setTopUpAmount(event.target.value.replace(/\D/g, ''))}
-              className="mt-3 h-12 w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 text-center text-lg text-dark-50 outline-none focus:border-accent-300"
-            />
-            <Button
-              type="button"
-              fullWidth
-              className="mt-4"
-              disabled={!topUpAmount || !paymentMethods?.some((method) => method.is_available)}
-              onClick={() => {
-                const method = paymentMethods?.find((item) => item.is_available);
-                if (!method) return;
-                navigate(
-                  `/balance/top-up/${method.id}?amount=${encodeURIComponent(topUpAmount)}&returnTo=%2Fprofile`,
-                );
-              }}
-            >
-              {t('balance.topUp')}
-            </Button>
-          </Card>
-
-          <Card className="glass-surface p-5 sm:p-6 lg:col-span-2">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-400">
-                  {t('info.loyalty')}
-                </p>
-                <h2 className="mt-2 text-lg font-semibold text-dark-100">
-                  {t('info.yourProgress')}
+            <Card className="ix-profile-history glass-surface p-5 sm:p-7">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl font-medium text-dark-50">
+                  {t('balance.transactionHistory')}
                 </h2>
+                <button
+                  type="button"
+                  aria-label={t('balance.transactionHistory')}
+                  onClick={() => navigate('/balance')}
+                  className="text-sm font-semibold text-accent-400 hover:text-accent-300"
+                >
+                  Все операции →
+                </button>
               </div>
-              <StarIcon className="h-6 w-6 text-accent-400" filled />
-            </div>
-            {loyaltyLoading ? (
-              <SkeletonGroup className="space-y-3">
-                <Skeleton variant="line" className="h-5 w-40" />
-                <Skeleton variant="line" className="h-3 w-full" />
-              </SkeletonGroup>
-            ) : loyaltyError ? (
-              <p role="alert" className="text-sm text-error-400">
-                {t('subscription.promoGroup.error')}
-              </p>
-            ) : validLoyaltyData &&
-              (validLoyaltyData.tiers.length > 0 ||
-                validLoyaltyData.current_tier_name ||
-                validLoyaltyData.next_tier_name) ? (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="card-inset min-w-0 p-3">
-                    <p className="mb-1 text-xs text-dark-400">{t('info.totalSpent')}</p>
-                    <p className="truncate font-semibold text-dark-50">
-                      {formatAmount(validLoyaltyData.current_spent_rubles)} {currencySymbol}
-                    </p>
-                  </div>
-                  <div className="card-inset min-w-0 p-3">
-                    <p className="mb-1 text-xs text-dark-400">{t('info.currentStatus')}</p>
-                    <p className="truncate font-semibold text-accent-400">
-                      {validLoyaltyData.current_tier_name || t('info.noLoyaltyTiers')}
-                    </p>
-                  </div>
-                </div>
-                {loyaltyRemainingRubles != null && Number.isFinite(loyaltyRemainingRubles) ? (
-                  <div className="mt-4">
-                    <div className="mb-2 flex flex-col gap-1 text-xs text-dark-400 sm:flex-row sm:justify-between">
-                      <span>
-                        {t('info.nextStatus')}: {validLoyaltyData.next_tier_name}
-                      </span>
-                      <span>
-                        {t('info.toNextStatus')}: {formatAmount(loyaltyRemainingRubles)}{' '}
-                        {currencySymbol}
-                      </span>
-                    </div>
-                    <div
-                      className="h-3 overflow-hidden rounded-full bg-dark-700"
-                      role="progressbar"
-                      aria-label={t('info.yourProgress')}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={loyaltyProgress}
-                    >
+              <div className="mt-3 divide-y divide-white/10">
+                {recentTransactions?.items?.length ? (
+                  recentTransactions.items.map((transaction) => {
+                    const sign =
+                      transaction.amount_rubles > 0
+                        ? '+'
+                        : transaction.amount_rubles < 0
+                          ? '−'
+                          : '';
+                    const amount = Math.abs(transaction.amount_rubles);
+                    return (
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-accent-500 to-accent-400 transition-all duration-500"
-                        style={{ width: `${loyaltyProgress}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-right text-xs text-dark-400">
-                      {loyaltyProgress.toFixed(1)}%
-                    </p>
-                  </div>
+                        key={transaction.id}
+                        className="flex items-center justify-between gap-4 py-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-dark-100">
+                            {transaction.description || transaction.type}
+                          </p>
+                          <p className="mt-1 text-xs text-dark-400">
+                            {new Date(transaction.created_at).toLocaleDateString(uiLocale())}
+                          </p>
+                        </div>
+                        <strong
+                          className={cn(
+                            'shrink-0 text-sm',
+                            transaction.amount_rubles > 0 ? 'text-success-400' : 'text-dark-100',
+                          )}
+                        >
+                          {sign}
+                          {formatAmount(amount)} {currencySymbol}
+                        </strong>
+                      </div>
+                    );
+                  })
                 ) : (
-                  <p className="mt-4 text-center text-sm font-medium text-success-400">
-                    {t('info.allStatusesAchieved')}
+                  <p className="py-6 text-center text-sm text-dark-400">
+                    {t('balance.noTransactions')}
                   </p>
                 )}
-              </>
-            ) : (
-              <p className="text-sm text-dark-400">{t('info.noLoyaltyTiers')}</p>
-            )}
-          </Card>
+              </div>
+            </Card>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-5">
+            <Card className="glass-surface p-5 sm:p-6 lg:col-span-2">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-400">
+                    {t('info.loyalty')}
+                  </p>
+                  <h2 className="mt-2 text-lg font-semibold text-dark-100">
+                    {t('info.yourProgress')}
+                  </h2>
+                </div>
+                <StarIcon className="h-6 w-6 text-accent-400" filled />
+              </div>
+              {loyaltyLoading ? (
+                <SkeletonGroup className="space-y-3">
+                  <Skeleton variant="line" className="h-5 w-40" />
+                  <Skeleton variant="line" className="h-3 w-full" />
+                </SkeletonGroup>
+              ) : loyaltyError ? (
+                <p role="alert" className="text-sm text-error-400">
+                  {t('subscription.promoGroup.error')}
+                </p>
+              ) : validLoyaltyData &&
+                (validLoyaltyData.tiers.length > 0 ||
+                  validLoyaltyData.current_tier_name ||
+                  validLoyaltyData.next_tier_name) ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="card-inset min-w-0 p-3">
+                      <p className="mb-1 text-xs text-dark-400">{t('info.totalSpent')}</p>
+                      <p className="truncate font-semibold text-dark-50">
+                        {formatAmount(validLoyaltyData.current_spent_rubles)} {currencySymbol}
+                      </p>
+                    </div>
+                    <div className="card-inset min-w-0 p-3">
+                      <p className="mb-1 text-xs text-dark-400">{t('info.currentStatus')}</p>
+                      <p className="truncate font-semibold text-accent-400">
+                        {validLoyaltyData.current_tier_name || t('info.noLoyaltyTiers')}
+                      </p>
+                    </div>
+                  </div>
+                  {loyaltyRemainingRubles != null && Number.isFinite(loyaltyRemainingRubles) ? (
+                    <div className="mt-4">
+                      <div className="mb-2 flex flex-col gap-1 text-xs text-dark-400 sm:flex-row sm:justify-between">
+                        <span>
+                          {t('info.nextStatus')}: {validLoyaltyData.next_tier_name}
+                        </span>
+                        <span>
+                          {t('info.toNextStatus')}: {formatAmount(loyaltyRemainingRubles)}{' '}
+                          {currencySymbol}
+                        </span>
+                      </div>
+                      <div
+                        className="h-3 overflow-hidden rounded-full bg-dark-700"
+                        role="progressbar"
+                        aria-label={t('info.yourProgress')}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={loyaltyProgress}
+                      >
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-accent-500 to-accent-400 transition-all duration-500"
+                          style={{ width: `${loyaltyProgress}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-right text-xs text-dark-400">
+                        {loyaltyProgress.toFixed(1)}%
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-center text-sm font-medium text-success-400">
+                      {t('info.allStatusesAchieved')}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-dark-400">{t('info.noLoyaltyTiers')}</p>
+              )}
+            </Card>
+          </div>
         </div>
       </motion.div>
 
@@ -603,7 +667,7 @@ export default function Profile() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <h2 className="text-lg font-semibold text-dark-100">{t('referral.yourLink')}</h2>
               <Link
-                to="/referral"
+                to="/referrals"
                 className="ml-auto flex items-center gap-1 text-accent-400 transition-colors hover:text-accent-300"
               >
                 <span className="text-sm">{t('referral.title')}</span>

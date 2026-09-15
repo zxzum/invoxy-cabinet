@@ -1,4 +1,4 @@
-import { DevicesIcon, PlusIcon, TrashIcon } from '@/components/icons';
+import { DevicesIcon, XIcon } from '@/components/icons';
 import type { Device } from '@/types';
 import { LunaEmptyState, LunaErrorState, LunaLoadingState } from './LunaSurfaceState';
 
@@ -28,28 +28,23 @@ export default function LunaDevicesCard({
   errorMessage,
   onRetry,
   retryLabel,
-  onManageDevices,
   onRemoveDevice,
   formatDeviceDate,
   title = 'Connected devices',
-  manageLabel = 'Manage devices',
   disconnectLabel = 'Disconnect',
   emptyMessage = 'No connected devices',
   loadingMessage = 'Loading connected devices',
 }: LunaDevicesCardProps) {
   if (isLoading) return <LunaLoadingState message={loadingMessage} />;
 
+  const deviceLimitLabel = deviceLimit == null ? '—' : deviceLimit === 0 ? '∞' : deviceLimit;
+
   return (
     <section className="glass-surface rounded-[28px] p-4 sm:p-5" aria-label={title}>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-400/10 text-accent-300">
-            <DevicesIcon className="h-5 w-5" />
-          </span>
-          <h2 className="truncate text-lg font-semibold text-dark-50">{title}</h2>
-        </div>
+        <h2 className="truncate text-lg font-semibold text-dark-50">{title}</h2>
         <span className="shrink-0 text-xs text-dark-400">
-          {devices.length} / {deviceLimit ?? '—'}
+          {devices.length} из {deviceLimitLabel}
         </span>
       </div>
 
@@ -89,25 +84,15 @@ export default function LunaDevicesCard({
                   onClick={() => onRemoveDevice?.(device)}
                   disabled={!onRemoveDevice || isRemoving}
                   aria-label={`${disconnectLabel} ${name}`}
-                  className="flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-error-500/25 bg-error-500/10 text-error-400 transition-colors hover:bg-error-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-error-500/25 bg-error-500/10 text-error-400 transition-colors hover:bg-error-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <TrashIcon className="h-4 w-4" />
+                  <XIcon className="h-5 w-5" />
                 </button>
               </li>
             );
           })}
         </ul>
       )}
-
-      <button
-        type="button"
-        onClick={onManageDevices}
-        disabled={!onManageDevices}
-        className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-accent-400/25 bg-accent-400/10 px-4 text-sm font-semibold text-accent-300 transition-colors hover:border-accent-400/45 hover:bg-accent-400/15 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <PlusIcon className="h-4 w-4" />
-        {manageLabel}
-      </button>
     </section>
   );
 }

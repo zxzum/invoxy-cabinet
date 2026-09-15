@@ -1,6 +1,4 @@
-import type { ReactNode } from 'react';
 import TrafficProgressBar from '@/components/dashboard/TrafficProgressBar';
-import { GlobeIcon, TrafficIcon } from '@/components/icons';
 import { LunaEmptyState, LunaLoadingState } from './LunaSurfaceState';
 import type { LunaTrafficSnapshot } from './types';
 
@@ -23,29 +21,31 @@ export interface LunaTrafficCardsProps {
 }
 
 function TrafficCard({
-  icon,
   label,
   traffic,
   formatUsage,
   emptyMessage,
 }: {
-  icon: ReactNode;
   label: string;
   traffic: LunaTrafficSnapshot | null;
   formatUsage: (traffic: LunaTrafficSnapshot) => string;
   emptyMessage: string;
 }) {
   return (
-    <article className="glass-surface motion-card min-w-0 rounded-2xl p-4 sm:p-5">
-      <div className="flex items-center gap-2 text-sm font-semibold text-dark-200">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent-400/10 text-accent-300">
-          {icon}
-        </span>
-        <h3>{label}</h3>
-      </div>
+    <article className="glass-surface motion-card min-w-0 rounded-2xl p-4 lg:h-[clamp(128px,8.5vw,166px)] lg:rounded-[clamp(20px,1vw,24px)] lg:p-[clamp(20px,1.4vw,28px)]">
+      <h3 className="truncate text-[14px] leading-5 text-dark-400 lg:text-[clamp(14px,0.9vw,18px)]">
+        {label}
+      </h3>
       {traffic ? (
         <>
-          <p className="mt-5 text-base font-bold text-dark-50">{formatUsage(traffic)}</p>
+          <div className="mt-3 flex w-full items-center justify-between lg:mt-[clamp(16px,1.1vw,22px)]">
+            <p className="whitespace-nowrap text-[16px] font-bold leading-6 text-dark-50 lg:text-[clamp(17px,1.1vw,22px)]">
+              {formatUsage(traffic)}
+            </p>
+            <span className="text-[15px] font-bold leading-6 text-accent-300 lg:text-[clamp(16px,1vw,20px)]">
+              {traffic.isUnlimited ? '∞' : `${Math.round(traffic.percent)}%`}
+            </span>
+          </div>
           <div className="mt-3">
             <TrafficProgressBar
               usedGb={traffic.usedGb}
@@ -70,7 +70,7 @@ export default function LunaTrafficCards({
   formatUsage,
   trafficUnitLabel = 'GB',
   regularLabel = 'Main traffic',
-  lteLabel = 'LTE traffic',
+  lteLabel = 'LTE-сервера',
   loadingMessage = 'Loading traffic',
   regularEmptyMessage = 'Main traffic unavailable',
   lteEmptyMessage = 'LTE traffic unavailable',
@@ -109,16 +109,14 @@ export default function LunaTrafficCards({
           </button>
         </div>
       )}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2.5 lg:gap-[clamp(18px,1.4vw,28px)]">
         <TrafficCard
-          icon={<TrafficIcon className="h-4 w-4" />}
           label={regularLabel}
           traffic={regularTraffic}
           formatUsage={usage}
           emptyMessage={regularEmptyMessage}
         />
         <TrafficCard
-          icon={<GlobeIcon className="h-4 w-4" />}
           label={lteLabel}
           traffic={lteTraffic}
           formatUsage={usage}

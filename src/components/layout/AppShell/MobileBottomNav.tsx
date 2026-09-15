@@ -34,23 +34,27 @@ export function MobileBottomNav({
   const items = [
     {
       path: '/dashboard',
-      label: t('nav.dashboard', 'Главная'),
+      label: t('nav.dashboard', 'Кабинет'),
       icon: HomeIcon,
+      activeWidth: 'w-[117px]',
     },
     {
-      path: '/subscription/purchase',
+      path: '/tariffs',
       label: t('nav.tariffs', 'Тарифы'),
       icon: SubscriptionIcon,
+      activeWidth: 'w-[115px]',
     },
     {
-      path: '/referral',
+      path: '/referrals',
       label: t('nav.referral', 'Рефералы'),
       icon: UsersIcon,
+      activeWidth: 'w-[124px]',
     },
     {
       path: '/profile',
       label: t('nav.profile', 'Профиль'),
       icon: UserIcon,
+      activeWidth: 'w-[122px]',
     },
   ];
 
@@ -78,7 +82,12 @@ export function MobileBottomNav({
           const active =
             item.path === '/dashboard'
               ? location.pathname === '/dashboard'
-              : location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+              : item.path === '/tariffs'
+                ? location.pathname === '/tariffs' || location.pathname === '/subscription/purchase'
+                : item.path === '/referrals'
+                  ? location.pathname === '/referrals' || location.pathname.startsWith('/referral')
+                  : location.pathname === item.path ||
+                    location.pathname.startsWith(`${item.path}/`);
           const Icon = item.icon;
           return (
             <MotionLink
@@ -91,11 +100,13 @@ export function MobileBottomNav({
               className={cn(
                 'relative z-10 flex h-14 items-center overflow-hidden rounded-full border text-xs font-bold transition-[width,padding,background-color,color] duration-300',
                 active
-                  ? 'w-[122px] justify-start border-transparent bg-dark-50 pl-4 text-dark-950'
+                  ? `${item.activeWidth} justify-start border-transparent bg-dark-50 pl-4 text-dark-950`
                   : 'w-14 justify-center border-white/10 bg-white/[.04] text-dark-400',
               )}
             >
-              <Icon className={cn('relative z-10 h-6 w-6 shrink-0 transition-transform')} />
+              <Icon
+                className={cn('relative z-10 h-[22px] w-[22px] shrink-0 transition-transform')}
+              />
               {active && <span className="ml-2 whitespace-nowrap">{item.label}</span>}
             </MotionLink>
           );

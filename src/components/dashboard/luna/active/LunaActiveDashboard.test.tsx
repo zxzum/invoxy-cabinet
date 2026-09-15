@@ -150,12 +150,15 @@ describe('Luna active dashboard', () => {
     expect(screen.getByText('12 / 50 GB')).toBeTruthy();
     expect(screen.getByText('Personal phone')).toBeTruthy();
     expect(screen.getByText('https://example.test/access')).toBeTruthy();
+    expect(
+      Number.parseFloat(screen.getByTestId('subscription-progress').style.width),
+    ).toBeGreaterThan(0);
     expect(screen.getByText('30 days')).toBeTruthy();
     expect(screen.getByText('100 GB')).toBeTruthy();
     expect(screen.getByText('50 GB')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Быстрое подключение' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Manage subscription' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Manage devices' }));
     fireEvent.click(screen.getByRole('button', { name: 'Copy access link' }));
     fireEvent.click(screen.getByRole('button', { name: 'Connect in HAPP' }));
     fireEvent.click(screen.getByRole('button', { name: 'Connect in INCY' }));
@@ -167,7 +170,6 @@ describe('Luna active dashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add LTE traffic' }));
 
     expect(callbacks.onManageSubscription).toHaveBeenCalledOnce();
-    expect(callbacks.onManageDevices).toHaveBeenCalledOnce();
     expect(callbacks.onCopyAccess).toHaveBeenCalledOnce();
     expect(callbacks.onConnectHapp).toHaveBeenCalledOnce();
     expect(callbacks.onConnectIncy).toHaveBeenCalledOnce();
@@ -254,7 +256,7 @@ describe('Luna active dashboard', () => {
     );
   });
 
-  it('keeps target INCY and QR actions available when the connection page owns the link', () => {
+  it('keeps target INCY action available when the connection page owns the link', () => {
     const callbacks = renderDashboard({
       accessLink: null,
       happLink: null,

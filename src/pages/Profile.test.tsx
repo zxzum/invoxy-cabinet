@@ -8,6 +8,8 @@ import Profile from './Profile';
 const mocks = vi.hoisted(() => ({
   setUser: vi.fn(),
   getBalance: vi.fn(),
+  getTransactions: vi.fn(),
+  getPaymentMethods: vi.fn(),
   getLoyaltyTiers: vi.fn(),
   getReferralInfo: vi.fn(),
   getReferralTerms: vi.fn(),
@@ -24,6 +26,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../api/balance', () => ({
   balanceApi: {
     getBalance: mocks.getBalance,
+    getTransactions: mocks.getTransactions,
+    getPaymentMethods: mocks.getPaymentMethods,
   },
 }));
 vi.mock('../api/promo', () => ({
@@ -90,6 +94,7 @@ vi.mock('react-i18next', () => ({
     t: (key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : key),
   }),
 }));
+vi.mock('../components/TicketNotificationBell', () => ({ default: () => null }));
 vi.mock('@/platform', () => ({
   usePlatform: () => ({
     platform: 'web',
@@ -119,6 +124,14 @@ function LocationProbe() {
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.getBalance.mockResolvedValue({ balance_kopeks: 32100, balance_rubles: 321 });
+  mocks.getTransactions.mockResolvedValue({
+    items: [],
+    page: 1,
+    pages: 1,
+    total: 0,
+    per_page: 4,
+  });
+  mocks.getPaymentMethods.mockResolvedValue([]);
   mocks.getLoyaltyTiers.mockResolvedValue({
     tiers: [],
     current_spent_rubles: 3200,
@@ -168,10 +181,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Profile target data presentation', () => {
-  it('redirects the legacy top-up hash to the existing top-up surface', async () => {
+  it('keeps the top-up hash on the profile surface', async () => {
     renderProfile('/profile#top-up');
 
-    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/balance/top-up'));
+    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/profile'));
+    expect(document.getElementById('top-up')).toBeTruthy();
   });
 
   it('puts live balance and loyalty before account details with discoverable routes', async () => {
@@ -187,8 +201,8 @@ describe('Profile target data presentation', () => {
     expect(screen.getByRole('progressbar', { name: 'info.yourProgress' })).toBeTruthy();
     expect(overview.compareDocumentPosition(accountInfo)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 
-    fireEvent.click(screen.getByRole('button', { name: 'balance.topUpBalance' }));
-    expect(screen.getByTestId('location').textContent).toBe('/balance');
+    expect(document.getElementById('top-up')?.querySelector('button')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'balance.topUpBalance' })).toBeNull();
   });
 
   it('routes transaction history to the balance owner', async () => {
