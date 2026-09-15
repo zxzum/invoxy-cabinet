@@ -584,6 +584,131 @@ describe('Dashboard target states', () => {
     expect(secondPackage.className).toContain('card-selected');
   });
 
+  it('keeps traffic top-up selection valid after switching the sheet scope', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+    mocks.getTrafficPackages.mockImplementation((_id?: number, scope?: 'regular' | 'whitelist') =>
+      Promise.resolve([
+        {
+          gb: scope === 'whitelist' ? 25 : 100,
+          price_kopeks: scope === 'whitelist' ? 2500 : 5000,
+          price_rubles: scope === 'whitelist' ? 25 : 50,
+          is_unlimited: false,
+        },
+      ]),
+    );
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить трафик' }));
+    fireEvent.click(screen.getByRole('button', { name: 'subscription.whiteInternet' }));
+    const whitelistPackage = await screen.findByRole('button', { name: /25/ });
+    fireEvent.click(whitelistPackage);
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'subscription.additionalOptions.buyWhitelistTrafficGb',
+      }),
+    ).toBeTruthy();
+  });
+
+  it('keeps the latest traffic refresh indicator for the same subscription', async () => {
+    setupResolvedQueries();
+    const firstRefresh = deferred<{
+      traffic_used_gb: number;
+      traffic_used_percent: number;
+      is_unlimited: boolean;
+      rate_limited: boolean;
+      retry_after_seconds?: number;
+    }>();
+    const secondRefresh = deferred<{
+      traffic_used_gb: number;
+      traffic_used_percent: number;
+      is_unlimited: boolean;
+      rate_limited: boolean;
+      retry_after_seconds?: number;
+    }>();
+    mocks.getSubscriptions.mockResolvedValue({
+      ...multiSubscription,
+      subscriptions: [
+        multiSubscription.subscriptions[0],
+        {
+          ...multiSubscription.subscriptions[0],
+          id: 43,
+          tariff_id: 8,
+          tariff_name: 'Fixture second dashboard тариф',
+          device_limit: 3,
+        },
+      ],
+    });
+    mocks.getSubscription.mockImplementation((id?: number) =>
+      Promise.resolve({
+        has_subscription: id != null,
+        subscription: id === 43 ? secondActiveSubscription : id === 42 ? activeSubscription : null,
+      }),
+    );
+    let firstSubscriptionRefreshCalls = 0;
+    mocks.refreshTraffic.mockImplementation((id?: number) => {
+      if (id === 42) {
+        firstSubscriptionRefreshCalls += 1;
+        return firstSubscriptionRefreshCalls === 1 ? firstRefresh.promise : secondRefresh.promise;
+      }
+      if (id === 43) {
+        return Promise.resolve({
+          traffic_used_gb: 8,
+          traffic_used_percent: 8,
+          is_unlimited: false,
+          rate_limited: false,
+        });
+      }
+      return Promise.reject(new Error('unexpected id'));
+    });
+    localStorage.removeItem('traffic_refresh_ts_42');
+    localStorage.removeItem('traffic_refresh_ts_43');
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    await vi.waitFor(() => expect(mocks.refreshTraffic).toHaveBeenCalledWith(42));
+    fireEvent.click(screen.getByRole('radio', { name: 'Fixture second dashboard тариф' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Fixture second active tariff' }),
+    ).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /Обновить трафик \(\d+s\)/ })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Fixture dashboard тариф' }));
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    await vi.waitFor(() => expect(firstSubscriptionRefreshCalls).toBe(2));
+    expect(await screen.findByRole('button', { name: 'Обновляем трафик…' })).toBeTruthy();
+
+    firstRefresh.resolve({
+      traffic_used_gb: 12,
+      traffic_used_percent: 12,
+      is_unlimited: false,
+      rate_limited: false,
+    });
+    await firstRefresh.promise;
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(screen.getByText('18.0 GB / 100.0 GB')).toBeTruthy();
+    expect(screen.queryByText('12.0 GB / 100.0 GB')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Обновляем трафик…' })).toBeTruthy();
+
+    secondRefresh.resolve({
+      traffic_used_gb: 19,
+      traffic_used_percent: 19,
+      is_unlimited: false,
+      rate_limited: false,
+    });
+    expect(await screen.findByText('19.0 GB / 100.0 GB')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /Обновить трафик \(\d+s\)/ })).toBeTruthy();
+  });
+
   it('opens the LTE top-up flow with the whitelist scope selected', async () => {
     setupResolvedQueries();
     mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });

@@ -25,6 +25,7 @@ export interface TrafficTopupSheetProps {
   subscription: Subscription;
   subscriptionId: number | undefined;
   initialScope?: 'regular' | 'whitelist';
+  onScopeChange?: (scope: 'regular' | 'whitelist') => void;
   selectedTrafficPackage: number | null;
   onSelectedTrafficPackageChange: (gb: number | null) => void;
   purchaseOptions: PurchaseOptions | undefined;
@@ -38,6 +39,7 @@ export function TrafficTopupSheet({
   subscription,
   subscriptionId,
   initialScope = 'regular',
+  onScopeChange,
   selectedTrafficPackage,
   onSelectedTrafficPackageChange,
   purchaseOptions,
@@ -60,12 +62,18 @@ export function TrafficTopupSheet({
   );
 
   useEffect(() => {
-    if (open) setScope(initialScope);
-  }, [initialScope, open]);
+    if (open) {
+      setScope(initialScope);
+      onScopeChange?.(initialScope);
+    }
+  }, [initialScope, onScopeChange, open]);
 
   useEffect(() => {
-    if ((subscription.whitelist_traffic_limit_gb ?? 0) <= 0) setScope('regular');
-  }, [subscription.whitelist_traffic_limit_gb]);
+    if ((subscription.whitelist_traffic_limit_gb ?? 0) <= 0) {
+      setScope('regular');
+      onScopeChange?.('regular');
+    }
+  }, [onScopeChange, subscription.whitelist_traffic_limit_gb]);
 
   const { data: trafficPackages } = useQuery({
     queryKey: ['traffic-packages', subscriptionId, scope],
@@ -157,6 +165,7 @@ export function TrafficTopupSheet({
               type="button"
               onClick={() => {
                 setScope(value);
+                onScopeChange?.(value);
                 onSelectedTrafficPackageChange(null);
               }}
               className={`rounded-lg px-3 py-2 text-sm transition ${

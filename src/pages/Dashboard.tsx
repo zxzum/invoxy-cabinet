@@ -329,7 +329,11 @@ export default function Dashboard() {
   const [trafficRefreshCooldowns, setTrafficRefreshCooldowns] = useState<Record<number, number>>(
     {},
   );
-  const [refreshingTrafficSubId, setRefreshingTrafficSubId] = useState<number | null>(null);
+  const [trafficRefreshRequestIds, setTrafficRefreshRequestIds] = useState<Record<number, number>>(
+    {},
+  );
+  const trafficRefreshRequestIdsRef = useRef<Record<number, number>>({});
+  const trafficRefreshSequence = useRef(0);
   const [pendingRemovalHwid, setPendingRemovalHwid] = useState<string | null>(null);
   const [trafficDataBySubscription, setTrafficDataBySubscription] = useState<
     Record<
@@ -344,6 +348,7 @@ export default function Dashboard() {
   const trafficData = activeSubId == null ? null : (trafficDataBySubscription[activeSubId] ?? null);
   const trafficRefreshCooldown =
     activeSubId == null ? 0 : (trafficRefreshCooldowns[activeSubId] ?? 0);
+  const isRefreshingTraffic = activeSubId != null && trafficRefreshRequestIds[activeSubId] != null;
 
   const refreshTrafficMutation = useMutation({
     mutationFn: (subscriptionId: number) => subscriptionApi.refreshTraffic(subscriptionId),
@@ -351,10 +356,16 @@ export default function Dashboard() {
 
   const refreshTraffic = useCallback(
     (subscriptionId: number) => {
-      setRefreshingTrafficSubId(subscriptionId);
+      const requestId = ++trafficRefreshSequence.current;
+      trafficRefreshRequestIdsRef.current[subscriptionId] = requestId;
+      setTrafficRefreshRequestIds((previous) => ({
+        ...previous,
+        [subscriptionId]: requestId,
+      }));
       void refreshTrafficMutation
         .mutateAsync(subscriptionId)
         .then((data) => {
+          if (trafficRefreshRequestIdsRef.current[subscriptionId] !== requestId) return;
           setTrafficDataBySubscription((previous) => ({
             ...previous,
             [subscriptionId]: {
@@ -374,6 +385,7 @@ export default function Dashboard() {
           (error: {
             response?: { status?: number; headers?: { get?: (key: string) => string } };
           }) => {
+            if (trafficRefreshRequestIdsRef.current[subscriptionId] !== requestId) return;
             if (error.response?.status === 429) {
               const retryAfter = error.response.headers?.get?.('Retry-After');
               const cooldown = retryAfter ? parseInt(retryAfter, 10) : 30;
@@ -385,7 +397,14 @@ export default function Dashboard() {
           },
         )
         .finally(() => {
-          setRefreshingTrafficSubId((current) => (current === subscriptionId ? null : current));
+          if (trafficRefreshRequestIdsRef.current[subscriptionId] !== requestId) return;
+          delete trafficRefreshRequestIdsRef.current[subscriptionId];
+          setTrafficRefreshRequestIds((previous) => {
+            if (previous[subscriptionId] !== requestId) return previous;
+            const next = { ...previous };
+            delete next[subscriptionId];
+            return next;
+          });
         });
     },
     [queryClient, refreshTrafficMutation],
@@ -666,8 +685,7 @@ export default function Dashboard() {
   };
 
   const handleRefreshTraffic = () => {
-    if (activeSubId == null || trafficRefreshCooldown > 0 || refreshingTrafficSubId === activeSubId)
-      return;
+    if (activeSubId == null || trafficRefreshCooldown > 0 || isRefreshingTraffic) return;
     refreshTraffic(activeSubId);
   };
 
@@ -1006,7 +1024,7 @@ export default function Dashboard() {
                 isCopied={accessCopied}
                 isRemovingHwid={pendingRemovalHwid}
                 onRefreshTraffic={handleRefreshTraffic}
-                isRefreshingTraffic={refreshingTrafficSubId === activeSubId}
+                isRefreshingTraffic={isRefreshingTraffic}
                 trafficRefreshCooldown={trafficRefreshCooldown}
                 onManageSubscription={() => navigate(`/subscriptions/${activeSubscription.id}`)}
                 onManageDevices={() => navigate(`/subscriptions/${activeSubscription.id}`)}
@@ -1253,6 +1271,7 @@ export default function Dashboard() {
           subscription={activeSubscription}
           subscriptionId={activeSubscription.id}
           initialScope={trafficTopupScope}
+          onScopeChange={setTrafficTopupScope}
           selectedTrafficPackage={selectedTrafficPackage}
           onSelectedTrafficPackageChange={setSelectedTrafficPackage}
           purchaseOptions={purchaseOptions}
