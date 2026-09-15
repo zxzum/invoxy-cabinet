@@ -136,7 +136,11 @@ describe('AppShell support FAB', () => {
     '/contests',
     '/wheel',
     '/balance/saved-cards',
+    '/saved-cards',
     '/profile/accounts',
+    '/profile/saved-cards',
+    '/partner',
+    '/subscription',
   ])('does not render the legacy support FAB on modern customer route %s', (pathname) => {
     renderShell(pathname);
 
@@ -239,8 +243,12 @@ describe('AppShell support FAB', () => {
       '/contests',
       '/wheel',
       '/balance/saved-cards',
+      '/saved-cards',
       '/profile/accounts',
+      '/profile/saved-cards',
       '/account/security',
+      '/partner',
+      '/subscription',
     ]) {
       cleanup();
       renderShell(pathname);

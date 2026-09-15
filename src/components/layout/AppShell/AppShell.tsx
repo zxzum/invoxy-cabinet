@@ -68,6 +68,8 @@ export function AppShell({ children }: AppShellProps) {
     '/profile/accounts',
     '/profile/saved-cards',
     '/account/security',
+    '/partner',
+    '/subscription',
   ];
   const isModernCustomerRoute =
     tabs.includes(location.pathname) ||
