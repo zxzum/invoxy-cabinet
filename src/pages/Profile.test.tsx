@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Profile from './Profile';
 
 const mocks = vi.hoisted(() => ({
   setUser: vi.fn(),
+  getBalance: vi.fn(),
+  getLoyaltyTiers: vi.fn(),
   getReferralInfo: vi.fn(),
   getReferralTerms: vi.fn(),
   getBranding: vi.fn(),
@@ -17,6 +19,23 @@ const mocks = vi.hoisted(() => ({
   resendVerification: vi.fn(),
   requestEmailChange: vi.fn(),
   verifyEmailChange: vi.fn(),
+}));
+
+vi.mock('../api/balance', () => ({
+  balanceApi: {
+    getBalance: mocks.getBalance,
+  },
+}));
+vi.mock('../api/promo', () => ({
+  promoApi: {
+    getLoyaltyTiers: mocks.getLoyaltyTiers,
+  },
+}));
+vi.mock('../hooks/useCurrency', () => ({
+  useCurrency: () => ({
+    formatAmount: (amount: number) => String(amount),
+    currencySymbol: '₽',
+  }),
 }));
 
 vi.mock('../store/auth', () => ({
@@ -86,13 +105,28 @@ function renderProfile() {
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
       >
         <Profile />
+        <LocationProbe />
       </QueryClientProvider>
     </MemoryRouter>,
   );
 }
 
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{location.pathname}</output>;
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.getBalance.mockResolvedValue({ balance_kopeks: 32100, balance_rubles: 321 });
+  mocks.getLoyaltyTiers.mockResolvedValue({
+    tiers: [],
+    current_spent_rubles: 3200,
+    current_tier_name: 'Friends',
+    next_tier_name: 'VIP',
+    next_tier_threshold_rubles: 5000,
+    progress_percent: 64,
+  });
   mocks.getReferralInfo.mockResolvedValue(null);
   mocks.getReferralTerms.mockResolvedValue({ is_enabled: false });
   mocks.getBranding.mockResolvedValue({ name: 'Configured Cabinet' });
@@ -134,6 +168,23 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Profile target data presentation', () => {
+  it('puts live balance and loyalty before account details with discoverable routes', async () => {
+    renderProfile();
+
+    const balance = await screen.findByText((_, element) => element?.textContent === '321 ₽');
+    const overview = screen.getByTestId('profile-financial-overview');
+    const accountInfo = screen.getByText('profile.accountInfo').closest('.glass-surface');
+    if (!accountInfo) throw new Error('account info card is missing');
+
+    expect(balance).toBeTruthy();
+    expect(screen.getByText('Friends')).toBeTruthy();
+    expect(screen.getByRole('progressbar', { name: 'info.yourProgress' })).toBeTruthy();
+    expect(overview.compareDocumentPosition(accountInfo)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+    fireEvent.click(screen.getByRole('button', { name: 'balance.topUpBalance' }));
+    expect(screen.getByTestId('location').textContent).toBe('/balance');
+  });
+
   it('renders the target user and account action in glass panels', async () => {
     renderProfile();
 

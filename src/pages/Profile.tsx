@@ -9,9 +9,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/auth';
 import { displayName } from '../utils/displayName';
 import { authApi } from '../api/auth';
+import { balanceApi } from '../api/balance';
 import { isValidEmail } from '../utils/validation';
 import { useCountdown } from '../hooks/useCountdown';
 import { getApiErrorMessage } from '../utils/api-error';
+import { promoApi } from '../api/promo';
 import {
   notificationsApi,
   type NotificationSettings,
@@ -19,7 +21,8 @@ import {
 } from '../api/notifications';
 import { referralApi } from '../api/referral';
 import { brandingApi, type EmailAuthEnabled } from '../api/branding';
-import { UI } from '../config/constants';
+import { API, UI } from '../config/constants';
+import { useCurrency } from '../hooks/useCurrency';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
 import { Switch } from '@/components/primitives/Switch';
@@ -32,6 +35,8 @@ import {
   PencilIcon,
   TelegramIcon,
   LinkIcon,
+  StarIcon,
+  WalletIcon,
 } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
@@ -41,6 +46,7 @@ export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
+  const { currencySymbol, formatAmount } = useCurrency();
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -65,6 +71,27 @@ export default function Profile() {
   const { data: referralTerms } = useQuery({
     queryKey: ['referral-terms'],
     queryFn: referralApi.getReferralTerms,
+  });
+
+  const {
+    data: balanceData,
+    isLoading: balanceLoading,
+    isError: balanceError,
+  } = useQuery({
+    queryKey: ['balance'],
+    queryFn: balanceApi.getBalance,
+    staleTime: API.BALANCE_STALE_TIME_MS,
+    refetchOnMount: 'always',
+  });
+
+  const {
+    data: loyaltyData,
+    isLoading: loyaltyLoading,
+    isError: loyaltyError,
+  } = useQuery({
+    queryKey: ['loyalty-tiers'],
+    queryFn: promoApi.getLoyaltyTiers,
+    staleTime: 60_000,
   });
 
   const { data: branding } = useQuery({
@@ -272,6 +299,17 @@ export default function Profile() {
     updateNotificationsMutation.mutate(update);
   };
 
+  const validLoyaltyData =
+    loyaltyData &&
+    Array.isArray(loyaltyData.tiers) &&
+    typeof loyaltyData.current_spent_rubles === 'number' &&
+    typeof loyaltyData.progress_percent === 'number'
+      ? loyaltyData
+      : null;
+  const loyaltyProgress = validLoyaltyData
+    ? Math.min(100, Math.max(0, validLoyaltyData.progress_percent))
+    : 0;
+
   return (
     <motion.div
       className="space-y-6"
@@ -279,6 +317,139 @@ export default function Profile() {
       initial="initial"
       animate="animate"
     >
+      <motion.div variants={staggerItem} data-testid="profile-financial-overview">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="glass-surface-accent p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-4 flex items-center gap-3 text-sm text-dark-400">
+                  <WalletIcon className="h-5 w-5 text-accent-400" />
+                  {t('balance.currentBalance')}
+                </div>
+                {balanceLoading ? (
+                  <SkeletonGroup>
+                    <Skeleton className="h-10 w-36" />
+                  </SkeletonGroup>
+                ) : balanceError ? (
+                  <p role="alert" className="text-sm text-error-400">
+                    {t('common.error')}
+                  </p>
+                ) : balanceData ? (
+                  <p className="text-4xl font-bold text-dark-50 sm:text-5xl">
+                    {formatAmount(balanceData.balance_rubles)}{' '}
+                    <span className="text-2xl text-dark-400">{currencySymbol}</span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-dark-400">{t('common.noData')}</p>
+                )}
+              </div>
+            </div>
+            <Button
+              type="button"
+              className="mt-5 w-full sm:w-auto"
+              onClick={() => navigate('/balance')}
+            >
+              {t('balance.topUpBalance')}
+            </Button>
+            <button
+              type="button"
+              className="mt-4 flex items-center gap-1 text-sm text-accent-400 hover:text-accent-300"
+              onClick={() => navigate('/balance')}
+            >
+              {t('balance.transactionHistory')}
+              <ArrowRightIcon className="h-4 w-4" />
+            </button>
+          </Card>
+
+          <Card className="glass-surface p-5 sm:p-6">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-400">
+                  {t('info.loyalty')}
+                </p>
+                <h2 className="mt-2 text-lg font-semibold text-dark-100">
+                  {t('info.yourProgress')}
+                </h2>
+              </div>
+              <StarIcon className="h-6 w-6 text-accent-400" filled />
+            </div>
+            {loyaltyLoading ? (
+              <SkeletonGroup className="space-y-3">
+                <Skeleton variant="line" className="h-5 w-40" />
+                <Skeleton variant="line" className="h-3 w-full" />
+              </SkeletonGroup>
+            ) : loyaltyError ? (
+              <p role="alert" className="text-sm text-error-400">
+                {t('subscription.promoGroup.error')}
+              </p>
+            ) : validLoyaltyData &&
+              (validLoyaltyData.tiers.length > 0 ||
+                validLoyaltyData.current_tier_name ||
+                validLoyaltyData.next_tier_name) ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="card-inset min-w-0 p-3">
+                    <p className="mb-1 text-xs text-dark-400">{t('info.totalSpent')}</p>
+                    <p className="truncate font-semibold text-dark-50">
+                      {formatAmount(validLoyaltyData.current_spent_rubles)} {currencySymbol}
+                    </p>
+                  </div>
+                  <div className="card-inset min-w-0 p-3">
+                    <p className="mb-1 text-xs text-dark-400">{t('info.currentStatus')}</p>
+                    <p className="truncate font-semibold text-accent-400">
+                      {validLoyaltyData.current_tier_name || t('info.noLoyaltyTiers')}
+                    </p>
+                  </div>
+                </div>
+                {validLoyaltyData.next_tier_name &&
+                validLoyaltyData.next_tier_threshold_rubles != null ? (
+                  <div className="mt-4">
+                    <div className="mb-2 flex flex-col gap-1 text-xs text-dark-400 sm:flex-row sm:justify-between">
+                      <span>
+                        {t('info.nextStatus')}: {validLoyaltyData.next_tier_name}
+                      </span>
+                      <span>
+                        {t('info.toNextStatus')}:{' '}
+                        {formatAmount(
+                          Math.max(
+                            0,
+                            validLoyaltyData.next_tier_threshold_rubles -
+                              validLoyaltyData.current_spent_rubles,
+                          ),
+                        )}{' '}
+                        {currencySymbol}
+                      </span>
+                    </div>
+                    <div
+                      className="h-3 overflow-hidden rounded-full bg-dark-700"
+                      role="progressbar"
+                      aria-label={t('info.yourProgress')}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={loyaltyProgress}
+                    >
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-accent-500 to-accent-400 transition-all duration-500"
+                        style={{ width: `${loyaltyProgress}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-right text-xs text-dark-400">
+                      {loyaltyProgress.toFixed(1)}%
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-center text-sm font-medium text-success-400">
+                    {t('info.allStatusesAchieved')}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-dark-400">{t('info.noLoyaltyTiers')}</p>
+            )}
+          </Card>
+        </div>
+      </motion.div>
+
       {/* User Info Card */}
       <motion.div variants={staggerItem}>
         <Card className="glass-surface p-5 sm:p-6">
@@ -329,6 +500,15 @@ export default function Profile() {
         </Card>
       </motion.div>
 
+      <motion.div variants={staggerItem}>
+        <Card className="glass-surface p-5 sm:p-6">
+          <Button type="button" variant="secondary" fullWidth onClick={() => navigate('/support')}>
+            {t('nav.support')}
+            <ArrowRightIcon className="h-4 w-4" />
+          </Button>
+        </Card>
+      </motion.div>
+
       {/* Referral Link Widget — self-animated: mounts after the referral queries
           resolve, when the parent stagger orchestration has already finished and
           would leave it stuck at opacity 0 */}
@@ -375,7 +555,7 @@ export default function Profile() {
                     <Button
                       onClick={() => copyReferralLink(link, type)}
                       variant="primary"
-                      className={copied === type ? 'bg-success-500 hover:bg-success-500' : ''}
+                      className={`shrink-0 ${copied === type ? 'bg-success-500 hover:bg-success-500' : ''}`}
                       aria-label={t('referral.copyLink')}
                     >
                       {copied === type ? <CheckIcon /> : <CopyIcon />}
