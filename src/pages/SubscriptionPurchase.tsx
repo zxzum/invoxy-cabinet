@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 import { subscriptionApi } from '../api/subscription';
 import { balanceApi } from '../api/balance';
 import { promoApi } from '../api/promo';
-import type { Tariff, ClassicPurchaseOptions } from '../types';
+import type { Tariff, ClassicPurchaseOptions, DevicesConfig } from '../types';
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { SwitchTariffSheet } from '../components/subscription/sheets/SwitchTariffSheet';
 import { TariffPurchaseForm } from '../components/subscription/purchase/TariffPurchaseForm';
@@ -13,13 +13,18 @@ import { TariffPickerGrid } from '../components/subscription/purchase/TariffPick
 import { getTariffCustomerFacingName } from '../components/subscription/purchase/tariffPresentation';
 import { ClassicPurchaseWizard } from '../components/subscription/purchase/ClassicPurchaseWizard';
 import { ResponsiveSheet } from '../components/ui/ResponsiveSheet';
+import LunaAddonsCard from '../components/dashboard/luna/active/LunaAddonsCard';
+import { DeviceTopupSheet } from '../components/subscription/sheets/DeviceTopupSheet';
+import { TrafficTopupSheet } from '../components/subscription/sheets/TrafficTopupSheet';
 import { ExclamationIcon, SparklesIcon, WalletIcon } from '@/components/icons';
 import { PageSkeleton, Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function SubscriptionPurchase() {
   const { t } = useTranslation();
   const { formatWithCurrency } = useCurrency();
+  const { isDark } = useTheme();
   const [searchParams] = useSearchParams();
   const subscriptionIdParam = searchParams.get('subscriptionId');
   const subscriptionId = subscriptionIdParam ? parseInt(subscriptionIdParam, 10) : undefined;
@@ -59,6 +64,60 @@ export default function SubscriptionPurchase() {
   const tariffs =
     isTariffsMode && purchaseOptions && 'tariffs' in purchaseOptions ? purchaseOptions.tariffs : [];
 
+  const activeAddonSubscription =
+    subscription && !subscription.is_trial && (subscription.is_active || subscription.is_limited)
+      ? subscription
+      : null;
+  const currentTariff =
+    isTariffsMode && purchaseOptions && 'current_tariff_id' in purchaseOptions
+      ? tariffs.find(
+          (tariff) =>
+            tariff.id === purchaseOptions.current_tariff_id ||
+            (purchaseOptions.current_tariff_id == null && tariff.is_current),
+        )
+      : null;
+  const addonDevicesConfig: DevicesConfig | null =
+    currentTariff?.device_price_kopeks && currentTariff.device_price_kopeks > 0
+      ? {
+          min: 1,
+          max: currentTariff.max_device_limit ?? 0,
+          default: activeAddonSubscription?.device_limit ?? currentTariff.device_limit,
+          current: activeAddonSubscription?.device_limit ?? currentTariff.device_limit,
+          price_per_device_kopeks: currentTariff.device_price_kopeks,
+          price_per_device_label: formatWithCurrency(currentTariff.device_price_kopeks / 100),
+          ...(currentTariff.original_device_price_kopeks != null && {
+            price_per_device_original_kopeks: currentTariff.original_device_price_kopeks,
+          }),
+          ...(currentTariff.device_discount_percent != null && {
+            discount_percent: currentTariff.device_discount_percent,
+          }),
+        }
+      : null;
+
+  const {
+    data: regularTrafficPackages,
+    isLoading: regularTrafficPackagesLoading,
+    isError: regularTrafficPackagesError,
+    refetch: refetchRegularTrafficPackages,
+  } = useQuery({
+    queryKey: ['traffic-packages', activeAddonSubscription?.id, 'regular'],
+    queryFn: () => subscriptionApi.getTrafficPackages(activeAddonSubscription?.id, 'regular'),
+    enabled: isTariffsMode && activeAddonSubscription != null,
+    staleTime: 60_000,
+  });
+  const hasLteTraffic = (activeAddonSubscription?.whitelist_traffic_limit_gb ?? 0) > 0;
+  const {
+    data: lteTrafficPackages,
+    isLoading: lteTrafficPackagesLoading,
+    isError: lteTrafficPackagesError,
+    refetch: refetchLteTrafficPackages,
+  } = useQuery({
+    queryKey: ['traffic-packages', activeAddonSubscription?.id, 'whitelist'],
+    queryFn: () => subscriptionApi.getTrafficPackages(activeAddonSubscription?.id, 'whitelist'),
+    enabled: isTariffsMode && activeAddonSubscription != null && hasLteTraffic,
+    staleTime: 60_000,
+  });
+
   const { data: loyaltyTiers } = useQuery({
     queryKey: ['loyalty-tiers'],
     queryFn: promoApi.getLoyaltyTiers,
@@ -83,6 +142,11 @@ export default function SubscriptionPurchase() {
   // Tariffs mode state
   const [selectedTariff, setSelectedTariff] = useState<Tariff | null>(null);
   const [showTariffPurchase, setShowTariffPurchase] = useState(false);
+  const [showDeviceTopup, setShowDeviceTopup] = useState(false);
+  const [devicesToAdd, setDevicesToAdd] = useState(1);
+  const [showTrafficTopup, setShowTrafficTopup] = useState(false);
+  const [selectedTrafficPackage, setSelectedTrafficPackage] = useState<number | null>(null);
+  const [trafficTopupScope, setTrafficTopupScope] = useState<'regular' | 'whitelist'>('regular');
   // Шит доигрывает анимацию выезда после isOpen=false — тариф для его
   // содержимого держим в ref, иначе selectedTariff=null размонтировал бы
   // шит посреди анимации.
@@ -103,6 +167,9 @@ export default function SubscriptionPurchase() {
   const handleCloseAllModals = () => {
     // setShowPurchaseForm moved into <ClassicPurchaseWizard>'s own useCloseOnSuccessNotification
     setShowTariffPurchase(false);
+    setShowDeviceTopup(false);
+    setShowTrafficTopup(false);
+    setSelectedTrafficPackage(null);
     setSwitchTariffId(null);
 
     setSelectedTariff(null);
@@ -340,6 +407,104 @@ export default function SubscriptionPurchase() {
           subscription={subscription}
           subscriptionId={subscriptionId}
         />
+      )}
+
+      {isTariffsMode && activeAddonSubscription && (
+        <section aria-label={t('dashboard.luna.addons.title', 'Дополнительные опции')}>
+          <LunaAddonsCard
+            devicesConfig={addonDevicesConfig}
+            regularTrafficPackages={regularTrafficPackages ?? []}
+            lteTrafficPackages={lteTrafficPackages ?? []}
+            isLoading={regularTrafficPackagesLoading || lteTrafficPackagesLoading}
+            errorMessage={
+              regularTrafficPackagesError || (hasLteTraffic && lteTrafficPackagesError)
+                ? t('dashboard.luna.addons.error', 'Не удалось загрузить варианты докупки')
+                : undefined
+            }
+            onRetry={() => {
+              void Promise.all([
+                ...(regularTrafficPackagesError ? [refetchRegularTrafficPackages()] : []),
+                ...(hasLteTraffic && lteTrafficPackagesError ? [refetchLteTrafficPackages()] : []),
+              ]);
+            }}
+            retryLabel={t('common.retry', 'Повторить')}
+            onOpenDeviceAddon={addonDevicesConfig ? () => setShowDeviceTopup(true) : undefined}
+            onOpenTrafficAddon={(packageOption) => {
+              setTrafficTopupScope('regular');
+              setSelectedTrafficPackage(packageOption.gb);
+              setShowTrafficTopup(true);
+            }}
+            onOpenLteAddon={(packageOption) => {
+              setTrafficTopupScope('whitelist');
+              setSelectedTrafficPackage(packageOption.gb);
+              setShowTrafficTopup(true);
+            }}
+            formatPackagePrice={(packageOption) =>
+              formatWithCurrency(packageOption.price_rubles, 0)
+            }
+            trafficUnitLabel={t('common.units.gb', 'ГБ')}
+            title={t('dashboard.luna.addons.title', 'Дополнительные опции')}
+            devicesLabel={t('dashboard.luna.addons.devices', 'Ещё устройства')}
+            trafficLabel={t('dashboard.luna.addons.traffic', 'Основной трафик')}
+            lteLabel={t('subscription.additionalOptions.whitelistTraffic', 'Доп. LTE-трафик')}
+            addDevicesLabel={t('dashboard.luna.addons.addDevices', 'Добавить')}
+            addTrafficLabel={t('dashboard.luna.addons.addTraffic', 'Добавить трафик')}
+            addLteLabel={t('dashboard.luna.addons.addLte', 'Добавить LTE-трафик')}
+            unlimitedLabel={t('dashboard.unlimited', 'Безлимит')}
+            unavailableLabel={t('dashboard.luna.addons.unavailable', 'Недоступно')}
+            emptyMessage={t('dashboard.luna.addons.empty', 'Докупка недоступна')}
+          />
+
+          {activeAddonSubscription && showDeviceTopup && (
+            <ResponsiveSheet
+              isOpen
+              onClose={() => setShowDeviceTopup(false)}
+              title={t('subscription.buyDevices', 'Докупить устройства')}
+              size="md"
+            >
+              <DeviceTopupSheet
+                open
+                onOpen={() => setShowDeviceTopup(true)}
+                onClose={() => setShowDeviceTopup(false)}
+                subscription={activeAddonSubscription}
+                subscriptionId={activeAddonSubscription.id}
+                devicesToAdd={devicesToAdd}
+                onDevicesToAddChange={setDevicesToAdd}
+                purchaseOptions={purchaseOptions}
+                isDark={isDark}
+              />
+            </ResponsiveSheet>
+          )}
+
+          {activeAddonSubscription && showTrafficTopup && (
+            <ResponsiveSheet
+              isOpen
+              onClose={() => {
+                setShowTrafficTopup(false);
+                setSelectedTrafficPackage(null);
+              }}
+              title={t('subscription.additionalOptions.buyTrafficTitle', 'Докупить трафик')}
+              size="lg"
+            >
+              <TrafficTopupSheet
+                open
+                onOpen={() => setShowTrafficTopup(true)}
+                onClose={() => {
+                  setShowTrafficTopup(false);
+                  setSelectedTrafficPackage(null);
+                }}
+                subscription={activeAddonSubscription}
+                subscriptionId={activeAddonSubscription.id}
+                initialScope={trafficTopupScope}
+                onScopeChange={setTrafficTopupScope}
+                selectedTrafficPackage={selectedTrafficPackage}
+                onSelectedTrafficPackageChange={setSelectedTrafficPackage}
+                purchaseOptions={purchaseOptions}
+                isDark={isDark}
+              />
+            </ResponsiveSheet>
+          )}
+        </section>
       )}
 
       {/* No options available fallback */}

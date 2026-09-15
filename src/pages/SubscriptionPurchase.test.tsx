@@ -3,13 +3,14 @@ import type { ReactNode } from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SubscriptionPurchase from './SubscriptionPurchase';
 
 const mocks = vi.hoisted(() => ({
   getSubscription: vi.fn(),
   getPurchaseOptions: vi.fn(),
   getSubscriptions: vi.fn(),
+  getTrafficPackages: vi.fn(),
 }));
 
 vi.mock('../api/subscription', () => ({
@@ -17,6 +18,7 @@ vi.mock('../api/subscription', () => ({
     getSubscription: mocks.getSubscription,
     getPurchaseOptions: mocks.getPurchaseOptions,
     getSubscriptions: mocks.getSubscriptions,
+    getTrafficPackages: mocks.getTrafficPackages,
   },
 }));
 vi.mock('../api/balance', () => ({
@@ -32,6 +34,9 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 vi.mock('../hooks/useTheme', () => ({ useTheme: () => ({ isDark: true }) }));
+vi.mock('../api/promo', () => ({
+  promoApi: { getLoyaltyTiers: vi.fn().mockResolvedValue(null) },
+}));
 vi.mock('../hooks/useCurrency', () => ({
   useCurrency: () => ({ formatWithCurrency: (amount: number) => `${amount} ₽` }),
 }));
@@ -60,8 +65,10 @@ vi.mock('../components/subscription/purchase/ClassicPurchaseWizard', () => ({
 }));
 vi.mock('../components/ui/ResponsiveSheet', () => ({ ResponsiveSheet: () => null }));
 vi.mock('@/components/icons', () => ({
+  DevicesIcon: () => null,
   ExclamationIcon: () => null,
   SparklesIcon: () => null,
+  TrafficIcon: () => null,
   WalletIcon: () => null,
 }));
 vi.mock('@/components/ui/skeleton', () => ({
@@ -89,6 +96,7 @@ function createClient() {
 }
 
 afterEach(cleanup);
+beforeEach(() => vi.clearAllMocks());
 
 describe('SubscriptionPurchase cache refresh', () => {
   it('keeps cached options visible while refreshing subscription data on mount', async () => {
@@ -146,5 +154,65 @@ describe('SubscriptionPurchase cache refresh', () => {
 
     const tariff = await screen.findByTestId('cached-options');
     expect(tariff.closest('.glass-surface')).toBeTruthy();
+  });
+
+  it('shows API-backed add-ons for an active paid subscription', async () => {
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: {
+        id: 42,
+        status: 'active',
+        is_active: true,
+        is_limited: false,
+        is_trial: false,
+        device_limit: 5,
+        whitelist_traffic_limit_gb: 50,
+      },
+    });
+    mocks.getPurchaseOptions.mockResolvedValue({
+      sales_mode: 'tariffs' as const,
+      tariffs: [
+        {
+          id: 7,
+          name: 'Standard',
+          is_current: true,
+          device_limit: 5,
+          device_price_kopeks: 3_000,
+          max_device_limit: 10,
+        },
+      ],
+      current_tariff_id: 7,
+      balance_kopeks: 10_000,
+    });
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false });
+    mocks.getTrafficPackages.mockImplementation((_subscriptionId: number, scope: string) =>
+      Promise.resolve([
+        {
+          gb: scope === 'whitelist' ? 50 : 100,
+          price_kopeks: scope === 'whitelist' ? 15_000 : 5_000,
+          price_rubles: scope === 'whitelist' ? 150 : 50,
+          is_unlimited: false,
+          is_available: true,
+        },
+      ]),
+    );
+
+    const client = createClient();
+    render(
+      <MemoryRouter initialEntries={['/tariffs']}>
+        <QueryClientProvider client={client}>
+          <SubscriptionPurchase />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Дополнительные опции' })).toBeTruthy();
+    expect(screen.getByText('Ещё устройства')).toBeTruthy();
+    expect(screen.getByText('Основной трафик')).toBeTruthy();
+    expect(screen.getByText('Доп. LTE-трафик')).toBeTruthy();
+    await waitFor(() => {
+      expect(mocks.getTrafficPackages).toHaveBeenCalledWith(42, 'regular');
+      expect(mocks.getTrafficPackages).toHaveBeenCalledWith(42, 'whitelist');
+    });
   });
 });
