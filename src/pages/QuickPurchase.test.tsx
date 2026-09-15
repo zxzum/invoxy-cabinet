@@ -142,6 +142,7 @@ describe('QuickPurchase', () => {
     renderPage();
 
     expect(await screen.findByText('API tariff')).toBeTruthy();
+    expect(screen.getByText('API tariff').closest('.luna-dashboard')).toBeTruthy();
     expect(screen.getByText('API card')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'As a gift' })).toBeTruthy();
 
