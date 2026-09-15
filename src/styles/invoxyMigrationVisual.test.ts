@@ -24,6 +24,18 @@ describe('Invoxy visual migration', () => {
     expect(css).toContain('env(safe-area-inset-bottom');
   });
 
+  it('maps the Luna wrapper to the light theme tokens', () => {
+    const start = css.indexOf('/* Luna dashboard contract */');
+    const end = css.indexOf('/* End Luna dashboard contract */', start);
+    const lunaCss = start >= 0 && end > start ? css.slice(start, end) : '';
+
+    expect(lunaCss).toMatch(
+      /\.light\s+\.luna-dashboard\s*\{[\s\S]*--luna-bg:\s*rgb\(var\(--color-champagne-200\)\);[\s\S]*--luna-ink:\s*rgb\(var\(--color-champagne-950\)\);/,
+    );
+    expect(lunaCss).toContain('--luna-panel-bg: var(--glass-fill);');
+    expect(lunaCss).toContain('--luna-control-bg: var(--glass-fill-elevated);');
+  });
+
   it('keeps raised sheet/dialog surfaces explicit', () => {
     const sheet = readFileSync(new URL('../components/ui/Sheet.tsx', import.meta.url), 'utf8');
     const responsiveSheet = readFileSync(

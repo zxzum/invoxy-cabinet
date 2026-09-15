@@ -2693,6 +2693,13 @@ html.light .bento-card-hover:hover {
     background-color: var(--luna-bg);
   }
 
+  .light .luna-dashboard {
+    --luna-bg: rgb(var(--color-champagne-200));
+    --luna-ink: rgb(var(--color-champagne-950));
+    --luna-panel-bg: var(--glass-fill);
+    --luna-control-bg: var(--glass-fill-elevated);
+  }
+
   .luna-dashboard .glass-panel {
     background: var(--luna-panel-bg);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -2827,6 +2834,14 @@ html.light .bento-card-hover:hover {
       top: 0;
       transform: none;
     }
+  }
+
+  .light .luna-dashboard .glass-panel {
+    background: var(--luna-panel-bg);
+  }
+
+  .light .luna-dashboard .glass-control {
+    background: var(--luna-control-bg);
   }
 }
 
