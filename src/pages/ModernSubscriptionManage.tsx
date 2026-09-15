@@ -551,6 +551,18 @@ export default function ModernSubscriptionManage() {
             )}
           </Panel>
 
+          <ConnectionPanel
+            accessLink={accessLink}
+            qrLink={qrLink}
+            happLink={happLink}
+            incyLink={incyLink}
+            instructions={instructions}
+            isLoading={connectionQuery.isPending}
+            error={connectionQuery.isError}
+            onCopy={handleCopy}
+            onOpen={openDeepLink}
+          />
+
           <LunaDevicesCard
             devices={devices}
             deviceLimit={subscription.device_limit}
@@ -572,18 +584,6 @@ export default function ModernSubscriptionManage() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-5">
-          <ConnectionPanel
-            accessLink={accessLink}
-            qrLink={qrLink}
-            happLink={happLink}
-            incyLink={incyLink}
-            instructions={instructions}
-            isLoading={connectionQuery.isPending}
-            error={connectionQuery.isError}
-            onCopy={handleCopy}
-            onOpen={openDeepLink}
-          />
-
           {!subscription.is_trial && !subscription.is_daily && (
             <Panel
               title={t('modernSubscription.autopayTitle', 'Автопродление')}

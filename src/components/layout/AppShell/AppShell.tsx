@@ -294,7 +294,7 @@ export function AppShell({ children }: AppShellProps) {
         />
       )}
 
-      {location.pathname !== '/support' && (
+      {!isModernCustomerRoute && location.pathname !== '/support' && (
         <Link to="/support" className="ix-fab" aria-label="Поддержка" onClick={handleNavClick}>
           <PiChatCircle className="h-6 w-6" />
         </Link>

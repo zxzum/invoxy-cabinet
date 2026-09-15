@@ -152,6 +152,11 @@ describe('ModernSubscriptionManage', () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { name: 'Стандарт' })).toBeTruthy();
+    const connectionHeading = screen.getByRole('heading', { name: 'Ключ доступа' });
+    const devicesHeading = screen.getByRole('heading', { name: 'Подключённые устройства' });
+    expect(
+      connectionHeading.compareDocumentPosition(devicesHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByText(subscription.subscription_url)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Скопировать ключ' }));
     await waitFor(() =>
