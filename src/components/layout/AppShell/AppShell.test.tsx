@@ -120,12 +120,12 @@ describe('AppShell support FAB', () => {
   });
 
   it('mounts one support FAB immediately on a normal shell route', () => {
-    renderShell('/info');
+    renderShell('/balance');
 
     expect(screen.getAllByRole('link', { name: 'Поддержка' })).toHaveLength(1);
   });
 
-  it.each(['/dashboard', '/news', '/news/sample'])(
+  it.each(['/dashboard', '/news', '/news/sample', '/info', '/info/rules'])(
     'does not render the legacy support FAB on modern customer route %s',
     (pathname) => {
       renderShell(pathname);
@@ -210,6 +210,14 @@ describe('AppShell support FAB', () => {
 
     cleanup();
     renderShell('/news/sample');
+
+    expect(screen.getByText('page').closest('.ix-app')?.getAttribute('data-customer-ui')).toBe(
+      'modern',
+    );
+    expect(document.documentElement.getAttribute('data-customer-palette')).toBe('mint');
+
+    cleanup();
+    renderShell('/info');
 
     expect(screen.getByText('page').closest('.ix-app')?.getAttribute('data-customer-ui')).toBe(
       'modern',

@@ -10,8 +10,9 @@ import { formatContent } from '../utils/legalContent';
 import { infoPagesApi } from '../api/infoPages';
 import { promoApi, type LoyaltyTierInfo } from '../api/promo';
 import type { FaqItem, ReplacesTab } from '../api/infoPages';
-import { DocumentIcon, InfoIcon, QuestionIcon, ShieldIcon, StarIcon } from '@/components/icons';
+import { DocumentIcon, QuestionIcon, ShieldIcon, StarIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import TicketNotificationBell from '../components/TicketNotificationBell';
 
 const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
   <PiCaretDown className={`h-5 w-5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -435,7 +436,7 @@ export default function Info() {
     }
 
     return (
-      <div className="glass-surface bento-card prose prose-invert max-w-none">
+      <div className="glass-panel motion-card rounded-[30px] p-6 prose prose-invert max-w-none lg:p-8">
         <div className="overflow-x-auto" dangerouslySetInnerHTML={{ __html: infoPageHtml }} />
       </div>
     );
@@ -477,7 +478,10 @@ export default function Info() {
       return (
         <div className="space-y-2">
           {faqPages.map((faq: FaqPage) => (
-            <div key={faq.id} className="glass-surface bento-card overflow-hidden p-0">
+            <div
+              key={faq.id}
+              className="glass-panel motion-card overflow-hidden rounded-[24px] p-0"
+            >
               <button
                 onClick={() => toggleFaq(faq.id)}
                 className="flex min-h-[52px] w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-dark-800/50"
@@ -510,7 +514,7 @@ export default function Info() {
       }
 
       return (
-        <div className="glass-surface bento-card prose prose-invert max-w-none">
+        <div className="glass-panel motion-card rounded-[30px] p-6 prose prose-invert max-w-none lg:p-8">
           <div
             className="overflow-x-auto"
             dangerouslySetInnerHTML={{ __html: formatContent(rules.content) }}
@@ -538,7 +542,7 @@ export default function Info() {
       }
 
       return (
-        <div className="glass-surface bento-card prose prose-invert max-w-none">
+        <div className="glass-panel motion-card rounded-[30px] p-6 prose prose-invert max-w-none lg:p-8">
           <div
             className="overflow-x-auto"
             dangerouslySetInnerHTML={{ __html: formatContent(privacy.content) }}
@@ -566,7 +570,7 @@ export default function Info() {
       }
 
       return (
-        <div className="glass-surface bento-card prose prose-invert max-w-none">
+        <div className="glass-panel motion-card rounded-[30px] p-6 prose prose-invert max-w-none lg:p-8">
           <div
             className="overflow-x-auto"
             dangerouslySetInnerHTML={{ __html: formatContent(offer.content) }}
@@ -594,7 +598,7 @@ export default function Info() {
       }
 
       return (
-        <div className="glass-surface bento-card prose prose-invert max-w-none">
+        <div className="glass-panel motion-card rounded-[30px] p-6 prose prose-invert max-w-none lg:p-8">
           <div
             className="overflow-x-auto"
             dangerouslySetInnerHTML={{ __html: formatContent(recurrentPayments.content) }}
@@ -665,7 +669,7 @@ export default function Info() {
       return (
         <div className="flex flex-col gap-5 lg:gap-6">
           {/* Progress Card */}
-          <div className="glass-surface bento-card p-5">
+          <div className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <h3 className="mb-4 text-lg font-semibold text-dark-50">{t('info.yourProgress')}</h3>
 
             <div className="mb-4 grid grid-cols-2 gap-4">
@@ -722,7 +726,7 @@ export default function Info() {
             {loyaltyData.tiers.map((tier) => (
               <div
                 key={tier.id}
-                className={`glass-surface bento-card p-4 transition-all ${
+                className={`glass-panel motion-card rounded-[24px] p-4 transition-all ${
                   tier.is_current
                     ? 'bg-accent-500/5 ring-2 ring-accent-500/50'
                     : tier.is_achieved
@@ -797,33 +801,33 @@ export default function Info() {
   };
 
   return (
-    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <div className="flex items-center gap-3">
-        <InfoIcon className="h-6 w-6" />
-        <h1 className="text-2xl font-bold text-dark-50 sm:text-3xl">{t('info.title')}</h1>
-        <nav
-          aria-label={t('info.title')}
-          className="mt-3 flex flex-wrap gap-4 text-sm text-accent-400"
-        >
-          <Link to="/offer" className="underline">
-            {t('footer.offer', 'Публичная оферта')}
-          </Link>
-          <Link to="/privacy" className="underline">
-            {t('footer.privacy', 'Политика конфиденциальности')}
-          </Link>
-        </nav>
-      </div>
+    <div className="luna-dashboard flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
+      <header className="relative z-10 flex items-start justify-between gap-4">
+        <div className="ix-page-heading min-w-0">
+          <h1>{t('info.title')}</h1>
+          <p>{t('info.subtitle', 'Ответы, правила и документы InvoxyVPN')}</p>
+        </div>
+        <TicketNotificationBell />
+      </header>
+      <nav aria-label={t('info.title')} className="flex flex-wrap gap-4 text-xs text-accent-300">
+        <Link to="/offer" className="underline underline-offset-4">
+          {t('footer.offer', 'Публичная оферта')}
+        </Link>
+        <Link to="/privacy" className="underline underline-offset-4">
+          {t('footer.privacy', 'Политика конфиденциальности')}
+        </Link>
+      </nav>
 
       {/* Tabs */}
-      <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-x-visible">
+      <div className="glass-panel scrollbar-hide flex gap-2 overflow-x-auto rounded-[24px] p-2 sm:flex-wrap sm:overflow-x-visible">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+            className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? 'bg-accent-500 text-on-accent'
-                : 'bg-dark-800 text-dark-300 hover:bg-dark-700'
+                : 'glass-control text-dark-300 hover:border-accent-400/35 hover:text-dark-50'
             }`}
           >
             {tab.emoji ? <span className="text-base">{tab.emoji}</span> : <tab.icon />}

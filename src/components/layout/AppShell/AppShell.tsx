@@ -65,7 +65,9 @@ export function AppShell({ children }: AppShellProps) {
     location.pathname === '/subscriptions' ||
     location.pathname.startsWith('/subscriptions/') ||
     location.pathname === '/news' ||
-    location.pathname.startsWith('/news/');
+    location.pathname.startsWith('/news/') ||
+    location.pathname === '/info' ||
+    location.pathname.startsWith('/info/');
   const animatePage = !isTelegramWebApp && !reducedMotion;
   if (animatePage && previousPath !== location.pathname) {
     const previousIndex = tabs.indexOf(previousPath);

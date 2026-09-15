@@ -36,6 +36,9 @@ vi.mock('../api/infoPages', () => ({
   },
 }));
 vi.mock('../api/promo', () => ({ promoApi: { getLoyaltyTiers: mocks.getLoyaltyTiers } }));
+vi.mock('../components/TicketNotificationBell', () => ({
+  default: () => <button aria-label="notifications" type="button" />,
+}));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string) =>
