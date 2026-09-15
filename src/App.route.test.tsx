@@ -207,7 +207,7 @@ vi.mock('./pages/SavedCards', () => ({
   default: () => <div data-testid="saved-cards-page">saved cards</div>,
 }));
 vi.mock('./pages/Referral', () => ({ default: () => <div data-testid="referral-page" /> }));
-vi.mock('./components/news/NewsSection', () => ({
+vi.mock('./pages/News', () => ({
   default: () => <div data-testid="news-page">news</div>,
 }));
 vi.mock('./pages/ConnectedAccounts', () => ({
