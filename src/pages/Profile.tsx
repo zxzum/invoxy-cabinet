@@ -1,6 +1,6 @@
 import { uiLocale } from '@/utils/uiLocale';
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePlatform } from '@/platform';
 import { copyToClipboard } from '@/utils/clipboard';
@@ -40,13 +40,23 @@ import {
 } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
 export default function Profile() {
   const { t } = useTranslation();
+  const location = useLocation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
   const { currencySymbol, formatAmount } = useCurrency();
+
+  useEffect(() => {
+    if (location.hash !== '#top-up') return;
+
+    navigate(`/balance/top-up${location.search}`, { replace: true });
+  }, [location.hash, location.search, navigate]);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -302,13 +312,26 @@ export default function Profile() {
   const validLoyaltyData =
     loyaltyData &&
     Array.isArray(loyaltyData.tiers) &&
-    typeof loyaltyData.current_spent_rubles === 'number' &&
-    typeof loyaltyData.progress_percent === 'number'
+    isFiniteNumber(loyaltyData.current_spent_rubles) &&
+    isFiniteNumber(loyaltyData.progress_percent) &&
+    (loyaltyData.next_tier_threshold_rubles == null ||
+      isFiniteNumber(loyaltyData.next_tier_threshold_rubles)) &&
+    (loyaltyData.current_tier_name == null || typeof loyaltyData.current_tier_name === 'string') &&
+    (loyaltyData.next_tier_name == null || typeof loyaltyData.next_tier_name === 'string')
       ? loyaltyData
       : null;
+  const validBalanceData =
+    balanceData && isFiniteNumber(balanceData.balance_rubles) ? balanceData : null;
   const loyaltyProgress = validLoyaltyData
     ? Math.min(100, Math.max(0, validLoyaltyData.progress_percent))
     : 0;
+  const loyaltyRemainingRubles =
+    validLoyaltyData?.next_tier_name && validLoyaltyData.next_tier_threshold_rubles != null
+      ? Math.max(
+          0,
+          validLoyaltyData.next_tier_threshold_rubles - validLoyaltyData.current_spent_rubles,
+        )
+      : null;
 
   return (
     <motion.div
@@ -334,9 +357,9 @@ export default function Profile() {
                   <p role="alert" className="text-sm text-error-400">
                     {t('common.error')}
                   </p>
-                ) : balanceData ? (
+                ) : validBalanceData ? (
                   <p className="text-4xl font-bold text-dark-50 sm:text-5xl">
-                    {formatAmount(balanceData.balance_rubles)}{' '}
+                    {formatAmount(validBalanceData.balance_rubles)}{' '}
                     <span className="text-2xl text-dark-400">{currencySymbol}</span>
                   </p>
                 ) : (
@@ -401,22 +424,14 @@ export default function Profile() {
                     </p>
                   </div>
                 </div>
-                {validLoyaltyData.next_tier_name &&
-                validLoyaltyData.next_tier_threshold_rubles != null ? (
+                {loyaltyRemainingRubles != null && Number.isFinite(loyaltyRemainingRubles) ? (
                   <div className="mt-4">
                     <div className="mb-2 flex flex-col gap-1 text-xs text-dark-400 sm:flex-row sm:justify-between">
                       <span>
                         {t('info.nextStatus')}: {validLoyaltyData.next_tier_name}
                       </span>
                       <span>
-                        {t('info.toNextStatus')}:{' '}
-                        {formatAmount(
-                          Math.max(
-                            0,
-                            validLoyaltyData.next_tier_threshold_rubles -
-                              validLoyaltyData.current_spent_rubles,
-                          ),
-                        )}{' '}
+                        {t('info.toNextStatus')}: {formatAmount(loyaltyRemainingRubles)}{' '}
                         {currencySymbol}
                       </span>
                     </div>

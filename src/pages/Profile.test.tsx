@@ -98,9 +98,9 @@ vi.mock('@/platform', () => ({
   }),
 }));
 
-function renderProfile() {
+function renderProfile(initialEntry = '/profile') {
   return render(
-    <MemoryRouter initialEntries={['/profile']}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <QueryClientProvider
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
       >
@@ -168,6 +168,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Profile target data presentation', () => {
+  it('redirects the legacy top-up hash to the existing top-up surface', async () => {
+    renderProfile('/profile#top-up');
+
+    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/balance/top-up'));
+  });
+
   it('puts live balance and loyalty before account details with discoverable routes', async () => {
     renderProfile();
 
@@ -183,6 +189,54 @@ describe('Profile target data presentation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'balance.topUpBalance' }));
     expect(screen.getByTestId('location').textContent).toBe('/balance');
+  });
+
+  it('routes transaction history to the balance owner', async () => {
+    renderProfile();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'balance.transactionHistory' }));
+    expect(screen.getByTestId('location').textContent).toBe('/balance');
+  });
+
+  it('falls back safely when balance or loyalty values are malformed', async () => {
+    mocks.getBalance.mockResolvedValue({ balance_kopeks: 32100, balance_rubles: Number.NaN });
+    mocks.getLoyaltyTiers.mockResolvedValue({
+      tiers: [],
+      current_spent_rubles: Number.NaN,
+      current_tier_name: 'Friends',
+      next_tier_name: 'VIP',
+      next_tier_threshold_rubles: Number.POSITIVE_INFINITY,
+      progress_percent: Number.NaN,
+    });
+
+    renderProfile();
+
+    const overview = await screen.findByTestId('profile-financial-overview');
+    expect(await screen.findByText('common.noData')).toBeTruthy();
+    expect(await screen.findByText('info.noLoyaltyTiers')).toBeTruthy();
+    expect(overview.innerHTML).not.toMatch(/NaN|Infinity/);
+  });
+
+  it('falls back safely when financial payloads are empty', async () => {
+    mocks.getBalance.mockResolvedValue({});
+    mocks.getLoyaltyTiers.mockResolvedValue({});
+
+    renderProfile();
+
+    const overview = await screen.findByTestId('profile-financial-overview');
+    expect(await screen.findByText('common.noData')).toBeTruthy();
+    expect(await screen.findByText('info.noLoyaltyTiers')).toBeTruthy();
+    expect(overview.innerHTML).not.toMatch(/NaN|Infinity/);
+  });
+
+  it('shows explicit errors when balance and loyalty requests fail', async () => {
+    mocks.getBalance.mockRejectedValue(new Error('balance unavailable'));
+    mocks.getLoyaltyTiers.mockRejectedValue(new Error('loyalty unavailable'));
+
+    renderProfile();
+
+    expect(await screen.findByText('common.error')).toBeTruthy();
+    expect(await screen.findByText('subscription.promoGroup.error')).toBeTruthy();
   });
 
   it('renders the target user and account action in glass panels', async () => {
