@@ -177,6 +177,21 @@ describe('AppShell support FAB', () => {
     expect(screen.getByRole('link', { name: 'Кабинет' }).getAttribute('href')).toBe('/dashboard');
   });
 
+  it('scopes the mint palette to modern customer routes', () => {
+    const { container } = renderShell('/dashboard');
+
+    expect(container.querySelector('.ix-app')?.getAttribute('data-customer-ui')).toBe('modern');
+    expect(document.documentElement.getAttribute('data-customer-palette')).toBe('mint');
+
+    cleanup();
+    renderShell('/subscriptions');
+
+    expect(screen.getByText('page').closest('.ix-app')?.getAttribute('data-customer-ui')).toBe(
+      'legacy',
+    );
+    expect(document.documentElement.getAttribute('data-customer-palette')).toBeNull();
+  });
+
   it.each(['/dashboard', '/subscriptions', '/balance', '/referral', '/support', '/info'])(
     'keeps the mobile nav on a direct user route: %s',
     (pathname) => {

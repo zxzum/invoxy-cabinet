@@ -24,6 +24,13 @@ describe('Invoxy visual migration', () => {
     expect(css).toContain('env(safe-area-inset-bottom');
   });
 
+  it('scopes the InvoxyStart mint accent to modern customer routes', () => {
+    expect(css).toContain('html[data-customer-palette="mint"]');
+    expect(css).toContain('--color-accent-400: 165, 232, 196 !important;');
+    expect(css).toContain('--color-accent-500: 165, 232, 196 !important;');
+    expect(css).toContain('--color-on-accent: 11, 12, 14 !important;');
+  });
+
   it('maps the Luna wrapper to the light theme tokens', () => {
     const start = css.indexOf('/* Luna dashboard contract */');
     const end = css.indexOf('/* End Luna dashboard contract */', start);

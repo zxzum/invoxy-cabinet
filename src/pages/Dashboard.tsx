@@ -48,7 +48,7 @@ import TicketNotificationBell from '../components/TicketNotificationBell';
 import { openAppScheme } from '../utils/openAppScheme';
 import { isInTelegramWebApp } from '../hooks/useTelegramSDK';
 import { useNativeDialog, useNotify } from '@/platform';
-import type { Device, RenewalOption, TrafficPackage } from '../types';
+import type { Device, DevicesConfig, RenewalOption, TrafficPackage } from '../types';
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
@@ -729,11 +729,11 @@ export default function Dashboard() {
       empty: t('dashboard.luna.connection.empty', 'Ссылка подписки недоступна'),
     },
     addons: {
-      title: t('dashboard.luna.addons.title', 'Докупка'),
-      devices: t('dashboard.luna.addons.devices', 'Дополнительные устройства'),
+      title: t('dashboard.luna.addons.title', 'Дополнительные опции'),
+      devices: t('dashboard.luna.addons.devices', 'Ещё устройства'),
       traffic: t('dashboard.luna.addons.traffic', 'Основной трафик'),
       lte: t('dashboard.luna.addons.lte', 'LTE-трафик'),
-      addDevices: t('dashboard.luna.addons.addDevices', 'Добавить устройства'),
+      addDevices: t('dashboard.luna.addons.addDevices', 'Добавить'),
       addTraffic: t('dashboard.luna.addons.addTraffic', 'Добавить трафик'),
       addLte: t('dashboard.luna.addons.addLte', 'Добавить LTE-трафик'),
       unlimited: t('dashboard.unlimited', 'Безлимит'),
@@ -742,7 +742,31 @@ export default function Dashboard() {
     },
   };
 
-  const devicesConfig = purchaseOptions?.sales_mode === 'classic' ? purchaseOptions.devices : null;
+  const currentTariff =
+    purchaseOptions?.sales_mode === 'tariffs'
+      ? purchaseOptions.tariffs.find(
+          (tariff) => tariff.id === purchaseOptions.current_tariff_id || tariff.is_current,
+        )
+      : null;
+  const devicesConfig: DevicesConfig | null =
+    purchaseOptions?.sales_mode === 'classic'
+      ? purchaseOptions.devices
+      : currentTariff?.device_price_kopeks && currentTariff.device_price_kopeks > 0
+        ? {
+            min: 1,
+            max: currentTariff.max_device_limit ?? 0,
+            default: activeSubscription?.device_limit ?? currentTariff.device_limit,
+            current: activeSubscription?.device_limit ?? currentTariff.device_limit,
+            price_per_device_kopeks: currentTariff.device_price_kopeks,
+            price_per_device_label: formatKopeks(currentTariff.device_price_kopeks),
+            ...(currentTariff.original_device_price_kopeks != null && {
+              price_per_device_original_kopeks: currentTariff.original_device_price_kopeks,
+            }),
+            ...(currentTariff.device_discount_percent != null && {
+              discount_percent: currentTariff.device_discount_percent,
+            }),
+          }
+        : null;
 
   const activeDashboardLoading = Boolean(
     activeSubscription &&

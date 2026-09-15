@@ -2852,6 +2852,27 @@ html.light .bento-card-hover:hover {
   }
 }
 
+/* Modern customer routes use the InvoxyStart mint accent. The attribute is
+   toggled by AppShell, leaving admin and legacy/classic routes on the
+   configured platform palette. !important wins over ThemeColorsProvider's
+   inline root vars without changing the shared palette itself. */
+html[data-customer-palette="mint"] {
+  --color-accent-50: 247, 253, 249 !important;
+  --color-accent-100: 228, 248, 236 !important;
+  --color-accent-200: 207, 242, 220 !important;
+  --color-accent-300: 181, 238, 207 !important;
+  --color-accent-400: 165, 232, 196 !important;
+  --color-accent-500: 165, 232, 196 !important;
+  --color-accent-600: 129, 208, 161 !important;
+  --color-accent-700: 96, 177, 132 !important;
+  --color-accent-800: 66, 139, 101 !important;
+  --color-accent-900: 41, 99, 70 !important;
+  --color-accent-950: 20, 59, 38 !important;
+  --color-on-accent: 11, 12, 14 !important;
+  --ix-accent-rgb: 165, 232, 196 !important;
+  --ix-glow: rgba(165, 232, 196, 0.38) !important;
+}
+
 /* Luna dashboard contract */
 @layer components {
   .luna-dashboard {

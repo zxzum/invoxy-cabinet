@@ -58,6 +58,7 @@ export function AppShell({ children }: AppShellProps) {
   const [previousPath, setPreviousPath] = useState(location.pathname);
   const [direction, setDirection] = useState(1);
   const tabs = ['/dashboard', '/tariffs', '/referrals', '/profile'];
+  const isModernCustomerRoute = tabs.includes(location.pathname);
   const animatePage = !isTelegramWebApp && !reducedMotion;
   if (animatePage && previousPath !== location.pathname) {
     const previousIndex = tabs.indexOf(previousPath);
@@ -95,6 +96,18 @@ export function AppShell({ children }: AppShellProps) {
   useEffect(() => {
     resetVirtualKeyboard();
   }, [location.pathname]);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isModernCustomerRoute) {
+      root.dataset.customerPalette = 'mint';
+    } else if (root.dataset.customerPalette === 'mint') {
+      delete root.dataset.customerPalette;
+    }
+
+    return () => {
+      if (root.dataset.customerPalette === 'mint') delete root.dataset.customerPalette;
+    };
+  }, [isModernCustomerRoute]);
   const showMobileNav = !location.pathname.startsWith('/admin');
 
   const sidebarNav = [
@@ -147,7 +160,11 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   return (
-    <div className="ix-app min-h-viewport" data-mobile-nav={showMobileNav ? 'on' : 'off'}>
+    <div
+      className="ix-app min-h-viewport"
+      data-mobile-nav={showMobileNav ? 'on' : 'off'}
+      data-customer-ui={isModernCustomerRoute ? 'modern' : 'legacy'}
+    >
       <WebSocketNotifications />
       <CampaignBonusNotifier />
       <SuccessNotificationModal />

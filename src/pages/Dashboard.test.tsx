@@ -753,10 +753,52 @@ describe('Dashboard target states', () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Добавить устройства' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить' }));
 
     expect(await screen.findByText('subscription.buyDevices')).toBeTruthy();
     expect(mocks.getDevicePrice).toHaveBeenCalledWith(1, activeSubscription.id);
+  });
+
+  it('restores the device add-on from the current tariff purchase options', async () => {
+    setupResolvedQueries();
+    mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
+    mocks.getSubscription.mockResolvedValue({
+      has_subscription: true,
+      subscription: activeSubscription,
+    });
+    mocks.getPurchaseOptions.mockResolvedValueOnce({
+      sales_mode: 'tariffs',
+      current_tariff_id: activeSubscription.tariff_id,
+      balance_kopeks: 0,
+      balance_label: '0 ₽',
+      tariffs: [
+        {
+          id: activeSubscription.tariff_id,
+          name: activeSubscription.tariff_name,
+          description: null,
+          tier_level: 1,
+          traffic_limit_gb: activeSubscription.traffic_limit_gb,
+          traffic_limit_label: '100 ГБ',
+          is_unlimited_traffic: false,
+          device_limit: activeSubscription.device_limit,
+          extra_devices_count: 0,
+          servers_count: 0,
+          servers: [],
+          periods: [],
+          is_current: true,
+          is_available: true,
+          device_price_kopeks: 3000,
+          max_device_limit: 10,
+        },
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Ещё устройства' })).toBeTruthy();
+    expect(screen.getByText('от 30 ₽ / мес')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Добавить' })).toBeTruthy();
   });
 
   it('uses the target HAPP cryptolink resolver and routes INCY through Connection', async () => {
