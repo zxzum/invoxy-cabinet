@@ -11,6 +11,11 @@ vi.mock('react-i18next', () => ({
       if (key === 'common.units.gb') return 'ГБ';
       if (key === 'subscription.whiteInternet') return 'LTE';
       if (key === 'subscription.whiteInternetServers') return 'LTE сервера';
+      if (key === 'subscription.primaryTraffic') return 'Основной трафик';
+      if (key === 'dashboard.luna.traffic.lte') return 'LTE-трафик';
+      if (key === 'subscription.lteEnabled') return 'LTE включён';
+      if (key === 'subscription.devicesPrefix') return 'До';
+      if (key === 'subscription.unlimited') return '∞';
       if (key === 'subscription.devices') {
         const count = (options as { count?: number } | undefined)?.count;
         return `${count} устройств`;
@@ -126,12 +131,12 @@ describe('TariffPickerGrid quota presentation', () => {
     );
 
     expect(screen.getByText('750 ГБ')).toBeTruthy();
-    const whiteInternetBadge = screen.getByText('LTE 50 ГБ').parentElement;
-    expect(whiteInternetBadge).toBeTruthy();
-    expect(whiteInternetBadge?.className).toContain('whitespace-normal');
-    expect(whiteInternetBadge?.className).toContain('break-words');
-    expect(whiteInternetBadge?.className).not.toContain('whitespace-nowrap');
-    expect(screen.getByText('LTE')).toBeTruthy();
+    const lteBlock = document.querySelector('[data-tariff-lte-traffic]');
+    expect(lteBlock).toBeTruthy();
+    expect(lteBlock?.textContent).toContain('LTE-трафик');
+    expect(lteBlock?.textContent).toContain('50 ГБ');
+    expect(lteBlock?.className).toContain('bg-accent-500/10');
+    expect(screen.getByText('LTE включён')).toBeTruthy();
     expect(screen.queryByText(/Доп\. устройство/)).toBeNull();
   });
 
@@ -198,11 +203,16 @@ describe('TariffPickerGrid card anatomy', () => {
 
     for (const card of cards) {
       expect(card.className).toContain('rounded-[30px]');
+      expect(card.getAttribute('role')).toBeNull();
       expect(card.querySelector('[data-tariff-summary]')).toBeTruthy();
+      expect(card.querySelector('[data-tariff-price]')?.textContent).toContain('/мес');
       const features = card.querySelector('[data-tariff-features]');
       expect(features).toBeTruthy();
       expect(features?.className).toContain('items-start');
       expect(features?.className).toContain('content-start');
+      expect(card.querySelector('[data-tariff-main-traffic]')).toBeTruthy();
+      expect(card.querySelector('[data-tariff-lte-traffic]')).toBeTruthy();
+      expect(card.querySelector('[data-tariff-devices]')).toBeTruthy();
       expect(card.querySelector('[data-tariff-action]')).toBeTruthy();
     }
   });
@@ -226,6 +236,61 @@ describe('TariffPickerGrid card anatomy', () => {
     expect(cards[0]?.textContent).toContain('Premium LTE');
     expect(cards[0]?.className).toContain('border-2');
     expect(cards[0]?.textContent).toContain('Рекомендуемый тариф');
+  });
+
+  it('keeps purchase and switch callbacks on the card actions', () => {
+    const onSelectTariff = vi.fn();
+    const onSwitchTariff = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <TariffPickerGrid
+          tariffs={[tariff]}
+          subscription={null}
+          purchaseOptions={undefined}
+          isTariffsMode
+          isMultiTariff={false}
+          onSelectTariff={onSelectTariff}
+          onSwitchTariff={onSwitchTariff}
+        />
+      </MemoryRouter>,
+    );
+
+    const purchaseButton = document.querySelector('[data-tariff-action] button');
+    expect(purchaseButton).toBeTruthy();
+    fireEvent.click(purchaseButton as HTMLButtonElement);
+    expect(onSelectTariff).toHaveBeenCalledWith(tariff);
+    expect(onSwitchTariff).not.toHaveBeenCalled();
+  });
+
+  it('routes an eligible alternate tariff to the switch callback', () => {
+    const onSwitchTariff = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <TariffPickerGrid
+          tariffs={[tariff]}
+          subscription={
+            {
+              tariff_id: 2,
+              is_active: true,
+              is_limited: false,
+              is_trial: false,
+            } as never
+          }
+          purchaseOptions={undefined}
+          isTariffsMode
+          isMultiTariff={false}
+          onSelectTariff={vi.fn()}
+          onSwitchTariff={onSwitchTariff}
+        />
+      </MemoryRouter>,
+    );
+
+    const switchButton = document.querySelector('[data-tariff-action] button');
+    expect(switchButton).toBeTruthy();
+    fireEvent.click(switchButton as HTMLButtonElement);
+    expect(onSwitchTariff).toHaveBeenCalledWith(tariff.id);
   });
 
   it('keeps the promo sheet mounted while its open state closes', () => {
