@@ -66,6 +66,7 @@ export function DashboardPage() {
             ? current
             : (result.subscriptions[0]?.id ?? null),
         );
+        setDetailsLoading(result.subscriptions.length > 0);
         if (!result.subscriptions.length) {
           const trial = await subscriptionApi.getTrialInfo().catch(() => null);
           if (mounted) setTrialInfo(trial);

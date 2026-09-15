@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from '@/invoxystart/components/ui/RuneIcon';
+import { lockBodyScroll } from '@/utils/scrollLock';
 
 type DragState = { pointerId: number; startY: number; startTime: number; lastY: number };
 
@@ -40,8 +41,7 @@ export function AdaptiveDialog({
   useEffect(() => {
     if (!mounted) return;
     const previousFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const unlockScroll = lockBodyScroll();
     const frame = window.requestAnimationFrame(() =>
       panelRef.current
         ?.querySelector<HTMLElement>(
@@ -74,7 +74,7 @@ export function AdaptiveDialog({
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.cancelAnimationFrame(frame);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
       window.removeEventListener('keydown', onKeyDown);
       previousFocus?.focus();
     };

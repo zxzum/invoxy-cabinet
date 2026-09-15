@@ -214,14 +214,14 @@ function PaymentDialog({
 }) {
   return (
     <AdaptiveDialog open={open} onClose={onClose} titleId="payment-title" maxWidth="max-w-2xl">
-      <div className="lg:pr-12">
+      <div className="payment-dialog-heading lg:pr-12">
         <p className="text-[10px] font-bold tracking-[.15em] text-mint">ОПЛАТА</p>
         <h2 id="payment-title" className="mt-2 text-2xl font-medium">
           Выберите способ оплаты
         </h2>
       </div>
       <div className="form-step-enter mt-6">
-        <div className="max-w-full overflow-hidden rounded-2xl bg-white/5 p-4 text-center">
+        <div className="payment-dialog-item max-w-full overflow-hidden rounded-2xl bg-white/5 p-4 text-center">
           <p className="text-[10px] font-bold uppercase tracking-[.12em] text-muted">Назначение</p>
           <p className="mt-1 break-words text-sm font-medium">{request?.purpose}</p>
           <strong className="mt-3 block text-3xl font-medium">
@@ -266,7 +266,7 @@ export function PaymentMethods({
     return () => {
       mounted = false;
     };
-  }, [request.amount, request.topUp, request.tariffId]);
+  }, []);
 
   const canUseBalance = (balance?.balance_kopeks ?? 0) >= Math.round(request.amount * 100);
   const showBalance = request.allowBalance !== false && !request.topUp;
@@ -277,10 +277,10 @@ export function PaymentMethods({
   const externalMethods = paymentMethods.filter((method) => method !== platega);
 
   return (
-    <div className="mt-4 grid min-w-0 gap-2">
+    <div className="payment-methods-stagger mt-4 grid min-w-0 gap-2">
       {showBalance && (
         <div
-          className={`rounded-2xl border p-4 ${canUseBalance ? 'border-mint/60 bg-mint/[.12] shadow-[0_0_28px_rgba(165,232,196,.08)]' : 'border-amber-200/20 bg-amber-200/[.05]'}`}
+          className={`payment-method-item rounded-2xl border p-4 ${canUseBalance ? 'border-mint/60 bg-mint/[.12] shadow-[0_0_28px_rgba(165,232,196,.08)]' : 'border-amber-200/20 bg-amber-200/[.05]'}`}
         >
           <button
             type="button"
@@ -317,7 +317,7 @@ export function PaymentMethods({
         </div>
       )}
       {loading ? (
-        <p className="rounded-2xl bg-white/[.035] p-4 text-center text-xs text-muted">
+        <p className="payment-method-item rounded-2xl bg-white/[.035] p-4 text-center text-xs text-muted">
           Загрузка способов оплаты…
         </p>
       ) : (
@@ -326,7 +326,7 @@ export function PaymentMethods({
         ))
       )}
       {platega && (
-        <div className="rounded-2xl border border-white/8 bg-white/[.035] p-3.5">
+        <div className="payment-method-item rounded-2xl border border-white/8 bg-white/[.035] p-3.5">
           <div className="flex items-center gap-3 px-1">
             <span className="glass-control grid h-10 w-10 place-items-center rounded-xl text-mint">
               <Landmark size={18} />
@@ -360,7 +360,7 @@ export function PaymentMethods({
         </div>
       )}
       {!loading && paymentMethods.length === 0 && (
-        <p className="rounded-2xl bg-white/[.035] p-4 text-center text-xs text-muted">
+        <p className="payment-method-item rounded-2xl bg-white/[.035] p-4 text-center text-xs text-muted">
           Способы оплаты недоступны
         </p>
       )}
@@ -394,7 +394,7 @@ function PaymentMethodButton({
       type="button"
       disabled={busy}
       onClick={() => onPay(method.id, method.options?.[0]?.id)}
-      className="button-lift group flex min-w-0 items-center gap-3 rounded-2xl border border-white/8 bg-white/[.035] p-4 text-left transition-colors hover:border-mint/40 hover:bg-mint/[.08] disabled:opacity-50"
+      className="payment-method-item button-lift group flex min-w-0 items-center gap-3 rounded-2xl border border-white/8 bg-white/[.035] p-4 text-left transition-colors hover:border-mint/40 hover:bg-mint/[.08] disabled:opacity-50"
     >
       <span className="glass-control grid h-11 w-11 shrink-0 place-items-center rounded-full text-mint">
         <Icon size={18} />
