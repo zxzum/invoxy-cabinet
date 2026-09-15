@@ -9,6 +9,19 @@ import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
 export type PublicLegalDoc = 'offer' | 'privacy' | 'recurrent';
 
+const LEGAL_NAV = [
+  { href: '/info?tab=faq', labelKey: 'info.faq', fallback: 'FAQ' },
+  { href: '/info?tab=rules', labelKey: 'info.rules', fallback: 'Правила' },
+  { href: '/privacy', doc: 'privacy' as const, labelKey: 'info.privacy', fallback: 'Политика' },
+  { href: '/offer', doc: 'offer' as const, labelKey: 'info.offer', fallback: 'Оферта' },
+  {
+    href: '/recurrent-payments',
+    doc: 'recurrent' as const,
+    labelKey: 'footer.recurrent',
+    fallback: 'Рекуррентные платежи',
+  },
+] as const;
+
 interface PublicLegalProps {
   doc: PublicLegalDoc;
 }
@@ -65,6 +78,25 @@ export default function PublicLegal({ doc }: PublicLegalProps) {
 
       <div className="mx-auto w-full max-w-3xl">
         <h1 className="mb-6 text-2xl font-semibold text-dark-100">{title}</h1>
+
+        <nav
+          aria-label={t('info.legalNavigation', 'Разделы информации')}
+          className="scrollbar-hide mb-6 flex gap-2 overflow-x-auto rounded-xl border border-dark-700/70 bg-dark-900/60 p-2"
+        >
+          {LEGAL_NAV.map((link) => {
+            const active = 'doc' in link && link.doc === doc;
+            return (
+              <Link
+                key={link.href}
+                to={link.href}
+                aria-current={active ? 'page' : undefined}
+                className={`shrink-0 rounded-full px-4 py-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 ${active ? 'bg-accent-500 text-on-accent' : 'text-dark-300 hover:bg-dark-800 hover:text-dark-100'}`}
+              >
+                {t(link.labelKey, link.fallback)}
+              </Link>
+            );
+          })}
+        </nav>
 
         {isLoading ? (
           <SkeletonGroup className="space-y-3">

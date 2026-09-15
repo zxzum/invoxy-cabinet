@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import type { ReactNode } from 'react';
@@ -375,6 +375,38 @@ describe('AutoLogin', () => {
 });
 
 describe('PublicLegal and LegalFooter', () => {
+  it.each([
+    ['/offer', 'Оферта'],
+    ['/privacy', 'Политика'],
+    ['/recurrent-payments', 'Рекуррентные платежи'],
+  ])('exposes source-equivalent legal navigation on %s', (path, activeLabel) => {
+    renderRoute(
+      path,
+      <Routes>
+        <Route path="/offer" element={<PublicLegal doc="offer" />} />
+        <Route path="/privacy" element={<PublicLegal doc="privacy" />} />
+        <Route path="/recurrent-payments" element={<PublicLegal doc="recurrent" />} />
+      </Routes>,
+      false,
+    );
+
+    const navigation = screen.getByRole('navigation', { name: 'Разделы информации' });
+    const links = within(navigation).getAllByRole('link');
+
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/info?tab=faq',
+      '/info?tab=rules',
+      '/privacy',
+      '/offer',
+      '/recurrent-payments',
+    ]);
+    expect(navigation.className).toContain('overflow-x-auto');
+    expect(links.every((link) => link.className.includes('shrink-0'))).toBe(true);
+    expect(
+      within(navigation).getByRole('link', { name: activeLabel }).getAttribute('aria-current'),
+    ).toBe('page');
+  });
+
   it('sanitizes API legal HTML while keeping the public document readable', async () => {
     mocks.getPublicOffer.mockResolvedValue({
       content:
