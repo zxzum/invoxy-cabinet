@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { usePlatform } from '@/platform';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import {
   Check,
   ChevronRight,
@@ -44,6 +44,8 @@ export default function ProfilePage() {
   const [history, setHistory] = useState<Transaction[]>([]);
   const [loyalty, setLoyalty] = useState<LoyaltyTiersResponse | null>(null);
   const [supportTarget, setSupportTarget] = useState<SupportContactTarget | null>(null);
+  const location = useLocation();
+  const [highlightTopUp, setHighlightTopUp] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -65,6 +67,27 @@ export default function ProfilePage() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (location.hash === '#top-up') {
+      setHighlightTopUp(true);
+      const timer = setTimeout(() => {
+        const el = document.getElementById('top-up');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+
+      const clearTimer = setTimeout(() => {
+        setHighlightTopUp(false);
+      }, 4500);
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(clearTimer);
+      };
+    }
+  }, [location.hash]);
 
   function openSupport() {
     const target = supportTarget ?? { kind: 'telegram' as const, url: 'https://t.me/invoxyvpn' };
@@ -133,7 +156,9 @@ export default function ProfilePage() {
 
           <section
             id="top-up"
-            className="glass-panel motion-card scroll-mt-6 rounded-[30px] p-5 lg:p-7"
+            className={`glass-panel motion-card scroll-mt-6 rounded-[30px] p-5 lg:p-7 transition-all duration-500 ${
+              highlightTopUp ? 'topup-highlight' : ''
+            }`}
           >
             <div className="flex items-start justify-between gap-4">
               <div>

@@ -74,7 +74,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import ResetPassword from './pages/ResetPassword';
 import PublicLegal from './pages/PublicLegal';
 import OAuthCallback from './pages/OAuthCallback';
-import Landing from './pages/Landing';
+import Landing from './invoxystart/pages/LandingPage';
 
 // Legacy connection page remains available from the customer dashboard.
 
