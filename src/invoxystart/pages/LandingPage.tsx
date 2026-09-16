@@ -493,102 +493,76 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
-          {/* Hero Visual Card: Bespoke Live Security Radar & Connection Engine */}
+          {/* Hero Visual Card: Fusion of 3D Cyber Shield Artwork & Interactive Telemetry HUD */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
             className="lg:col-span-5 relative"
           >
-            <div className="relative mx-auto max-w-md rounded-3xl p-1 bg-gradient-to-b from-[#a5e8c4]/40 via-emerald-500/10 to-transparent shadow-2xl shadow-[#a5e8c4]/15">
-              <div className="rounded-[22px] bg-[#0c0f13] p-6 space-y-5 overflow-hidden relative border border-white/5">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-[#a5e8c4]/10 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="relative mx-auto max-w-md rounded-3xl p-1 bg-gradient-to-b from-[#a5e8c4]/40 via-emerald-500/10 to-transparent shadow-2xl shadow-[#a5e8c4]/20">
+              <div className="rounded-[22px] bg-[#0c0f13] p-5 space-y-5 overflow-hidden relative border border-white/10">
+                <div className="absolute top-0 right-0 w-44 h-44 bg-[#a5e8c4]/15 rounded-full blur-3xl pointer-events-none" />
 
-                {/* Radar & Cryptographic Shield Interactive Display */}
-                <div className="relative h-64 rounded-2xl overflow-hidden border border-emerald-500/20 bg-[#07090d] flex flex-col items-center justify-between p-4 group">
-                  {/* Cyber Grid & Radar Sweep */}
-                  <div
-                    className="absolute inset-0 opacity-20 pointer-events-none"
-                    style={{
-                      backgroundImage:
-                        'radial-gradient(circle, #a5e8c4 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)',
-                      backgroundSize: '24px 24px',
-                    }}
+                {/* 3D Cyber Shield Artwork with Live HUD Glass Overlay */}
+                <div className="relative h-72 rounded-2xl overflow-hidden border border-white/15 bg-black flex flex-col justify-between p-4 group">
+                  {/* High-res 3D Cyber Shield Render */}
+                  <img
+                    src="/images/landing-shield.png"
+                    alt="Invoxy Cyber Shield Protection"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
                   />
+                  {/* Luxury dark vignette and glow */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-radial-at-c from-transparent via-transparent to-[#0c0f13]/80" />
 
-                  {/* Concentric Pulsing Radar Rings */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-48 h-48 rounded-full border border-emerald-500/15 animate-ping [animation-duration:4s]" />
-                    <div className="w-36 h-36 rounded-full border border-[#a5e8c4]/20 animate-pulse" />
-                    <div className="w-24 h-24 rounded-full border border-emerald-400/30" />
-                  </div>
-
-                  {/* Top Status Bar */}
+                  {/* Top Interactive Status Bar */}
                   <div className="relative z-10 w-full flex items-center justify-between">
-                    <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[11px] text-zinc-300">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-xs text-zinc-200 shadow-lg">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="font-medium">Шифрование XTLS Vision</span>
+                      <span className="font-semibold tracking-wide">XTLS Vision Active</span>
                     </div>
-                    <span className="text-[10px] font-mono text-[#a5e8c4] bg-[#a5e8c4]/10 px-2 py-0.5 rounded-full border border-[#a5e8c4]/25">
-                      VLESS • 0% LOSS
+                    <span className="text-[11px] font-mono text-[#a5e8c4] bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#a5e8c4]/30 shadow-lg">
+                      VLESS · 0% LOSS
                     </span>
                   </div>
 
-                  {/* Central Animated Shield Core */}
-                  <div className="relative z-10 my-auto flex flex-col items-center">
-                    <motion.div
-                      animate={{
-                        boxShadow: [
-                          '0 0 20px rgba(165, 232, 196, 0.2)',
-                          '0 0 40px rgba(165, 232, 196, 0.45)',
-                          '0 0 20px rgba(165, 232, 196, 0.2)',
-                        ],
-                      }}
-                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                      className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-[#0f171c] to-[#162423] border border-[#a5e8c4]/40 flex items-center justify-center text-[#a5e8c4] relative"
-                    >
-                      <ShieldCheck className="w-10 h-10" />
-                      <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#0c0f13] flex items-center justify-center">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                      </div>
-                    </motion.div>
-                    <div className="mt-3 text-center">
-                      <div className="text-xs font-bold text-white tracking-wide">
-                        Invoxy Zero-Leak Tunnel
-                      </div>
-                      <div className="text-[11px] text-[#a5e8c4] font-mono mt-0.5">
-                        AES-256-GCM · Direct Carrier Route
-                      </div>
+                  {/* Center Telemetry Badge */}
+                  <div className="relative z-10 my-auto text-center pointer-events-none">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0c0f13]/80 backdrop-blur-md border border-emerald-500/30 text-[11px] font-mono text-emerald-300 shadow-2xl">
+                      <span>TUNNEL:</span>
+                      <span className="text-white font-bold">CARRIER_ROUTE_OPTIMIZED</span>
                     </div>
                   </div>
 
-                  {/* Bottom Metrics Pill */}
-                  <div className="relative z-10 w-full flex items-center justify-between px-1">
-                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
-                      <span>MTU:</span>
-                      <span className="text-zinc-200">1420</span>
+                  {/* Bottom Metrics HUD Panel */}
+                  <div className="relative z-10 w-full p-2.5 rounded-xl bg-black/75 backdrop-blur-md border border-white/15 flex items-center justify-between text-xs font-mono shadow-2xl">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-zinc-400 text-[11px]">Задержка:</span>
+                      <span className="text-[#a5e8c4] font-bold">16 ms</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
-                      <span>Задержка:</span>
-                      <span className="text-[#a5e8c4] font-bold">~16 ms</span>
+                    <div className="w-[1px] h-3.5 bg-white/20" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-zinc-400 text-[11px]">DPI Bypass:</span>
+                      <span className="text-emerald-300 font-bold">100%</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
-                      <span>Канал:</span>
-                      <span className="text-emerald-300 font-bold">10 Gbps</span>
+                    <div className="w-[1px] h-3.5 bg-white/20" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-zinc-400 text-[11px]">Канал:</span>
+                      <span className="text-white font-bold">10 Gbps</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Feature Pills */}
                 <div className="space-y-2.5">
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition">
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#a5e8c4]/30 transition">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-[#a5e8c4]">
-                        <ShieldCheck className="w-4 h-4" />
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-[#a5e8c4] shrink-0">
+                        <ShieldCheck className="w-4.5 h-4.5" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-zinc-200">
+                        <div className="text-xs font-bold text-zinc-100">
                           Маскировка трафика под HTTPS
                         </div>
                         <div className="text-[11px] text-zinc-400">
@@ -596,18 +570,18 @@ export default function LandingPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs font-mono font-bold text-[#a5e8c4] bg-[#a5e8c4]/10 px-2 py-0.5 rounded">
+                    <span className="text-xs font-mono font-bold text-[#a5e8c4] bg-[#a5e8c4]/10 border border-[#a5e8c4]/20 px-2.5 py-0.5 rounded-lg">
                       ВКЛ
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition">
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-teal-400/30 transition">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-300">
-                        <Zap className="w-4 h-4" />
+                      <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-300 shrink-0">
+                        <Zap className="w-4.5 h-4.5" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-zinc-200">
+                        <div className="text-xs font-bold text-zinc-100">
                           Белые списки операторов
                         </div>
                         <div className="text-[11px] text-zinc-400">
@@ -615,7 +589,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs font-mono font-bold text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded">
+                    <span className="text-xs font-mono font-bold text-teal-300 bg-teal-500/10 border border-teal-500/20 px-2.5 py-0.5 rounded-lg">
                       LIVE
                     </span>
                   </div>
@@ -626,7 +600,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Visual Features Section: Interactive High-Craft Widgets */}
+      {/* Visual Features Section: Seamless Fusion of 3D Renders & Live Telemetry Widgets */}
       <section
         id="features"
         className="relative z-10 py-16 px-4 max-w-6xl mx-auto border-t border-white/5"
@@ -644,48 +618,46 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Interactive High-Speed Throughput Meter */}
-          <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-[#a5e8c4]/40 transition-all shadow-lg hover:shadow-[#a5e8c4]/5">
-            <div className="h-44 rounded-2xl overflow-hidden bg-[#07090d] border border-white/5 p-4 mb-5 relative flex flex-col justify-between">
-              {/* Grid backdrop */}
-              <div
-                className="absolute inset-0 opacity-15 pointer-events-none"
-                style={{
-                  backgroundImage:
-                    'radial-gradient(circle, #a5e8c4 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px)',
-                  backgroundSize: '20px 20px',
-                }}
+          {/* Card 1: 3D Globe Speed Artwork with Live Throughput HUD */}
+          <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-[#a5e8c4]/40 transition-all shadow-xl hover:shadow-[#a5e8c4]/10">
+            <div className="h-48 rounded-2xl overflow-hidden bg-black mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
+              <img
+                src="/images/landing-hero.png"
+                alt="Максимальная скорость 4K"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/30 to-black/50" />
 
+              {/* Live HUD Badge */}
               <div className="relative z-10 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="font-mono text-[11px] uppercase tracking-wider">
-                    Stream: 4K 60fps
-                  </span>
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-zinc-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="font-mono text-[10px] uppercase font-bold">4K 60fps Ready</span>
                 </div>
-                <span className="px-2 py-0.5 rounded font-mono text-[10px] text-[#a5e8c4] bg-[#a5e8c4]/10 border border-[#a5e8c4]/20">
+                <span className="px-2 py-0.5 rounded-full font-mono text-[10px] text-[#a5e8c4] bg-black/70 backdrop-blur-md border border-[#a5e8c4]/30">
                   0 ms Jitter
                 </span>
               </div>
 
-              {/* Dynamic Throughput Gauge Graphic */}
-              <div className="relative z-10 flex flex-col items-center justify-center my-auto">
-                <div className="text-3xl font-black font-mono text-white tracking-tight flex items-baseline gap-1">
-                  <span>940.8</span>
-                  <span className="text-sm font-semibold text-[#a5e8c4]">Mbps</span>
-                </div>
-                <div className="text-[11px] text-zinc-400 font-mono mt-0.5">
-                  Прямой пиринг • Без шейпинга
+              {/* Interactive Speed Counter Strip */}
+              <div className="relative z-10 flex items-center justify-between p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 shadow-2xl">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-zinc-400 uppercase font-mono">
+                    Скорость потока
+                  </span>
+                  <div className="text-xl font-black font-mono text-white flex items-baseline gap-1">
+                    <span>940.8</span>
+                    <span className="text-xs font-bold text-[#a5e8c4]">Mbps</span>
+                  </div>
                 </div>
 
-                {/* Animated visual equalizer / bars */}
-                <div className="flex items-end gap-1.5 h-6 mt-3">
-                  {[40, 65, 90, 75, 100, 85, 95, 60, 80, 95, 70, 85].map((h, i) => (
+                {/* Animated visual equalizer bars */}
+                <div className="flex items-end gap-1 h-5">
+                  {[45, 75, 100, 80, 95, 65, 85].map((h, i) => (
                     <motion.div
                       key={i}
                       animate={{
-                        height: [`${Math.max(25, h - 30)}%`, `${h}%`, `${Math.max(20, h - 20)}%`],
+                        height: [`${Math.max(30, h - 35)}%`, `${h}%`, `${Math.max(25, h - 20)}%`],
                       }}
                       transition={{
                         duration: 1.2 + (i % 3) * 0.3,
@@ -693,15 +665,10 @@ export default function LandingPage() {
                         repeatType: 'reverse',
                         ease: 'easeInOut',
                       }}
-                      className="w-1.5 bg-gradient-to-t from-emerald-500/40 to-[#a5e8c4] rounded-full"
+                      className="w-1 bg-gradient-to-t from-emerald-400 to-[#a5e8c4] rounded-full"
                     />
                   ))}
                 </div>
-              </div>
-
-              <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-zinc-400 pt-2 border-t border-white/5">
-                <span>Loss: 0.00%</span>
-                <span className="text-emerald-300">Buffer: Instant</span>
               </div>
             </div>
 
@@ -709,49 +676,43 @@ export default function LandingPage() {
               <h3 className="text-lg font-bold text-white mb-2">Видео 4K без буферизации</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
                 Смотрите YouTube, стримы и тяжелые файлы в максимальном качестве. Пропускная
-                способность выделенных серверов рассчитана на любые часы пик.
+                способность серверов рассчитана на любые часы пик без очередей.
               </p>
             </div>
           </div>
 
-          {/* Card 2: Interactive Instant Bot Connection Simulation */}
-          <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-emerald-400/40 transition-all shadow-lg hover:shadow-emerald-400/5">
-            <div className="h-44 rounded-2xl overflow-hidden bg-[#07090d] border border-white/5 p-3.5 mb-5 relative flex flex-col justify-between">
-              {/* Header with bot indicator */}
-              <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-[#a5e8c4] flex items-center justify-center">
-                    <Bot className="w-3 h-3" />
+          {/* Card 2: 3D Gift Artwork with Instant Telegram Connect Widget */}
+          <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-emerald-400/40 transition-all shadow-xl hover:shadow-emerald-400/10">
+            <div className="h-48 rounded-2xl overflow-hidden bg-black mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
+              <img
+                src="/images/trial-gift.png"
+                alt="Бесплатный тестовый период"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/30 to-black/50" />
+
+              {/* Bot Header Badge */}
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-zinc-200">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-[#a5e8c4] flex items-center justify-center">
+                    <Bot className="w-2.5 h-2.5" />
                   </div>
-                  <span className="text-xs font-bold text-zinc-200">@invoxy_bot</span>
+                  <span className="text-[11px] font-bold">@invoxy_bot</span>
                 </div>
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                  1 клик
+                <span className="text-[10px] font-mono font-bold text-emerald-300 bg-emerald-500/20 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                  3 дня бесплатно
                 </span>
               </div>
 
-              {/* Chat bubble snippet */}
-              <div className="my-auto space-y-2">
-                <div className="p-2.5 rounded-xl bg-white/[0.04] border border-white/5 text-[11px] text-zinc-300">
-                  <div className="font-semibold text-[#a5e8c4] mb-0.5">
-                    Ваш бесплатный ключ готов:
-                  </div>
-                  <div className="font-mono text-[10px] text-zinc-400 truncate bg-black/40 px-2 py-1 rounded border border-white/5">
-                    vless://invoxy-trial@fi1.invoxy.net:443?security=reality
-                  </div>
+              {/* Key Generator Widget */}
+              <div className="relative z-10 p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 shadow-2xl space-y-1">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-zinc-400">Тестовый ключ готов:</span>
+                  <span className="text-[#a5e8c4] font-bold">Без ввода карт</span>
                 </div>
-
-                <div className="flex items-center justify-between text-[11px] px-1">
-                  <span className="text-zinc-400">Тестовый период:</span>
-                  <span className="font-bold text-emerald-300">3 дня бесплатно</span>
+                <div className="font-mono text-[10px] text-zinc-300 truncate bg-white/[0.06] px-2 py-1 rounded border border-white/10">
+                  vless://invoxy-trial@fi1.invoxy.net:443?security=reality
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                <span className="text-[10px] text-zinc-400">Без ввода карт</span>
-                <span className="text-[10px] font-bold text-[#a5e8c4] flex items-center gap-1">
-                  Запустить тест →
-                </span>
               </div>
             </div>
 
@@ -759,58 +720,72 @@ export default function LandingPage() {
               <h3 className="text-lg font-bold text-white mb-2">Бесплатный тест сразу</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
                 Попробуйте сервис перед покупкой в один клик через Telegram. Убедитесь сами в
-                скорости и надежности соединения на своих устройствах.
+                скорости и надежности соединения на ваших устройствах.
               </p>
             </div>
           </div>
 
-          {/* Card 3: Multi-device Mesh / Ecosystem Matrix */}
-          <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-teal-400/40 transition-all shadow-lg hover:shadow-teal-400/5">
-            <div className="h-44 rounded-2xl overflow-hidden bg-[#07090d] border border-white/5 p-3.5 mb-5 relative flex flex-col justify-between">
+          {/* Card 3: Multi-device Ecosystem Matrix with Visual Device Fleet */}
+          <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-teal-400/40 transition-all shadow-xl hover:shadow-teal-400/10">
+            <div className="h-48 rounded-2xl overflow-hidden bg-[#07090d] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
+              {/* Radial grid ambiance */}
+              <div
+                className="absolute inset-0 opacity-20 pointer-events-none"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle, #a5e8c4 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px)',
+                  backgroundSize: '20px 20px',
+                }}
+              />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/15 rounded-full blur-2xl pointer-events-none" />
+
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                <span className="text-xs font-bold text-zinc-200">Экосистема устройств</span>
-                <span className="text-[10px] font-mono text-[#a5e8c4] bg-[#a5e8c4]/10 px-2 py-0.5 rounded-full border border-[#a5e8c4]/20">
+              <div className="relative z-10 flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="text-xs font-bold text-zinc-200">Мульти-девайс сеть</span>
+                <span className="text-[10px] font-mono font-bold text-[#a5e8c4] bg-[#a5e8c4]/10 px-2.5 py-0.5 rounded-full border border-[#a5e8c4]/30">
                   До 10 устройств
                 </span>
               </div>
 
-              {/* Mesh visual with interconnected nodes */}
-              <div className="relative my-auto flex items-center justify-center gap-3">
-                {/* Device 1: Phone */}
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-[#a5e8c4] shadow-sm">
+              {/* Interconnected Devices Matrix */}
+              <div className="relative z-10 my-auto flex items-center justify-around px-2">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-white/10 to-white/[0.02] border border-white/15 flex items-center justify-center text-[#a5e8c4] shadow-lg">
                     <Smartphone className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-mono">iOS / Android</span>
+                  <span className="text-[10px] text-zinc-300 font-medium">Телефон</span>
                 </div>
 
-                {/* Connecting Pulse Line */}
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  <div className="w-8 h-[1px] bg-gradient-to-r from-emerald-400 to-[#a5e8c4]" />
+                  <div className="w-6 h-[1px] bg-gradient-to-r from-emerald-400 to-[#a5e8c4]" />
                   <span className="w-1.5 h-1.5 rounded-full bg-[#a5e8c4]" />
                 </div>
 
-                {/* Device 2: Laptop */}
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-teal-300 shadow-sm">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-white/10 to-white/[0.02] border border-white/15 flex items-center justify-center text-teal-300 shadow-lg">
                     <Laptop className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-mono">macOS / Win</span>
+                  <span className="text-[10px] text-zinc-300 font-medium">Ноутбук</span>
                 </div>
 
-                {/* Device 3: TV / Other */}
-                <div className="hidden sm:flex flex-col items-center gap-1">
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-emerald-400 shadow-sm">
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#a5e8c4] animate-ping" />
+                  <div className="w-6 h-[1px] bg-gradient-to-r from-[#a5e8c4] to-teal-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                </div>
+
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-white/10 to-white/[0.02] border border-white/15 flex items-center justify-center text-emerald-400 shadow-lg">
                     <Globe2 className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-mono">Android TV</span>
+                  <span className="text-[10px] text-zinc-300 font-medium">Smart TV</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] font-mono text-zinc-400">
-                <span>Общий баланс трафика</span>
+              {/* Footer */}
+              <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/10 text-[10px] font-mono text-zinc-400">
+                <span>Единая подписка на семью</span>
                 <span className="text-teal-300 font-bold">Без доплат</span>
               </div>
             </div>
