@@ -1,8 +1,10 @@
 /* InvoxyStart customer surfaces. Admin and legacy pages keep globals.css. */
 .invoxystart-shell {
-  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
   min-height: 100dvh;
-  overflow-x: clip;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background: #0b0c0e;
   color: #f3f1ec;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -40,13 +42,32 @@ html.scroll-lock-active .ix-sidebar-island {
 
 .invoxystart-shell .route-stage.is-entering {
   position: relative;
-  top: 0;
-  animation: invoxy-route-enter 420ms var(--motion-ease) backwards;
+  will-change: transform, opacity;
 }
 
-.invoxystart-shell .route-stage.is-entering :is(.motion-reveal, .motion-card) {
-  animation: invoxy-card-enter 620ms var(--motion-ease) backwards;
-  animation-delay: var(--motion-delay, 60ms);
+.invoxystart-shell :is(.motion-reveal, .motion-card) {
+  animation: invoxy-card-enter 360ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: var(--motion-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(1) {
+  --motion-delay: 25ms;
+}
+.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(2) {
+  --motion-delay: 60ms;
+}
+.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(3) {
+  --motion-delay: 95ms;
+}
+.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(4) {
+  --motion-delay: 130ms;
+}
+.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(5) {
+  --motion-delay: 165ms;
+}
+.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(6) {
+  --motion-delay: 200ms;
 }
 
 .adaptive-dialog-backdrop {
@@ -191,14 +212,49 @@ html.scroll-lock-active .ix-sidebar-island {
 @keyframes invoxy-route-enter {
   from {
     opacity: 0;
-    top: 10px;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 @keyframes invoxy-card-enter {
   from {
     opacity: 0;
-    top: 20px;
+    transform: translate3d(0, 14px, 0);
   }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes indeterminate-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+.animate-indeterminate-slide {
+  animation: indeterminate-slide 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes invoxy-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-fade-in {
+  animation: invoxy-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes invoxy-dialog-backdrop-in {
   from {
@@ -213,48 +269,55 @@ html.scroll-lock-active .ix-sidebar-island {
 @keyframes invoxy-dialog-panel-in {
   from {
     opacity: 0;
-    transform: translate3d(0, 14px, 0) scale(0.985);
-    filter: blur(4px);
+    transform: translate3d(0, 10px, 0) scale(0.99);
   }
 }
 @keyframes invoxy-dialog-panel-out-left {
   to {
     opacity: 0;
-    transform: translate3d(-24px, var(--adaptive-dialog-drag-y), 0) scale(0.985);
-    filter: blur(3px);
+    transform: translate3d(-16px, var(--adaptive-dialog-drag-y), 0) scale(0.99);
   }
 }
 @keyframes invoxy-dialog-sheet-in {
   from {
     opacity: 0;
-    transform: translate3d(0, 100%, 0) scale(0.985);
-    filter: blur(4px);
+    transform: translate3d(0, 100%, 0);
   }
 }
 @keyframes invoxy-dialog-sheet-out {
   to {
     opacity: 0;
-    transform: translate3d(0, 100%, 0) scale(0.985);
-    filter: blur(3px);
+    transform: translate3d(0, 100%, 0);
   }
 }
 @keyframes invoxy-form-step-in {
   from {
     opacity: 0;
-    top: 10px;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 @keyframes invoxy-ticket-enter {
   from {
     opacity: 0;
-    top: 10px;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 @keyframes invoxy-payment-item-enter {
   from {
     opacity: 0;
-    transform: translate3d(0, 18px, 0) scale(0.985);
-    filter: blur(4px);
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 

@@ -1,4 +1,4 @@
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export function Reveal({
@@ -11,6 +11,7 @@ export function Reveal({
   className?: string;
   as?: 'div';
 }) {
+  const reducedMotion = useReducedMotion();
   const canObserveViewport = typeof IntersectionObserver !== 'undefined';
   const ref = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(!canObserveViewport);
@@ -23,18 +24,22 @@ export function Reveal({
         setIsInView(true);
         observer.disconnect();
       },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+      { threshold: 0.01, rootMargin: '120px 0px 40px 0px' },
     );
     observer.observe(ref.current);
     return () => observer.disconnect();
   }, [canObserveViewport]);
 
+  if (reducedMotion) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <m.div
       ref={ref}
-      initial={{ opacity: 0, y: 20 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-      transition={{ duration: 0.52, delay, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
+      transition={{ duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
       className={`scroll-reveal ${className || ''}`}
     >
       {children}

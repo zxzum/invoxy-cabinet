@@ -38,6 +38,7 @@ import LegalConsent from '../components/LegalConsent';
 import LegalConsentGate from '../components/LegalConsentGate';
 import { useLegalConsentGate } from '../hooks/useLegalConsentGate';
 import { infoApi } from '../api/info';
+import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShapes';
 import type { LegalConsentConfig } from '../types';
 import { safeLocal, safeSession } from '../utils/safeStorage';
 
@@ -190,7 +191,11 @@ export default function Login() {
     }
   };
 
-  const appName = branding ? branding.name : import.meta.env.VITE_APP_NAME || 'VPN';
+  const appName =
+    branding?.name ||
+    (import.meta.env.VITE_APP_NAME && import.meta.env.VITE_APP_NAME !== 'Cabinet'
+      ? import.meta.env.VITE_APP_NAME
+      : 'Invoxy VPN');
   const appLogo = branding?.logo_letter || import.meta.env.VITE_APP_LOGO || 'V';
   const logoUrl = branding ? brandingApi.getLogoUrl(branding) : null;
 
@@ -399,6 +404,74 @@ export default function Login() {
           'After registration, a verification email will be sent to your address',
         )
       : t('auth.loginSubtitle', 'Sign in with Telegram or use your email');
+
+  const hasTelegramLaunchData =
+    (isTelegramWebApp || isInTelegramWebApp()) && Boolean(getTelegramInitData());
+
+  const isAutoAuthenticating =
+    !error &&
+    !consent.pending &&
+    !isRegistrationRoute &&
+    ((hasTelegramLaunchData &&
+      (isAuthInitializing || isLoading || !telegramAuthAttemptedRef.current)) ||
+      (isAuthInitializing && Boolean(tokenStorage.getRefreshToken())));
+
+  if (isAutoAuthenticating) {
+    return (
+      <main
+        className="auth-page ix-login relative isolate flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 text-ink"
+        style={{
+          paddingTop:
+            safeTop > 0 ? `${safeTop + 16}px` : 'calc(1rem + env(safe-area-inset-top, 0px))',
+          paddingBottom:
+            safeBottom > 0
+              ? `${safeBottom + 16}px`
+              : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        <BackgroundShapes />
+
+        <div className="relative z-10 flex flex-col items-center text-center animate-fade-in">
+          <div className="relative mb-6 flex items-center justify-center">
+            <div className="absolute -inset-6 rounded-full bg-mint/20 blur-3xl animate-pulse pointer-events-none" />
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/15 bg-white/[0.06] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] backdrop-blur-2xl">
+              {branding?.has_custom_logo && logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={appName}
+                  className={`h-14 w-14 object-contain ${logoLoaded ? 'block' : 'hidden'}`}
+                  onLoad={() => setLogoLoaded(true)}
+                />
+              ) : (
+                <img
+                  src="/images/brand-mark.png"
+                  alt={appName}
+                  className="h-14 w-14 rounded-2xl object-cover shadow-md"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                    const fallback = (e.target as HTMLElement).parentElement?.querySelector(
+                      '.brand-letter-fallback',
+                    );
+                    if (fallback) (fallback as HTMLElement).style.display = 'block';
+                  }}
+                />
+              )}
+              <span className="brand-letter-fallback hidden text-2xl font-bold text-mint">
+                {appLogo}
+              </span>
+            </div>
+          </div>
+
+          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{appName}</h1>
+          <p className="mt-2 text-sm text-muted">{t('auth.authenticating', 'Авторизация...')}</p>
+
+          <div className="relative mt-7 h-1 w-36 overflow-hidden rounded-full bg-white/10">
+            <div className="absolute inset-y-0 w-2/5 rounded-full bg-gradient-to-r from-transparent via-mint to-transparent animate-indeterminate-slide" />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main

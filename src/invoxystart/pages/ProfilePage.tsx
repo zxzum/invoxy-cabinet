@@ -102,11 +102,11 @@ export default function ProfilePage() {
   const nextTier = tiers.find((tier) => !tier.is_achieved && tier.threshold_rubles > spent);
 
   return (
-    <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
+    <div className="flex w-full min-w-0 flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <PageHeader title="Профиль" subtitle="Баланс, данные и поддержка" mobileNotifications />
-      <div className="grid items-start gap-5 xl:grid-cols-2">
-        <div className="flex flex-col gap-5">
-          <section className="glass-panel motion-card relative overflow-hidden rounded-[32px] p-6 lg:p-8">
+      <div className="grid w-full min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-2">
+        <div className="flex w-full min-w-0 flex-col gap-5">
+          <section className="glass-panel motion-card relative overflow-hidden rounded-[32px] p-5 sm:p-6 lg:p-8">
             <img
               src="/images/profile-balance-bg.webp"
               alt=""
@@ -198,9 +198,9 @@ export default function ProfilePage() {
               {history.map((item) => {
                 const positive = item.amount_kopeks >= 0;
                 return (
-                  <div key={item.id} className="flex justify-between gap-4 py-4">
-                    <div>
-                      <p className="text-sm">{item.description || item.type}</p>
+                  <div key={item.id} className="flex items-center justify-between gap-4 py-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm">{item.description || item.type}</p>
                       <p className="mt-1 text-xs text-muted">{formatDate(item.created_at)}</p>
                     </div>
                     <strong
@@ -216,7 +216,7 @@ export default function ProfilePage() {
           </section>
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex w-full min-w-0 flex-col gap-5">
           <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -412,14 +412,16 @@ function Milestone({
   current?: boolean;
 }) {
   return (
-    <div className="relative z-10">
+    <div className="relative z-10 min-w-0 px-1">
       <span
         className={`mx-auto block h-4 w-4 rounded-full border-2 ${done || current ? 'border-mint bg-mint' : 'border-line bg-surface'} ${current ? 'shadow-[0_0_0_5px_rgba(165,232,196,.12)]' : ''}`}
       />
-      <p className={`mt-2 text-[10px] font-bold ${current ? 'text-mint' : 'text-muted'}`}>
+      <p
+        className={`mt-2 text-[10px] font-bold break-words leading-tight ${current ? 'text-mint' : 'text-muted'}`}
+      >
         {label}
       </p>
-      <p className="mt-1 text-[9px] text-muted">{detail}</p>
+      <p className="mt-1 truncate text-[9px] text-muted">{detail}</p>
     </div>
   );
 }

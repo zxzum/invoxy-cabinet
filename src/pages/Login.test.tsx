@@ -338,6 +338,28 @@ describe('Login integration shell', () => {
     ]);
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/dashboard'));
   });
+
+  it('renders clean preloader without login form during Telegram auto-auth', async () => {
+    auth.telegram.inTelegram = true;
+    auth.telegram.initData = 'valid-init-data';
+    let resolveAuth: () => void = () => {};
+    auth.state.loginWithTelegram.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveAuth = resolve;
+        }),
+    );
+
+    renderLogin('/login');
+
+    expect(screen.getByText('Авторизация...')).toBeTruthy();
+    expect(screen.queryByLabelText('Email')).toBeNull();
+    expect(screen.queryByLabelText('Password')).toBeNull();
+
+    auth.state.isAuthenticated = true;
+    resolveAuth();
+    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/dashboard'));
+  });
 });
 
 describe('Login email semantics', () => {

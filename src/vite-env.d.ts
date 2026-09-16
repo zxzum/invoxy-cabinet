@@ -27,6 +27,9 @@ interface TelegramWebAppGlobal {
    * stale — see src/utils/telegramInitData.ts.
    */
   initData?: string;
+  isFullscreen?: boolean;
+  safeAreaInset?: { top: number; bottom: number; left: number; right: number };
+  contentSafeAreaInset?: { top: number; bottom: number; left: number; right: number };
 }
 
 /** Telegram Login JS SDK — loaded from https://oauth.telegram.org/js/telegram-login.js */

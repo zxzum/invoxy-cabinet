@@ -86,6 +86,7 @@ export function BackgroundShapes() {
     const root = rootRef.current;
     if (
       !root ||
+      !isDesktop ||
       typeof window.matchMedia !== 'function' ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
     )

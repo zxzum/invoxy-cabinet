@@ -1,6 +1,9 @@
 import { useContext } from 'react';
 import { PlatformContext } from '@/platform/PlatformContext';
+import { createWebAdapter } from '@/platform/adapters/WebAdapter';
 import type { PlatformContext as PlatformContextType } from '@/platform/types';
+
+let defaultWebAdapter: PlatformContextType | null = null;
 
 /**
  * Hook to access the platform context
@@ -10,7 +13,10 @@ export function usePlatform(): PlatformContextType {
   const context = useContext(PlatformContext);
 
   if (!context) {
-    throw new Error('usePlatform must be used within a PlatformProvider');
+    if (!defaultWebAdapter) {
+      defaultWebAdapter = createWebAdapter();
+    }
+    return defaultWebAdapter;
   }
 
   return context;

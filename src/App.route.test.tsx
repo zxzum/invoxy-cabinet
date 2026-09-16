@@ -192,23 +192,54 @@ vi.mock('./pages/Landing', () => ({
 vi.mock('./pages/Dashboard', () => ({
   default: () => <div data-testid="dashboard-page">dashboard</div>,
 }));
+vi.mock('./invoxystart/pages/DashboardPage', () => ({
+  DashboardPage: () => <div data-testid="dashboard-page">dashboard</div>,
+}));
 vi.mock('./pages/SubscriptionPurchase', () => ({
   default: () => <div data-testid="subscription-purchase-page">subscription purchase</div>,
 }));
+vi.mock('./invoxystart/pages/TariffsPage', () => ({
+  default: () => <div data-testid="subscription-purchase-page">tariffs</div>,
+}));
+vi.mock('./invoxystart/pages/ReferralsPage', () => ({
+  default: () => <div data-testid="referral-page">referrals</div>,
+}));
+vi.mock('./invoxystart/pages/PartnerPage', () => ({
+  default: () => <div data-testid="partner-page">partner</div>,
+}));
+vi.mock('./invoxystart/pages/AccountSecurityPage', () => ({
+  default: () => <div data-testid="accounts-page">accounts</div>,
+}));
 vi.mock('./pages/Connection', () => ({ default: () => <div data-testid="connection-page" /> }));
 vi.mock('./pages/Profile', () => ({ default: () => <div data-testid="profile-page" /> }));
+vi.mock('./invoxystart/pages/ProfilePage', () => ({
+  default: () => <div data-testid="profile-page" />,
+}));
 vi.mock('./pages/Subscriptions', () => ({
+  default: () => <div data-testid="subscriptions-page">subscriptions</div>,
+}));
+vi.mock('./invoxystart/pages/SubscriptionsPage', () => ({
   default: () => <div data-testid="subscriptions-page">subscriptions</div>,
 }));
 vi.mock('./pages/ModernSubscriptionManage', () => ({
   default: () => <div data-testid="modern-subscription-page">modern subscription</div>,
 }));
+vi.mock('./invoxystart/pages/SubscriptionManagePage', () => ({
+  default: () => <div data-testid="modern-subscription-page">modern subscription</div>,
+}));
 vi.mock('./pages/SavedCards', () => ({
+  default: () => <div data-testid="saved-cards-page">saved cards</div>,
+}));
+vi.mock('./invoxystart/pages/SavedCardsPage', () => ({
   default: () => <div data-testid="saved-cards-page">saved cards</div>,
 }));
 vi.mock('./pages/Referral', () => ({ default: () => <div data-testid="referral-page" /> }));
 vi.mock('./pages/News', () => ({
   default: () => <div data-testid="news-page">news</div>,
+}));
+vi.mock('./invoxystart/pages/NewsPage', () => ({
+  default: () => <div data-testid="news-page">news</div>,
+  NewsArticlePage: () => <div data-testid="news-article-page">news article</div>,
 }));
 vi.mock('./pages/ConnectedAccounts', () => ({
   default: () => <div data-testid="accounts-page">accounts</div>,
@@ -480,7 +511,7 @@ describe('cabinet route boundary', () => {
     await renderApp('/dashboard');
 
     expect(await screen.findByTestId('dashboard-page')).toBeTruthy();
-    expect(screen.getByTestId('layout')).toBeTruthy();
+    expect(screen.getAllByRole('navigation').length).toBeGreaterThan(0);
   });
 
   it('renders the protected /news list route inside the authenticated shell', async () => {
@@ -512,12 +543,6 @@ describe('cabinet route boundary', () => {
   });
 
   it.each([
-    ['/partner?ref=abc#partner', '/referral?ref=abc#partner', 'referral-page'],
-    [
-      '/account/security?tab=oauth#accounts',
-      '/profile/accounts?tab=oauth#accounts',
-      'accounts-page',
-    ],
     [
       '/profile/saved-cards?return=1#cards',
       '/balance/saved-cards?return=1#cards',
@@ -544,6 +569,8 @@ describe('cabinet route boundary', () => {
   it.each([
     ['/tariffs?ref=abc#plans', 'subscription-purchase-page'],
     ['/referrals?ref=abc#referral', 'referral-page'],
+    ['/partner?ref=abc#partner', 'partner-page'],
+    ['/account/security?tab=oauth#accounts', 'accounts-page'],
   ])('keeps canonical InvoxyStart route %s', async (path, pageTestId) => {
     auth.state.isAuthenticated = true;
 
