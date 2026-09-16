@@ -131,16 +131,20 @@ export default function SupportPage() {
 
   return (
     <div className="flex min-w-0 flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <div className="relative z-50">
-        <PageHeader title="Поддержка" subtitle="Ответим и поможем решить вопрос" notifications />
-        <button
-          type="button"
-          onClick={startComposing}
-          className="button-lift absolute right-16 top-0 z-50 hidden h-12 items-center gap-2 rounded-2xl bg-mint px-5 text-sm font-bold text-bg lg:flex"
-        >
-          <Plus size={18} /> Новый тикет
-        </button>
-      </div>
+      <PageHeader
+        title="Поддержка"
+        subtitle="Ответим и поможем решить вопрос"
+        notifications
+        action={
+          <button
+            type="button"
+            onClick={startComposing}
+            className="button-lift hidden h-11 items-center gap-2 rounded-2xl bg-mint px-5 text-sm font-bold text-bg transition-transform active:scale-95 lg:flex"
+          >
+            <Plus size={18} /> Новый тикет
+          </button>
+        }
+      />
 
       <section className="glass-panel motion-card flex min-w-0 flex-wrap items-center gap-4 rounded-[28px] p-4 lg:flex-nowrap lg:p-5">
         <span className="glass-control grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-mint">

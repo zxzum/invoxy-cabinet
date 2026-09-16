@@ -134,17 +134,34 @@ void useAuthStore.getState().initialize();
 // the /login page first.
 void checkBackendOnStartup();
 
+const PRELOAD_ASSETS = [
+  '/images/brand-mark.png',
+  '/images/promo-group-bg.webp',
+  '/images/subscription-bg-desktop.webp',
+  '/images/subscription-orb.webp',
+  '/images/subscription-status-bg.webp',
+];
+
+if (typeof window !== 'undefined') {
+  PRELOAD_ASSETS.forEach((src) => {
+    const img = new Image();
+    img.src = src;
+  });
+}
+
 if ('requestIdleCallback' in window) {
   requestIdleCallback(() => initLogoPreload());
 } else {
   setTimeout(initLogoPreload, 100);
 }
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 60_000,
+      gcTime: 10 * 60_000,
     },
   },
 });

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/invoxystart/components/dashboard/Header';
 import { SubscriptionCard } from '@/invoxystart/components/dashboard/SubscriptionCard';
 import { TrafficCards } from '@/invoxystart/components/dashboard/TrafficCards';
@@ -19,15 +20,7 @@ import {
   TrialCard,
 } from '@/invoxystart/components/dashboard/WelcomeCards';
 import { Bell } from '@/invoxystart/components/ui/RuneIcon';
-import {
-  subscriptionApi,
-  type ConnectionLinkResponse,
-  type Device,
-  type RenewalOption,
-  type Subscription,
-  type SubscriptionListItem,
-  type TrialInfo,
-} from '@/invoxystart/api';
+import { subscriptionApi, type TrialInfo } from '@/invoxystart/api';
 import { useAuth } from '@/invoxystart/auth';
 
 type AccountState = 'new' | 'trial' | 'active';
@@ -37,97 +30,71 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { openPayment } = usePayment();
   const { user, refreshUser } = useAuth();
-  const [accountState, setAccountState] = useState<AccountState>('new');
+  const queryClient = useQueryClient();
+
+  const { data: subsData, isLoading: subsLoading } = useQuery({
+    queryKey: ['invoxy-subscriptions'],
+    queryFn: () => subscriptionApi.getSubscriptions(),
+    staleTime: 60_000,
+  });
+
+  const subscriptions = subsData?.subscriptions ?? [];
+
+  const { data: trialInfo } = useQuery<TrialInfo | null>({
+    queryKey: ['invoxy-trial-info'],
+    queryFn: () => subscriptionApi.getTrialInfo().catch(() => null),
+    enabled: subscriptions.length === 0 && !subsLoading,
+    staleTime: 60_000,
+  });
+
   const [selectedSubscription, setSelectedSubscription] = useState<number | null>(null);
-  const [subscriptions, setSubscriptions] = useState<SubscriptionListItem[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [connection, setConnection] = useState<ConnectionLinkResponse | null>(null);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [renewalOptions, setRenewalOptions] = useState<RenewalOption[]>([]);
-  const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [detailsLoading, setDetailsLoading] = useState(false);
+  const activeSubId =
+    selectedSubscription && subscriptions.some((s) => s.id === selectedSubscription)
+      ? selectedSubscription
+      : (subscriptions[0]?.id ?? null);
 
-  useEffect(() => {
-    let mounted = true;
-    void (async () => {
-      try {
-        const result = await subscriptionApi.getSubscriptions();
-        if (!mounted) return;
-        setSubscriptions(result.subscriptions);
-        setAccountState(
-          result.subscriptions[0]?.is_trial
-            ? 'trial'
-            : result.subscriptions.length
-              ? 'active'
-              : 'new',
-        );
-        setSelectedSubscription((current) =>
-          current && result.subscriptions.some((item) => item.id === current)
-            ? current
-            : (result.subscriptions[0]?.id ?? null),
-        );
-        setDetailsLoading(result.subscriptions.length > 0);
-        if (!result.subscriptions.length) {
-          const trial = await subscriptionApi.getTrialInfo().catch(() => null);
-          if (mounted) setTrialInfo(trial);
-        }
-      } catch {
-        if (mounted) setAccountState('new');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const { data: detailsData, isLoading: detailsLoading } = useQuery({
+    queryKey: ['invoxy-subscription-details', activeSubId],
+    queryFn: async () => {
+      if (!activeSubId) return null;
+      const [detailResult, connectionResult, devicesResult, renewalResult] =
+        await Promise.allSettled([
+          subscriptionApi.getSubscription(activeSubId),
+          subscriptionApi.getConnectionLink(activeSubId),
+          subscriptionApi.getDevices(activeSubId),
+          subscriptionApi.getRenewalOptions(activeSubId),
+        ]);
+      return {
+        subscription: detailResult.status === 'fulfilled' ? detailResult.value.subscription : null,
+        connection: connectionResult.status === 'fulfilled' ? connectionResult.value : null,
+        devices: devicesResult.status === 'fulfilled' ? devicesResult.value.devices : [],
+        renewalOptions: renewalResult.status === 'fulfilled' ? renewalResult.value : [],
+      };
+    },
+    enabled: Boolean(activeSubId),
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    if (!selectedSubscription) {
-      setDetailsLoading(false);
-      setSubscription(null);
-      setConnection(null);
-      setDevices([]);
-      setRenewalOptions([]);
-      return;
-    }
-    setDetailsLoading(true);
-    let mounted = true;
-    void Promise.allSettled([
-      subscriptionApi.getSubscription(selectedSubscription),
-      subscriptionApi.getConnectionLink(selectedSubscription),
-      subscriptionApi.getDevices(selectedSubscription),
-      subscriptionApi.getRenewalOptions(selectedSubscription),
-    ]).then(([detailResult, connectionResult, devicesResult, renewalResult]) => {
-      if (!mounted) return;
-      if (detailResult.status === 'fulfilled') setSubscription(detailResult.value.subscription);
-      if (connectionResult.status === 'fulfilled') setConnection(connectionResult.value);
-      if (devicesResult.status === 'fulfilled') setDevices(devicesResult.value.devices);
-      if (renewalResult.status === 'fulfilled') setRenewalOptions(renewalResult.value);
-      setDetailsLoading(false);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [selectedSubscription]);
+  const subscription = detailsData?.subscription ?? null;
+  const connection = detailsData?.connection ?? null;
+  const devices = detailsData?.devices ?? [];
+  const renewalOptions = detailsData?.renewalOptions ?? [];
+
+  const accountState: AccountState = subscriptions[0]?.is_trial
+    ? 'trial'
+    : subscriptions.length > 0
+      ? 'active'
+      : 'new';
+
+  const loading = subsLoading || (subscriptions.length > 0 && detailsLoading && !detailsData);
 
   async function activateTrial() {
     if (!trialInfo?.is_available) return;
     try {
       await subscriptionApi.activateTrial();
       showToast('Пробный период активирован');
-      const result = await subscriptionApi.getSubscriptions();
-      setSubscriptions(result.subscriptions);
-      setAccountState(
-        result.subscriptions[0]?.is_trial
-          ? 'trial'
-          : result.subscriptions.length
-            ? 'active'
-            : 'new',
-      );
-      setSelectedSubscription(result.subscriptions[0]?.id ?? null);
-      setTrialInfo(null);
+      await queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] });
+      await queryClient.invalidateQueries({ queryKey: ['invoxy-trial-info'] });
       await refreshUser();
     } catch {
       showToast('Не удалось активировать пробный период');
@@ -297,7 +264,9 @@ export function DashboardPage() {
                         device.id,
                         selectedSubscription ?? undefined,
                       );
-                      setDevices((items) => items.filter((item) => item.hwid !== device.id));
+                      await queryClient.invalidateQueries({
+                        queryKey: ['invoxy-subscription-details', activeSubId],
+                      });
                     }}
                   />
                 </Reveal>

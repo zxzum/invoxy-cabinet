@@ -2,16 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
-import { CalendarDays, Copy, Link2, X } from '@/invoxystart/components/ui/RuneIcon';
+import { CalendarDays, Link2, Smartphone, X } from '@/invoxystart/components/ui/RuneIcon';
 import { subscriptionApi } from '@/invoxystart/api';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
+import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
+import { ConnectDeviceModal } from '@/invoxystart/components/connection/ConnectDeviceModal';
 import {
   AccountPage,
   AccountPanel,
   ErrorState,
   LoadingState,
   Toggle,
-  copyText,
   formatDate,
 } from '@/invoxystart/components/account/AccountPrimitives';
 import { RenewalCard } from '@/invoxystart/components/dashboard/RenewalCard';
@@ -41,6 +42,10 @@ type Connection = {
   subscription_url?: string | null;
   display_link?: string | null;
   happ_redirect_link?: string | null;
+  happ_scheme_link?: string | null;
+  happ_link?: string | null;
+  happ_cryptolink?: string | null;
+  happ_crypto_link?: string | null;
   instructions?: { steps?: string[] };
 };
 
@@ -78,6 +83,7 @@ export default function SubscriptionManagePage() {
   const [autopay, setAutopay] = useState(false);
   const [hasMultiple, setHasMultiple] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [deviceModalOpen, setDeviceModalOpen] = useState(false);
   const load = useCallback(async () => {
     if (!Number.isInteger(id) || id < 1) {
       setError('Некорректный идентификатор подписки');
@@ -126,15 +132,20 @@ export default function SubscriptionManagePage() {
     [connection, detail],
   );
 
-  async function copyLink() {
-    if (!accessLink) return;
-    try {
-      await copyText(accessLink);
-      showToast('Ссылка скопирована');
-    } catch {
-      showToast('Не удалось скопировать ссылку');
-    }
-  }
+  const happLink = useMemo(() => {
+    return (
+      connection?.happ_redirect_link ||
+      connection?.happ_scheme_link ||
+      connection?.happ_link ||
+      connection?.happ_cryptolink ||
+      connection?.happ_crypto_link ||
+      (accessLink ? `happ://add/${accessLink}` : null)
+    );
+  }, [connection, accessLink]);
+
+  const incyLink = useMemo(() => {
+    return accessLink ? `incy://import/${accessLink}` : null;
+  }, [accessLink]);
 
   async function toggleAutopay(value: boolean) {
     setBusy('autopay');
@@ -268,20 +279,19 @@ export default function SubscriptionManagePage() {
               <div className="glass-control flex h-12 min-w-0 flex-1 items-center truncate rounded-2xl px-4 font-mono text-xs leading-none text-muted">
                 {accessLink || 'Ссылка пока недоступна'}
               </div>
-              <button
-                type="button"
+              <LivelyCopyButton
+                text={accessLink}
+                variant="circle"
+                label="Скопировать"
+                copiedLabel="Скопировано!"
                 disabled={!accessLink}
-                onClick={() => void copyLink()}
-                className="button-lift grid h-12 w-12 shrink-0 place-items-center rounded-full bg-mint text-bg disabled:opacity-40"
-                aria-label="Копировать ссылку"
-              >
-                <Copy size={17} />
-              </button>
+                onCopied={() => showToast('Ссылка скопирована')}
+              />
             </div>
             <div className="mt-3 glass-panel motion-card grid gap-2 rounded-[26px] p-3 2xl:grid-cols-2">
-              {connection?.happ_redirect_link ? (
+              {happLink ? (
                 <a
-                  href={connection.happ_redirect_link}
+                  href={happLink}
                   target="_blank"
                   rel="noreferrer"
                   className="glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98]"
@@ -296,9 +306,9 @@ export default function SubscriptionManagePage() {
                   Подключить в HAPP
                 </a>
               ) : null}
-              {accessLink ? (
+              {incyLink ? (
                 <a
-                  href={`incy://import/${accessLink}`}
+                  href={incyLink}
                   className="glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98]"
                 >
                   <span className="flex h-5 shrink-0 items-center">
@@ -314,10 +324,17 @@ export default function SubscriptionManagePage() {
             </div>
             <button
               type="button"
+              onClick={() => setDeviceModalOpen(true)}
+              className="mt-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white/[0.04] px-4 text-center text-xs font-bold text-mint hover:bg-white/[0.08] transition-colors"
+            >
+              <Smartphone size={15} /> Инструкция и подключение других устройств →
+            </button>
+            <button
+              type="button"
               disabled={!accessLink}
               aria-expanded={qrOpen}
               onClick={() => setQrOpen((open) => !open)}
-              className="mt-5 w-full cursor-pointer rounded-2xl bg-white/5 p-4 text-left disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-4 w-full cursor-pointer rounded-2xl bg-white/5 p-4 text-left disabled:cursor-not-allowed disabled:opacity-40"
             >
               <span className="flex items-center gap-2 text-xs font-bold text-mint">
                 <Link2 size={15} /> QR-код
@@ -416,6 +433,14 @@ export default function SubscriptionManagePage() {
           </AccountPanel>
         </div>
       </div>
+
+      <ConnectDeviceModal
+        open={deviceModalOpen}
+        onClose={() => setDeviceModalOpen(false)}
+        accessLink={accessLink}
+        happLink={happLink}
+        incyLink={incyLink}
+      />
     </AccountPage>
   );
 }

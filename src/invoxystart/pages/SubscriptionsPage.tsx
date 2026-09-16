@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
@@ -23,19 +23,16 @@ type SubscriptionItem = {
   tariff_name?: string | null;
   status?: string | null;
   is_trial?: boolean;
-  is_daily?: boolean;
-  is_daily_paused?: boolean;
-  autopay_enabled?: boolean;
+  end_date?: string | null;
+  days_left?: number | null;
   traffic_limit_gb?: number | null;
   traffic_used_gb?: number | null;
   device_limit?: number | null;
-  end_date?: string | null;
-  connected_squads?: string[] | null;
+  autopay_enabled?: boolean;
 };
 
 function statusLabel(item: SubscriptionItem) {
   if (item.is_trial) return 'Пробный период';
-  if (item.is_daily_paused) return 'Приостановлена';
   if (item.status === 'active' || !item.status) return 'Активна';
   if (item.status === 'limited') return 'Ограничена';
   if (item.status === 'expired') return 'Завершена';
@@ -48,37 +45,29 @@ function statusClass(item: SubscriptionItem) {
 
 export default function SubscriptionsPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<SubscriptionItem[]>([]);
-  const [multiTariffEnabled, setMultiTariffEnabled] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const result = await subscriptionApi.getSubscriptions();
-      setItems(
-        Array.isArray(result?.subscriptions) ? (result.subscriptions as SubscriptionItem[]) : [],
-      );
-      setMultiTariffEnabled(Boolean(result?.multi_tariff_enabled));
-    } catch {
-      setError('Не удалось загрузить подписки');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    data,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ['invoxy-subscriptions'],
+    queryFn: () => subscriptionApi.getSubscriptions(),
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const items = (data?.subscriptions ?? []) as SubscriptionItem[];
+  const multiTariffEnabled = Boolean(data?.multi_tariff_enabled);
+  const loading = isLoading && !data;
+  const error = queryError ? 'Не удалось загрузить подписки' : '';
 
   return (
     <AccountPage title="Мои подписки" subtitle="Все тарифы и подключённые сервисы">
       {loading ? (
         <LoadingState />
       ) : error ? (
-        <ErrorState message={error} onRetry={() => void load()} />
+        <ErrorState message={error} onRetry={() => void refetch()} />
       ) : items.length === 0 ? (
         <EmptyState
           title="Нет подписок"

@@ -8,7 +8,7 @@ export type { AnimationConfig };
 
 // Versioned URL prevents Telegram/WebView from keeping the previous broken asset
 // for a year (nginx serves public assets with immutable-style caching).
-export const LOCAL_LOGO_URL = '/invoxy_logo.jpg?v=2c0c067a';
+export const LOCAL_LOGO_URL = '/images/brand-mark.png';
 
 export interface BrandingInfo {
   name: string;

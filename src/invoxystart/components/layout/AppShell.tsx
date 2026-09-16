@@ -22,14 +22,8 @@ function ShellLayout({ children }: { children: ReactNode }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const routeKey = `${location.pathname}${location.search}`;
 
-  const {
-    isTelegramWebApp,
-    isFullscreen,
-    isExpanded,
-    platform,
-    safeAreaInset,
-    contentSafeAreaInset,
-  } = useTelegramSDK();
+  const { isTelegramWebApp, isFullscreen, platform, safeAreaInset, contentSafeAreaInset } =
+    useTelegramSDK();
 
   const tgWebApp = typeof window !== 'undefined' ? (window.Telegram?.WebApp as any) : undefined;
 
@@ -42,17 +36,13 @@ function ShellLayout({ children }: { children: ReactNode }) {
     tgWebApp?.platform === 'android' ||
     (typeof navigator !== 'undefined' && /iphone|ipad|ipod|android/i.test(navigator.userAgent));
 
-  // If opened in Telegram as a compact sheet (half-screen modal), header stays outside
-  const isCompactSheet =
-    isTg &&
-    isTgMobile &&
-    (isExpanded === false || tgWebApp?.isExpanded === false) &&
-    !isFullscreen &&
-    !tgWebApp?.isFullscreen;
+  // If opened in Telegram as non-fullscreen, the native Telegram header bar sits
+  // entirely outside the webview — no top clearance overlay is needed.
+  const isTgFullscreen = Boolean(isFullscreen || tgWebApp?.isFullscreen);
 
   const topPadding = useMemo(() => {
-    // Normal web or compact sheet in Telegram doesn't have Telegram's top close overlay
-    if (!isTg || !isTgMobile || isCompactSheet) {
+    // Normal web or standard (non-fullscreen) sheet in Telegram doesn't have Telegram's top close overlay
+    if (!isTg || !isTgMobile || !isTgFullscreen) {
       return '1.5rem';
     }
 
@@ -69,8 +59,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
       platform === 'ios' ||
       (typeof window !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent));
 
-    // Telegram's native '✕ Закрыть' capsule sits at ~60-95px from the top edge on iOS
-    // We guarantee at least 114px on iOS / 96px on Android so content clears the capsule with generous breathing space
+    // Telegram's native '✕ Закрыть' capsule sits at ~60-95px from the top edge in fullscreen
     const minClearance = isIos ? 114 : 96;
 
     let computedPx = minClearance;
@@ -81,7 +70,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
     }
 
     return `max(${computedPx}px, calc(env(safe-area-inset-top, 0px) + ${isIos ? 58 : 50}px), calc(var(--tg-content-safe-area-inset-top, 0px) + 16px))`;
-  }, [isTg, isTgMobile, isCompactSheet, contentSafeAreaInset?.top, safeAreaInset?.top, platform]);
+  }, [isTg, isTgMobile, isTgFullscreen, contentSafeAreaInset?.top, safeAreaInset?.top, platform]);
 
   useLayoutEffect(() => {
     if (reducedMotion || !routeKey) return;
@@ -123,7 +112,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
   }, [location.pathname, location.hash]);
 
   return (
-    <div className="invoxystart-shell relative isolate min-h-screen w-full overflow-x-hidden text-ink">
+    <div className="invoxystart-shell relative isolate min-h-screen w-full overflow-x-clip text-ink">
       <BackgroundShapes />
 
       <div

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronRight,
   Globe2,
@@ -72,18 +73,58 @@ function adaptPlan(value: Record<string, unknown>): Plan {
 const formatRubles = (value: number) => `${value.toLocaleString('ru-RU')} ₽`;
 
 export default function TariffsPage() {
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const addingSubscription = searchParams.get('mode') === 'add';
   const { pay, topUp } = usePayment();
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeSubscriptionId, setActiveSubscriptionId] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tariffStep, setTariffStep] = useState<'options' | 'payment'>('options');
   const [months, setMonths] = useState(1);
   const [devices, setDevices] = useState(5);
-  const [loading, setLoading] = useState(true);
+
+  const { data: tariffsData, isLoading: tariffsLoading } = useQuery({
+    queryKey: ['invoxy-tariffs-page-data'],
+    queryFn: async () => {
+      const [optionsResult, subscriptionsResult, loyaltyResult] = await Promise.allSettled([
+        subscriptionApi.getPurchaseOptions(),
+        subscriptionApi.getSubscriptions(),
+        promoApi.getLoyaltyTiers(),
+      ]);
+      const optionsVal =
+        optionsResult.status === 'fulfilled'
+          ? (optionsResult.value as {
+              tariffs?: Array<Record<string, unknown>>;
+              current_tariff_id?: number | null;
+            })
+          : null;
+      const nextPlans = (optionsVal?.tariffs || [])
+        .map(adaptPlan)
+        .filter((plan) => plan.periods.length);
+      const subscriptions =
+        subscriptionsResult.status === 'fulfilled' ? subscriptionsResult.value.subscriptions : [];
+      const currentTariffId = optionsVal?.current_tariff_id ?? subscriptions[0]?.tariff_id ?? null;
+      const activeSubscription =
+        subscriptions.find(
+          (subscription) => subscription.id && subscription.tariff_id === currentTariffId,
+        ) ?? subscriptions[0];
+      const loyalty = loyaltyResult.status === 'fulfilled' ? loyaltyResult.value : null;
+
+      return {
+        plans: nextPlans,
+        activeId: currentTariffId == null ? null : String(currentTariffId),
+        activeSubscriptionId: activeSubscription?.id ?? null,
+        loyalty,
+      };
+    },
+    staleTime: 60_000,
+  });
+
+  const plans = tariffsData?.plans ?? [];
+  const activeId = tariffsData?.activeId ?? null;
+  const activeSubscriptionId = tariffsData?.activeSubscriptionId ?? null;
+  const loading = tariffsLoading && !tariffsData;
+
   const selected = plans.find((plan) => plan.id === selectedId);
   const selectedPeriod =
     selected?.periods.find((period) => period.months === months) ?? selected?.periods[0];
@@ -93,40 +134,6 @@ export default function TariffsPage() {
         Math.max(0, devices - selected.devices) * selected.devicePrice * selectedPeriod.months
       : 0;
   const total = Math.round(subtotal);
-
-  useEffect(() => {
-    let mounted = true;
-    void Promise.allSettled([
-      subscriptionApi.getPurchaseOptions(),
-      subscriptionApi.getSubscriptions(),
-      promoApi.getLoyaltyTiers(),
-    ]).then(([optionsResult, subscriptionsResult]) => {
-      if (!mounted) return;
-      if (optionsResult.status === 'fulfilled') {
-        const value = optionsResult.value as {
-          tariffs?: Array<Record<string, unknown>>;
-          current_tariff_id?: number | null;
-        };
-        const nextPlans = (value.tariffs || [])
-          .map(adaptPlan)
-          .filter((plan) => plan.periods.length);
-        setPlans(nextPlans);
-        const subscriptions =
-          subscriptionsResult.status === 'fulfilled' ? subscriptionsResult.value.subscriptions : [];
-        const currentTariffId = value.current_tariff_id ?? subscriptions[0]?.tariff_id ?? null;
-        setActiveId(currentTariffId == null ? null : String(currentTariffId));
-        const activeSubscription =
-          subscriptions.find(
-            (subscription) => subscription.id && subscription.tariff_id === currentTariffId,
-          ) ?? subscriptions[0];
-        setActiveSubscriptionId(activeSubscription?.id ?? null);
-      }
-      setLoading(false);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   function selectPlan(id: string, baseDevices: number) {
     if (selectedId === id && dialogOpen) {
@@ -273,7 +280,10 @@ export default function TariffsPage() {
           activate={activate}
           onPay={(method, request) => pay(method, request)}
           onTopUp={topUp}
-          onComplete={() => setActiveId(selected.id)}
+          onComplete={() => {
+            void queryClient.invalidateQueries({ queryKey: ['invoxy-tariffs-page-data'] });
+            void queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] });
+          }}
         />
       )}
     </div>
@@ -318,7 +328,10 @@ function PromoGroup() {
         src="/images/promo-group-bg.webp"
         alt=""
         className="absolute inset-0 h-full w-full object-cover opacity-80"
-        decoding="async"
+        loading="eager"
+        decoding="sync"
+        // @ts-expect-error React 18 fetchPriority support
+        fetchpriority="high"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-bg/65 via-bg/45 to-bg/20 lg:from-bg/90 lg:via-bg/75 lg:to-bg/60" />
       <div className="relative z-10 grid gap-4 lg:grid-cols-[minmax(0,.85fr)_minmax(360px,1.15fr)] lg:items-center lg:gap-12">

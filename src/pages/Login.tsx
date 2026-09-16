@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence, m } from 'framer-motion';
+import { subscriptionApi } from '@/invoxystart/api';
 import { useAuthStore } from '../store/auth';
 import { useShallow } from 'zustand/shallow';
 import { authApi } from '../api/auth';
@@ -42,7 +44,7 @@ import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShap
 import type { LegalConsentConfig } from '../types';
 import { safeLocal, safeSession } from '../utils/safeStorage';
 
-const DEFAULT_LOGO_URL = '/invoxy_logo.jpg?v=2c0c067a';
+const DEFAULT_LOGO_URL = '/images/brand-mark.png';
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -202,11 +204,24 @@ export default function Login() {
   const logoUrl =
     (branding?.has_custom_logo ? brandingApi.getLogoUrl?.(branding) : null) || DEFAULT_LOGO_URL;
 
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     if (isAuthenticated) {
+      // Eagerly prefetch cabinet data so dashboard and tariffs render with 0ms delay!
+      void queryClient.prefetchQuery({
+        queryKey: ['invoxy-subscriptions'],
+        queryFn: () => subscriptionApi.getSubscriptions(),
+        staleTime: 60_000,
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['invoxy-tariffs'],
+        queryFn: () => subscriptionApi.getPurchaseOptions(),
+        staleTime: 120_000,
+      });
       navigate(getReturnUrl(), { replace: true });
     }
-  }, [isAuthenticated, navigate, getReturnUrl]);
+  }, [isAuthenticated, navigate, getReturnUrl, queryClient]);
 
   // Try Telegram WebApp authentication on mount (with auto-retry on 401)
   // Wait for auth store initialization to complete to avoid race conditions
@@ -421,49 +436,70 @@ export default function Login() {
 
   if (isAutoAuthenticating) {
     return (
-      <main
-        className="auth-page ix-login relative isolate flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 text-ink"
-        style={{
-          paddingTop:
-            safeTop > 0 ? `${safeTop + 16}px` : 'calc(1rem + env(safe-area-inset-top, 0px))',
-          paddingBottom:
-            safeBottom > 0
-              ? `${safeBottom + 16}px`
-              : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-        }}
-      >
-        <BackgroundShapes />
+      <AnimatePresence mode="wait">
+        <m.main
+          key="preloader"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{
+            opacity: 0,
+            y: -16,
+            scale: 0.98,
+            filter: 'blur(8px)',
+            transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] },
+          }}
+          className="auth-page ix-login relative isolate flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 text-ink"
+          style={{
+            paddingTop:
+              safeTop > 0 ? `${safeTop + 16}px` : 'calc(1rem + env(safe-area-inset-top, 0px))',
+            paddingBottom:
+              safeBottom > 0
+                ? `${safeBottom + 16}px`
+                : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+          }}
+        >
+          <BackgroundShapes />
 
-        <div className="relative z-10 flex flex-col items-center text-center animate-fade-in">
-          <div className="relative mb-6 flex items-center justify-center">
-            <div className="absolute -inset-6 rounded-full bg-mint/20 blur-3xl animate-pulse pointer-events-none" />
-            <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/15 bg-white/[0.06] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] backdrop-blur-2xl">
-              <img
-                src={logoUrl}
-                alt={appName}
-                className="h-14 w-14 rounded-2xl object-cover shadow-md"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                  const fallback = (e.target as HTMLElement).parentElement?.querySelector(
-                    '.brand-letter-fallback',
-                  );
-                  if (fallback) (fallback as HTMLElement).style.display = 'block';
-                }}
+          <m.div
+            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 flex flex-col items-center text-center"
+          >
+            <m.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative mb-6 flex items-center justify-center"
+            >
+              <m.div
+                animate={{ opacity: [0.25, 0.6, 0.25], scale: [0.95, 1.08, 0.95] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -inset-8 rounded-full bg-mint/25 blur-3xl pointer-events-none"
               />
-              <span className="brand-letter-fallback hidden text-2xl font-bold text-mint">
-                {appLogo}
-              </span>
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/15 bg-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.25)] backdrop-blur-2xl transition-transform hover:scale-105">
+                <img
+                  src="/images/brand-mark.png"
+                  alt={appName}
+                  className="h-14 w-14 rounded-2xl object-cover drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
+                />
+              </div>
+            </m.div>
+
+            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{appName}</h1>
+            <p className="mt-2 text-sm text-muted animate-pulse">
+              {t('auth.authenticating', 'Авторизация...')}
+            </p>
+
+            <div className="relative mt-7 h-1.5 w-40 overflow-hidden rounded-full bg-white/10 p-0.5">
+              <m.div
+                animate={{ x: ['-100%', '160%'] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+                className="h-full w-24 rounded-full bg-gradient-to-r from-transparent via-mint to-transparent shadow-[0_0_8px_rgba(6,214,160,0.8)]"
+              />
             </div>
-          </div>
-
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{appName}</h1>
-          <p className="mt-2 text-sm text-muted">{t('auth.authenticating', 'Авторизация...')}</p>
-
-          <div className="relative mt-7 h-1 w-36 overflow-hidden rounded-full bg-white/10">
-            <div className="absolute inset-y-0 w-2/5 rounded-full bg-gradient-to-r from-transparent via-mint to-transparent animate-indeterminate-slide" />
-          </div>
-        </div>
-      </main>
+          </m.div>
+        </m.main>
+      </AnimatePresence>
     );
   }
 

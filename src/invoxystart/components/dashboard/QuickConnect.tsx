@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import type { ConnectionLinkResponse } from '@/invoxystart/api/subscription';
+import { ConnectDeviceModal } from '@/invoxystart/components/connection/ConnectDeviceModal';
+import { Smartphone } from '@/invoxystart/components/ui/RuneIcon';
 
 const options = [
   { id: 'happ', label: 'Подключить в HAPP', icon: '/images/apps/happ.png' },
@@ -18,12 +21,15 @@ export function QuickConnect({
     | 'happ_link'
   > | null;
 }) {
+  const [modalOpen, setModalOpen] = useState(false);
+
   const happLink =
     connection?.happ_redirect_link ||
     connection?.happ_scheme_link ||
     connection?.happ_link ||
     connection?.happ_cryptolink ||
-    connection?.happ_crypto_link;
+    connection?.happ_crypto_link ||
+    (connection?.subscription_url ? `happ://add/${connection.subscription_url}` : null);
   const incyLink = connection?.subscription_url
     ? `incy://import/${connection.subscription_url}`
     : null;
@@ -31,7 +37,16 @@ export function QuickConnect({
 
   return (
     <div className="flex w-full flex-col gap-2.5">
-      <h3 className="text-[17px] font-bold text-ink">Быстрое подключение</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-[17px] font-bold text-ink">Быстрое подключение</h3>
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-1.5 text-xs font-bold text-mint hover:underline cursor-pointer"
+        >
+          <Smartphone size={14} /> Все устройства →
+        </button>
+      </div>
       <div className="glass-panel motion-card grid w-full gap-2 rounded-[26px] p-3 2xl:grid-cols-2">
         {options.map((opt) => {
           const href = links[opt.id];
@@ -53,6 +68,14 @@ export function QuickConnect({
           );
         })}
       </div>
+
+      <ConnectDeviceModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        accessLink={connection?.subscription_url}
+        happLink={happLink}
+        incyLink={incyLink}
+      />
     </div>
   );
 }

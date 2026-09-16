@@ -24,7 +24,7 @@ export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () =
   ];
 
   return (
-    <aside className="glass-panel sticky top-4 hidden h-[calc(100vh-32px)] w-full shrink-0 flex-col gap-4 rounded-[24px] p-6 lg:top-0 lg:h-screen lg:gap-[clamp(16px,1.2vw,24px)] lg:rounded-l-none lg:rounded-r-[clamp(24px,1.2vw,28px)] lg:border-l-0 lg:p-[clamp(20px,1.2vw,24px)] lg:flex">
+    <aside className="glass-panel sticky top-4 self-start hidden h-[calc(100vh-32px)] w-full shrink-0 flex-col gap-4 rounded-[24px] p-6 lg:top-0 lg:h-screen lg:gap-[clamp(16px,1.2vw,24px)] lg:rounded-l-none lg:rounded-r-[clamp(24px,1.2vw,28px)] lg:border-l-0 lg:p-[clamp(20px,1.2vw,24px)] lg:flex">
       <div className="flex items-center gap-2.5 lg:gap-[clamp(10px,0.65vw,13px)]">
         <BrandLogo
           iconClassName="h-[38px] w-[38px] rounded-xl object-cover lg:h-[clamp(38px,2.4vw,48px)] lg:w-[clamp(38px,2.4vw,48px)] lg:rounded-[clamp(12px,0.8vw,16px)]"

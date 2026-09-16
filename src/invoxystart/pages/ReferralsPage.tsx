@@ -1,44 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Check, Copy, Link2, Send, Share2, Sparkles } from '@/invoxystart/components/ui/RuneIcon';
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
-import {
-  referralApi,
-  type ReferralEarning,
-  type ReferralInfo,
-  type ReferralItem,
-  type ReferralTerms,
-} from '@/invoxystart/api';
+import { referralApi } from '@/invoxystart/api';
 import { formatDate, formatMoney } from '@/invoxystart/components/account/AccountPrimitives';
 import { copyToClipboard } from '@/utils/clipboard';
 
 export default function ReferralsPage() {
   const { showToast } = useToast();
-  const [info, setInfo] = useState<ReferralInfo | null>(null);
-  const [terms, setTerms] = useState<ReferralTerms | null>(null);
-  const [invited, setInvited] = useState<ReferralItem[]>([]);
-  const [income, setIncome] = useState<ReferralEarning[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    void Promise.allSettled([
-      referralApi.getReferralInfo(),
-      referralApi.getReferralTerms(),
-      referralApi.getReferralList({ per_page: 20 }),
-      referralApi.getReferralEarnings({ per_page: 20 }),
-    ]).then(([infoResult, termsResult, invitedResult, earningsResult]) => {
-      if (!mounted) return;
-      if (infoResult.status === 'fulfilled') setInfo(infoResult.value);
-      if (termsResult.status === 'fulfilled') setTerms(termsResult.value);
-      if (invitedResult.status === 'fulfilled') setInvited(invitedResult.value.items);
-      if (earningsResult.status === 'fulfilled') setIncome(earningsResult.value.items);
-      setLoading(false);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const { data: referralData, isLoading: referralLoading } = useQuery({
+    queryKey: ['invoxy-referrals-page-data'],
+    queryFn: async () => {
+      const [infoResult, termsResult, invitedResult, earningsResult] = await Promise.allSettled([
+        referralApi.getReferralInfo(),
+        referralApi.getReferralTerms(),
+        referralApi.getReferralList({ per_page: 20 }),
+        referralApi.getReferralEarnings({ per_page: 20 }),
+      ]);
+      return {
+        info: infoResult.status === 'fulfilled' ? infoResult.value : null,
+        terms: termsResult.status === 'fulfilled' ? termsResult.value : null,
+        invited: invitedResult.status === 'fulfilled' ? invitedResult.value.items : [],
+        income: earningsResult.status === 'fulfilled' ? earningsResult.value.items : [],
+      };
+    },
+    staleTime: 60_000,
+  });
+
+  const info = referralData?.info ?? null;
+  const terms = referralData?.terms ?? null;
+  const invited = referralData?.invited ?? [];
+  const income = referralData?.income ?? [];
+  const loading = referralLoading && !referralData;
 
   const links = [
     { label: 'Telegram', value: info?.bot_referral_link || '' },
