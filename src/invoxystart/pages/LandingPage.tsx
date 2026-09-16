@@ -11,6 +11,7 @@ import {
   Sparkles,
   Plus,
   Minus,
+  Globe2,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { BrandLogo } from '@/invoxystart/components/layout/BrandLogo';
 
@@ -39,6 +40,8 @@ interface LandingNode {
   ping_ms: number;
   load_percent: number;
   status: string;
+  node_name?: string;
+  users_online?: number;
 }
 
 interface ProcessedPlan {
@@ -70,14 +73,18 @@ const FALLBACK_NODES: LandingNode[] = [
     ping_ms: 22,
     load_percent: 42,
     status: 'online',
+    node_name: 'AdminVPS-FI-1',
+    users_online: 8,
   },
   {
     country_code: 'NL',
     country_name: 'Нидерланды',
     city: 'Амстердам',
     ping_ms: 38,
-    load_percent: 28,
+    load_percent: 34,
     status: 'online',
+    node_name: 'NodeHost-NL-1',
+    users_online: 4,
   },
   {
     country_code: 'DE',
@@ -86,6 +93,8 @@ const FALLBACK_NODES: LandingNode[] = [
     ping_ms: 34,
     load_percent: 35,
     status: 'online',
+    node_name: 'AWAS-DE1-WL',
+    users_online: 5,
   },
   {
     country_code: 'SE',
@@ -94,22 +103,28 @@ const FALLBACK_NODES: LandingNode[] = [
     ping_ms: 25,
     load_percent: 19,
     status: 'online',
+    node_name: 'NodeHost-SE-1',
+    users_online: 2,
   },
   {
     country_code: 'PL',
     country_name: 'Польша',
     city: 'Варшава',
     ping_ms: 29,
-    load_percent: 24,
+    load_percent: 28,
     status: 'online',
+    node_name: 'Intezio-PL-2',
+    users_online: 6,
   },
   {
-    country_code: 'LTE',
-    country_name: 'WhiteNet Relay',
-    city: 'Мобильный контур',
-    ping_ms: 18,
-    load_percent: 36,
+    country_code: 'NL',
+    country_name: 'Нидерланды',
+    city: 'Амстердам',
+    ping_ms: 36,
+    load_percent: 30,
     status: 'online',
+    node_name: 'CloudBlast-NL-3',
+    users_online: 4,
   },
 ];
 
@@ -194,20 +209,28 @@ export default function LandingPage() {
   const [plans, setPlans] = useState<ProcessedPlan[]>(FALLBACK_PLANS);
   const [nodes, setNodes] = useState<LandingNode[]>(FALLBACK_NODES);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState<'grid' | 'list'>('list');
 
   useEffect(() => {
-    fetch('/api/cabinet/landing/default?lang=ru')
-      .then((res) => {
+    let mounted = true;
+
+    const fetchLandingData = async (isPoll = false) => {
+      if (isPoll) setIsUpdating(true);
+      try {
+        const res = await fetch('/api/cabinet/landing/default?lang=ru');
         if (!res.ok) throw new Error('Failed to load tariffs');
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
+        if (!mounted) return;
+
         if (data?.nodes && Array.isArray(data.nodes) && data.nodes.length > 0) {
           setNodes(data.nodes);
           setIsLiveConnected(true);
+          setLastUpdated(new Date());
         }
 
-        if (data?.tariffs && Array.isArray(data.tariffs) && data.tariffs.length > 0) {
+        if (!isPoll && data?.tariffs && Array.isArray(data.tariffs) && data.tariffs.length > 0) {
           const rawTariffs: DbTariff[] = data.tariffs;
           const mapped: ProcessedPlan[] = rawTariffs.map((t, idx) => {
             const trafficGb = t.traffic_limit_gb || (t.id === 2 ? 350 : t.id === 3 ? 750 : 1000);
@@ -293,10 +316,27 @@ export default function LandingPage() {
           setPlans(mapped);
           setSelectedDurations(mapped.reduce((acc, p) => ({ ...acc, [p.id]: 1 }), {}));
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.warn('Using fallback data:', err);
-      });
+      } finally {
+        if (mounted) {
+          setTimeout(() => {
+            if (mounted) setIsUpdating(false);
+          }, 600);
+        }
+      }
+    };
+
+    void fetchLandingData(false);
+
+    const interval = setInterval(() => {
+      void fetchLandingData(true);
+    }, 20_000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const handleSelectDuration = (planId: string, months: number) => {
@@ -810,44 +850,231 @@ export default function LandingPage() {
         id="status"
         className="relative z-10 py-16 px-4 max-w-6xl mx-auto border-t border-white/5"
       >
-        <div className="rounded-3xl p-8 bg-gradient-to-r from-[#0d1217] via-[#0f141b] to-[#0d1217] border border-white/10">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-            <div className="md:col-span-5 space-y-3">
+        <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#0c0f14] via-[#0e1319] to-[#0c0f14] border border-white/10 shadow-2xl">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
+            <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                {isLiveConnected
-                  ? 'Статус сети: Данные RemnaWave в реальном времени'
-                  : 'Все серверы работают штатно'}
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isUpdating
+                      ? 'bg-mint scale-125 transition-transform'
+                      : 'bg-emerald-400 animate-pulse'
+                  }`}
+                />
+                <span>
+                  {isLiveConnected
+                    ? 'Сеть онлайн · RemnaWave в реальном времени'
+                    : 'Все серверы работают штатно'}
+                </span>
+                {isUpdating && (
+                  <span className="text-[10px] text-mint font-mono uppercase tracking-wider ml-1 animate-pulse">
+                    обновление...
+                  </span>
+                )}
               </div>
-              <h3 className="text-2xl font-black text-white">Выделенные каналы 10 Gbps</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Европейские узлы первого эшелона с прямым подключением к магистральным сетям. Пинг
-                минимален, а переключение между локациями мгновенное.
+              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                Выделенные магистральные каналы 10 Gbps
+              </h3>
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+                Прямые аплинки в европейские дата-центры первого уровня. Данные нагрузки и отклика
+                обновляются автоматически.
               </p>
             </div>
 
-            <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {nodes.map((s, idx) => (
-                <div
-                  key={idx}
-                  className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-white/15 transition"
+            {/* Live refresh & view toggle controls */}
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <div className="text-[11px] text-zinc-400 font-mono flex items-center gap-1.5 bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
+                <span className="text-zinc-400">Синхронизация:</span>
+                <span className="text-[#a5e8c4]">
+                  {lastUpdated.toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  })}
+                </span>
+              </div>
+
+              <div className="inline-flex rounded-xl bg-white/[0.04] p-1 border border-white/5 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('list')}
+                  className={`px-3 py-1 rounded-lg transition ${
+                    activeTab === 'list'
+                      ? 'bg-emerald-400/20 text-emerald-300 font-bold shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
                 >
-                  <div className="flex items-center justify-between gap-1">
-                    <div className="text-xs font-bold text-zinc-200 truncate">{s.country_name}</div>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                  </div>
-                  <div className="text-[11px] text-zinc-400 truncate">{s.city}</div>
-                  <div className="mt-2.5 flex items-center justify-between text-[11px] pt-2 border-t border-white/5">
-                    <span className="text-zinc-400">Пинг:</span>
-                    <span className="font-mono text-[#a5e8c4]">{s.ping_ms} ms</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between text-[11px]">
-                    <span className="text-zinc-400">Нагрузка:</span>
-                    <span className="font-mono text-zinc-300">{s.load_percent}%</span>
-                  </div>
-                </div>
-              ))}
+                  Список
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('grid')}
+                  className={`px-3 py-1 rounded-lg transition ${
+                    activeTab === 'grid'
+                      ? 'bg-emerald-400/20 text-emerald-300 font-bold shadow-sm'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  Сетка
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Servers Display */}
+          <div className="mt-6">
+            {activeTab === 'list' ? (
+              <div className="divide-y divide-white/5 rounded-2xl overflow-hidden border border-white/5 bg-black/20">
+                {nodes.map((s, idx) => (
+                  <motion.div
+                    key={s.node_name || idx}
+                    initial={{ opacity: 0.8 }}
+                    animate={{
+                      opacity: 1,
+                      backgroundColor: isUpdating
+                        ? 'rgba(165, 232, 196, 0.03)'
+                        : 'rgba(0, 0, 0, 0)',
+                    }}
+                    transition={{ duration: 0.4 }}
+                    className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                        <Globe2 className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-zinc-100 truncate">
+                            {s.node_name || `${s.country_name} #${idx + 1}`}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-white/10 text-zinc-300">
+                            {s.country_code}
+                          </span>
+                        </div>
+                        <div className="text-xs text-zinc-400 flex items-center gap-2 mt-0.5">
+                          <span>{s.country_name}</span>
+                          <span>•</span>
+                          <span className="text-zinc-400">{s.city}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-6 pt-2 sm:pt-0 border-t border-white/5 sm:border-0 text-xs">
+                      {/* Live Ping Indicator */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-400">Пинг:</span>
+                        <motion.span
+                          key={s.ping_ms}
+                          initial={{ scale: 1.15, color: '#a5e8c4' }}
+                          animate={{ scale: 1, color: '#a5e8c4' }}
+                          transition={{ duration: 0.35 }}
+                          className="font-mono font-bold text-xs"
+                        >
+                          {s.ping_ms} ms
+                        </motion.span>
+                      </div>
+
+                      {/* Live Load bar */}
+                      <div className="flex items-center gap-2 w-36 sm:w-44">
+                        <span className="text-zinc-400 text-[11px] shrink-0">Нагрузка:</span>
+                        <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden p-0.5 relative">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${s.load_percent}%` }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                            className={`h-full rounded-full ${
+                              s.load_percent > 75
+                                ? 'bg-amber-400'
+                                : s.load_percent > 90
+                                  ? 'bg-rose-400'
+                                  : 'bg-gradient-to-r from-emerald-400 to-[#a5e8c4]'
+                            }`}
+                          />
+                        </div>
+                        <span className="font-mono text-zinc-300 text-[11px] w-8 text-right shrink-0">
+                          {s.load_percent}%
+                        </span>
+                      </div>
+
+                      {/* Online status indicator */}
+                      <div className="flex items-center gap-1.5 shrink-0 pl-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                        <span className="text-[11px] text-emerald-300 hidden md:inline">
+                          Online
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {nodes.map((s, idx) => (
+                  <motion.div
+                    key={s.node_name || idx}
+                    initial={{ opacity: 0.8 }}
+                    animate={{
+                      opacity: 1,
+                      scale: isUpdating ? 0.99 : 1,
+                    }}
+                    transition={{ duration: 0.35 }}
+                    className="p-4 rounded-2xl bg-white/[0.025] border border-white/5 hover:border-emerald-500/25 transition-all relative overflow-hidden group"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-bold text-sm text-zinc-100 truncate">
+                          {s.node_name || s.country_name}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-white/10 text-zinc-300 shrink-0">
+                          {s.country_code}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-zinc-400 truncate mb-3">
+                      {s.country_name}, {s.city}
+                    </div>
+
+                    <div className="space-y-2 pt-2.5 border-t border-white/5 text-[11px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-zinc-400">Пинг:</span>
+                        <motion.span
+                          key={s.ping_ms}
+                          initial={{ scale: 1.15, color: '#a5e8c4' }}
+                          animate={{ scale: 1, color: '#a5e8c4' }}
+                          transition={{ duration: 0.35 }}
+                          className="font-mono font-bold text-xs"
+                        >
+                          {s.ping_ms} ms
+                        </motion.span>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-zinc-400">Нагрузка:</span>
+                          <span className="font-mono text-zinc-300">{s.load_percent}%</span>
+                        </div>
+                        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${s.load_percent}%` }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                            className={`h-full rounded-full ${
+                              s.load_percent > 75
+                                ? 'bg-amber-400'
+                                : 'bg-gradient-to-r from-emerald-400 to-[#a5e8c4]'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
