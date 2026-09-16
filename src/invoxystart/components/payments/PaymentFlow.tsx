@@ -270,11 +270,6 @@ export function PaymentMethods({
 
   const canUseBalance = (balance?.balance_kopeks ?? 0) >= Math.round(request.amount * 100);
   const showBalance = request.allowBalance !== false && !request.topUp;
-  const platega = paymentMethods.find(
-    (method) =>
-      method.id.toLowerCase().includes('platega') || method.name.toLowerCase().includes('platega'),
-  );
-  const externalMethods = paymentMethods.filter((method) => method !== platega);
 
   return (
     <div className="payment-methods-stagger mt-4 grid min-w-0 gap-2">
@@ -321,43 +316,50 @@ export function PaymentMethods({
           Загрузка способов оплаты…
         </p>
       ) : (
-        externalMethods.map((method) => (
-          <PaymentMethodButton key={method.id} method={method} busy={busy} onPay={onPay} />
-        ))
-      )}
-      {platega && (
-        <div className="payment-method-item rounded-2xl border border-white/8 bg-white/[.035] p-3.5">
-          <div className="flex items-center gap-3 px-1">
-            <span className="glass-control grid h-10 w-10 place-items-center rounded-xl text-mint">
-              <Landmark size={18} />
-            </span>
-            <span>
-              <strong className="text-sm">{platega.name}</strong>
-              <span className="mt-0.5 block text-[11px] text-muted">
-                {platega.description || 'Банковские платежи и крипта'}
-              </span>
-            </span>
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {(platega.options || []).map((option) => (
-              <button
-                type="button"
-                disabled={busy}
-                key={option.id}
-                onClick={() => onPay(platega.id, option.id)}
-                className="button-lift glass-control flex min-w-0 items-center gap-2.5 rounded-xl p-3 text-left hover:border-mint/35 disabled:opacity-50"
+        paymentMethods.map((method) => {
+          const options = method.options || [];
+          if (options.length > 0) {
+            return (
+              <div
+                key={method.id}
+                className="payment-method-item rounded-2xl border border-white/8 bg-white/[.035] p-3.5"
               >
-                <CreditCard size={16} className="text-mint" />
-                <span className="min-w-0">
-                  <strong className="block truncate text-xs">{option.name}</strong>
-                  <span className="mt-0.5 block text-[10px] text-muted">
-                    {option.description || 'Оплата через Platega'}
+                <div className="flex items-center gap-3 px-1">
+                  <span className="glass-control grid h-10 w-10 place-items-center rounded-xl text-mint">
+                    <Landmark size={18} />
                   </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+                  <span>
+                    <strong className="text-sm">{method.name}</strong>
+                    <span className="mt-0.5 block text-[11px] text-muted">
+                      {method.description || 'Банковские платежи и крипта'}
+                    </span>
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {options.map((option) => (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      key={option.id}
+                      onClick={() => onPay(method.id, option.id)}
+                      className="button-lift glass-control flex min-w-0 items-center gap-2.5 rounded-xl p-3 text-left hover:border-mint/35 disabled:opacity-50"
+                    >
+                      <CreditCard size={16} className="text-mint" />
+                      <span className="min-w-0">
+                        <strong className="block truncate text-xs">{option.name}</strong>
+                        <span className="mt-0.5 block text-[10px] text-muted">
+                          {option.description || 'Оплата через ' + method.name}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
+          return <PaymentMethodButton key={method.id} method={method} busy={busy} onPay={onPay} />;
+        })
       )}
       {!loading && paymentMethods.length === 0 && (
         <p className="payment-method-item rounded-2xl bg-white/[.035] p-4 text-center text-xs text-muted">

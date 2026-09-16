@@ -7,6 +7,7 @@ export function SubscriptionCard({
   hasLte = false,
   progress = 0,
   trialTrafficGb,
+  devicesCount,
 }: {
   onManage: () => void;
   trial?: boolean;
@@ -16,6 +17,7 @@ export function SubscriptionCard({
   hasLte?: boolean;
   progress?: number;
   trialTrafficGb?: number | null;
+  devicesCount?: number;
 }) {
   return (
     <div className="glass-panel motion-card relative flex w-full flex-col gap-3.5 overflow-hidden rounded-[32px] p-[22px] lg:h-[clamp(250px,16.5vw,330px)] lg:justify-center lg:gap-[clamp(16px,1.2vw,24px)] lg:rounded-[clamp(24px,1.2vw,30px)] lg:p-[clamp(24px,1.6vw,32px)]">
@@ -44,10 +46,17 @@ export function SubscriptionCard({
         </button>
       </div>
 
-      <div className="relative z-10 flex gap-2 lg:hidden">
-        <span className="rounded-full bg-mint px-2.5 py-[7px] text-[11px] font-bold text-bg">
-          {trial ? 'Активен' : 'Активна'}
-        </span>
+      <div className="relative z-10 flex flex-wrap gap-2 lg:hidden">
+        {devicesCount === 0 ? (
+          <span className="flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/15 px-2.5 py-[7px] text-[11px] font-bold text-amber-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
+            Ожидает подключения
+          </span>
+        ) : (
+          <span className="rounded-full bg-mint px-2.5 py-[7px] text-[11px] font-bold text-bg">
+            {trial ? 'Активен' : 'Активна'}
+          </span>
+        )}
         <span className="glass-control rounded-full px-2.5 py-[7px] text-[11px] font-bold text-muted">
           {trial ? 'Пробный период' : name}
         </span>
@@ -57,9 +66,18 @@ export function SubscriptionCard({
           </span>
         )}
       </div>
-      <p className="relative z-10 hidden text-[13px] font-bold text-mint lg:block lg:text-[clamp(13px,0.9vw,18px)]">
-        {trial ? 'Активен' : 'Активна'}
-      </p>
+      <div className="relative z-10 hidden items-center gap-2 lg:flex">
+        {devicesCount === 0 ? (
+          <span className="flex items-center gap-2 text-[13px] font-bold text-amber-300">
+            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+            Подписка активна · Ожидает первого подключения
+          </span>
+        ) : (
+          <p className="text-[13px] font-bold text-mint lg:text-[clamp(13px,0.9vw,18px)]">
+            ● Подписка активна
+          </p>
+        )}
+      </div>
 
       <div className="relative z-10 flex items-baseline gap-2">
         <span className="text-[64px] font-normal leading-none tracking-[-3px] text-ink lg:text-[clamp(64px,4.2vw,84px)] lg:tracking-[clamp(-2px,-0.1vw,-1.5px)]">

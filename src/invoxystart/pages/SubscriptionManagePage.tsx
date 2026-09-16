@@ -6,7 +6,10 @@ import { CalendarDays, Link2, Smartphone, X } from '@/invoxystart/components/ui/
 import { subscriptionApi } from '@/invoxystart/api';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
-import { ConnectDeviceModal } from '@/invoxystart/components/connection/ConnectDeviceModal';
+import {
+  ConnectDeviceModal,
+  type PlatformKey,
+} from '@/invoxystart/components/connection/ConnectDeviceModal';
 import {
   AccountPage,
   AccountPanel,
@@ -84,6 +87,7 @@ export default function SubscriptionManagePage() {
   const [hasMultiple, setHasMultiple] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [deviceModalOpen, setDeviceModalOpen] = useState(false);
+  const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
   const load = useCallback(async () => {
     if (!Number.isInteger(id) || id < 1) {
       setError('Некорректный идентификатор подписки');
@@ -376,6 +380,10 @@ export default function SubscriptionManagePage() {
             }))}
             deviceLimit={detail.device_limit}
             onRemove={(device) => removeDevice(device.id)}
+            onConnect={(platform) => {
+              setConnectPlatform(platform as PlatformKey | undefined);
+              setDeviceModalOpen(true);
+            }}
           />
         </div>
 
@@ -440,6 +448,7 @@ export default function SubscriptionManagePage() {
         accessLink={accessLink}
         happLink={happLink}
         incyLink={incyLink}
+        initialPlatform={connectPlatform}
       />
     </AccountPage>
   );

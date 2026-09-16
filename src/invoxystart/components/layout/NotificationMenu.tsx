@@ -73,7 +73,7 @@ export function NotificationMenu({ className = '' }: { className?: string }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
-              className="notification-backdrop fixed inset-0 z-40 cursor-default bg-black/15"
+              className="notification-backdrop fixed inset-0 z-[60] cursor-default bg-black/40 backdrop-blur-[2px]"
             />
             <m.div
               role="region"
@@ -82,7 +82,7 @@ export function NotificationMenu({ className = '' }: { className?: string }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="glass-panel notification-panel absolute right-0 top-[calc(100%+10px)] z-50 w-[min(340px,calc(100vw-32px))] origin-top-right overflow-hidden rounded-2xl p-2 shadow-2xl"
+              className="notification-panel absolute right-0 top-[calc(100%+10px)] z-[70] w-[min(340px,calc(100vw-32px))] origin-top-right overflow-hidden rounded-2xl border border-white/15 bg-bg/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.7)] backdrop-blur-2xl"
             >
               <div className="flex items-center justify-between px-3 py-2">
                 <strong className="text-sm">Уведомления</strong>

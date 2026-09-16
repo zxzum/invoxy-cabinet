@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/invoxystart/components/dashboard/Header';
@@ -19,7 +19,12 @@ import {
   SupportStrip,
   TrialCard,
 } from '@/invoxystart/components/dashboard/WelcomeCards';
-import { Bell } from '@/invoxystart/components/ui/RuneIcon';
+import { Bell, Zap } from '@/invoxystart/components/ui/RuneIcon';
+import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
+import {
+  ConnectDeviceModal,
+  type PlatformKey,
+} from '@/invoxystart/components/connection/ConnectDeviceModal';
 import { subscriptionApi, type TrialInfo } from '@/invoxystart/api';
 import { useAuth } from '@/invoxystart/auth';
 
@@ -48,6 +53,9 @@ export function DashboardPage() {
   });
 
   const [selectedSubscription, setSelectedSubscription] = useState<number | null>(null);
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
+
   const activeSubId =
     selectedSubscription && subscriptions.some((s) => s.id === selectedSubscription)
       ? selectedSubscription
@@ -101,7 +109,7 @@ export function DashboardPage() {
     }
   }
 
-  const selected = subscriptions.find((item) => item.id === selectedSubscription);
+  const selected = subscriptions.find((item) => item.id === activeSubId);
   const current = subscription ?? selected;
   const endDate = current?.end_date ? formatDate(current.end_date) : '—';
   const totalDays =
@@ -119,6 +127,25 @@ export function DashboardPage() {
     : 0;
   const accessLink =
     connection?.subscription_url || connection?.display_link || current?.subscription_url || null;
+
+  const happLink =
+    connection?.happ_redirect_link ||
+    connection?.happ_scheme_link ||
+    connection?.happ_link ||
+    connection?.happ_cryptolink ||
+    connection?.happ_crypto_link ||
+    null;
+
+  const incyLink = useMemo(() => {
+    if (!accessLink) return null;
+    const clean = accessLink.replace(/^https?:\/\//, '');
+    return `happ://cryptolink/${clean}`;
+  }, [accessLink]);
+
+  const handleOpenConnect = (platform?: string) => {
+    setConnectPlatform(platform as PlatformKey | undefined);
+    setConnectModalOpen(true);
+  };
   const managedDevices = devices.map((device) => ({
     id: device.hwid,
     name: device.local_name || device.device_model || 'Устройство',
@@ -232,6 +259,10 @@ export function DashboardPage() {
               </div>
             )}
 
+            {managedDevices.length === 0 && (
+              <ZeroDevicesHeroBanner accessLink={accessLink} onConnect={handleOpenConnect} />
+            )}
+
             <div className="flex w-full flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(310px,.85fr)] lg:items-start lg:gap-[1.1vw]">
               <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-[1.1vw]">
                 <Reveal className="order-1 min-w-0 lg:order-none">
@@ -245,9 +276,14 @@ export function DashboardPage() {
                         selected?.whitelist_traffic_limit_gb,
                     )}
                     progress={progress}
-                    onManage={() =>
-                      selectedSubscription && navigate(`/subscriptions/${selectedSubscription}`)
-                    }
+                    devicesCount={managedDevices.length}
+                    onManage={() => {
+                      if (activeSubId) {
+                        navigate(`/subscriptions/${activeSubId}`);
+                      } else {
+                        navigate('/subscriptions');
+                      }
+                    }}
                   />
                 </Reveal>
 
@@ -260,14 +296,12 @@ export function DashboardPage() {
                     devices={managedDevices}
                     deviceLimit={subscription?.device_limit ?? selected?.device_limit}
                     onRemove={async (device) => {
-                      await subscriptionApi.deleteDevice(
-                        device.id,
-                        selectedSubscription ?? undefined,
-                      );
+                      await subscriptionApi.deleteDevice(device.id, activeSubId ?? undefined);
                       await queryClient.invalidateQueries({
                         queryKey: ['invoxy-subscription-details', activeSubId],
                       });
                     }}
+                    onConnect={handleOpenConnect}
                   />
                 </Reveal>
 
@@ -284,7 +318,7 @@ export function DashboardPage() {
                       openPayment({
                         amount: renewalTerms.find((option) => option.id === period)?.price ?? 0,
                         purpose: `Продление подписки · ${term}`,
-                        subscriptionId: selectedSubscription ?? undefined,
+                        subscriptionId: activeSubId ?? undefined,
                         periodDays: Number(period),
                       })
                     }
@@ -302,7 +336,7 @@ export function DashboardPage() {
                 </Reveal>
 
                 <Reveal delay={0.3} className="order-7 min-w-0 lg:order-none">
-                  <AddonsCard subscriptionId={selectedSubscription} />
+                  <AddonsCard subscriptionId={activeSubId} />
                 </Reveal>
               </div>
             </div>
@@ -310,7 +344,96 @@ export function DashboardPage() {
           </m.div>
         )}
       </AnimatePresence>
+
+      <ConnectDeviceModal
+        open={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+        accessLink={accessLink}
+        happLink={happLink}
+        incyLink={incyLink}
+        initialPlatform={connectPlatform}
+      />
     </div>
+  );
+}
+
+function ZeroDevicesHeroBanner({
+  accessLink,
+  onConnect,
+}: {
+  accessLink: string | null;
+  onConnect: (platform?: PlatformKey) => void;
+}) {
+  return (
+    <Reveal>
+      <div className="relative overflow-hidden rounded-[30px] border border-amber-400/30 bg-gradient-to-br from-amber-500/15 via-bg/80 to-mint/10 p-5 shadow-[0_12px_36px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-6 lg:p-7">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-amber-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-mint/15 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-xl space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 py-1 text-[11px] font-bold text-amber-300 backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+              </span>
+              Подписка активна · VPN готов к подключению
+            </div>
+
+            <h3 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+              Остался один шаг — подключите ваше устройство
+            </h3>
+
+            <p className="text-xs text-muted leading-relaxed sm:text-sm">
+              Ваш персональный скоростной профиль с защитой от блокировок сгенерирован. Подключите
+              смартфон, ноутбук или ТВ прямо сейчас, чтобы пользоваться свободным интернетом.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center lg:flex-col lg:items-end">
+            <button
+              type="button"
+              onClick={() => onConnect()}
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-6 py-3.5 text-xs font-extrabold text-bg shadow-[0_4px_20px_rgba(6,214,160,0.4)] transition-all hover:bg-mint/90 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Zap size={16} />
+              <span>⚡ Подключить в 1 клик</span>
+            </button>
+
+            {accessLink && (
+              <LivelyCopyButton
+                text={accessLink}
+                label="Скопировать ключ"
+                copiedLabel="Ключ скопирован"
+                className="glass-control rounded-2xl px-5 py-3 text-xs font-semibold text-ink"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-4 border-t border-white/10 pt-3.5 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold text-muted mr-1">Инструкция для:</span>
+          {(
+            [
+              { key: 'ios', label: 'iOS / iPhone' },
+              { key: 'android', label: 'Android' },
+              { key: 'windows', label: 'Windows' },
+              { key: 'macos', label: 'macOS' },
+              { key: 'tv', label: 'Android TV' },
+            ] as const
+          ).map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => onConnect(p.key)}
+              className="glass-control cursor-pointer rounded-xl px-3 py-1.5 text-xs font-medium text-ink/90 transition-all hover:border-mint/50 hover:bg-mint/10 hover:text-mint active:scale-95"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Reveal>
   );
 }
 

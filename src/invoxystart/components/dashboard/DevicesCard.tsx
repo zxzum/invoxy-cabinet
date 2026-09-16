@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Smartphone, Laptop, Check, X } from '@/invoxystart/components/ui/RuneIcon';
+import { Smartphone, Laptop, Check, X, Zap } from '@/invoxystart/components/ui/RuneIcon';
 
 export interface ManagedDevice {
   id: string;
@@ -16,6 +16,7 @@ type DevicesCardProps = {
   deviceLimit?: number | null;
   onRemove?: (device: ManagedDevice) => void | Promise<void>;
   title?: string;
+  onConnect?: (platform?: string) => void;
 };
 
 export function DevicesCard({
@@ -23,6 +24,7 @@ export function DevicesCard({
   deviceLimit = 5,
   onRemove,
   title = 'Подключенные устройства',
+  onConnect,
 }: DevicesCardProps) {
   const [localDevices, setLocalDevices] = useState(initialDevices);
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
@@ -115,7 +117,71 @@ export function DevicesCard({
       })}
 
       {devices.length === 0 && (
-        <p className="py-6 text-center text-xs text-muted">Нет подключённых устройств</p>
+        <div className="flex flex-col items-center justify-center py-5 text-center">
+          <div className="relative mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-mint/25 bg-mint/10 shadow-[0_0_24px_rgba(6,214,160,0.2)]">
+            <span className="absolute -inset-1.5 rounded-2xl bg-mint/20 animate-ping opacity-40 pointer-events-none" />
+            <Smartphone size={26} className="text-mint" />
+          </div>
+
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
+              Ожидает первого подключения
+            </span>
+          </div>
+
+          <h4 className="text-base font-bold text-ink sm:text-[17px]">
+            Подключите ваше первое устройство
+          </h4>
+          <p className="mt-1 max-w-[320px] text-xs text-muted leading-relaxed">
+            VPN настроен и готов к работе. Нажмите кнопку для быстрого подключения или выберите
+            систему:
+          </p>
+
+          <div className="mt-3.5 flex flex-wrap items-center justify-center gap-1.5">
+            {[
+              { key: 'ios', label: 'iOS', icon: Smartphone },
+              { key: 'android', label: 'Android', icon: Smartphone },
+              { key: 'windows', label: 'Windows', icon: Laptop },
+              { key: 'macos', label: 'macOS', icon: Laptop },
+              { key: 'tv', label: 'TV', icon: Laptop },
+            ].map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => onConnect?.(p.key)}
+                className="glass-control flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink transition-all hover:border-mint/40 hover:bg-mint/10 active:scale-95"
+              >
+                <p.icon size={13} className="text-mint" />
+                <span>{p.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {onConnect && (
+            <button
+              type="button"
+              onClick={() => onConnect()}
+              className="mt-4 flex w-full max-w-[280px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint py-3 px-4 text-xs font-bold text-bg shadow-[0_4px_16px_rgba(6,214,160,0.35)] transition-all hover:bg-mint/90 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Zap size={14} />
+              <span>Подключить в 1 клик</span>
+            </button>
+          )}
+
+          <div className="mt-3.5 flex items-center gap-2 text-[11px] text-muted">
+            <div className="flex gap-1.5">
+              {Array.from({ length: Math.min(deviceLimit ?? 5, 5) }).map((_, idx) => (
+                <span
+                  key={idx}
+                  className="h-1.5 w-1.5 rounded-full bg-white/20 border border-white/10"
+                  title={`Слот ${idx + 1} свободен`}
+                />
+              ))}
+            </div>
+            <span>Все {deviceLimit ?? 5} слотов свободны</span>
+          </div>
+        </div>
       )}
     </div>
   );

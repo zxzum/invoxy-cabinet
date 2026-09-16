@@ -11,7 +11,7 @@ export function Header({
   onWalletClick: () => void;
 }) {
   return (
-    <div className="motion-reveal flex w-full items-center justify-between">
+    <div className="motion-reveal relative z-50 flex w-full items-center justify-between">
       <div className="min-w-0 flex flex-col gap-1 lg:gap-1.5">
         <h1 className="text-[28px] font-medium leading-[1.05] tracking-[-1px] text-ink lg:text-[clamp(30px,2.2vw,44px)] lg:tracking-[clamp(-1px,-0.035vw,-0.5px)]">
           Доброе утро, {userName?.trim() || 'гость'}!

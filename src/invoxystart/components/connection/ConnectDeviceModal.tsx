@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
@@ -17,9 +17,10 @@ export interface ConnectDeviceModalProps {
   accessLink?: string | null;
   happLink?: string | null;
   incyLink?: string | null;
+  initialPlatform?: PlatformKey;
 }
 
-type PlatformKey = 'ios' | 'android' | 'windows' | 'macos' | 'linux' | 'tv';
+export type PlatformKey = 'ios' | 'android' | 'windows' | 'macos' | 'linux' | 'tv';
 
 interface AppInfo {
   name: string;
@@ -49,10 +50,17 @@ export function ConnectDeviceModal({
   accessLink,
   happLink,
   incyLink,
+  initialPlatform,
 }: ConnectDeviceModalProps) {
-  const initialOS = useMemo(() => detectUserOS(), []);
+  const initialOS = useMemo(() => initialPlatform || detectUserOS(), [initialPlatform]);
   const [selectedOS, setSelectedOS] = useState<PlatformKey>(initialOS);
   const [qrOpen, setQrOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialPlatform) {
+      setSelectedOS(initialPlatform);
+    }
+  }, [initialPlatform]);
 
   const effectiveHappLink = happLink || (accessLink ? `happ://add/${accessLink}` : null);
   const effectiveIncyLink = incyLink || (accessLink ? `incy://import/${accessLink}` : null);
