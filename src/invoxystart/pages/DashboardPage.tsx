@@ -19,7 +19,7 @@ import {
   SupportStrip,
   TrialCard,
 } from '@/invoxystart/components/dashboard/WelcomeCards';
-import { Bell, Zap } from '@/invoxystart/components/ui/RuneIcon';
+import { Bell, Laptop, Smartphone, Zap } from '@/invoxystart/components/ui/RuneIcon';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
 import {
   ConnectDeviceModal,
@@ -366,21 +366,21 @@ function ZeroDevicesHeroBanner({
 }) {
   return (
     <Reveal>
-      <div className="relative overflow-hidden rounded-[30px] border border-amber-400/30 bg-gradient-to-br from-amber-500/15 via-bg/80 to-mint/10 p-5 shadow-[0_12px_36px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-6 lg:p-7">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-amber-400/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-mint/15 blur-3xl" />
+      <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-white/[0.04] via-surface-1/90 to-surface-2/70 p-5 shadow-[0_16px_40px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:p-6 lg:p-7">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-mint/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-cyan-400/8 blur-3xl" />
 
-        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 py-1 text-[11px] font-bold text-amber-300 backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-full border border-mint/25 bg-mint/10 px-3 py-1 text-[11px] font-semibold text-mint backdrop-blur-md">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-mint" />
               </span>
               Подписка активна · VPN готов к подключению
             </div>
 
-            <h3 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+            <h3 className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
               Остался один шаг — подключите ваше устройство
             </h3>
 
@@ -390,45 +390,47 @@ function ZeroDevicesHeroBanner({
             </p>
           </div>
 
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center lg:flex-col lg:items-end">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center lg:flex-col lg:items-stretch lg:w-[220px]">
             <button
               type="button"
               onClick={() => onConnect()}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-6 py-3.5 text-xs font-extrabold text-bg shadow-[0_4px_20px_rgba(6,214,160,0.4)] transition-all hover:bg-mint/90 hover:scale-[1.02] active:scale-[0.98]"
+              className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-5 font-bold text-xs text-bg shadow-[0_4px_16px_rgba(6,214,160,0.25)] transition-all hover:bg-mint/90 hover:shadow-[0_6px_22px_rgba(6,214,160,0.4)] active:scale-[0.98]"
             >
-              <Zap size={16} />
-              <span>⚡ Подключить в 1 клик</span>
+              <Zap size={15} />
+              <span>Подключить в 1 клик</span>
             </button>
 
             {accessLink && (
               <LivelyCopyButton
+                variant="glass"
                 text={accessLink}
                 label="Скопировать ключ"
                 copiedLabel="Ключ скопирован"
-                className="glass-control rounded-2xl px-5 py-3 text-xs font-semibold text-ink"
+                className="w-full"
               />
             )}
           </div>
         </div>
 
-        <div className="relative z-10 mt-4 border-t border-white/10 pt-3.5 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold text-muted mr-1">Инструкция для:</span>
+        <div className="relative z-10 mt-5 flex flex-wrap items-center gap-2 border-t border-white/8 pt-4">
+          <span className="text-[11px] font-medium text-muted mr-1">Инструкция для:</span>
           {(
             [
-              { key: 'ios', label: 'iOS / iPhone' },
-              { key: 'android', label: 'Android' },
-              { key: 'windows', label: 'Windows' },
-              { key: 'macos', label: 'macOS' },
-              { key: 'tv', label: 'Android TV' },
+              { key: 'ios', label: 'iOS / iPhone', icon: Smartphone },
+              { key: 'android', label: 'Android', icon: Smartphone },
+              { key: 'windows', label: 'Windows', icon: Laptop },
+              { key: 'macos', label: 'macOS', icon: Laptop },
+              { key: 'tv', label: 'Android TV', icon: Laptop },
             ] as const
           ).map((p) => (
             <button
               key={p.key}
               type="button"
               onClick={() => onConnect(p.key)}
-              className="glass-control cursor-pointer rounded-xl px-3 py-1.5 text-xs font-medium text-ink/90 transition-all hover:border-mint/50 hover:bg-mint/10 hover:text-mint active:scale-95"
+              className="group flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-ink/80 transition-all hover:border-mint/40 hover:bg-mint/10 hover:text-mint active:scale-95"
             >
-              {p.label}
+              <p.icon size={13} className="text-muted/70 transition-colors group-hover:text-mint" />
+              <span>{p.label}</span>
             </button>
           ))}
         </div>

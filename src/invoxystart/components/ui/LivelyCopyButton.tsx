@@ -9,7 +9,7 @@ interface LivelyCopyButtonProps {
   label?: string;
   copiedLabel?: string;
   className?: string;
-  variant?: 'pill' | 'circle';
+  variant?: 'pill' | 'circle' | 'glass';
   onCopied?: () => void;
   disabled?: boolean;
 }
@@ -108,18 +108,24 @@ export function LivelyCopyButton({
     );
   }
 
+  const isGlass = variant === 'glass';
+
   return (
     <m.button
       type="button"
       disabled={disabled || !text}
       onClick={() => void handleCopy()}
-      whileTap={{ scale: 0.94 }}
+      whileTap={{ scale: 0.95 }}
       whileHover={{ scale: 1.01 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={`relative flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full font-bold text-sm transition-all duration-300 disabled:opacity-40 ${
-        copied
-          ? 'bg-mint text-bg shadow-[0_0_25px_rgba(6,214,160,0.5)] ring-2 ring-mint/40'
-          : 'bg-mint text-bg shadow-[0_4px_16px_rgba(6,214,160,0.25)] hover:shadow-[0_4px_22px_rgba(6,214,160,0.4)]'
+      className={`relative flex h-11 cursor-pointer items-center justify-center gap-2 font-semibold text-xs transition-all duration-300 disabled:opacity-40 ${
+        isGlass
+          ? copied
+            ? 'rounded-2xl border border-mint/50 bg-mint/15 text-mint shadow-[0_0_20px_rgba(6,214,160,0.25)] ring-2 ring-mint/20'
+            : 'rounded-2xl border border-white/12 bg-white/[0.05] text-ink hover:border-mint/35 hover:bg-white/[0.09] hover:text-mint shadow-[0_2px_10px_rgba(0,0,0,0.2)]'
+          : copied
+            ? 'h-12 w-full rounded-full bg-mint text-bg shadow-[0_0_25px_rgba(6,214,160,0.5)] ring-2 ring-mint/40 font-bold'
+            : 'h-12 w-full rounded-full bg-mint text-bg shadow-[0_4px_16px_rgba(6,214,160,0.25)] hover:shadow-[0_4px_22px_rgba(6,214,160,0.4)] font-bold'
       } ${className}`}
     >
       <AnimatePresence>
@@ -130,7 +136,9 @@ export function LivelyCopyButton({
             animate={{ scale: 1.15, opacity: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="pointer-events-none absolute inset-0 rounded-full border-2 border-mint"
+            className={`pointer-events-none absolute inset-0 ${
+              isGlass ? 'rounded-2xl border-2 border-mint/50' : 'rounded-full border-2 border-mint'
+            }`}
             onAnimationComplete={() => {
               setRipples((prev) => prev.filter((item) => item !== id));
             }}
@@ -146,14 +154,14 @@ export function LivelyCopyButton({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-            className="flex items-center gap-2 font-bold"
+            className={`flex items-center gap-2 font-bold ${isGlass ? 'text-mint' : ''}`}
           >
             <m.span
               initial={{ scale: 0, rotate: -40 }}
               animate={{ scale: [0, 1.35, 1], rotate: 0 }}
               transition={{ type: 'spring', stiffness: 500, damping: 15 }}
             >
-              <Check size={18} />
+              <Check size={16} />
             </m.span>
             <span>{copiedLabel}</span>
           </m.span>
@@ -164,9 +172,9 @@ export function LivelyCopyButton({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="flex items-center gap-2 font-bold"
+            className="flex items-center gap-2"
           >
-            <Copy size={18} />
+            <Copy size={15} className={isGlass ? 'text-muted' : ''} />
             <span>{label}</span>
           </m.span>
         )}

@@ -150,9 +150,12 @@ export function DevicesCard({
                 key={p.key}
                 type="button"
                 onClick={() => onConnect?.(p.key)}
-                className="glass-control flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink transition-all hover:border-mint/40 hover:bg-mint/10 active:scale-95"
+                className="group flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-ink/80 transition-all hover:border-mint/40 hover:bg-mint/10 hover:text-mint active:scale-95"
               >
-                <p.icon size={13} className="text-mint" />
+                <p.icon
+                  size={13}
+                  className="text-muted/70 transition-colors group-hover:text-mint"
+                />
                 <span>{p.label}</span>
               </button>
             ))}
@@ -162,9 +165,9 @@ export function DevicesCard({
             <button
               type="button"
               onClick={() => onConnect()}
-              className="mt-4 flex w-full max-w-[280px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint py-3 px-4 text-xs font-bold text-bg shadow-[0_4px_16px_rgba(6,214,160,0.35)] transition-all hover:bg-mint/90 hover:scale-[1.02] active:scale-[0.98]"
+              className="mt-4 flex h-11 w-full max-w-[260px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-5 font-bold text-xs text-bg shadow-[0_4px_16px_rgba(6,214,160,0.25)] transition-all hover:bg-mint/90 hover:shadow-[0_6px_22px_rgba(6,214,160,0.4)] active:scale-[0.98]"
             >
-              <Zap size={14} />
+              <Zap size={15} />
               <span>Подключить в 1 клик</span>
             </button>
           )}
