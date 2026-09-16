@@ -28,6 +28,8 @@ interface LockState {
     bodyLeft: string;
     bodyRight: string;
     htmlOverflow: string;
+    htmlScrollLockClass: boolean;
+    htmlScrollLockY: string;
   };
 }
 
@@ -59,12 +61,14 @@ export function lockBodyScroll(): () => void {
         bodyLeft: body.style.left,
         bodyRight: body.style.right,
         htmlOverflow: html.style.overflow,
+        htmlScrollLockClass: html.classList.contains('scroll-lock-active'),
+        htmlScrollLockY: html.style.getPropertyValue('--scroll-lock-y'),
       },
     };
 
     body.style.overflow = 'hidden';
-    html.style.overflow = 'hidden';
     if (fixed) {
+      html.style.overflow = 'hidden';
       body.style.position = 'fixed';
       body.style.top = `-${scrollY}px`;
       // Растягиваем через left/right, а не width: 100% — у body в globals.css
@@ -72,6 +76,10 @@ export function lockBodyScroll(): () => void {
       // делал бы страницу уже на ширину скроллбара («сжатый» контент).
       body.style.left = '0';
       body.style.right = '0';
+    } else {
+      html.style.overflow = 'hidden';
+      html.classList.add('scroll-lock-active');
+      html.style.setProperty('--scroll-lock-y', `${scrollY}px`);
     }
   }
   lockCount += 1;
@@ -94,6 +102,11 @@ export function lockBodyScroll(): () => void {
       body.style.left = prev.bodyLeft;
       body.style.right = prev.bodyRight;
       window.scrollTo(0, scrollY);
+    } else {
+      if (prev.htmlScrollLockClass) html.classList.add('scroll-lock-active');
+      else html.classList.remove('scroll-lock-active');
+      if (prev.htmlScrollLockY) html.style.setProperty('--scroll-lock-y', prev.htmlScrollLockY);
+      else html.style.removeProperty('--scroll-lock-y');
     }
   };
 }

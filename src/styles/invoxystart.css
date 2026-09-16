@@ -31,6 +31,13 @@
   border-color: rgba(255, 255, 255, 0.15);
 }
 
+/* Hiding the document scrollbar disables sticky positioning in Chromium;
+   keep both customer and legacy sidebars at their pre-modal viewport offset. */
+html.scroll-lock-active .invoxystart-shell aside,
+html.scroll-lock-active .ix-sidebar-island {
+  transform: translate3d(0, var(--scroll-lock-y, 0px), 0);
+}
+
 .invoxystart-shell .route-stage.is-entering {
   position: relative;
   top: 0;
