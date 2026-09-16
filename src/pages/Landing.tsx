@@ -78,45 +78,103 @@ export default function Landing() {
         <div className="pointer-events-none absolute inset-0 z-[-1] bg-[radial-gradient(circle_at_78%_24%,rgba(var(--ix-accent-rgb),.13),transparent_30%),linear-gradient(180deg,rgba(var(--color-dark-950),.38),rgba(var(--color-dark-950),.96)_92%)]" />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[-1] h-28 bg-[linear-gradient(90deg,rgba(var(--ix-accent-rgb),.07)_1px,transparent_1px),linear-gradient(rgba(var(--ix-accent-rgb),.07)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
 
-        <nav className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10 lg:py-7">
-          <Link
-            to="/"
-            aria-label={`${appName} — ${t('landing.home')}`}
-            className="flex shrink-0 items-center gap-3 rounded-2xl outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-accent-400/70"
-          >
-            <img
-              src="/images/brand-mark.png"
-              alt={appName}
-              className="h-9 w-9 rounded-xl sm:h-10 sm:w-10"
-            />
-            <span className="text-base font-bold sm:text-lg">{appName}</span>
-          </Link>
-          <div className="hidden items-center gap-7 text-sm text-dark-400 md:flex">
-            <a href="#features" className="transition-colors hover:text-dark-50">
-              {t('landing.navFeatures')}
-            </a>
-            <a href="#security" className="transition-colors hover:text-dark-50">
-              {t('landing.navSecurity')}
-            </a>
-            <a href="#start" className="transition-colors hover:text-dark-50">
-              {t('landing.navStart')}
-            </a>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+        {/* STICKY HEADER */}
+        <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0b0c0e]/75 backdrop-blur-2xl transition-all duration-300">
+          <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-8 lg:px-10">
+            {/* Logo with 3D depth and subtle neon glow */}
             <Link
-              to="/login"
-              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-dark-300 transition-colors hover:text-dark-50 sm:inline-flex"
+              to="/"
+              aria-label={`${appName} — ${t('landing.home')}`}
+              className="group relative flex shrink-0 items-center gap-3 outline-none"
             >
-              {t('auth.login', 'Войти')}
+              <div className="relative">
+                <div className="absolute -inset-1 rounded-2xl bg-accent-400/30 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
+                <img
+                  src="/images/brand-mark.png?v=3d"
+                  alt={appName}
+                  className="relative h-10 w-10 rounded-2xl border border-white/15 bg-dark-900 object-cover shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold tracking-tight text-dark-50 transition-colors">
+                  Invoxy
+                  <span className="bg-gradient-to-r from-accent-300 to-accent-100 bg-clip-text text-transparent">
+                    VPN
+                  </span>
+                </span>
+                <span className="text-[10px] font-semibold tracking-wider text-dark-400 uppercase">
+                  Fast & Secure
+                </span>
+              </div>
             </Link>
-            <Link
-              to="/register"
-              className="inline-flex min-h-[44px] items-center rounded-full bg-dark-50 px-4 text-xs font-bold text-dark-950 transition hover:bg-dark-100 sm:px-5 sm:text-sm"
-            >
-              {t('auth.register', 'Создать аккаунт')}
-            </Link>
+
+            {/* Desktop Navigation: Floating frosted glass island */}
+            <nav className="hidden items-center rounded-full border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] backdrop-blur-xl lg:flex">
+              <a
+                href="#features"
+                className="rounded-full px-4 py-2 text-xs font-semibold text-dark-400 transition-all duration-200 hover:bg-white/[0.07] hover:text-dark-50"
+              >
+                {t('landing.navFeatures')}
+              </a>
+              <a
+                href="#security"
+                className="rounded-full px-4 py-2 text-xs font-semibold text-dark-400 transition-all duration-200 hover:bg-white/[0.07] hover:text-dark-50"
+              >
+                {t('landing.navSecurity')}
+              </a>
+              <a
+                href="#start"
+                className="rounded-full px-4 py-2 text-xs font-semibold text-dark-400 transition-all duration-200 hover:bg-white/[0.07] hover:text-dark-50"
+              >
+                {t('landing.navStart')}
+              </a>
+              {telegramHref && (
+                <a
+                  href={telegramHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-sky-300/90 transition-all duration-200 hover:bg-sky-500/10 hover:text-sky-200"
+                >
+                  <TelegramIcon className="h-3.5 w-3.5 text-[#2AABEE]" /> Telegram-бот
+                </a>
+              )}
+            </nav>
+
+            {/* Direct Authentication Actions */}
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              {telegramHref && (
+                <a
+                  href={telegramHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Открыть Telegram-бота"
+                  className="hidden items-center gap-2 rounded-full border border-sky-400/25 bg-sky-500/[0.08] px-3.5 py-2 text-xs font-semibold text-sky-300 shadow-[0_2px_12px_rgba(42,171,238,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-400/50 hover:bg-sky-500/20 md:inline-flex"
+                >
+                  <TelegramIcon className="h-3.5 w-3.5 text-sky-400" />
+                  <span>Бот в TG</span>
+                </a>
+              )}
+
+              <Link
+                to="/login"
+                className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-dark-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-white/20 hover:bg-white/[0.09] hover:text-dark-50 sm:text-sm"
+              >
+                {t('auth.login', 'Войти')}
+              </Link>
+
+              <Link
+                to="/register"
+                className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-accent-400 px-5 py-2 text-xs font-bold text-dark-950 shadow-[0_0_24px_rgba(var(--ix-accent-rgb),0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent-300 hover:shadow-[0_0_32px_rgba(var(--ix-accent-rgb),0.55)] sm:text-sm"
+              >
+                <span className="relative z-10 flex items-center gap-1.5">
+                  {t('auth.register', 'Регистрация')}
+                  <ArrowRightIcon className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </span>
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-white/0 via-white/30 to-white/0 transition-transform duration-700 group-hover:translate-x-full" />
+              </Link>
+            </div>
           </div>
-        </nav>
+        </header>
 
         <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-8 px-5 pb-16 pt-10 sm:px-8 sm:pb-24 lg:grid-cols-[minmax(0,.83fr)_minmax(420px,1.17fr)] lg:gap-4 lg:px-10 lg:pb-28 lg:pt-16">
           <motion.div

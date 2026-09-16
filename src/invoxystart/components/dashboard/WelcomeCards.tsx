@@ -318,7 +318,7 @@ export function ReferralPromoCard() {
             <span className="text-mint">получите бонус</span>
           </h2>
           <p className="mt-3 max-w-md text-xs leading-relaxed text-muted sm:text-sm">
-            +30 ₽ за первую оплату друга и до 25% бонусами с его пополнений.
+            +50 ₽ за первую оплату друга и до 25% бонусами с его пополнений.
           </p>
           <Link
             to="/referrals"

@@ -1,5 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { Check, Copy, Link2, Send, Share2, Sparkles } from '@/invoxystart/components/ui/RuneIcon';
+import {
+  Check,
+  Copy,
+  Link2,
+  Send,
+  Share2,
+  Sparkles,
+  Users,
+  Wallet,
+  Zap,
+} from '@/invoxystart/components/ui/RuneIcon';
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { referralApi } from '@/invoxystart/api';
@@ -113,7 +123,7 @@ export default function ReferralsPage() {
               </div>
               <div className="glass-control h-[58px] w-[88px] rounded-2xl p-2 lg:h-auto lg:w-auto lg:px-4 lg:py-3">
                 <strong className="block text-[17px] leading-none text-mint lg:text-xl">
-                  +{terms?.inviter_bonus_rubles ?? 0} ₽
+                  +{terms?.inviter_bonus_rubles ?? 50} ₽
                 </strong>
                 <p className="mt-1 text-[9px] leading-[1.1] text-muted lg:text-[10px]">
                   обоим за старт
@@ -156,6 +166,76 @@ export default function ReferralsPage() {
             <Share2 size={17} /> Поделиться
           </button>
         </section>
+      </div>
+
+      <div className="grid min-w-0 max-w-full grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className="glass-panel motion-card flex min-w-0 flex-col justify-between rounded-[24px] p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium text-muted sm:text-xs">Приглашено друзей</span>
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-mint/10 text-mint sm:h-9 sm:w-9">
+              <Users size={16} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
+              {info?.total_referrals ?? invited.length ?? 0}
+            </div>
+            <p className="mt-1 truncate text-[11px] text-mint sm:text-xs">
+              {info?.active_referrals ?? invited.filter((i) => i.has_paid).length} активных
+            </p>
+          </div>
+        </div>
+
+        <div className="glass-panel motion-card flex min-w-0 flex-col justify-between rounded-[24px] p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium text-muted sm:text-xs">Всего заработано</span>
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-mint/10 text-mint sm:h-9 sm:w-9">
+              <Wallet size={16} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
+              {formatMoney(info?.total_earnings_kopeks, info?.total_earnings_rubles ?? 0)}
+            </div>
+            <p className="mt-1 truncate text-[11px] text-muted sm:text-xs">
+              Пожизненно со всех оплат
+            </p>
+          </div>
+        </div>
+
+        <div className="glass-panel motion-card flex min-w-0 flex-col justify-between rounded-[24px] p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium text-muted sm:text-xs">Ваша ставка</span>
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-mint/10 text-mint sm:h-9 sm:w-9">
+              <Zap size={16} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-xl font-bold tracking-tight text-mint sm:text-2xl">
+              {terms?.commission_percent ?? info?.commission_percent ?? 25}%
+            </div>
+            <p className="mt-1 truncate text-[11px] text-muted sm:text-xs">
+              Вечный процент от оплат
+            </p>
+          </div>
+        </div>
+
+        <div className="glass-panel motion-card flex min-w-0 flex-col justify-between rounded-[24px] p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium text-muted sm:text-xs">Бонус за друга</span>
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-mint/10 text-mint sm:h-9 sm:w-9">
+              <Sparkles size={16} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
+              +{terms?.inviter_bonus_rubles ?? 50} ₽
+            </div>
+            <p className="mt-1 truncate text-[11px] text-muted sm:text-xs">
+              Обоим при первом старте
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid min-w-0 max-w-full gap-5 xl:grid-cols-2">
