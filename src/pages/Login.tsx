@@ -42,6 +42,8 @@ import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShap
 import type { LegalConsentConfig } from '../types';
 import { safeLocal, safeSession } from '../utils/safeStorage';
 
+const DEFAULT_LOGO_URL = '/invoxy_logo.jpg?v=2c0c067a';
+
 export default function Login() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -197,7 +199,8 @@ export default function Login() {
       ? import.meta.env.VITE_APP_NAME
       : 'Invoxy VPN');
   const appLogo = branding?.logo_letter || import.meta.env.VITE_APP_LOGO || 'V';
-  const logoUrl = branding ? brandingApi.getLogoUrl(branding) : null;
+  const logoUrl =
+    (branding?.has_custom_logo ? brandingApi.getLogoUrl?.(branding) : null) || DEFAULT_LOGO_URL;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -435,27 +438,18 @@ export default function Login() {
           <div className="relative mb-6 flex items-center justify-center">
             <div className="absolute -inset-6 rounded-full bg-mint/20 blur-3xl animate-pulse pointer-events-none" />
             <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/15 bg-white/[0.06] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)] backdrop-blur-2xl">
-              {branding?.has_custom_logo && logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={appName}
-                  className={`h-14 w-14 object-contain ${logoLoaded ? 'block' : 'hidden'}`}
-                  onLoad={() => setLogoLoaded(true)}
-                />
-              ) : (
-                <img
-                  src="/images/brand-mark.png"
-                  alt={appName}
-                  className="h-14 w-14 rounded-2xl object-cover shadow-md"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                    const fallback = (e.target as HTMLElement).parentElement?.querySelector(
-                      '.brand-letter-fallback',
-                    );
-                    if (fallback) (fallback as HTMLElement).style.display = 'block';
-                  }}
-                />
-              )}
+              <img
+                src={logoUrl}
+                alt={appName}
+                className="h-14 w-14 rounded-2xl object-cover shadow-md"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                  const fallback = (e.target as HTMLElement).parentElement?.querySelector(
+                    '.brand-letter-fallback',
+                  );
+                  if (fallback) (fallback as HTMLElement).style.display = 'block';
+                }}
+              />
               <span className="brand-letter-fallback hidden text-2xl font-bold text-mint">
                 {appLogo}
               </span>

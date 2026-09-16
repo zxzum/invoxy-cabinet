@@ -16,7 +16,7 @@ import {
   mountBackButton,
   bindThemeParamsCssVars,
   bindViewportCssVars,
-  requestFullscreen,
+  exitFullscreen,
   isFullscreen,
 } from '@telegram-apps/sdk-react';
 import { clearStaleSessionIfNeeded } from './utils/token';
@@ -27,7 +27,6 @@ import { AppWithNavigator } from './AppWithNavigator';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initLogoPreload } from './api/branding';
 import { checkBackendOnStartup } from './api/health';
-import { getCachedFullscreenEnabled, isTelegramMobile } from './hooks/useTelegramSDK';
 import { applyTelegramLanguage, i18nReady } from './i18n';
 import { themeColorsQueryOptions } from './api/themeColors';
 import { applyThemeColors } from './hooks/useThemeColors';
@@ -109,11 +108,11 @@ if (isTelegramEnv && !alreadyInitialized) {
         bindViewportCssVars();
         expandViewport();
 
-        // Auto-enter fullscreen if enabled in settings (mobile only)
-        if (getCachedFullscreenEnabled() && isTelegramMobile()) {
-          if (!isFullscreen()) {
-            requestFullscreen();
-          }
+        // Fullscreen mode is disabled per user preference
+        if (isFullscreen()) {
+          try {
+            exitFullscreen();
+          } catch {}
         }
       })
       .catch(() => {});

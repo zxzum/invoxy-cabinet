@@ -22,16 +22,12 @@ import { getTelegramInitData as readTelegramInitData } from '../utils/telegramIn
 const FULLSCREEN_CACHE_KEY = 'cabinet_fullscreen_enabled';
 
 export const getCachedFullscreenEnabled = (): boolean => {
-  try {
-    return localStorage.getItem(FULLSCREEN_CACHE_KEY) === 'true';
-  } catch {
-    return false;
-  }
+  return false;
 };
 
-export const setCachedFullscreenEnabled = (enabled: boolean) => {
+export const setCachedFullscreenEnabled = (_enabled: boolean) => {
   try {
-    localStorage.setItem(FULLSCREEN_CACHE_KEY, String(enabled));
+    localStorage.setItem(FULLSCREEN_CACHE_KEY, 'false');
   } catch {}
 };
 

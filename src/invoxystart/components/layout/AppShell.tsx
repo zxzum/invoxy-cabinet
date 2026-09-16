@@ -103,12 +103,16 @@ function ShellLayout({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (location.hash) {
-      const target = document.querySelector(location.hash);
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth' });
-        return;
-      }
+    // Safely check for anchor hash (Telegram passes #tgWebAppData=... in hash which is not a DOM ID)
+    if (location.hash && !location.hash.includes('tgWebAppData')) {
+      try {
+        const id = location.hash.replace(/^#/, '');
+        const target = document.getElementById(id);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+      } catch {}
     }
 
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
