@@ -9,7 +9,7 @@ export function BrandLogo({
 }) {
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
-      <img src="/images/brand-mark.png" alt="" className={iconClassName} />
+      <img src="/images/brand-mark.png?v=3d" alt="" className={iconClassName} />
       <span className={textClassName}>
         Invoxy<span className="text-mint">VPN</span>
       </span>

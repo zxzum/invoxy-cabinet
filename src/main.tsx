@@ -135,7 +135,7 @@ void useAuthStore.getState().initialize();
 void checkBackendOnStartup();
 
 const PRELOAD_ASSETS = [
-  '/images/brand-mark.png',
+  '/images/brand-mark.png?v=3d',
   '/images/promo-group-bg.webp',
   '/images/subscription-bg-desktop.webp',
   '/images/subscription-orb.webp',
