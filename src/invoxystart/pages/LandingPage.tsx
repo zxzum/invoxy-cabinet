@@ -518,70 +518,113 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
-          {/* Hero Visual Card: Fusion of 3D Cyber Shield Artwork & Interactive Telemetry HUD */}
-          {/* Hero Visual Card: High-craft interactive Cyber Shield Security Console */}
+          {/* Hero Visual: Interactive Generative UI Cyber Network HUD & Live Security Console */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
             className="lg:col-span-5 relative"
           >
-            <div className="relative mx-auto max-w-md rounded-3xl p-1 bg-gradient-to-b from-[#a5e8c4]/40 via-emerald-500/10 to-transparent shadow-2xl shadow-[#a5e8c4]/20">
-              <div className="rounded-[22px] bg-[#0c0f13] p-5 space-y-4 overflow-hidden relative border border-white/10">
-                <div className="absolute top-0 right-0 w-44 h-44 bg-[#a5e8c4]/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative mx-auto max-w-md rounded-3xl p-1 bg-gradient-to-b from-[#a5e8c4]/40 via-emerald-500/15 to-transparent shadow-2xl shadow-[#a5e8c4]/15">
+              <div className="rounded-[22px] bg-[#0c0f14] p-5 space-y-4 overflow-hidden relative border border-white/10">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#a5e8c4]/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-                {/* 3D Cyber Shield Artwork - Main Focal Viewport */}
-                <div className="relative h-80 rounded-2xl overflow-hidden border border-white/15 bg-[#080b0e] flex flex-col justify-between p-4 group shadow-[0_0_50px_rgba(165,232,196,0.15)]">
-                  <img
-                    src="/images/landing-shield.png"
-                    alt="Invoxy Cyber Shield Protection"
-                    className="absolute inset-0 w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700 brightness-105 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-transparent to-black/30 pointer-events-none" />
-
-                  {/* Top Status Bar with Interactive Ping Trigger */}
-                  <div className="relative z-10 w-full flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsShieldTesting(true);
-                        setTimeout(() => {
-                          setShieldPing(Math.floor(Math.random() * 8) + 14);
-                          setIsShieldTesting(false);
-                        }, 600);
-                      }}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/15 text-xs text-zinc-200 hover:border-[#a5e8c4]/40 transition active:scale-95 shadow-lg"
-                    >
-                      <span
-                        className={`w-2 h-2 rounded-full ${isShieldTesting ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`}
-                      />
-                      <span className="font-semibold text-[11px]">
-                        {isShieldTesting ? 'Проверка маршрута...' : 'XTLS Vision Активен'}
-                      </span>
-                    </button>
-
-                    <span className="text-[11px] font-mono text-[#a5e8c4] bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#a5e8c4]/30 shadow-lg">
-                      {isShieldTesting ? 'TESTING' : `${shieldPing} ms • 0% LOSS`}
+                {/* Console Top Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                    <span className="ml-2 font-mono text-[11px] text-zinc-400 font-semibold tracking-wide">
+                      INVOXY ENGINE v4.2
                     </span>
                   </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#a5e8c4]/10 border border-[#a5e8c4]/20 text-[#a5e8c4] font-mono text-[10px] font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#a5e8c4] animate-pulse" />
+                    ENCRYPTED
+                  </div>
+                </div>
 
-                  {/* Bottom Metrics HUD Panel inside the Viewport */}
-                  <div className="relative z-10 w-full p-2.5 rounded-xl bg-black/85 backdrop-blur-md border border-white/15 flex items-center justify-between text-xs font-mono shadow-2xl">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-zinc-400 text-[10px]">Режим:</span>
-                      <span className="text-[#a5e8c4] font-bold text-[11px] uppercase">
-                        {selectedCipher}
-                      </span>
+                {/* Generative Interactive HUD Display */}
+                <div className="relative rounded-2xl overflow-hidden border border-white/15 bg-gradient-to-b from-[#080b0e] to-[#0a0e12] p-5 shadow-inner">
+                  {/* Background grid canvas aesthetic */}
+                  <div
+                    className="absolute inset-0 opacity-20 pointer-events-none"
+                    style={{
+                      backgroundImage:
+                        'radial-gradient(circle, #a5e8c4 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px)',
+                      backgroundSize: '16px 16px',
+                    }}
+                  />
+
+                  {/* Main HUD Circle / Connection Status */}
+                  <div className="relative z-10 flex flex-col items-center justify-center py-4">
+                    <div className="relative flex items-center justify-center mb-4">
+                      {/* Pulse rings */}
+                      <div className="absolute w-32 h-32 rounded-full border border-[#a5e8c4]/20 animate-ping duration-1000 pointer-events-none" />
+                      <div className="absolute w-28 h-28 rounded-full border border-[#a5e8c4]/30 pointer-events-none" />
+                      <div className="absolute w-24 h-24 rounded-full bg-[#a5e8c4]/5 blur-sm pointer-events-none" />
+
+                      {/* Main Interactive Connect Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsShieldTesting(true);
+                          setTimeout(() => {
+                            setShieldPing(Math.floor(Math.random() * 6) + 14);
+                            setIsShieldTesting(false);
+                          }, 500);
+                        }}
+                        className="relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br from-[#121b18] to-[#070b09] border-2 border-[#a5e8c4]/70 flex flex-col items-center justify-center text-[#a5e8c4] shadow-[0_0_30px_rgba(165,232,196,0.25)] hover:scale-105 active:scale-95 transition-all group cursor-pointer"
+                        title="Нажмите для проверки пинга и шифрования"
+                      >
+                        <ShieldCheck className="w-8 h-8 group-hover:scale-110 transition-transform text-[#a5e8c4]" />
+                        <span className="text-[9px] font-mono font-bold mt-1 text-zinc-300 group-hover:text-white">
+                          {isShieldTesting ? 'TESTING' : 'SECURE'}
+                        </span>
+                      </button>
                     </div>
-                    <div className="w-[1px] h-3 bg-white/20" />
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-zinc-400 text-[10px]">DPI Bypass:</span>
-                      <span className="text-emerald-300 font-bold text-[11px]">100%</span>
+
+                    <div className="text-center space-y-1">
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-sm font-black text-white tracking-wide uppercase font-mono">
+                          Туннель активен
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 font-mono">
+                        Маршрут: RU ➔ FI/DE Direct Tier-1 Uplink
+                      </p>
                     </div>
-                    <div className="w-[1px] h-3 bg-white/20" />
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-zinc-400 text-[10px]">Канал:</span>
-                      <span className="text-white font-bold text-[11px]">10 Gbps</span>
+
+                    {/* Ping trigger info */}
+                    <div className="mt-4 flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-white/10 font-mono text-[11px]">
+                        <span className="text-zinc-400">Пинг:</span>
+                        <span className="text-[#a5e8c4] font-bold">
+                          {isShieldTesting ? '...' : `${shieldPing} ms`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-white/10 font-mono text-[11px]">
+                        <span className="text-zinc-400">Потери:</span>
+                        <span className="text-emerald-300 font-bold">0.00%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-white/10 font-mono text-[11px]">
+                        <span className="text-zinc-400">DPI:</span>
+                        <span className="text-teal-300 font-bold">BYPASS</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Telemetry Vector Graph Strip */}
+                  <div className="relative z-10 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] font-mono">
+                    <div className="flex items-center gap-1.5 text-zinc-400">
+                      <span>Шифр:</span>
+                      <span className="text-[#a5e8c4] font-bold uppercase">{selectedCipher}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-emerald-400">
+                      <span>10 Gbps Магистраль</span>
                     </div>
                   </div>
                 </div>
@@ -629,7 +672,7 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                {/* Feature Pills */}
+                {/* Feature Status Indicators */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#a5e8c4]/30 transition">
                     <div className="flex items-center gap-3">
@@ -641,7 +684,7 @@ export default function LandingPage() {
                           Маскировка трафика под HTTPS
                         </div>
                         <div className="text-[11px] text-zinc-400">
-                          Невидим для фильтров и систем глубокой проверки (DPI)
+                          Невидим для провайдеров и систем глубокой фильтрации (DPI)
                         </div>
                       </div>
                     </div>
@@ -657,7 +700,7 @@ export default function LandingPage() {
                       </div>
                       <div>
                         <div className="text-xs font-bold text-zinc-100">
-                          Белые списки операторов
+                          Белые списки сотовых операторов
                         </div>
                         <div className="text-[11px] text-zinc-400">
                           Оптимизация под МТС, Билайн, МегаФон и Т2
@@ -693,23 +736,26 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Interactive Live Speedtest & Throughput Equalizer */}
+          {/* Card 1: Interactive Live Speedtest & 4K Stream Buffer Deck */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-[#a5e8c4]/40 transition-all shadow-xl hover:shadow-[#a5e8c4]/10">
-            <div className="h-64 rounded-2xl overflow-hidden bg-[#080b0e] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10 shadow-[0_0_30px_rgba(165,232,196,0.08)]">
-              <img
-                src="/images/landing-hero.png"
-                alt="Максимальная скорость 4K"
-                className="absolute inset-0 w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700 brightness-105"
+            <div className="h-64 rounded-2xl overflow-hidden bg-gradient-to-b from-[#080b0e] to-[#0d1217] mb-5 relative flex flex-col justify-between p-4 border border-white/10 shadow-[0_0_30px_rgba(165,232,196,0.08)]">
+              {/* Background grid */}
+              <div
+                className="absolute inset-0 opacity-15 pointer-events-none"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(circle, #a5e8c4 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px)',
+                  backgroundSize: '16px 16px',
+                }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-transparent to-black/40 pointer-events-none" />
 
               {/* Live HUD Badge & Speedtest Trigger */}
               <div className="relative z-10 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-zinc-200">
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/15 text-zinc-200">
                   <span
                     className={`w-2 h-2 rounded-full ${isTestingSpeed ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`}
                   />
-                  <span className="font-mono text-[10px] uppercase font-bold">
+                  <span className="font-mono text-[10px] uppercase font-bold text-zinc-300">
                     {isTestingSpeed ? 'Замер потока...' : '4K 60fps Ready'}
                   </span>
                 </div>
@@ -721,41 +767,43 @@ export default function LandingPage() {
                     let step = 0;
                     const interval = setInterval(() => {
                       step++;
-                      setSpeedMbps(+(Math.random() * 200 + 850).toFixed(1));
+                      setSpeedMbps(+(Math.random() * 120 + 880).toFixed(1));
                       if (step > 6) {
                         clearInterval(interval);
-                        setSpeedMbps(948.4);
+                        setSpeedMbps(964.2);
                         setIsTestingSpeed(false);
                       }
                     }, 120);
                   }}
-                  className="px-2.5 py-1 rounded-full font-mono text-[10px] text-[#a5e8c4] bg-black/75 backdrop-blur-md border border-[#a5e8c4]/40 hover:bg-[#a5e8c4]/20 transition active:scale-95"
+                  className="px-2.5 py-1 rounded-full font-mono text-[10px] text-[#a5e8c4] bg-black/80 backdrop-blur-md border border-[#a5e8c4]/40 hover:bg-[#a5e8c4]/20 transition active:scale-95 cursor-pointer"
                 >
                   {isTestingSpeed ? 'Тест...' : 'Замерить ↺'}
                 </button>
               </div>
 
-              {/* Interactive Speed Counter Strip */}
-              <div className="relative z-10 flex items-center justify-between p-3 rounded-xl bg-black/85 backdrop-blur-md border border-white/15 shadow-2xl">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-zinc-400 uppercase font-mono">
-                    Скорость потока
+              {/* Central Speed Gauge Graphic & Streaming Buffer HUD */}
+              <div className="relative z-10 my-auto flex flex-col items-center justify-center">
+                <div className="text-3xl sm:text-4xl font-black font-mono text-white flex items-baseline gap-1 tracking-tight">
+                  <span className="bg-gradient-to-r from-white via-zinc-100 to-[#a5e8c4] bg-clip-text text-transparent">
+                    {speedMbps}
                   </span>
-                  <div className="text-2xl font-black font-mono text-white flex items-baseline gap-1">
-                    <span>{speedMbps}</span>
-                    <span className="text-xs font-bold text-[#a5e8c4]">Mbps</span>
-                  </div>
+                  <span className="text-xs font-bold font-mono text-[#a5e8c4]">Mbps</span>
+                </div>
+                <div className="text-[10px] text-zinc-400 font-mono flex items-center gap-2 mt-1">
+                  <span className="text-emerald-400 font-semibold">● 0 buffering</span>
+                  <span>|</span>
+                  <span>YouTube 2160p HDR</span>
                 </div>
 
                 {/* Animated visual equalizer bars */}
-                <div className="flex items-end gap-1.5 h-6">
-                  {[45, 75, 100, 80, 95, 65, 85, 90, 70].map((h, i) => (
+                <div className="flex items-end gap-1.5 h-8 mt-3">
+                  {[45, 80, 100, 85, 95, 70, 90, 100, 75, 88, 92].map((h, i) => (
                     <motion.div
                       key={i}
                       animate={{
                         height: isTestingSpeed
                           ? [
-                              `${Math.floor(Math.random() * 40) + 20}%`,
+                              `${Math.floor(Math.random() * 40) + 25}%`,
                               `${Math.floor(Math.random() * 60) + 40}%`,
                             ]
                           : [`${Math.max(30, h - 35)}%`, `${h}%`, `${Math.max(25, h - 20)}%`],
@@ -766,10 +814,16 @@ export default function LandingPage() {
                         repeatType: 'reverse',
                         ease: 'easeInOut',
                       }}
-                      className="w-1 bg-gradient-to-t from-emerald-400 to-[#a5e8c4] rounded-full"
+                      className="w-1.5 bg-gradient-to-t from-emerald-500 via-[#a5e8c4] to-teal-200 rounded-full"
                     />
                   ))}
                 </div>
+              </div>
+
+              {/* Bottom Metrics Pill */}
+              <div className="relative z-10 flex items-center justify-between p-2 rounded-xl bg-black/70 backdrop-blur-md border border-white/10 text-[10px] font-mono">
+                <span className="text-zinc-400">Пинг до CDN:</span>
+                <span className="text-[#a5e8c4] font-bold">14 ms (Direct FI/DE)</span>
               </div>
             </div>
 
@@ -784,13 +838,9 @@ export default function LandingPage() {
 
           {/* Card 2: Interactive Telegram Bot Token Generator */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-emerald-400/40 transition-all shadow-xl hover:shadow-emerald-400/10">
-            <div className="h-64 rounded-2xl overflow-hidden bg-[#080b0e] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10 shadow-[0_0_30px_rgba(52,211,153,0.08)]">
-              <img
-                src="/images/trial-gift.png"
-                alt="Бесплатный тестовый период"
-                className="absolute inset-0 w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700 brightness-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-transparent to-black/40 pointer-events-none" />
+            <div className="h-64 rounded-2xl overflow-hidden bg-gradient-to-b from-[#080b0e] to-[#0d1319] mb-5 relative flex flex-col justify-between p-4 border border-white/10 shadow-[0_0_30px_rgba(52,211,153,0.08)]">
+              {/* Background accent glow */}
+              <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
               {/* Bot Header Badge */}
               <div className="relative z-10 flex items-center justify-between">
@@ -798,7 +848,7 @@ export default function LandingPage() {
                   href="https://t.me/invoxy_bot"
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-zinc-200 hover:border-white/30 transition"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/15 text-zinc-200 hover:border-white/30 transition"
                 >
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-[#a5e8c4] flex items-center justify-center">
                     <Bot className="w-2.5 h-2.5" />
@@ -816,42 +866,51 @@ export default function LandingPage() {
                         `vless://invoxy-trial-${rand}@fi1.invoxy.net:443?security=reality`,
                       );
                       setIsGeneratingKey(false);
-                    }, 500);
+                    }, 400);
                   }}
-                  className="text-[10px] font-mono font-bold text-emerald-300 bg-emerald-500/20 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-500/30 hover:bg-emerald-500/30 transition active:scale-95"
+                  className="text-[10px] font-mono font-bold text-emerald-300 bg-emerald-500/20 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-500/30 hover:bg-emerald-500/30 transition active:scale-95 cursor-pointer"
                 >
                   {isGeneratingKey ? 'Генерация...' : 'Новый ключ ↻'}
                 </button>
               </div>
 
-              {/* Interactive Key Generator & One-Click Copy */}
-              <div className="relative z-10 p-2.5 rounded-xl bg-black/85 backdrop-blur-md border border-white/15 shadow-2xl space-y-1.5">
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-zinc-400">Ваш тестовый ключ (3 дня):</span>
-                  <span className="text-[#a5e8c4] font-bold">Без ввода карт</span>
+              {/* Center Code / Config Preview Visual */}
+              <div className="relative z-10 my-auto p-3 rounded-xl bg-black/75 border border-white/10 font-mono text-[11px] space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] text-zinc-400 border-b border-white/10 pb-1.5">
+                  <span className="flex items-center gap-1 text-[#a5e8c4]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#a5e8c4]" />
+                    VLESS + REALITY
+                  </span>
+                  <span className="text-emerald-400">Бесплатно 3 дня</span>
                 </div>
+                <div className="text-zinc-300 truncate text-[10px] bg-white/[0.04] p-2 rounded-lg border border-white/5">
+                  {trialKey}
+                </div>
+              </div>
 
-                <div className="flex items-center gap-1.5">
-                  <div className="font-mono text-[10px] text-zinc-300 truncate bg-white/[0.06] px-2.5 py-1.5 rounded-lg border border-white/10 flex-1">
-                    {trialKey}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      copyToClipboard(trialKey);
-                      setCopiedKey(true);
-                      setTimeout(() => setCopiedKey(false), 2000);
-                    }}
-                    className="p-1.5 rounded-lg bg-[#a5e8c4] text-[#0c0f13] hover:brightness-110 active:scale-95 transition shrink-0"
-                    title="Скопировать ключ"
-                  >
-                    {copiedKey ? (
-                      <Check className="w-3.5 h-3.5" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
+              {/* Copy & Connect Button */}
+              <div className="relative z-10 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    copyToClipboard(trialKey);
+                    setCopiedKey(true);
+                    setTimeout(() => setCopiedKey(false), 2000);
+                  }}
+                  className="w-full py-2 px-3 rounded-xl bg-[#a5e8c4] text-[#0c0f13] font-bold text-xs hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2 shadow-lg shadow-[#a5e8c4]/20 cursor-pointer"
+                >
+                  {copiedKey ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Скопировано в буфер!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Скопировать ключ
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -866,7 +925,7 @@ export default function LandingPage() {
 
           {/* Card 3: Interactive Multi-device Ecosystem Matrix with Switcher */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-teal-400/40 transition-all shadow-xl hover:shadow-teal-400/10">
-            <div className="h-64 rounded-2xl overflow-hidden bg-[#07090d] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10 shadow-[0_0_30px_rgba(45,212,191,0.08)]">
+            <div className="h-64 rounded-2xl overflow-hidden bg-gradient-to-b from-[#07090d] to-[#0a1014] mb-5 relative flex flex-col justify-between p-4 border border-white/10 shadow-[0_0_30px_rgba(45,212,191,0.08)]">
               <div
                 className="absolute inset-0 opacity-20 pointer-events-none"
                 style={{
@@ -890,7 +949,7 @@ export default function LandingPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedDevice('phone')}
-                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 ${selectedDevice === 'phone' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
+                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 cursor-pointer ${selectedDevice === 'phone' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
                 >
                   <div
                     className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${selectedDevice === 'phone' ? 'bg-[#a5e8c4]/20 border-2 border-[#a5e8c4] text-[#a5e8c4] shadow-lg shadow-[#a5e8c4]/20' : 'bg-white/5 border border-white/10 text-zinc-400'}`}
@@ -909,7 +968,7 @@ export default function LandingPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedDevice('laptop')}
-                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 ${selectedDevice === 'laptop' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
+                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 cursor-pointer ${selectedDevice === 'laptop' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
                 >
                   <div
                     className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${selectedDevice === 'laptop' ? 'bg-teal-500/20 border-2 border-teal-400 text-teal-300 shadow-lg shadow-teal-500/20' : 'bg-white/5 border border-white/10 text-zinc-400'}`}
@@ -928,7 +987,7 @@ export default function LandingPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedDevice('tv')}
-                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 ${selectedDevice === 'tv' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
+                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 cursor-pointer ${selectedDevice === 'tv' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
                 >
                   <div
                     className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${selectedDevice === 'tv' ? 'bg-emerald-500/20 border-2 border-emerald-400 text-emerald-300 shadow-lg shadow-emerald-500/20' : 'bg-white/5 border border-white/10 text-zinc-400'}`}
