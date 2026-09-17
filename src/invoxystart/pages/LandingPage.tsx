@@ -336,7 +336,7 @@ export default function LandingPage() {
           });
 
           setPlans(mapped);
-          const initialDurations: Record<number, number> = {};
+          const initialDurations: Record<string, number> = {};
           for (const p of mapped) {
             initialDurations[p.id] = 1;
           }
