@@ -13,8 +13,10 @@ import {
   Minus,
   Globe2,
   Bot,
+  Copy,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { BrandLogo } from '@/invoxystart/components/layout/BrandLogo';
+import { copyToClipboard } from '@/utils/clipboard';
 
 interface DbTariffPeriod {
   days: number;
@@ -214,6 +216,25 @@ export default function LandingPage() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState<'grid' | 'list'>('list');
 
+  // Interactive UI state for Hero & Feature micro-apps
+  const [selectedCipher, setSelectedCipher] = useState<'xtls' | 'reality' | 'carrier'>('xtls');
+  const [isShieldTesting, setIsShieldTesting] = useState(false);
+  const [shieldPing, setShieldPing] = useState(16);
+
+  // Speed test state
+  const [isTestingSpeed, setIsTestingSpeed] = useState(false);
+  const [speedMbps, setSpeedMbps] = useState(940.8);
+
+  // Bot test state
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+  const [trialKey, setTrialKey] = useState(
+    'vless://invoxy-trial@fi1.invoxy.net:443?security=reality',
+  );
+
+  // Device ecosystem state
+  const [selectedDevice, setSelectedDevice] = useState<'phone' | 'laptop' | 'tv'>('phone');
+
   useEffect(() => {
     let mounted = true;
 
@@ -315,7 +336,11 @@ export default function LandingPage() {
           });
 
           setPlans(mapped);
-          setSelectedDurations(mapped.reduce((acc, p) => ({ ...acc, [p.id]: 1 }), {}));
+          const initialDurations: Record<number, number> = {};
+          for (const p of mapped) {
+            initialDurations[p.id] = 1;
+          }
+          setSelectedDurations(initialDurations);
         }
       } catch (err) {
         console.warn('Using fallback data:', err);
@@ -494,6 +519,7 @@ export default function LandingPage() {
           </div>
 
           {/* Hero Visual Card: Fusion of 3D Cyber Shield Artwork & Interactive Telemetry HUD */}
+          {/* Hero Visual Card: High-craft interactive Cyber Shield Security Console */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -501,65 +527,110 @@ export default function LandingPage() {
             className="lg:col-span-5 relative"
           >
             <div className="relative mx-auto max-w-md rounded-3xl p-1 bg-gradient-to-b from-[#a5e8c4]/40 via-emerald-500/10 to-transparent shadow-2xl shadow-[#a5e8c4]/20">
-              <div className="rounded-[22px] bg-[#0c0f13] p-5 space-y-5 overflow-hidden relative border border-white/10">
+              <div className="rounded-[22px] bg-[#0c0f13] p-5 space-y-4 overflow-hidden relative border border-white/10">
                 <div className="absolute top-0 right-0 w-44 h-44 bg-[#a5e8c4]/15 rounded-full blur-3xl pointer-events-none" />
 
                 {/* 3D Cyber Shield Artwork with Live HUD Glass Overlay */}
-                <div className="relative h-72 rounded-2xl overflow-hidden border border-white/15 bg-black flex flex-col justify-between p-4 group">
-                  {/* High-res 3D Cyber Shield Render */}
+                <div className="relative h-64 rounded-2xl overflow-hidden border border-white/15 bg-black flex flex-col justify-between p-3.5 group">
                   <img
                     src="/images/landing-shield.png"
                     alt="Invoxy Cyber Shield Protection"
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
                   />
-                  {/* Luxury dark vignette and glow */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/40 to-transparent" />
-                  <div className="absolute inset-0 bg-radial-at-c from-transparent via-transparent to-[#0c0f13]/80" />
 
-                  {/* Top Interactive Status Bar */}
+                  {/* Top Status Bar with Interactive Ping Trigger */}
                   <div className="relative z-10 w-full flex items-center justify-between">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-xs text-zinc-200 shadow-lg">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="font-semibold tracking-wide">XTLS Vision Active</span>
-                    </div>
-                    <span className="text-[11px] font-mono text-[#a5e8c4] bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#a5e8c4]/30 shadow-lg">
-                      VLESS · 0% LOSS
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsShieldTesting(true);
+                        setTimeout(() => {
+                          setShieldPing(Math.floor(Math.random() * 8) + 14);
+                          setIsShieldTesting(false);
+                        }, 600);
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-xs text-zinc-200 hover:border-[#a5e8c4]/40 transition active:scale-95 shadow-lg"
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${isShieldTesting ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`}
+                      />
+                      <span className="font-semibold text-[11px]">
+                        {isShieldTesting ? 'Проверка маршрута...' : 'XTLS Vision Активен'}
+                      </span>
+                    </button>
+
+                    <span className="text-[11px] font-mono text-[#a5e8c4] bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#a5e8c4]/30 shadow-lg">
+                      {isShieldTesting ? 'TESTING' : `${shieldPing} ms • 0% LOSS`}
                     </span>
                   </div>
 
-                  {/* Center Telemetry Badge */}
-                  <div className="relative z-10 my-auto text-center pointer-events-none">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0c0f13]/80 backdrop-blur-md border border-emerald-500/30 text-[11px] font-mono text-emerald-300 shadow-2xl">
-                      <span>TUNNEL:</span>
-                      <span className="text-white font-bold">CARRIER_ROUTE_OPTIMIZED</span>
+                  {/* Protocol Switcher Pills inside Artwork */}
+                  <div className="relative z-10 my-auto flex justify-center">
+                    <div className="inline-flex p-1 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 gap-1 shadow-2xl">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCipher('xtls')}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
+                          selectedCipher === 'xtls'
+                            ? 'bg-[#a5e8c4] text-[#0c0f13] shadow'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        XTLS Vision
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCipher('reality')}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
+                          selectedCipher === 'reality'
+                            ? 'bg-[#a5e8c4] text-[#0c0f13] shadow'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        VLESS Reality
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCipher('carrier')}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
+                          selectedCipher === 'carrier'
+                            ? 'bg-[#a5e8c4] text-[#0c0f13] shadow'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        Direct Carrier
+                      </button>
                     </div>
                   </div>
 
                   {/* Bottom Metrics HUD Panel */}
-                  <div className="relative z-10 w-full p-2.5 rounded-xl bg-black/75 backdrop-blur-md border border-white/15 flex items-center justify-between text-xs font-mono shadow-2xl">
+                  <div className="relative z-10 w-full p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 flex items-center justify-between text-xs font-mono shadow-2xl">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-zinc-400 text-[11px]">Задержка:</span>
-                      <span className="text-[#a5e8c4] font-bold">16 ms</span>
+                      <span className="text-zinc-400 text-[10px]">Режим:</span>
+                      <span className="text-[#a5e8c4] font-bold text-[11px] uppercase">
+                        {selectedCipher}
+                      </span>
                     </div>
-                    <div className="w-[1px] h-3.5 bg-white/20" />
+                    <div className="w-[1px] h-3 bg-white/20" />
                     <div className="flex items-center gap-1.5">
-                      <span className="text-zinc-400 text-[11px]">DPI Bypass:</span>
-                      <span className="text-emerald-300 font-bold">100%</span>
+                      <span className="text-zinc-400 text-[10px]">DPI Bypass:</span>
+                      <span className="text-emerald-300 font-bold text-[11px]">100%</span>
                     </div>
-                    <div className="w-[1px] h-3.5 bg-white/20" />
+                    <div className="w-[1px] h-3 bg-white/20" />
                     <div className="flex items-center gap-1.5">
-                      <span className="text-zinc-400 text-[11px]">Канал:</span>
-                      <span className="text-white font-bold">10 Gbps</span>
+                      <span className="text-zinc-400 text-[10px]">Канал:</span>
+                      <span className="text-white font-bold text-[11px]">10 Gbps</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Feature Pills */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#a5e8c4]/30 transition">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#a5e8c4]/30 transition">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-[#a5e8c4] shrink-0">
-                        <ShieldCheck className="w-4.5 h-4.5" />
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-[#a5e8c4] shrink-0">
+                        <ShieldCheck className="w-4 h-4" />
                       </div>
                       <div>
                         <div className="text-xs font-bold text-zinc-100">
@@ -570,15 +641,15 @@ export default function LandingPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs font-mono font-bold text-[#a5e8c4] bg-[#a5e8c4]/10 border border-[#a5e8c4]/20 px-2.5 py-0.5 rounded-lg">
+                    <span className="text-xs font-mono font-bold text-[#a5e8c4] bg-[#a5e8c4]/10 border border-[#a5e8c4]/20 px-2 py-0.5 rounded-lg">
                       ВКЛ
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-teal-400/30 transition">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-teal-400/30 transition">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-300 shrink-0">
-                        <Zap className="w-4.5 h-4.5" />
+                      <div className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-300 shrink-0">
+                        <Zap className="w-4 h-4" />
                       </div>
                       <div>
                         <div className="text-xs font-bold text-zinc-100">
@@ -589,7 +660,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs font-mono font-bold text-teal-300 bg-teal-500/10 border border-teal-500/20 px-2.5 py-0.5 rounded-lg">
+                    <span className="text-xs font-mono font-bold text-teal-300 bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded-lg">
                       LIVE
                     </span>
                   </div>
@@ -600,7 +671,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Visual Features Section: Seamless Fusion of 3D Renders & Live Telemetry Widgets */}
+      {/* Visual Features Section: Fully Interactive High-Craft Widgets */}
       <section
         id="features"
         className="relative z-10 py-16 px-4 max-w-6xl mx-auto border-t border-white/5"
@@ -618,49 +689,75 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: 3D Globe Speed Artwork with Live Throughput HUD */}
+          {/* Card 1: Interactive Live Speedtest & Throughput Equalizer */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-[#a5e8c4]/40 transition-all shadow-xl hover:shadow-[#a5e8c4]/10">
-            <div className="h-48 rounded-2xl overflow-hidden bg-black mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
+            <div className="h-52 rounded-2xl overflow-hidden bg-black mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
               <img
                 src="/images/landing-hero.png"
                 alt="Максимальная скорость 4K"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/30 to-black/50" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/40 to-black/60" />
 
-              {/* Live HUD Badge */}
+              {/* Live HUD Badge & Speedtest Trigger */}
               <div className="relative z-10 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-zinc-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="font-mono text-[10px] uppercase font-bold">4K 60fps Ready</span>
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-zinc-200">
+                  <span
+                    className={`w-2 h-2 rounded-full ${isTestingSpeed ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`}
+                  />
+                  <span className="font-mono text-[10px] uppercase font-bold">
+                    {isTestingSpeed ? 'Замер потока...' : '4K 60fps Ready'}
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full font-mono text-[10px] text-[#a5e8c4] bg-black/70 backdrop-blur-md border border-[#a5e8c4]/30">
-                  0 ms Jitter
-                </span>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTestingSpeed(true);
+                    let step = 0;
+                    const interval = setInterval(() => {
+                      step++;
+                      setSpeedMbps(+(Math.random() * 200 + 850).toFixed(1));
+                      if (step > 6) {
+                        clearInterval(interval);
+                        setSpeedMbps(948.4);
+                        setIsTestingSpeed(false);
+                      }
+                    }, 120);
+                  }}
+                  className="px-2.5 py-1 rounded-full font-mono text-[10px] text-[#a5e8c4] bg-black/75 backdrop-blur-md border border-[#a5e8c4]/40 hover:bg-[#a5e8c4]/20 transition active:scale-95"
+                >
+                  {isTestingSpeed ? 'Тест...' : 'Замерить ↺'}
+                </button>
               </div>
 
               {/* Interactive Speed Counter Strip */}
-              <div className="relative z-10 flex items-center justify-between p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 shadow-2xl">
+              <div className="relative z-10 flex items-center justify-between p-3 rounded-xl bg-black/85 backdrop-blur-md border border-white/15 shadow-2xl">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-zinc-400 uppercase font-mono">
                     Скорость потока
                   </span>
-                  <div className="text-xl font-black font-mono text-white flex items-baseline gap-1">
-                    <span>940.8</span>
+                  <div className="text-2xl font-black font-mono text-white flex items-baseline gap-1">
+                    <span>{speedMbps}</span>
                     <span className="text-xs font-bold text-[#a5e8c4]">Mbps</span>
                   </div>
                 </div>
 
                 {/* Animated visual equalizer bars */}
-                <div className="flex items-end gap-1 h-5">
-                  {[45, 75, 100, 80, 95, 65, 85].map((h, i) => (
+                <div className="flex items-end gap-1.5 h-6">
+                  {[45, 75, 100, 80, 95, 65, 85, 90, 70].map((h, i) => (
                     <motion.div
                       key={i}
                       animate={{
-                        height: [`${Math.max(30, h - 35)}%`, `${h}%`, `${Math.max(25, h - 20)}%`],
+                        height: isTestingSpeed
+                          ? [
+                              `${Math.floor(Math.random() * 40) + 20}%`,
+                              `${Math.floor(Math.random() * 60) + 40}%`,
+                            ]
+                          : [`${Math.max(30, h - 35)}%`, `${h}%`, `${Math.max(25, h - 20)}%`],
                       }}
                       transition={{
-                        duration: 1.2 + (i % 3) * 0.3,
+                        duration: isTestingSpeed ? 0.2 : 1.2 + (i % 3) * 0.3,
                         repeat: Infinity,
                         repeatType: 'reverse',
                         ease: 'easeInOut',
@@ -681,37 +778,75 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Card 2: 3D Gift Artwork with Instant Telegram Connect Widget */}
+          {/* Card 2: Interactive Telegram Bot Token Generator */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-emerald-400/40 transition-all shadow-xl hover:shadow-emerald-400/10">
-            <div className="h-48 rounded-2xl overflow-hidden bg-black mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
+            <div className="h-52 rounded-2xl overflow-hidden bg-black mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
               <img
                 src="/images/trial-gift.png"
                 alt="Бесплатный тестовый период"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/30 to-black/50" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/40 to-black/60" />
 
               {/* Bot Header Badge */}
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-zinc-200">
+                <a
+                  href="https://t.me/invoxy_bot"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-zinc-200 hover:border-white/30 transition"
+                >
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-[#a5e8c4] flex items-center justify-center">
                     <Bot className="w-2.5 h-2.5" />
                   </div>
                   <span className="text-[11px] font-bold">@invoxy_bot</span>
-                </div>
-                <span className="text-[10px] font-mono font-bold text-emerald-300 bg-emerald-500/20 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                  3 дня бесплатно
-                </span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsGeneratingKey(true);
+                    setTimeout(() => {
+                      const rand = Math.random().toString(36).substring(2, 8);
+                      setTrialKey(
+                        `vless://invoxy-trial-${rand}@fi1.invoxy.net:443?security=reality`,
+                      );
+                      setIsGeneratingKey(false);
+                    }, 500);
+                  }}
+                  className="text-[10px] font-mono font-bold text-emerald-300 bg-emerald-500/20 backdrop-blur-md px-2.5 py-1 rounded-full border border-emerald-500/30 hover:bg-emerald-500/30 transition active:scale-95"
+                >
+                  {isGeneratingKey ? 'Генерация...' : 'Новый ключ ↻'}
+                </button>
               </div>
 
-              {/* Key Generator Widget */}
-              <div className="relative z-10 p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 shadow-2xl space-y-1">
+              {/* Interactive Key Generator & One-Click Copy */}
+              <div className="relative z-10 p-2.5 rounded-xl bg-black/85 backdrop-blur-md border border-white/15 shadow-2xl space-y-1.5">
                 <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-zinc-400">Тестовый ключ готов:</span>
+                  <span className="text-zinc-400">Ваш тестовый ключ (3 дня):</span>
                   <span className="text-[#a5e8c4] font-bold">Без ввода карт</span>
                 </div>
-                <div className="font-mono text-[10px] text-zinc-300 truncate bg-white/[0.06] px-2 py-1 rounded border border-white/10">
-                  vless://invoxy-trial@fi1.invoxy.net:443?security=reality
+
+                <div className="flex items-center gap-1.5">
+                  <div className="font-mono text-[10px] text-zinc-300 truncate bg-white/[0.06] px-2.5 py-1.5 rounded-lg border border-white/10 flex-1">
+                    {trialKey}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      copyToClipboard(trialKey);
+                      setCopiedKey(true);
+                      setTimeout(() => setCopiedKey(false), 2000);
+                    }}
+                    className="p-1.5 rounded-lg bg-[#a5e8c4] text-[#0c0f13] hover:brightness-110 active:scale-95 transition shrink-0"
+                    title="Скопировать ключ"
+                  >
+                    {copiedKey ? (
+                      <Check className="w-3.5 h-3.5" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
@@ -725,10 +860,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Card 3: Multi-device Ecosystem Matrix with Visual Device Fleet */}
+          {/* Card 3: Interactive Multi-device Ecosystem Matrix with Switcher */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-teal-400/40 transition-all shadow-xl hover:shadow-teal-400/10">
-            <div className="h-48 rounded-2xl overflow-hidden bg-[#07090d] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
-              {/* Radial grid ambiance */}
+            <div className="h-52 rounded-2xl overflow-hidden bg-[#07090d] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
               <div
                 className="absolute inset-0 opacity-20 pointer-events-none"
                 style={{
@@ -747,46 +881,68 @@ export default function LandingPage() {
                 </span>
               </div>
 
-              {/* Interconnected Devices Matrix */}
-              <div className="relative z-10 my-auto flex items-center justify-around px-2">
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-white/10 to-white/[0.02] border border-white/15 flex items-center justify-center text-[#a5e8c4] shadow-lg">
+              {/* Interactive Clickable Devices */}
+              <div className="relative z-10 my-auto flex items-center justify-around px-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDevice('phone')}
+                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 ${selectedDevice === 'phone' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
+                >
+                  <div
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${selectedDevice === 'phone' ? 'bg-[#a5e8c4]/20 border-2 border-[#a5e8c4] text-[#a5e8c4] shadow-lg shadow-[#a5e8c4]/20' : 'bg-white/5 border border-white/10 text-zinc-400'}`}
+                  >
                     <Smartphone className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] text-zinc-300 font-medium">Телефон</span>
-                </div>
+                  <span className="text-[10px] text-zinc-200 font-medium">Телефон</span>
+                </button>
 
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  <div className="w-6 h-[1px] bg-gradient-to-r from-emerald-400 to-[#a5e8c4]" />
+                  <div className="w-5 h-[1px] bg-gradient-to-r from-emerald-400 to-[#a5e8c4]" />
                   <span className="w-1.5 h-1.5 rounded-full bg-[#a5e8c4]" />
                 </div>
 
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-white/10 to-white/[0.02] border border-white/15 flex items-center justify-center text-teal-300 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDevice('laptop')}
+                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 ${selectedDevice === 'laptop' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
+                >
+                  <div
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${selectedDevice === 'laptop' ? 'bg-teal-500/20 border-2 border-teal-400 text-teal-300 shadow-lg shadow-teal-500/20' : 'bg-white/5 border border-white/10 text-zinc-400'}`}
+                  >
                     <Laptop className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] text-zinc-300 font-medium">Ноутбук</span>
-                </div>
+                  <span className="text-[10px] text-zinc-200 font-medium">Ноутбук</span>
+                </button>
 
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#a5e8c4] animate-ping" />
-                  <div className="w-6 h-[1px] bg-gradient-to-r from-[#a5e8c4] to-teal-400" />
+                  <div className="w-5 h-[1px] bg-gradient-to-r from-[#a5e8c4] to-teal-400" />
                   <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
                 </div>
 
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-white/10 to-white/[0.02] border border-white/15 flex items-center justify-center text-emerald-400 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDevice('tv')}
+                  className={`flex flex-col items-center gap-1.5 transition-transform active:scale-95 ${selectedDevice === 'tv' ? 'scale-105' : 'opacity-70 hover:opacity-100'}`}
+                >
+                  <div
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${selectedDevice === 'tv' ? 'bg-emerald-500/20 border-2 border-emerald-400 text-emerald-300 shadow-lg shadow-emerald-500/20' : 'bg-white/5 border border-white/10 text-zinc-400'}`}
+                  >
                     <Globe2 className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] text-zinc-300 font-medium">Smart TV</span>
-                </div>
+                  <span className="text-[10px] text-zinc-200 font-medium">Smart TV</span>
+                </button>
               </div>
 
-              {/* Footer */}
-              <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/10 text-[10px] font-mono text-zinc-400">
-                <span>Единая подписка на семью</span>
-                <span className="text-teal-300 font-bold">Без доплат</span>
+              {/* Dynamic device info based on selected state */}
+              <div className="relative z-10 flex items-center justify-between p-2 rounded-xl bg-black/60 border border-white/10 text-[10px] font-mono text-zinc-300">
+                <span>
+                  {selectedDevice === 'phone' && 'iOS / Android · 0% Battery Drain'}
+                  {selectedDevice === 'laptop' && 'macOS / Windows / Linux · WireGuard & VLESS'}
+                  {selectedDevice === 'tv' && 'Android TV / Apple TV / Keenetic'}
+                </span>
+                <span className="text-teal-300 font-bold">Подключен</span>
               </div>
             </div>
 
