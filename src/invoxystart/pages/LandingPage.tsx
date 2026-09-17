@@ -530,14 +530,14 @@ export default function LandingPage() {
               <div className="rounded-[22px] bg-[#0c0f13] p-5 space-y-4 overflow-hidden relative border border-white/10">
                 <div className="absolute top-0 right-0 w-44 h-44 bg-[#a5e8c4]/15 rounded-full blur-3xl pointer-events-none" />
 
-                {/* 3D Cyber Shield Artwork with Live HUD Glass Overlay */}
-                <div className="relative h-64 rounded-2xl overflow-hidden border border-white/15 bg-black flex flex-col justify-between p-3.5 group">
+                {/* 3D Cyber Shield Artwork - Main Focal Viewport */}
+                <div className="relative h-80 rounded-2xl overflow-hidden border border-white/15 bg-[#080b0e] flex flex-col justify-between p-4 group shadow-[0_0_50px_rgba(165,232,196,0.15)]">
                   <img
                     src="/images/landing-shield.png"
                     alt="Invoxy Cyber Shield Protection"
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
+                    className="absolute inset-0 w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700 brightness-105 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-transparent to-black/30 pointer-events-none" />
 
                   {/* Top Status Bar with Interactive Ping Trigger */}
                   <div className="relative z-10 w-full flex items-center justify-between">
@@ -550,7 +550,7 @@ export default function LandingPage() {
                           setIsShieldTesting(false);
                         }, 600);
                       }}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-xs text-zinc-200 hover:border-[#a5e8c4]/40 transition active:scale-95 shadow-lg"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/15 text-xs text-zinc-200 hover:border-[#a5e8c4]/40 transition active:scale-95 shadow-lg"
                     >
                       <span
                         className={`w-2 h-2 rounded-full ${isShieldTesting ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`}
@@ -560,52 +560,13 @@ export default function LandingPage() {
                       </span>
                     </button>
 
-                    <span className="text-[11px] font-mono text-[#a5e8c4] bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#a5e8c4]/30 shadow-lg">
+                    <span className="text-[11px] font-mono text-[#a5e8c4] bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#a5e8c4]/30 shadow-lg">
                       {isShieldTesting ? 'TESTING' : `${shieldPing} ms • 0% LOSS`}
                     </span>
                   </div>
 
-                  {/* Protocol Switcher Pills inside Artwork */}
-                  <div className="relative z-10 my-auto flex justify-center">
-                    <div className="inline-flex p-1 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 gap-1 shadow-2xl">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCipher('xtls')}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
-                          selectedCipher === 'xtls'
-                            ? 'bg-[#a5e8c4] text-[#0c0f13] shadow'
-                            : 'text-zinc-400 hover:text-white'
-                        }`}
-                      >
-                        XTLS Vision
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCipher('reality')}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
-                          selectedCipher === 'reality'
-                            ? 'bg-[#a5e8c4] text-[#0c0f13] shadow'
-                            : 'text-zinc-400 hover:text-white'
-                        }`}
-                      >
-                        VLESS Reality
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCipher('carrier')}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
-                          selectedCipher === 'carrier'
-                            ? 'bg-[#a5e8c4] text-[#0c0f13] shadow'
-                            : 'text-zinc-400 hover:text-white'
-                        }`}
-                      >
-                        Direct Carrier
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Bottom Metrics HUD Panel */}
-                  <div className="relative z-10 w-full p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 flex items-center justify-between text-xs font-mono shadow-2xl">
+                  {/* Bottom Metrics HUD Panel inside the Viewport */}
+                  <div className="relative z-10 w-full p-2.5 rounded-xl bg-black/85 backdrop-blur-md border border-white/15 flex items-center justify-between text-xs font-mono shadow-2xl">
                     <div className="flex items-center gap-1.5">
                       <span className="text-zinc-400 text-[10px]">Режим:</span>
                       <span className="text-[#a5e8c4] font-bold text-[11px] uppercase">
@@ -622,6 +583,49 @@ export default function LandingPage() {
                       <span className="text-zinc-400 text-[10px]">Канал:</span>
                       <span className="text-white font-bold text-[11px]">10 Gbps</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* Interactive Protocol Control Deck */}
+                <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between px-1 text-[11px]">
+                    <span className="text-zinc-400 font-medium">Протокол маскировки:</span>
+                    <span className="text-[#a5e8c4] font-mono font-bold">Smart Auto-Fallback</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-black/60 border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCipher('xtls')}
+                      className={`py-2 px-2 rounded-lg text-xs font-mono font-bold transition-all text-center ${
+                        selectedCipher === 'xtls'
+                          ? 'bg-[#a5e8c4] text-[#0c0f13] shadow-lg shadow-[#a5e8c4]/20'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      XTLS Vision
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCipher('reality')}
+                      className={`py-2 px-2 rounded-lg text-xs font-mono font-bold transition-all text-center ${
+                        selectedCipher === 'reality'
+                          ? 'bg-[#a5e8c4] text-[#0c0f13] shadow-lg shadow-[#a5e8c4]/20'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      VLESS Reality
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCipher('carrier')}
+                      className={`py-2 px-2 rounded-lg text-xs font-mono font-bold transition-all text-center ${
+                        selectedCipher === 'carrier'
+                          ? 'bg-[#a5e8c4] text-[#0c0f13] shadow-lg shadow-[#a5e8c4]/20'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      Direct Carrier
+                    </button>
                   </div>
                 </div>
 
@@ -691,13 +695,13 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Interactive Live Speedtest & Throughput Equalizer */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-[#a5e8c4]/40 transition-all shadow-xl hover:shadow-[#a5e8c4]/10">
-            <div className="h-52 rounded-2xl overflow-hidden bg-black mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
+            <div className="h-64 rounded-2xl overflow-hidden bg-[#080b0e] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10 shadow-[0_0_30px_rgba(165,232,196,0.08)]">
               <img
                 src="/images/landing-hero.png"
                 alt="Максимальная скорость 4K"
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
+                className="absolute inset-0 w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700 brightness-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/40 to-black/60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-transparent to-black/40 pointer-events-none" />
 
               {/* Live HUD Badge & Speedtest Trigger */}
               <div className="relative z-10 flex items-center justify-between text-xs">
@@ -780,13 +784,13 @@ export default function LandingPage() {
 
           {/* Card 2: Interactive Telegram Bot Token Generator */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-emerald-400/40 transition-all shadow-xl hover:shadow-emerald-400/10">
-            <div className="h-52 rounded-2xl overflow-hidden bg-black mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
+            <div className="h-64 rounded-2xl overflow-hidden bg-[#080b0e] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10 shadow-[0_0_30px_rgba(52,211,153,0.08)]">
               <img
                 src="/images/trial-gift.png"
                 alt="Бесплатный тестовый период"
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 brightness-95"
+                className="absolute inset-0 w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-700 brightness-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-black/40 to-black/60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f13] via-transparent to-black/40 pointer-events-none" />
 
               {/* Bot Header Badge */}
               <div className="relative z-10 flex items-center justify-between">
@@ -862,7 +866,7 @@ export default function LandingPage() {
 
           {/* Card 3: Interactive Multi-device Ecosystem Matrix with Switcher */}
           <div className="p-6 rounded-3xl bg-[#0c0f13] border border-white/10 overflow-hidden flex flex-col justify-between group hover:border-teal-400/40 transition-all shadow-xl hover:shadow-teal-400/10">
-            <div className="h-52 rounded-2xl overflow-hidden bg-[#07090d] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10">
+            <div className="h-64 rounded-2xl overflow-hidden bg-[#07090d] mb-5 relative flex flex-col justify-between p-3.5 border border-white/10 shadow-[0_0_30px_rgba(45,212,191,0.08)]">
               <div
                 className="absolute inset-0 opacity-20 pointer-events-none"
                 style={{
