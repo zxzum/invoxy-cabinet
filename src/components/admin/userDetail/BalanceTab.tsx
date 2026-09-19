@@ -6,6 +6,7 @@ import { adminUsersApi, type UserDetailResponse } from '../../../api/adminUsers'
 import { promocodesApi } from '../../../api/promocodes';
 import { promoOffersApi } from '../../../api/promoOffers';
 import { createNumberInputHandler, toNumber } from '../../../utils/inputHelpers';
+import { getApiErrorMessage } from '@/utils/api-error';
 import { PlusIcon, MinusIcon } from '@/components/icons';
 
 // ──────────────────────────────────────────────────────────────────
@@ -34,7 +35,7 @@ export function BalanceTab({
   const notify = useNotify();
   const { formatWithCurrency } = useCurrency();
 
-  const [balanceAmount, setBalanceAmount] = useState<number | ''>('');
+  const [balanceAmount, setBalanceAmount] = useState<string>('');
   const [balanceDescription, setBalanceDescription] = useState('');
   const [offerDiscountPercent, setOfferDiscountPercent] = useState<number | ''>('');
   const [offerValidHours, setOfferValidHours] = useState<number | ''>(24);
@@ -59,22 +60,34 @@ export function BalanceTab({
   // ─── Mutations ──────────────────────────────────────────────────
 
   const handleUpdateBalance = async (isAdd: boolean) => {
-    if (balanceAmount === '') return;
+    const rawVal = balanceAmount.trim().replace(',', '.');
+    if (!rawVal) return;
+    const num = parseFloat(rawVal);
+    if (isNaN(num) || num <= 0) {
+      notify.error('Укажите корректную сумму больше нуля', t('common.error'));
+      return;
+    }
     setActionLoading(true);
     try {
-      const amount = Math.abs(toNumber(balanceAmount) * 100);
+      const amount = Math.round(num * 100);
       await adminUsersApi.updateBalance(userId, {
         amount_kopeks: isAdd ? amount : -amount,
         description:
-          balanceDescription ||
+          balanceDescription.trim() ||
           (isAdd
             ? t('admin.users.detail.balance.addByAdmin')
             : t('admin.users.detail.balance.subtractByAdmin')),
       });
+      notify.success(
+        isAdd ? 'Баланс успешно начислен' : 'Баланс успешно списан',
+        t('common.success'),
+      );
       await onUserRefresh();
       setBalanceAmount('');
       setBalanceDescription('');
-    } catch (error) {
+    } catch (error: unknown) {
+      const msg = getApiErrorMessage(error, 'Не удалось обновить баланс');
+      notify.error(msg, t('common.error'));
       console.error('Failed to update balance:', error);
     } finally {
       setActionLoading(false);
@@ -123,22 +136,46 @@ export function BalanceTab({
     <div className="space-y-4">
       {/* Current balance */}
       <div className="rounded-xl border border-accent-500/30 bg-gradient-to-r from-accent-500/20 to-accent-700/20 p-4">
-        <div className="mb-1 text-sm text-dark-400">{t('admin.users.detail.balance.current')}</div>
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-sm text-dark-400">{t('admin.users.detail.balance.current')}</div>
+          {user.balance_kopeks > 0 && (
+            <button
+              type="button"
+              onClick={() => setBalanceAmount(String(user.balance_rubles))}
+              className="text-xs font-medium text-accent-400 hover:text-accent-300 transition-colors"
+            >
+              Списать всё
+            </button>
+          )}
+        </div>
         <div className="text-3xl font-bold text-dark-100">
-          {formatWithCurrency(user.balance_rubles)}
+          {formatWithCurrency(user.balance_rubles, user.balance_kopeks % 100 === 0 ? 0 : 2)}
         </div>
       </div>
 
       {/* Add/subtract form */}
       {hasPermission('users:balance') && (
         <div className="space-y-3 rounded-xl bg-dark-800/50 p-4">
-          <input
-            type="number"
-            value={balanceAmount}
-            onChange={createNumberInputHandler(setBalanceAmount)}
-            placeholder={t('admin.users.detail.balance.amountPlaceholder')}
-            className="input"
-          />
+          <div className="relative">
+            <input
+              type="number"
+              step="any"
+              min="0"
+              value={balanceAmount}
+              onChange={(e) => setBalanceAmount(e.target.value)}
+              placeholder={t('admin.users.detail.balance.amountPlaceholder')}
+              className="input pr-24"
+            />
+            {user.balance_kopeks > 0 && (
+              <button
+                type="button"
+                onClick={() => setBalanceAmount(String(user.balance_rubles))}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-dark-700/70 px-2 py-1 text-xs text-accent-400 hover:bg-dark-700 hover:text-accent-300 transition-colors"
+              >
+                Весь баланс
+              </button>
+            )}
+          </div>
           <input
             type="text"
             value={balanceDescription}
@@ -149,15 +186,17 @@ export function BalanceTab({
           />
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => handleUpdateBalance(true)}
-              disabled={actionLoading || balanceAmount === ''}
+              disabled={actionLoading || balanceAmount.trim() === ''}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-success-500 py-2 text-white transition-colors hover:bg-success-600 disabled:opacity-50"
             >
               <PlusIcon className="h-4 w-4" /> {t('admin.users.detail.balance.add')}
             </button>
             <button
+              type="button"
               onClick={() => handleUpdateBalance(false)}
-              disabled={actionLoading || balanceAmount === ''}
+              disabled={actionLoading || balanceAmount.trim() === ''}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-error-500 py-2 text-white transition-colors hover:bg-error-600 disabled:opacity-50"
             >
               <MinusIcon className="h-4 w-4" /> {t('admin.users.detail.balance.subtract')}
