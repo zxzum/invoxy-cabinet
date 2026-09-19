@@ -116,6 +116,7 @@ export default function TariffsPage() {
         plans: nextPlans,
         activeId: currentTariffId == null ? null : String(currentTariffId),
         activeSubscriptionId: activeSubscription?.id ?? null,
+        activeSubscription: activeSubscription ?? null,
         loyalty,
       };
     },
@@ -125,6 +126,8 @@ export default function TariffsPage() {
   const plans = tariffsData?.plans ?? [];
   const activeId = tariffsData?.activeId ?? null;
   const activeSubscriptionId = tariffsData?.activeSubscriptionId ?? null;
+  const activeSubscription = tariffsData?.activeSubscription ?? null;
+  const activePlan = plans.find((plan) => plan.id === activeId);
   const loading = tariffsLoading && !tariffsData;
 
   const selected = plans.find((plan) => plan.id === selectedId);
@@ -269,8 +272,28 @@ export default function TariffsPage() {
 
       {activeId && (
         <section>
-          <h2 className="sr-only">Дополнительные опции к активной подписке</h2>
-          <AddonsCard subscriptionId={activeSubscriptionId} />
+          <AddonsCard
+            subscriptionId={activeSubscriptionId}
+            subscription={
+              activeSubscription
+                ? {
+                    ...activeSubscription,
+                    whitelist_traffic_limit_gb:
+                      activeSubscription.whitelist_traffic_limit_gb ??
+                      activePlan?.lteTraffic ??
+                      null,
+                    tariff_name: activeSubscription.tariff_name ?? activePlan?.name ?? null,
+                  }
+                : activePlan
+                  ? {
+                      tariff_name: activePlan.name,
+                      whitelist_traffic_limit_gb: activePlan.lteTraffic,
+                      traffic_limit_gb: activePlan.mainTraffic,
+                      is_trial: false,
+                    }
+                  : null
+            }
+          />
         </section>
       )}
 

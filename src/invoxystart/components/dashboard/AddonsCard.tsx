@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { Gauge, Globe2, Minus, Plus, Users } from '@/invoxystart/components/ui/RuneIcon';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { PaymentMethods, usePayment } from '@/invoxystart/components/payments/PaymentFlow';
@@ -40,9 +41,18 @@ export function AddonsCard({
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
 
+  const { data: fetchedSub } = useQuery({
+    queryKey: ['invoxy-subscription-details', subscriptionId],
+    queryFn: () => subscriptionApi.getSubscriptionById(subscriptionId!),
+    enabled: (!subscription || subscription.whitelist_traffic_limit_gb == null) && !!subscriptionId,
+    staleTime: 30_000,
+  });
+
+  const effectiveSub = subscription ?? fetchedSub ?? null;
+
   const hasLte = Boolean(
-    (subscription?.whitelist_traffic_limit_gb && subscription.whitelist_traffic_limit_gb > 0) ||
-      subscription?.tariff_name?.toLowerCase().includes('lte'),
+    (effectiveSub?.whitelist_traffic_limit_gb && effectiveSub.whitelist_traffic_limit_gb > 0) ||
+      effectiveSub?.tariff_name?.toLowerCase().includes('lte'),
   );
 
   const availableCards = useMemo(() => {
@@ -57,14 +67,15 @@ export function AddonsCard({
     ];
 
     if (hasLte) {
+      const lteLimit = effectiveSub?.whitelist_traffic_limit_gb ?? 50;
       list.push({
         id: 'lte_reset' as const,
         icon: Globe2,
         title: 'Сброс LTE',
-        desc: 'Сброс 50 ГБ расхода Белого интернета',
+        desc: `Сброс до ${lteLimit} ГБ расхода Белого интернета`,
         price: '150 ₽',
       });
-    } else if (subscription && !subscription?.is_trial) {
+    } else if (effectiveSub && !effectiveSub?.is_trial) {
       list.push({
         id: 'traffic' as const,
         icon: Gauge,
@@ -75,7 +86,7 @@ export function AddonsCard({
     }
 
     return list;
-  }, [hasLte, subscription]);
+  }, [hasLte, effectiveSub]);
 
   const amount =
     selected === 'devices'
@@ -194,7 +205,7 @@ export function AddonsCard({
               onClick={() => openAddon(addon.id)}
               className="button-lift h-9 shrink-0 rounded-full bg-mint px-4 text-[11px] font-bold text-bg"
             >
-              Добавить
+              {addon.id === 'lte_reset' ? 'Сбросить' : 'Добавить'}
             </button>
           </div>
         ))}
