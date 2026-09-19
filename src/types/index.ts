@@ -185,6 +185,36 @@ export interface TrafficPackage {
   next_available_at?: string | null;
 }
 
+export interface TrafficResetStatus {
+  enabled: boolean;
+  chunk_gb: number;
+  price_kopeks: number;
+  price_rubles: number;
+  base_price_kopeks?: number;
+  discount_percent?: number;
+  min_used_gb: number;
+  used_gb: number;
+  limit_gb: number;
+  will_clear_gb: number;
+  used_after_gb: number;
+  max_per_month: number;
+  used_this_month: number;
+  remaining_this_month: number;
+  next_available_at: string | null;
+  unavailable_reason: 'disabled' | 'below_min_used' | 'monthly_limit' | null;
+  exhausted: boolean;
+}
+
+export interface TrafficResetResponse {
+  success: boolean;
+  cleared_gb: number;
+  new_used_gb: number;
+  limit_gb: number;
+  remaining_this_month: number;
+  max_per_month: number;
+  price_kopeks: number;
+}
+
 export interface TrialInfo {
   is_available: boolean;
   duration_days: number;
@@ -333,6 +363,13 @@ export interface Tariff {
   traffic_topup_enabled?: boolean;
   traffic_topup_packages?: number[];
   max_topup_traffic_gb?: number;
+  traffic_topup_max_per_month?: number;
+  // Whitelist traffic reset
+  whitelist_reset_enabled?: boolean;
+  whitelist_reset_chunk_gb?: number;
+  whitelist_reset_price_kopeks?: number;
+  whitelist_reset_min_used_gb?: number;
+  whitelist_reset_max_per_month?: number;
   // Daily tariff options
   is_daily?: boolean;
   daily_price_kopeks?: number;
@@ -369,6 +406,7 @@ export interface TariffsPurchaseOptions {
   // автооплатой СБП» рядом с покупкой с баланса
   platega_recurrent_enabled?: boolean;
   lava_recurrent_enabled?: boolean;
+  traffic_reset?: TrafficResetStatus | null;
 }
 
 export interface ClassicPurchaseOptions {

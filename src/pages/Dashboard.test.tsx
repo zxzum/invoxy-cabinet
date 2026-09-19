@@ -41,6 +41,9 @@ const mocks = vi.hoisted(() => ({
   getReferralInfo: vi.fn(),
   getRenewalOptions: vi.fn(),
   getTrafficPackages: vi.fn(),
+  getTrafficReset: vi.fn(),
+  resetTraffic: vi.fn(),
+  saveTrafficResetCart: vi.fn(),
   refreshTraffic: vi.fn(),
   getSubscription: vi.fn(),
   getSubscriptions: vi.fn(),
@@ -64,6 +67,9 @@ vi.mock('../api/subscription', () => ({
     getSubscription: mocks.getSubscription,
     getSubscriptions: mocks.getSubscriptions,
     getTrafficPackages: mocks.getTrafficPackages,
+    getTrafficReset: mocks.getTrafficReset,
+    resetTraffic: mocks.resetTraffic,
+    saveTrafficResetCart: mocks.saveTrafficResetCart,
     getTrialInfo: mocks.getTrialInfo,
     refreshTraffic: mocks.refreshTraffic,
   },
@@ -104,7 +110,12 @@ vi.mock('../components/dashboard/StatsGrid', () => ({ default: () => null }));
 vi.mock('../components/dashboard/PendingGiftCard', () => ({ default: () => null }));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: unknown) => (typeof fallback === 'string' ? fallback : key),
+    t: (key: string, fallback?: unknown) =>
+      typeof fallback === 'string'
+        ? fallback
+        : typeof (fallback as { defaultValue?: string })?.defaultValue === 'string'
+          ? (fallback as { defaultValue: string }).defaultValue
+          : key,
     i18n: { language: 'ru' },
   }),
   initReactI18next: { type: '3rdParty', init: () => {} },
@@ -302,6 +313,23 @@ function setupResolvedQueries() {
   mocks.getTrafficPackages.mockResolvedValue([
     { gb: 100, price_kopeks: 5000, price_rubles: 50, is_unlimited: false },
   ]);
+  mocks.getTrafficReset.mockResolvedValue({
+    enabled: true,
+    chunk_gb: 50,
+    price_kopeks: 15000,
+    price_rubles: 150,
+    min_used_gb: 10,
+    used_gb: 12,
+    limit_gb: 50,
+    will_clear_gb: 12,
+    used_after_gb: 0,
+    max_per_month: 1,
+    used_this_month: 0,
+    remaining_this_month: 1,
+    next_available_at: null,
+    unavailable_reason: null,
+    exhausted: false,
+  });
   mocks.getSubscription.mockResolvedValue({ has_subscription: false, subscription: null });
   mocks.getTrialInfo.mockResolvedValue({ is_available: false });
   mocks.refreshTraffic.mockResolvedValue({
@@ -650,37 +678,52 @@ describe('Dashboard target states', () => {
     expect(secondPackage.className).toContain('card-selected');
   });
 
-  it('keeps traffic top-up selection valid after switching the sheet scope', async () => {
+  it('opens and confirms the LTE traffic reset flow', async () => {
     setupResolvedQueries();
+    mocks.getBalance.mockResolvedValue({ balance_rubles: 500, balance_kopeks: 50000 });
+    mocks.getPurchaseOptions.mockResolvedValue({
+      sales_mode: 'classic',
+      balance_kopeks: 50000,
+      balance_label: '500 ₽',
+      devices: {
+        min: 1,
+        max: 10,
+        default: 3,
+        current: 3,
+        price_per_device_kopeks: 3000,
+        price_per_device_label: '30 ₽',
+      },
+    });
     mocks.getSubscriptions.mockResolvedValue({ multi_tariff_enabled: false, subscriptions: [] });
     mocks.getSubscription.mockResolvedValue({
       has_subscription: true,
       subscription: activeSubscription,
     });
-    mocks.getTrafficPackages.mockImplementation((_id?: number, scope?: 'regular' | 'whitelist') =>
-      Promise.resolve([
-        {
-          gb: scope === 'whitelist' ? 25 : 100,
-          price_kopeks: scope === 'whitelist' ? 2500 : 5000,
-          price_rubles: scope === 'whitelist' ? 25 : 50,
-          is_unlimited: false,
-        },
-      ]),
-    );
+    mocks.resetTraffic.mockResolvedValue({
+      success: true,
+      cleared_gb: 12,
+      new_used_gb: 0,
+      limit_gb: 50,
+      remaining_this_month: 0,
+      max_per_month: 1,
+      price_kopeks: 15000,
+    });
 
     renderPage();
 
     expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Добавить трафик' }));
-    fireEvent.click(screen.getByRole('button', { name: 'subscription.whiteInternet' }));
-    const whitelistPackage = await screen.findByRole('button', { name: /25/ });
-    fireEvent.click(whitelistPackage);
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить LTE-трафик' }));
 
-    expect(
-      await screen.findByRole('button', {
-        name: 'subscription.additionalOptions.buyWhitelistTrafficGb',
-      }),
-    ).toBeTruthy();
+    expect(await screen.findByText(/LTE сервера: 12\.0/)).toBeTruthy();
+    const checkbox = screen.getByRole('checkbox');
+    expect(checkbox).toBeTruthy();
+    fireEvent.click(checkbox);
+
+    const resetButton = await screen.findByRole('button', { name: /сбросить/i });
+    await vi.waitFor(() => expect((resetButton as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(resetButton);
+
+    await vi.waitFor(() => expect(mocks.resetTraffic).toHaveBeenCalledWith(activeSubscription.id));
   });
 
   it('keeps the latest traffic refresh indicator for the same subscription', async () => {

@@ -7,6 +7,8 @@ import type {
   SubscriptionsListResponse,
   RenewalOption,
   TrafficPackage,
+  TrafficResetStatus,
+  TrafficResetResponse,
   TrialInfo,
   PurchaseOptions,
   PurchaseSelection,
@@ -167,6 +169,31 @@ export const subscriptionApi = {
     await apiClient.post(
       '/cabinet/subscription/traffic/save-cart',
       ...bodyWithSubId({ gb: trafficGb, scope }, subscriptionId),
+    );
+  },
+
+  // ── Traffic Reset (LTE) ─────────────────────────────────────────────
+
+  getTrafficReset: async (subscriptionId?: number): Promise<TrafficResetStatus> => {
+    const response = await apiClient.get<TrafficResetStatus>(
+      '/cabinet/subscription/traffic-reset',
+      withSubId(subscriptionId),
+    );
+    return response.data;
+  },
+
+  resetTraffic: async (subscriptionId?: number): Promise<TrafficResetResponse> => {
+    const response = await apiClient.post<TrafficResetResponse>(
+      '/cabinet/subscription/traffic-reset',
+      ...bodyWithSubId({ yandex_cid: getYandexCid() || undefined }, subscriptionId),
+    );
+    return response.data;
+  },
+
+  saveTrafficResetCart: async (subscriptionId?: number): Promise<void> => {
+    await apiClient.post(
+      '/cabinet/subscription/traffic-reset/save-cart',
+      ...bodyWithSubId({}, subscriptionId),
     );
   },
 

@@ -197,9 +197,15 @@ export default function AdminTariffCreate() {
   // Traffic topup
   const [trafficTopupEnabled, setTrafficTopupEnabled] = useState(false);
   const [maxTopupTrafficGb, setMaxTopupTrafficGb] = useState<number | ''>(0);
+  const [trafficTopupMaxPerMonth, setTrafficTopupMaxPerMonth] = useState<number | ''>(0);
   const [trafficTopupPackages, setTrafficTopupPackages] = useState<TrafficPackages>({});
-  const [whitelistTrafficTopupPackages, setWhitelistTrafficTopupPackages] =
-    useState<TrafficPackages>({});
+
+  // Whitelist traffic reset
+  const [whitelistResetEnabled, setWhitelistResetEnabled] = useState(false);
+  const [whitelistResetChunkGb, setWhitelistResetChunkGb] = useState<number | ''>(50);
+  const [whitelistResetPriceRubles, setWhitelistResetPriceRubles] = useState<number | ''>(150);
+  const [whitelistResetMinUsedGb, setWhitelistResetMinUsedGb] = useState<number | ''>(10);
+  const [whitelistResetMaxPerMonth, setWhitelistResetMaxPerMonth] = useState<number | ''>(0);
 
   // Traffic reset mode
   const [trafficResetMode, setTrafficResetMode] = useState<string | null>(null);
@@ -267,8 +273,17 @@ export default function AdminTariffCreate() {
       setLavaProductId(data.lava_product_id || '');
       setTrafficTopupEnabled(data.traffic_topup_enabled || false);
       setMaxTopupTrafficGb(data.max_topup_traffic_gb || 0);
+      setTrafficTopupMaxPerMonth(data.traffic_topup_max_per_month || 0);
       setTrafficTopupPackages(data.traffic_topup_packages || {});
-      setWhitelistTrafficTopupPackages(data.whitelist_traffic_topup_packages || {});
+      setWhitelistResetEnabled(data.whitelist_reset_enabled ?? false);
+      setWhitelistResetChunkGb(data.whitelist_reset_chunk_gb ?? 50);
+      setWhitelistResetPriceRubles(
+        data.whitelist_reset_price_kopeks
+          ? Math.round(data.whitelist_reset_price_kopeks / 100)
+          : 150,
+      );
+      setWhitelistResetMinUsedGb(data.whitelist_reset_min_used_gb ?? 10);
+      setWhitelistResetMaxPerMonth(data.whitelist_reset_max_per_month || 0);
       setTrafficResetMode(data.traffic_reset_mode || null);
       setShowInGift(data.show_in_gift ?? true);
       setIsTariffHighlighted(data.is_highlighted ?? false);
@@ -322,8 +337,14 @@ export default function AdminTariffCreate() {
       promo_group_ids: selectedPromoGroups,
       traffic_topup_enabled: trafficTopupEnabled,
       traffic_topup_packages: trafficTopupPackages,
-      whitelist_traffic_topup_packages: whitelistTrafficTopupPackages,
       max_topup_traffic_gb: toNumber(maxTopupTrafficGb),
+      traffic_topup_max_per_month: toNumber(trafficTopupMaxPerMonth),
+      whitelist_reset_enabled: whitelistResetEnabled,
+      whitelist_reset_chunk_gb: toNumber(whitelistResetChunkGb, 50),
+      whitelist_reset_price_kopeks: toNumber(whitelistResetPriceRubles, 150) * 100,
+      whitelist_reset_min_used_gb: toNumber(whitelistResetMinUsedGb, 10),
+      whitelist_reset_max_per_month: toNumber(whitelistResetMaxPerMonth),
+      whitelist_traffic_topup_packages: {},
       is_daily: isDaily,
       daily_price_kopeks: isDaily ? toNumber(dailyPriceKopeks) : 0,
       // Пустая строка отвязывает тариф от продукта Lava
@@ -393,24 +414,23 @@ export default function AdminTariffCreate() {
   const isTierLevelValid =
     tierLevel !== '' && toNumber(tierLevel) >= 1 && toNumber(tierLevel) <= 10;
   const hasTrafficPackages = !trafficTopupEnabled || Object.keys(trafficTopupPackages).length > 0;
-  const hasWhitelistTrafficPackages =
-    !trafficTopupEnabled ||
-    toNumber(whitelistTrafficLimitGb) <= 0 ||
-    Object.keys(whitelistTrafficTopupPackages).length > 0;
+  const isWhitelistResetValid =
+    !whitelistResetEnabled ||
+    (toNumber(whitelistResetChunkGb) > 0 && toNumber(whitelistResetPriceRubles) > 0);
   const isValidPeriod =
     isNameValid &&
     isDeviceLimitValid &&
     isTierLevelValid &&
     periodPrices.length > 0 &&
     hasTrafficPackages &&
-    hasWhitelistTrafficPackages;
+    isWhitelistResetValid;
   const isValidDaily =
     isNameValid &&
     isDeviceLimitValid &&
     isTierLevelValid &&
     toNumber(dailyPriceKopeks) > 0 &&
     hasTrafficPackages &&
-    hasWhitelistTrafficPackages;
+    isWhitelistResetValid;
   const isValid =
     tariffType === 'period' ? isValidPeriod : tariffType === 'daily' ? isValidDaily : false;
 
@@ -433,13 +453,6 @@ export default function AdminTariffCreate() {
   }
   if (trafficTopupEnabled && Object.keys(trafficTopupPackages).length === 0) {
     validationErrors.push('trafficPackagesRequired');
-  }
-  if (
-    trafficTopupEnabled &&
-    toNumber(whitelistTrafficLimitGb) > 0 &&
-    Object.keys(whitelistTrafficTopupPackages).length === 0
-  ) {
-    validationErrors.push('whitelistTrafficPackagesRequired');
   }
 
   // Loading state
@@ -1093,6 +1106,22 @@ export default function AdminTariffCreate() {
                   />
                   <span className="text-dark-400">{t('admin.tariffs.gbUnit')}</span>
                 </div>
+                <div className="flex items-center gap-3">
+                  <span className="w-32 text-sm text-dark-400">
+                    {t('admin.tariffs.trafficTopupMaxPerMonth')}
+                  </span>
+                  <input
+                    type="number"
+                    value={trafficTopupMaxPerMonth}
+                    onChange={createNumberInputHandler(setTrafficTopupMaxPerMonth, 0)}
+                    className="input w-24"
+                    min={0}
+                    placeholder="2"
+                  />
+                  <span className="text-xs text-dark-500">
+                    {t('admin.tariffs.trafficTopupMaxPerMonthHint')}
+                  </span>
+                </div>
                 <TrafficPackageEditor
                   title={t('admin.tariffs.trafficPackagesLabel')}
                   packages={trafficTopupPackages}
@@ -1100,18 +1129,115 @@ export default function AdminTariffCreate() {
                   defaultGb={100}
                   defaultPrice={50}
                 />
-                {toNumber(whitelistTrafficLimitGb) > 0 && (
-                  <TrafficPackageEditor
-                    title={t('admin.tariffs.whitelistTrafficPackagesTitle')}
-                    packages={whitelistTrafficTopupPackages}
-                    onChange={setWhitelistTrafficTopupPackages}
-                    defaultGb={50}
-                    defaultPrice={150}
-                  />
-                )}
               </>
             )}
           </div>
+
+          {/* LTE Traffic Reset */}
+          {toNumber(whitelistTrafficLimitGb) > 0 && (
+            <div className="card space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-medium text-dark-200">
+                    {t('admin.tariffs.whitelistResetTitle')}
+                  </h4>
+                  <p className="text-xs text-dark-500">
+                    {t('admin.tariffs.whitelistResetEnabled')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWhitelistResetEnabled(!whitelistResetEnabled)}
+                  role="switch"
+                  aria-checked={whitelistResetEnabled}
+                  aria-label={t('admin.tariffs.whitelistResetTitle')}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${
+                    whitelistResetEnabled ? 'bg-accent-500' : 'bg-dark-600'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
+                      whitelistResetEnabled ? 'left-6' : 'left-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {whitelistResetEnabled && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs text-dark-400">
+                      {t('admin.tariffs.whitelistResetChunkLabel')}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={whitelistResetChunkGb}
+                        onChange={createNumberInputHandler(setWhitelistResetChunkGb, 1)}
+                        className="input w-full"
+                        min={1}
+                        placeholder="50"
+                      />
+                      <span className="text-xs text-dark-400">{t('admin.tariffs.gbUnit')}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-dark-400">
+                      {t('admin.tariffs.whitelistResetPriceLabel')}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={whitelistResetPriceRubles}
+                        onChange={createNumberInputHandler(setWhitelistResetPriceRubles, 0)}
+                        className="input w-full"
+                        min={0}
+                        placeholder="150"
+                      />
+                      <span className="text-xs text-dark-400">₽</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-dark-400">
+                      {t('admin.tariffs.whitelistResetMinUsedLabel')}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={whitelistResetMinUsedGb}
+                        onChange={createNumberInputHandler(setWhitelistResetMinUsedGb, 0)}
+                        className="input w-full"
+                        min={0}
+                        placeholder="10"
+                      />
+                      <span className="text-xs text-dark-400">{t('admin.tariffs.gbUnit')}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-dark-400">
+                      {t('admin.tariffs.whitelistResetMaxPerMonthLabel')}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={whitelistResetMaxPerMonth}
+                        onChange={createNumberInputHandler(setWhitelistResetMaxPerMonth, 0)}
+                        className="input w-full"
+                        min={0}
+                        placeholder="1"
+                      />
+                      <span className="text-xs text-dark-500">
+                        {t('admin.tariffs.noLimitHint')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Traffic reset mode */}
           <div className="card space-y-3">

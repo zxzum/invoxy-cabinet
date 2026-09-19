@@ -306,6 +306,10 @@ export default function Subscription() {
   });
 
   const isTariffsMode = purchaseOptions?.sales_mode === 'tariffs';
+  const trafficReset =
+    purchaseOptions && 'traffic_reset' in purchaseOptions
+      ? purchaseOptions.traffic_reset
+      : undefined;
 
   // SBP (Platega) recurring auto-payment status. Polls every 8s while a
   // payment is PENDING (waiting for bank-app confirmation) so the UI flips
@@ -947,7 +951,12 @@ export default function Subscription() {
                   compact
                   label={t('dashboard.mainTraffic', 'Основной трафик')}
                 />
-                <WhiteInternetUsage subscription={subscription} compact />
+                <WhiteInternetUsage
+                  subscription={subscription}
+                  compact
+                  onResetClick={() => setShowTrafficTopup(true)}
+                  trafficReset={trafficReset}
+                />
               </div>
 
               {/* ─── Connect Device Button ─── */}
@@ -1494,7 +1503,7 @@ export default function Subscription() {
       )}
 
       {/* Daily Subscription Pause */}
-      {subscription && subscription.is_daily && !subscription.is_trial && (
+      {subscription?.is_daily && !subscription.is_trial && (
         <div
           className="glass-surface relative overflow-hidden rounded-3xl"
           style={{
@@ -1615,7 +1624,7 @@ export default function Subscription() {
               const now = new Date();
               const nextChargeStr = subscription.next_daily_charge_at.endsWith('Z')
                 ? subscription.next_daily_charge_at
-                : subscription.next_daily_charge_at + 'Z';
+                : `${subscription.next_daily_charge_at}Z`;
               const nextCharge = new Date(nextChargeStr);
               const totalMs = 24 * 60 * 60 * 1000;
               const remainingMs = Math.max(0, nextCharge.getTime() - now.getTime());
@@ -1732,8 +1741,8 @@ export default function Subscription() {
               />
             </div>
 
-            {/* Buy Traffic */}
-            {subscription.traffic_limit_gb > 0 && (
+            {/* Buy Traffic / Reset LTE */}
+            {!subscription.is_trial && (
               <div className="mt-4">
                 <TrafficTopupSheet
                   open={showTrafficTopup}
@@ -1880,9 +1889,7 @@ export default function Subscription() {
                 const isEditing = editingDeviceHwid === device.hwid;
                 // Display priority: user alias → device model → platform.
                 const displayName =
-                  (device.local_name && device.local_name.trim()) ||
-                  device.device_model ||
-                  device.platform;
+                  device.local_name?.trim() || device.device_model || device.platform;
 
                 return (
                   <div

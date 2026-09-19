@@ -93,6 +93,13 @@ export interface TariffDetail {
   traffic_topup_packages: Record<string, number>;
   whitelist_traffic_topup_packages: Record<string, number>;
   max_topup_traffic_gb: number;
+  traffic_topup_max_per_month: number;
+  // Сброс LTE
+  whitelist_reset_enabled: boolean;
+  whitelist_reset_chunk_gb: number;
+  whitelist_reset_price_kopeks: number;
+  whitelist_reset_min_used_gb: number;
+  whitelist_reset_max_per_month: number;
   // Дневной тариф
   is_daily: boolean;
   daily_price_kopeks: number;
@@ -140,6 +147,13 @@ export interface TariffCreateRequest {
   traffic_topup_packages?: Record<string, number>;
   whitelist_traffic_topup_packages?: Record<string, number>;
   max_topup_traffic_gb?: number;
+  traffic_topup_max_per_month?: number;
+  // Сброс LTE
+  whitelist_reset_enabled?: boolean;
+  whitelist_reset_chunk_gb?: number;
+  whitelist_reset_price_kopeks?: number;
+  whitelist_reset_min_used_gb?: number;
+  whitelist_reset_max_per_month?: number;
   // Дневной тариф
   is_daily?: boolean;
   daily_price_kopeks?: number;
@@ -192,6 +206,13 @@ export interface TariffUpdateRequest {
   traffic_topup_packages?: Record<string, number>;
   whitelist_traffic_topup_packages?: Record<string, number>;
   max_topup_traffic_gb?: number;
+  traffic_topup_max_per_month?: number;
+  // Сброс LTE
+  whitelist_reset_enabled?: boolean;
+  whitelist_reset_chunk_gb?: number;
+  whitelist_reset_price_kopeks?: number;
+  whitelist_reset_min_used_gb?: number;
+  whitelist_reset_max_per_month?: number;
   // Дневной тариф
   is_daily?: boolean;
   daily_price_kopeks?: number;
