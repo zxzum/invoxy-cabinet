@@ -3,7 +3,7 @@ import { AnimatePresence, m } from 'framer-motion';
 import { Gauge, Globe2, Minus, Plus, Users } from '@/invoxystart/components/ui/RuneIcon';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { PaymentMethods, usePayment } from '@/invoxystart/components/payments/PaymentFlow';
-import { subscriptionApi, type Subscription, type TrafficResetStatus } from '@/invoxystart/api';
+import { subscriptionApi, type TrafficResetStatus } from '@/invoxystart/api';
 
 type Package = { gb: number; price: number; is_available?: boolean; reason?: string | null };
 
@@ -20,15 +20,14 @@ export function AddonsCard({
   subscription,
 }: {
   subscriptionId?: number | null;
-  subscription?: Pick<
-    Subscription,
-    | 'tariff_name'
-    | 'whitelist_traffic_limit_gb'
-    | 'whitelist_traffic_used_gb'
-    | 'traffic_limit_gb'
-    | 'traffic_used_gb'
-    | 'is_trial'
-  > | null;
+  subscription?: {
+    tariff_name?: string | null;
+    whitelist_traffic_limit_gb?: number | null;
+    whitelist_traffic_used_gb?: number | null;
+    traffic_limit_gb?: number | null;
+    traffic_used_gb?: number | null;
+    is_trial?: boolean | null;
+  } | null;
 }) {
   const { pay, topUp } = usePayment();
   const [selected, setSelected] = useState<'devices' | 'traffic' | 'lte_reset' | null>(null);
@@ -42,7 +41,8 @@ export function AddonsCard({
   const [loadError, setLoadError] = useState('');
 
   const hasLte = Boolean(
-    subscription?.whitelist_traffic_limit_gb && subscription.whitelist_traffic_limit_gb > 0,
+    (subscription?.whitelist_traffic_limit_gb && subscription.whitelist_traffic_limit_gb > 0) ||
+      subscription?.tariff_name?.toLowerCase().includes('lte'),
   );
 
   const availableCards = useMemo(() => {
@@ -64,7 +64,7 @@ export function AddonsCard({
         desc: 'Сброс 50 ГБ расхода Белого интернета',
         price: '150 ₽',
       });
-    } else if (!subscription?.is_trial) {
+    } else if (subscription && !subscription?.is_trial) {
       list.push({
         id: 'traffic' as const,
         icon: Gauge,
@@ -75,7 +75,7 @@ export function AddonsCard({
     }
 
     return list;
-  }, [hasLte, subscription?.is_trial]);
+  }, [hasLte, subscription]);
 
   const amount =
     selected === 'devices'

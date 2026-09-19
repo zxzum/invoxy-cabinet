@@ -339,7 +339,7 @@ export function DashboardPage() {
                 </Reveal>
 
                 <Reveal delay={0.3} className="order-7 min-w-0 lg:order-none">
-                  <AddonsCard subscriptionId={activeSubId} subscription={subscription} />
+                  <AddonsCard subscriptionId={activeSubId} subscription={current} />
                 </Reveal>
               </div>
             </div>

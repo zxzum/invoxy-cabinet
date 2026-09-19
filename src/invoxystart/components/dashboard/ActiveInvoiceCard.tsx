@@ -116,8 +116,10 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
         showToast('Платёж ещё не поступил. Попробуйте через пару секунд.');
         void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
       }
-    } catch {
-      showToast('Ошибка проверки статуса платежа');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } } };
+      const msg = axiosErr?.response?.data?.detail || 'Ошибка проверки статуса платежа';
+      showToast(msg);
     } finally {
       setChecking(false);
     }
@@ -128,10 +130,12 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
     setCancelling(true);
     try {
       await balanceApi.cancelPendingPayment(activeInvoice.method, activeInvoice.id);
-      showToast('Счёт отменён');
+      showToast('Счёт успешно отменён');
       void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
-    } catch {
-      showToast('Не удалось отменить счёт');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } } };
+      const msg = axiosErr?.response?.data?.detail || 'Не удалось отменить счёт';
+      showToast(msg);
     } finally {
       setCancelling(false);
     }
@@ -139,76 +143,78 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
 
   return (
     <div
-      className={`glass-panel motion-card relative overflow-hidden rounded-[28px] border border-mint/35 bg-gradient-to-r from-mint/[0.07] via-surface to-surface p-5 lg:p-6 shadow-[0_4px_30px_rgba(165,232,196,0.08)] ${className ?? ''}`}
+      className={`glass-panel motion-card relative overflow-hidden rounded-[24px] sm:rounded-[28px] border border-mint/35 bg-gradient-to-r from-mint/[0.07] via-surface to-surface p-4.5 sm:p-6 shadow-[0_4px_30px_rgba(165,232,196,0.08)] ${className ?? ''}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="relative flex h-2.5 w-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-75" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-mint" />
           </span>
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-mint">
+          <span className="truncate text-xs font-bold uppercase tracking-[0.12em] text-mint">
             Счёт ожидает оплаты
           </span>
         </div>
 
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-mint/10 px-3 py-1 text-xs font-bold text-mint border border-mint/20">
+        <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-mint/10 px-2.5 py-1 text-xs font-bold text-mint border border-mint/20">
           <PiClock className="h-3.5 w-3.5 animate-pulse" />
           <span className="font-mono">Осталось {timeFormatted}</span>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-mint/10 text-mint">
+      <div className="mt-3.5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="grid h-10 w-10 sm:h-11 sm:w-11 shrink-0 place-items-center rounded-2xl bg-mint/10 text-mint">
             <CreditCard size={20} />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-bold text-ink">
+            <p className="truncate text-sm sm:text-base font-bold text-ink">
               {activeInvoice.method_display || activeInvoice.method}
             </p>
             <p className="truncate text-xs text-muted">{purposeText}</p>
           </div>
         </div>
 
-        <div className="text-left sm:text-right">
-          <p className="text-2xl font-bold tracking-tight text-mint">
+        <div className="shrink-0 text-right">
+          <p className="text-xl sm:text-2xl font-bold tracking-tight text-mint">
             {amountRubles.toLocaleString('ru-RU')} ₽
           </p>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2.5">
+      <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
         {activeInvoice.payment_url && (
           <button
             type="button"
             onClick={handleOpen}
-            className="button-lift flex h-11 flex-1 sm:flex-none items-center justify-center gap-2 rounded-full bg-mint px-5 text-xs font-bold text-bg shadow-sm"
+            className="button-lift flex h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-mint px-6 text-sm font-bold text-bg shadow-sm"
           >
-            <ArrowUpRight size={15} />
+            <ArrowUpRight size={16} />
             <span>Оплатить счёт</span>
           </button>
         )}
 
-        <button
-          type="button"
-          disabled={checking}
-          onClick={handleCheck}
-          className="button-lift glass-control flex h-11 items-center justify-center gap-2 rounded-full px-4 text-xs font-medium text-ink disabled:opacity-50"
-        >
-          <PiArrowClockwise className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
-          <span>{checking ? 'Проверка…' : 'Проверить оплату'}</span>
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+          <button
+            type="button"
+            disabled={checking}
+            onClick={handleCheck}
+            className="button-lift glass-control flex h-11 flex-1 sm:flex-none items-center justify-center gap-2 rounded-full px-4 text-xs font-medium text-ink disabled:opacity-50"
+          >
+            <PiArrowClockwise className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
+            <span>{checking ? 'Проверка…' : 'Проверить оплату'}</span>
+          </button>
 
-        <button
-          type="button"
-          disabled={cancelling}
-          onClick={handleCancel}
-          className="button-lift ml-auto flex h-11 items-center justify-center gap-1.5 rounded-full px-3 text-xs text-red-300/70 hover:text-red-300 disabled:opacity-50"
-        >
-          <PiTrash className="h-4 w-4" />
-          <span>{cancelling ? 'Отмена…' : 'Отменить'}</span>
-        </button>
+          <button
+            type="button"
+            disabled={cancelling}
+            onClick={handleCancel}
+            className="button-lift glass-control flex h-11 items-center justify-center gap-1.5 rounded-full px-4 text-xs font-medium text-red-300 hover:bg-red-500/10 border-red-500/20 disabled:opacity-50"
+          >
+            <PiTrash className="h-4 w-4" />
+            <span>{cancelling ? 'Отмена…' : 'Отменить'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
