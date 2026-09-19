@@ -119,6 +119,8 @@ export interface SubscriptionListItem {
   connected_squads: string[] | null;
   whitelist_traffic_limit_gb?: number;
   whitelist_traffic_used_gb?: number;
+  days_left?: number;
+  is_expired?: boolean;
 }
 
 export interface SubscriptionsListResponse {

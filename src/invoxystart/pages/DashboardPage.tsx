@@ -160,6 +160,14 @@ export function DashboardPage() {
     discount: option.discount_percent,
   }));
 
+  const isExpired = Boolean(
+    current?.status === 'expired' ||
+      current?.is_expired ||
+      (current?.days_left !== undefined && current.days_left <= 0) ||
+      (current?.end_date ? Date.parse(current.end_date) <= Date.now() : false),
+  );
+  const isTrial = accountState === 'trial' || Boolean(current?.is_trial);
+
   return (
     <div className="flex w-full flex-col gap-5 pb-28 lg:gap-[1.1vw] lg:pb-0">
       <Header
@@ -260,7 +268,7 @@ export function DashboardPage() {
               </div>
             )}
 
-            {managedDevices.length === 0 && (
+            {!isExpired && managedDevices.length === 0 && (
               <ZeroDevicesHeroBanner accessLink={accessLink} onConnect={handleOpenConnect} />
             )}
 
@@ -270,7 +278,7 @@ export function DashboardPage() {
               <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-[1.1vw]">
                 <Reveal className="order-1 min-w-0 lg:order-none">
                   <SubscriptionCard
-                    trial={accountState === 'trial'}
+                    trial={isTrial}
                     name={subscription?.tariff_name || selected?.tariff_name || 'Подписка'}
                     days={subscription?.days_left ?? 0}
                     endDate={endDate}
@@ -280,8 +288,11 @@ export function DashboardPage() {
                     )}
                     progress={progress}
                     devicesCount={managedDevices.length}
+                    isExpired={isExpired}
                     onManage={() => {
-                      if (activeSubId) {
+                      if (isExpired && isTrial) {
+                        navigate('/tariffs');
+                      } else if (activeSubId) {
                         navigate(`/subscriptions/${activeSubId}`);
                       } else {
                         navigate('/subscriptions');
@@ -294,10 +305,42 @@ export function DashboardPage() {
                   <TrafficCards subscription={subscription} />
                 </div>
 
-                <Reveal delay={0.1} className="order-3 min-w-0 lg:order-none">
+                {/* Immediately after traffic cards: offer card for Standard if trial, or renewal card if paid */}
+                {isTrial ? (
+                  <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
+                    <StandardOfferCard
+                      onPay={(amount, purpose, tariffId, periodDays) =>
+                        openPayment({ amount, purpose, tariffId, periodDays })
+                      }
+                    />
+                  </Reveal>
+                ) : (
+                  <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
+                    <RenewalCard
+                      title={subscription?.tariff_name || selected?.tariff_name || 'Подписка'}
+                      subtitle={
+                        subscription
+                          ? `${subscription.traffic_limit_gb || '∞'} ГБ · ${subscription.whitelist_traffic_limit_gb || 0} ГБ LTE · до ${subscription.device_limit || '—'} устройств`
+                          : 'Параметры тарифа'
+                      }
+                      terms={renewalTerms}
+                      onPay={(_, term, period) =>
+                        openPayment({
+                          amount: renewalTerms.find((option) => option.id === period)?.price ?? 0,
+                          purpose: `Продление подписки · ${term}`,
+                          subscriptionId: activeSubId ?? undefined,
+                          periodDays: Number(period),
+                        })
+                      }
+                    />
+                  </Reveal>
+                )}
+
+                <Reveal delay={0.1} className="order-4 min-w-0 lg:order-none">
                   <DevicesCard
                     devices={managedDevices}
                     deviceLimit={subscription?.device_limit ?? selected?.device_limit}
+                    isExpired={isExpired}
                     onRemove={async (device) => {
                       await subscriptionApi.deleteDevice(device.id, activeSubId ?? undefined);
                       await queryClient.invalidateQueries({
@@ -307,38 +350,18 @@ export function DashboardPage() {
                     onConnect={handleOpenConnect}
                   />
                 </Reveal>
-
-                <Reveal className="order-6 min-w-0 lg:order-none">
-                  <RenewalCard
-                    title={subscription?.tariff_name || selected?.tariff_name || 'Подписка'}
-                    subtitle={
-                      subscription
-                        ? `${subscription.traffic_limit_gb || '∞'} ГБ · ${subscription.whitelist_traffic_limit_gb || 0} ГБ LTE · до ${subscription.device_limit || '—'} устройств`
-                        : 'Параметры тарифа'
-                    }
-                    terms={renewalTerms}
-                    onPay={(_, term, period) =>
-                      openPayment({
-                        amount: renewalTerms.find((option) => option.id === period)?.price ?? 0,
-                        purpose: `Продление подписки · ${term}`,
-                        subscriptionId: activeSubId ?? undefined,
-                        periodDays: Number(period),
-                      })
-                    }
-                  />
-                </Reveal>
               </div>
 
               <div className="contents lg:col-start-2 lg:flex lg:flex-col lg:gap-[1.1vw]">
-                <Reveal delay={0.15} className="order-4 min-w-0 lg:order-none">
+                <Reveal delay={0.15} className="order-5 min-w-0 lg:order-none">
                   <AccessKeyCard accessLink={accessLink} />
                 </Reveal>
 
-                <Reveal delay={0.2} className="order-5 min-w-0 lg:order-none">
+                <Reveal delay={0.2} className="order-6 min-w-0 lg:order-none">
                   <QuickConnect connection={connection} />
                 </Reveal>
 
-                <Reveal delay={0.3} className="order-7 min-w-0 lg:order-none">
+                <Reveal delay={0.25} className="order-7 min-w-0 lg:order-none">
                   <AddonsCard subscriptionId={activeSubId} subscription={current} />
                 </Reveal>
               </div>

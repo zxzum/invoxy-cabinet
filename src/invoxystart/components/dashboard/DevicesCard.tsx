@@ -17,6 +17,7 @@ type DevicesCardProps = {
   onRemove?: (device: ManagedDevice) => void | Promise<void>;
   title?: string;
   onConnect?: (platform?: string) => void;
+  isExpired?: boolean;
 };
 
 export function DevicesCard({
@@ -25,6 +26,7 @@ export function DevicesCard({
   onRemove,
   title = 'Подключенные устройства',
   onConnect,
+  isExpired = false,
 }: DevicesCardProps) {
   const [localDevices, setLocalDevices] = useState(initialDevices);
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
@@ -118,58 +120,79 @@ export function DevicesCard({
 
       {devices.length === 0 && (
         <div className="flex flex-col items-center justify-center py-5 text-center">
-          <div className="relative mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border border-mint/25 bg-mint/10 shadow-[0_0_24px_rgba(6,214,160,0.2)]">
-            <span className="absolute -inset-1.5 rounded-2xl bg-mint/20 animate-ping opacity-40 pointer-events-none" />
-            <Smartphone size={26} className="text-mint" />
+          <div
+            className={`relative mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl border ${
+              isExpired
+                ? 'border-rose-500/25 bg-rose-500/10 text-rose-300'
+                : 'border-mint/25 bg-mint/10 text-mint shadow-[0_0_24px_rgba(6,214,160,0.2)]'
+            }`}
+          >
+            {!isExpired && (
+              <span className="absolute -inset-1.5 rounded-2xl bg-mint/20 animate-ping opacity-40 pointer-events-none" />
+            )}
+            <Smartphone size={26} className={isExpired ? 'text-rose-400' : 'text-mint'} />
           </div>
 
           <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
-              Ожидает первого подключения
+            <span
+              className={`h-2 w-2 rounded-full ${
+                isExpired ? 'bg-rose-400' : 'bg-amber-400 animate-pulse'
+              }`}
+            />
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wider ${
+                isExpired ? 'text-rose-300' : 'text-amber-300'
+              }`}
+            >
+              {isExpired ? 'Подписка не активна' : 'Ожидает первого подключения'}
             </span>
           </div>
 
           <h4 className="text-base font-bold text-ink sm:text-[17px]">
-            Подключите ваше первое устройство
+            {isExpired ? 'Срок действия подписки истёк' : 'Подключите ваше первое устройство'}
           </h4>
           <p className="mt-1 max-w-[320px] text-xs text-muted leading-relaxed">
-            VPN настроен и готов к работе. Нажмите кнопку для быстрого подключения или выберите
-            систему:
+            {isExpired
+              ? 'Продлите подписку или выберите подходящий тариф, чтобы подключить устройства.'
+              : 'VPN настроен и готов к работе. Нажмите кнопку для быстрого подключения или выберите систему:'}
           </p>
 
-          <div className="mt-3.5 flex flex-wrap items-center justify-center gap-1.5">
-            {[
-              { key: 'ios', label: 'iOS', icon: Smartphone },
-              { key: 'android', label: 'Android', icon: Smartphone },
-              { key: 'windows', label: 'Windows', icon: Laptop },
-              { key: 'macos', label: 'macOS', icon: Laptop },
-              { key: 'tv', label: 'TV', icon: Laptop },
-            ].map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => onConnect?.(p.key)}
-                className="group flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-ink/80 transition-all hover:border-mint/40 hover:bg-mint/10 hover:text-mint active:scale-95"
-              >
-                <p.icon
-                  size={13}
-                  className="text-muted/70 transition-colors group-hover:text-mint"
-                />
-                <span>{p.label}</span>
-              </button>
-            ))}
-          </div>
+          {!isExpired && (
+            <>
+              <div className="mt-3.5 flex flex-wrap items-center justify-center gap-1.5">
+                {[
+                  { key: 'ios', label: 'iOS', icon: Smartphone },
+                  { key: 'android', label: 'Android', icon: Smartphone },
+                  { key: 'windows', label: 'Windows', icon: Laptop },
+                  { key: 'macos', label: 'macOS', icon: Laptop },
+                  { key: 'tv', label: 'TV', icon: Laptop },
+                ].map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => onConnect?.(p.key)}
+                    className="group flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-ink/80 transition-all hover:border-mint/40 hover:bg-mint/10 hover:text-mint active:scale-95"
+                  >
+                    <p.icon
+                      size={13}
+                      className="text-muted/70 transition-colors group-hover:text-mint"
+                    />
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
 
-          {onConnect && (
-            <button
-              type="button"
-              onClick={() => onConnect()}
-              className="mt-4 flex h-11 w-full max-w-[260px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-5 font-bold text-xs text-bg shadow-[0_4px_16px_rgba(6,214,160,0.25)] transition-all hover:bg-mint/90 hover:shadow-[0_6px_22px_rgba(6,214,160,0.4)] active:scale-[0.98]"
-            >
-              <Zap size={15} />
-              <span>Подключить в 1 клик</span>
-            </button>
+              {onConnect && (
+                <button
+                  type="button"
+                  onClick={() => onConnect()}
+                  className="mt-4 flex h-11 w-full max-w-[260px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-5 font-bold text-xs text-bg shadow-[0_4px_16px_rgba(6,214,160,0.25)] transition-all hover:bg-mint/90 hover:shadow-[0_6px_22px_rgba(6,214,160,0.4)] active:scale-[0.98]"
+                >
+                  <Zap size={15} />
+                  <span>Подключить в 1 клик</span>
+                </button>
+              )}
+            </>
           )}
 
           <div className="mt-3.5 flex items-center gap-2 text-[11px] text-muted">

@@ -456,7 +456,7 @@ export function TariffPickerGrid({
                 : tariff.traffic_limit_label || `${tariff.traffic_limit_gb} ${gbLabel}`;
             const lteTrafficValue = hasLte
               ? `${tariff.whitelist_traffic_limit_gb} ${gbLabel}`
-              : '—';
+              : t('subscription.noLteOption', 'Нет в тарифе');
             const deviceValue =
               tariff.device_limit === 0
                 ? t('subscription.unlimited', '∞')
@@ -570,8 +570,10 @@ export function TariffPickerGrid({
                             {lteTrafficLabel}
                           </p>
                           <strong
-                            className={`mt-2 block text-2xl font-medium leading-none ${
-                              hasLte ? 'text-accent-400' : 'text-dark-400'
+                            className={`mt-2 block font-medium leading-none ${
+                              hasLte
+                                ? 'text-2xl text-accent-400'
+                                : 'text-xs text-dark-400 font-normal leading-snug'
                             }`}
                           >
                             {lteTrafficValue}

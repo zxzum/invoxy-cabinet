@@ -884,7 +884,7 @@ export default function AdminUserDetail() {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in pb-32 sm:pb-36 lg:pb-12">
       {/* Header */}
       <div className="mb-6 space-y-3">
         <div className="flex items-center justify-between gap-2">

@@ -367,6 +367,9 @@ export const subscriptionApi = {
       missing_amount_kopeks: number;
       missing_amount_label: string;
       is_upgrade: boolean;
+      can_convert_days?: boolean;
+      converted_days?: number;
+      conversion_fee_percent?: number;
       discount_percent?: number;
       discount_kopeks?: number;
       base_upgrade_cost_kopeks?: number;
@@ -376,7 +379,11 @@ export const subscriptionApi = {
       query(subscriptionId),
     ),
 
-  switchTariff: (tariffId: number, subscriptionId?: number) =>
+  switchTariff: (
+    tariffId: number,
+    subscriptionId?: number,
+    switchMode: 'prorate_cost' | 'convert_days' = 'prorate_cost',
+  ) =>
     apiClient.post<{
       success: boolean;
       message: string;
@@ -387,9 +394,11 @@ export const subscriptionApi = {
       charged_kopeks: number;
       balance_kopeks: number;
       balance_label: string;
+      switch_mode?: string;
+      converted_days?: number | null;
     }>(
       '/cabinet/subscription/tariff/switch',
-      { tariff_id: tariffId, period_days: 30 },
+      { tariff_id: tariffId, period_days: 30, switch_mode: switchMode },
       query(subscriptionId),
     ),
 

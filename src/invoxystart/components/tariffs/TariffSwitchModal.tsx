@@ -6,13 +6,14 @@ import { AxiosError } from 'axios';
 import {
   ArrowRight,
   Check,
+  CreditCard,
   type ShieldCheck,
   Sparkles,
-  Wallet,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { subscriptionApi } from '@/invoxystart/api';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
+import { usePayment } from '@/invoxystart/components/payments/PaymentFlow';
 
 interface PlanPeriod {
   days: number;
@@ -71,11 +72,15 @@ export function TariffSwitchModal({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { openPayment } = usePayment();
 
+  const [switchMode, setSwitchMode] = useState<'convert_days' | 'prorate_cost'>('convert_days');
   const [switchResult, setSwitchResult] = useState<{
     new_tariff_name: string;
     balance_label: string;
     charged_kopeks: number;
+    switch_mode?: string;
+    converted_days?: number | null;
   } | null>(null);
 
   const tariffId = Number(plan.id);
@@ -95,12 +100,15 @@ export function TariffSwitchModal({
 
   // Switch mutation
   const switchMutation = useMutation({
-    mutationFn: () => subscriptionApi.switchTariff(tariffId, subscriptionId),
+    mutationFn: (mode: 'prorate_cost' | 'convert_days') =>
+      subscriptionApi.switchTariff(tariffId, subscriptionId, mode),
     onSuccess: (data) => {
       setSwitchResult({
         new_tariff_name: data.new_tariff_name || plan.name,
         balance_label: data.balance_label,
         charged_kopeks: data.charged_kopeks,
+        switch_mode: data.switch_mode,
+        converted_days: data.converted_days,
       });
 
       // Invalidate relevant queries
@@ -190,24 +198,30 @@ export function TariffSwitchModal({
                 <span className="text-muted">Новый тариф</span>
                 <span className="font-semibold text-mint">{switchResult.new_tariff_name}</span>
               </div>
-              {preview && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted">Срок действия</span>
-                  <span className="font-medium text-ink">
-                    {preview.remaining_days} дн. (сохранён)
-                  </span>
-                </div>
-              )}
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted">Списано</span>
+                <span className="text-muted">Срок действия</span>
                 <span className="font-medium text-ink">
-                  {preview ? preview.upgrade_cost_label : `${switchResult.charged_kopeks / 100} ₽`}
+                  {switchResult.switch_mode === 'convert_days'
+                    ? `${switchResult.converted_days ?? preview?.converted_days ?? 0} дн. (пересчитан с комиссией 10%)`
+                    : `${preview?.remaining_days ?? '—'} дн. (сохранён)`}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted">Остаток на балансе</span>
-                <span className="font-semibold text-ink">{switchResult.balance_label}</span>
+                <span className="text-muted">Списано</span>
+                <span className="font-medium text-ink">
+                  {switchResult.switch_mode === 'convert_days'
+                    ? '0 ₽ (Бесплатно)'
+                    : preview
+                      ? preview.upgrade_cost_label
+                      : `${switchResult.charged_kopeks / 100} ₽`}
+                </span>
               </div>
+              {switchResult.switch_mode !== 'convert_days' && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted">Остаток на балансе</span>
+                  <span className="font-semibold text-ink">{switchResult.balance_label}</span>
+                </div>
+              )}
               <div className="border-t border-white/10 pt-3 flex items-center justify-between text-xs">
                 <span className="text-muted">Лимиты тарифа</span>
                 <span className="font-medium text-ink">
@@ -351,92 +365,231 @@ export function TariffSwitchModal({
                   </div>
                 </div>
 
+                {/* Switch Mode Selector (if can convert days and upgrade cost > 0) */}
+                {preview.can_convert_days && preview.upgrade_cost_kopeks > 0 && (
+                  <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-white/[0.05] p-1 border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setSwitchMode('convert_days')}
+                      className={`flex flex-col items-center justify-center rounded-xl py-2 px-3 text-xs font-semibold transition-all cursor-pointer ${
+                        switchMode === 'convert_days'
+                          ? 'bg-mint text-bg shadow-sm'
+                          : 'text-muted hover:text-ink'
+                      }`}
+                    >
+                      <span>Конвертация дней</span>
+                      <span
+                        className={`text-[10px] ${
+                          switchMode === 'convert_days' ? 'text-bg/85 font-bold' : 'text-mint'
+                        }`}
+                      >
+                        Бесплатно · {preview.converted_days} дн.
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSwitchMode('prorate_cost')}
+                      className={`flex flex-col items-center justify-center rounded-xl py-2 px-3 text-xs font-semibold transition-all cursor-pointer ${
+                        switchMode === 'prorate_cost'
+                          ? 'bg-mint text-bg shadow-sm'
+                          : 'text-muted hover:text-ink'
+                      }`}
+                    >
+                      <span>Доплата разницы</span>
+                      <span
+                        className={`text-[10px] ${
+                          switchMode === 'prorate_cost' ? 'text-bg/85 font-bold' : 'text-muted'
+                        }`}
+                      >
+                        {preview.upgrade_cost_label} · {preview.remaining_days} дн.
+                      </span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Estimate Breakdown (Смета) */}
                 <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 divide-y divide-white/[0.07]">
                   <p className="pb-3 text-[11px] font-bold uppercase tracking-[.12em] text-muted">
-                    Смета расчёта перехода
+                    {switchMode === 'convert_days' &&
+                    preview.can_convert_days &&
+                    preview.upgrade_cost_kopeks > 0
+                      ? 'Смета конвертации дней'
+                      : 'Смета расчёта перехода'}
                   </p>
 
-                  <div className="py-2.5 flex items-center justify-between text-xs">
-                    <span className="text-muted">Остаток срока подписки</span>
-                    <span className="font-semibold text-ink">
-                      {preview.remaining_days} дн.{' '}
-                      <span className="font-normal text-muted">(переносится)</span>
-                    </span>
-                  </div>
+                  {switchMode === 'convert_days' &&
+                  preview.can_convert_days &&
+                  preview.upgrade_cost_kopeks > 0 ? (
+                    <>
+                      <div className="py-2.5 flex items-center justify-between text-xs">
+                        <span className="text-muted">Текущий остаток срока</span>
+                        <span className="font-semibold text-ink">{preview.remaining_days} дн.</span>
+                      </div>
 
-                  <div className="py-2.5 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-muted">Стоимость перехода</span>
-                      {preview.discount_percent && preview.discount_percent > 0 ? (
-                        <span className="rounded-full bg-mint/20 px-1.5 py-0.5 text-[9px] font-bold text-mint">
-                          -{preview.discount_percent}%
+                      <div className="py-2.5 flex items-center justify-between text-xs">
+                        <span className="text-muted">Комиссия за конвертацию</span>
+                        <span className="font-semibold text-rose-300">
+                          -{preview.conversion_fee_percent ?? 10}%
                         </span>
-                      ) : null}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {preview.discount_percent &&
-                      preview.discount_percent > 0 &&
-                      preview.base_upgrade_cost_kopeks &&
-                      preview.base_upgrade_cost_kopeks > 0 ? (
-                        <span className="text-[11px] text-muted line-through">
-                          {(preview.base_upgrade_cost_kopeks / 100).toLocaleString('ru-RU')} ₽
+                      </div>
+
+                      <div className="py-2.5 flex items-center justify-between text-xs">
+                        <span className="text-muted">Новый срок подписки</span>
+                        <span className="font-bold text-mint text-sm">
+                          {preview.converted_days} дн.
                         </span>
-                      ) : null}
-                      <span
-                        className={`font-bold ${
-                          preview.upgrade_cost_kopeks === 0 ? 'text-mint' : 'text-ink text-sm'
-                        }`}
-                      >
-                        {preview.upgrade_cost_kopeks === 0
-                          ? 'Бесплатно'
-                          : preview.upgrade_cost_label}
-                      </span>
-                    </div>
-                  </div>
+                      </div>
 
-                  <div className="py-2.5 flex items-center justify-between text-xs">
-                    <span className="text-muted">Ваш текущий баланс</span>
-                    <span className="font-medium text-ink">{preview.balance_label}</span>
-                  </div>
+                      <div className="py-2.5 flex items-center justify-between text-xs">
+                        <span className="text-muted">К оплате</span>
+                        <span className="font-bold text-mint text-sm">0 ₽ (Бесплатно)</span>
+                      </div>
 
-                  {/* Insufficient balance notice */}
-                  {!preview.has_enough_balance && preview.upgrade_cost_kopeks > 0 && (
-                    <div className="pt-3">
-                      <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3 text-left">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-rose-200">Не хватает для смены:</span>
-                          <span className="font-bold text-rose-300">
-                            {preview.missing_amount_label}
+                      <div className="pt-2 text-[11px] text-muted leading-relaxed">
+                        Оставшиеся дни пересчитываются пропорционально стоимости тарифов с комиссией
+                        10%. С баланса ничего не списывается.
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="py-2.5 flex items-center justify-between text-xs">
+                        <span className="text-muted">Остаток срока подписки</span>
+                        <span className="font-semibold text-ink">
+                          {preview.remaining_days} дн.{' '}
+                          <span className="font-normal text-muted">(переносится)</span>
+                        </span>
+                      </div>
+
+                      <div className="py-2.5 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted">Стоимость перехода</span>
+                          {preview.discount_percent && preview.discount_percent > 0 ? (
+                            <span className="rounded-full bg-mint/20 px-1.5 py-0.5 text-[9px] font-bold text-mint">
+                              -{preview.discount_percent}%
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {preview.discount_percent &&
+                          preview.discount_percent > 0 &&
+                          preview.base_upgrade_cost_kopeks &&
+                          preview.base_upgrade_cost_kopeks > 0 ? (
+                            <span className="text-[11px] text-muted line-through">
+                              {(preview.base_upgrade_cost_kopeks / 100).toLocaleString('ru-RU')} ₽
+                            </span>
+                          ) : null}
+                          <span
+                            className={`font-bold ${
+                              preview.upgrade_cost_kopeks === 0 ? 'text-mint' : 'text-ink text-sm'
+                            }`}
+                          >
+                            {preview.upgrade_cost_kopeks === 0
+                              ? 'Бесплатно'
+                              : preview.upgrade_cost_label}
                           </span>
                         </div>
-                        <p className="mt-1 text-[11px] text-rose-300/80">
-                          Пополните баланс на недостающую сумму, после чего вы сможете завершить
-                          смену тарифа.
-                        </p>
                       </div>
-                    </div>
+
+                      <div className="py-2.5 flex items-center justify-between text-xs">
+                        <span className="text-muted">Ваш текущий баланс</span>
+                        <span className="font-medium text-ink">{preview.balance_label}</span>
+                      </div>
+
+                      {/* Insufficient balance notice */}
+                      {!preview.has_enough_balance && preview.upgrade_cost_kopeks > 0 && (
+                        <div className="pt-3">
+                          <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3 text-left">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-medium text-rose-200">
+                                Не хватает для смены:
+                              </span>
+                              <span className="font-bold text-rose-300">
+                                {preview.missing_amount_label}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[11px] text-rose-300/80">
+                              Пополните баланс на недостающую сумму или выберите бесплатную
+                              конвертацию дней выше.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
                 {/* Action buttons */}
-                {!preview.has_enough_balance && preview.upgrade_cost_kopeks > 0 ? (
+                {switchMode === 'convert_days' &&
+                preview.can_convert_days &&
+                preview.upgrade_cost_kopeks > 0 ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      onClose();
-                      onTopUp();
-                    }}
-                    className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg shadow-[0_4px_20px_rgba(165,232,196,0.25)] transition-all hover:brightness-105 active:scale-[0.98]"
+                    disabled={switchMutation.isPending}
+                    onClick={() => switchMutation.mutate('convert_days')}
+                    className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg shadow-[0_4px_20px_rgba(165,232,196,0.25)] transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                   >
-                    <Wallet size={16} />
-                    Пополнить баланс на {preview.missing_amount_label}
+                    {switchMutation.isPending ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-bg/30 border-t-bg" />
+                        Смена тарифа...
+                      </span>
+                    ) : (
+                      <>
+                        <Sparkles size={16} />
+                        Сменить бесплатно ({preview.converted_days} дн.)
+                      </>
+                    )}
                   </button>
+                ) : !preview.has_enough_balance && preview.upgrade_cost_kopeks > 0 ? (
+                  <div className="mt-2 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const missingRub = Math.max(
+                          10,
+                          Math.ceil(preview.missing_amount_kopeks / 100),
+                        );
+                        openPayment({
+                          amount: missingRub,
+                          purpose: `Доплата за смену тарифа на ${preview.new_tariff_name || plan.name}`,
+                          topUp: true,
+                          onComplete: () => {
+                            void refetch();
+                          },
+                        });
+                      }}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg shadow-[0_4px_20px_rgba(165,232,196,0.25)] transition-all hover:brightness-105 active:scale-[0.98] cursor-pointer"
+                    >
+                      <CreditCard size={16} />
+                      Оплатить {preview.missing_amount_label} через СБП / Карту
+                    </button>
+
+                    {preview.can_convert_days ? (
+                      <button
+                        type="button"
+                        onClick={() => setSwitchMode('convert_days')}
+                        className="flex items-center justify-center py-2 text-xs font-semibold text-mint hover:underline transition-colors cursor-pointer"
+                      >
+                        Или смените бесплатно через конвертацию дней ({preview.converted_days} дн.)
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onTopUp();
+                        }}
+                        className="flex items-center justify-center py-2 text-xs font-medium text-muted hover:text-ink transition-colors cursor-pointer"
+                      >
+                        Пополнить баланс в профиле
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <button
                     type="button"
                     disabled={switchMutation.isPending}
-                    onClick={() => switchMutation.mutate()}
+                    onClick={() => switchMutation.mutate('prorate_cost')}
                     className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg shadow-[0_4px_20px_rgba(165,232,196,0.25)] transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                   >
                     {switchMutation.isPending ? (

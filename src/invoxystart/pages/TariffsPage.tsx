@@ -235,12 +235,16 @@ export default function TariffsPage() {
                   >
                     LTE-ТРАФИК
                   </p>
-                  <strong
-                    className={`mt-2 block text-2xl font-medium ${plan.lteTraffic ? 'text-mint' : 'text-muted'}`}
-                  >
-                    {plan.lteTraffic ?? '—'}
-                    {plan.lteTraffic && <span className="ml-1 text-xs">ГБ</span>}
-                  </strong>
+                  {plan.lteTraffic ? (
+                    <strong className="mt-2 block text-2xl font-medium text-mint">
+                      {plan.lteTraffic}
+                      <span className="ml-1 text-xs">ГБ</span>
+                    </strong>
+                  ) : (
+                    <span className="mt-2 block text-xs font-medium text-muted/70 leading-snug">
+                      Нет в тарифе
+                    </span>
+                  )}
                 </div>
               </div>
               <p className="mt-3 flex items-center gap-2 text-xs text-muted">
