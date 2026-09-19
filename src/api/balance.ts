@@ -1,4 +1,4 @@
-﻿import apiClient from './client';
+import apiClient from './client';
 import i18n from '../i18n';
 import type {
   Balance,
@@ -134,9 +134,23 @@ export const balanceApi = {
   },
 
   // Manually check payment status
-  checkPaymentStatus: async (method: string, paymentId: number): Promise<ManualCheckResponse> => {
+  checkPaymentStatus: async (
+    method: string,
+    paymentId: number | string,
+  ): Promise<ManualCheckResponse> => {
     const response = await apiClient.post<ManualCheckResponse>(
       `/cabinet/balance/pending-payments/${encodeURIComponent(method)}/${encodeURIComponent(paymentId)}/check`,
+    );
+    return response.data;
+  },
+
+  // Cancel a pending payment
+  cancelPendingPayment: async (
+    method: string,
+    paymentId: number | string,
+  ): Promise<PendingPayment> => {
+    const response = await apiClient.post<PendingPayment>(
+      `/cabinet/balance/pending-payments/${encodeURIComponent(method)}/${encodeURIComponent(paymentId)}/cancel`,
     );
     return response.data;
   },

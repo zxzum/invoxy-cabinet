@@ -30,6 +30,7 @@ export interface TariffInvoiceResult {
   price_kopeks: number;
   balance_kopeks: number;
   method: string;
+  expires_at?: string | null;
 }
 
 /** Helper: build query params with optional subscription_id */

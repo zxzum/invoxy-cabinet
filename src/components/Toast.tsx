@@ -5,7 +5,7 @@ import {
   useCallback,
   useRef,
   useEffect,
-  ReactNode,
+  type ReactNode,
 } from 'react';
 
 import { CheckIcon, XIcon, ExclamationIcon, InfoIcon } from '@/components/icons';
@@ -35,7 +35,7 @@ const MAX_VISIBLE = 3;
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within ToastProvider');
+    return { showToast: () => {} };
   }
   return context;
 }
@@ -88,7 +88,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const timers = timersRef.current;
     return () => {
-      timers.forEach((timer) => clearTimeout(timer));
+      timers.forEach((timer) => {
+        clearTimeout(timer);
+      });
       timers.clear();
     };
   }, []);

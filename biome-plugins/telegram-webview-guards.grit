@@ -13,7 +13,10 @@ file(name=$name, body=$body) where {
   $name <: not includes "src/platform/",
   $name <: not includes or {
     "utils/clipboard.ts",
-    "utils/clipboard.js"
+    "utils/clipboard.js",
+    "utils/openPaymentUrl.ts",
+    "utils/openPaymentUrl.js",
+    "utils/openPaymentUrl.test.ts"
   },
   $body <: contains bubble or {
     `window.confirm` as $use where {

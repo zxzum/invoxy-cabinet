@@ -36,6 +36,7 @@ function AmountDisplay({ amountKopeks, label }: { amountKopeks: number; label: s
 
 function PendingState({ amountKopeks }: { amountKopeks: number | null }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <motion.div
@@ -53,6 +54,13 @@ function PendingState({ amountKopeks }: { amountKopeks: number | null }) {
       {amountKopeks != null && amountKopeks > 0 && (
         <AmountDisplay amountKopeks={amountKopeks} label={t('balance.topUpResult.topUpAmount')} />
       )}
+      <button
+        type="button"
+        onClick={() => navigate('/profile#top-up')}
+        className="text-xs text-dark-400 underline hover:text-dark-200 transition-colors"
+      >
+        {t('balance.pendingPayments.viewInProfile', 'К счёту в профиле')}
+      </button>
     </motion.div>
   );
 }
@@ -210,7 +218,7 @@ export default function TopUpResult() {
   // Determine if we can poll by specific payment_id (need method + numeric payment_id)
   const parsedPaymentId = pendingInfo?.payment_id ? parseInt(pendingInfo.payment_id, 10) : NaN;
   const canPollById =
-    !!(pendingInfo?.method_id && !isNaN(parsedPaymentId)) &&
+    !!(pendingInfo?.method_id && !Number.isNaN(parsedPaymentId)) &&
     !isRedirectSuccess &&
     !isRedirectFailed;
 
@@ -221,7 +229,7 @@ export default function TopUpResult() {
   // Poll payment status by specific ID (primary path — sessionStorage available)
   const { data: paymentStatus, refetch } = useQuery({
     queryKey: ['topup-status', pendingInfo?.method_id, parsedPaymentId],
-    queryFn: () => balanceApi.getPendingPayment(pendingInfo!.method_id, parsedPaymentId),
+    queryFn: () => balanceApi.getPendingPayment(pendingInfo?.method_id ?? '', parsedPaymentId),
     enabled: canPollById && !pollTimedOut,
     refetchInterval: (query) => {
       const payment = query.state.data;
@@ -244,7 +252,7 @@ export default function TopUpResult() {
   // Poll payment status by method latest (fallback — external browser, no sessionStorage)
   const { data: latestPayment, refetch: refetchLatest } = useQuery({
     queryKey: ['topup-status-latest', methodFromUrl],
-    queryFn: () => balanceApi.getLatestPayment(methodFromUrl!),
+    queryFn: () => balanceApi.getLatestPayment(methodFromUrl || ''),
     enabled: canPollByMethod && !pollTimedOut,
     refetchInterval: (query) => {
       const payment = query.state.data;
@@ -264,8 +272,40 @@ export default function TopUpResult() {
     retry: 2,
   });
 
-  // Merge both polling sources
-  const effectivePayment = paymentStatus ?? latestPayment;
+  // Fallback 3: query active invoice from /pending-payments if no sessionStorage data and no URL method
+  const canPollActiveFromApi =
+    !canPollById && !canPollByMethod && !isRedirectSuccess && !isRedirectFailed;
+  const { data: activePendingData, isLoading: isActivePendingLoading } = useQuery({
+    queryKey: ['pendingPayments'],
+    queryFn: () => balanceApi.getPendingPayments({ per_page: 5 }),
+    enabled: canPollActiveFromApi && !pollTimedOut,
+    refetchInterval: (query) => {
+      const items = query.state.data?.items ?? [];
+      const active = items.find(
+        (p) =>
+          p.is_active ||
+          (!p.is_paid &&
+            !['canceled', 'cancelled', 'fail', 'failed', 'declined', 'expired'].includes(
+              (p.status || '').toLowerCase(),
+            )),
+      );
+      if (!active) return false;
+      return POLL_INTERVAL_MS;
+    },
+    retry: 2,
+  });
+
+  const activePaymentFromApi = activePendingData?.items?.find(
+    (p) =>
+      p.is_active ||
+      (!p.is_paid &&
+        !['canceled', 'cancelled', 'fail', 'failed', 'declined', 'expired'].includes(
+          (p.status || '').toLowerCase(),
+        )),
+  );
+
+  // Merge all polling sources
+  const effectivePayment = paymentStatus ?? latestPayment ?? activePaymentFromApi;
 
   const handleRetryPoll = useCallback(() => {
     pollStart.current = Date.now();
@@ -275,19 +315,32 @@ export default function TopUpResult() {
     } else {
       refetchLatest();
     }
-  }, [canPollById, setPollTimedOut, refetch, refetchLatest]);
+  }, [canPollById, refetch, refetchLatest]);
 
   const handleGoBack = useCallback(() => {
     clearTopUpPendingInfo();
     navigate('/balance', { replace: true });
   }, [navigate]);
 
-  // Redirect to balance if absolutely no data source available
+  // Redirect to balance only if absolutely no data source available AND active pending query finished with nothing
   useEffect(() => {
-    if (!pendingInfo && !redirectStatus && !methodFromUrl) {
+    if (
+      !pendingInfo &&
+      !redirectStatus &&
+      !methodFromUrl &&
+      !isActivePendingLoading &&
+      !activePaymentFromApi
+    ) {
       navigate('/balance', { replace: true });
     }
-  }, [pendingInfo, redirectStatus, methodFromUrl, navigate]);
+  }, [
+    pendingInfo,
+    redirectStatus,
+    methodFromUrl,
+    isActivePendingLoading,
+    activePaymentFromApi,
+    navigate,
+  ]);
 
   // Determine current visual state
   const amountKopeks = effectivePayment?.amount_kopeks ?? pendingInfo?.amount_kopeks ?? null;

@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { AxiosError } from 'axios';
 import { balanceApi } from '@/api/balance';
 import { subscriptionApi } from '@/api/subscription';
-import type { PaymentMethod } from '@/types';
+import type { PaymentMethod, PendingPayment } from '@/types';
 import { ResponsiveSheet } from '@/components/ui/ResponsiveSheet';
 import { usePlatform } from '@/platform';
 import { openPaymentUrl } from '@/utils/openPaymentUrl';
 import { getErrorMessage } from '@/utils/subscriptionHelpers';
 import { AnimatedNumber, staggerEntrance, SuccessBurst } from '@/components/motion';
 import { useCurrency } from '@/hooks/useCurrency';
+import { ActiveInvoiceCard } from '@/components/balance/ActiveInvoiceCard';
 
 // ──────────────────────────────────────────────────────────────────
 // TariffPaymentSheet
@@ -83,6 +84,7 @@ export function TariffPaymentSheet({
   const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>('methods');
   const [invoice, setInvoice] = useState<CreatedInvoice | null>(null);
+  const [activeInvoice, setActiveInvoice] = useState<PendingPayment | null>(null);
   const [error, setError] = useState<string | null>(null);
   const paidRef = useRef(false);
   // «Жив» ли шит: синхронно гасится в обёртке onClose, чтобы асинхронные
@@ -98,6 +100,7 @@ export function TariffPaymentSheet({
     aliveRef.current = true;
     setStage('methods');
     setInvoice(null);
+    setActiveInvoice(null);
     setError(null);
     setSelectedMethodId(null);
     paidRef.current = false;
@@ -179,9 +182,61 @@ export function TariffPaymentSheet({
         // Авторитетная цена корзины с бэка — по ней сверяем баланс в поллинге.
         priceKopeks: result.price_kopeks,
       });
+      const parsedId = Number(result.payment_id);
+      setActiveInvoice({
+        id: !Number.isNaN(parsedId) ? parsedId : 0,
+        identifier: result.payment_id,
+        method: result.method,
+        method_display: method.name || result.method,
+        amount_kopeks: result.amount_kopeks,
+        amount_rubles: result.amount_rubles,
+        status: 'pending',
+        status_emoji: '⏳',
+        status_text: 'Ожидает оплаты',
+        is_paid: false,
+        is_checkable: true,
+        created_at: new Date().toISOString(),
+        expires_at: result.expires_at || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        payment_url: result.payment_url,
+        purpose: t('payment.tariffSheet.tariff', { tariff: tariffName }),
+        purpose_code: 'tariff',
+        is_active: true,
+        can_cancel: true,
+      });
       setStage('waiting');
+      queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
       openPaymentUrl(result.payment_url, platform, openLink);
     } catch (error) {
+      // 409: active invoice already exists
+      const errObj = error as {
+        response?: {
+          status?: number;
+          data?: {
+            detail?: {
+              code?: string;
+              message?: string;
+              payment?: PendingPayment;
+            };
+          };
+        };
+      };
+      const detail = errObj?.response?.data?.detail;
+      if (
+        errObj?.response?.status === 409 &&
+        detail?.code === 'active_invoice_exists' &&
+        detail?.payment
+      ) {
+        setActiveInvoice(detail.payment);
+        setInvoice({
+          method: detail.payment.method,
+          paymentUrl: detail.payment.payment_url || '',
+          priceKopeks: priceKopeks,
+        });
+        setStage('waiting');
+        setError(null);
+        return;
+      }
+
       // Бэк присылает машинно-читаемые ошибки (dict в detail: balance_sufficient,
       // min amount, «only available through the bot») — показываем их текст юзеру,
       // глухой fallback только если хелпер ничего не извлёк.
@@ -264,17 +319,31 @@ export function TariffPaymentSheet({
             </div>
           </div>
 
-          {stage === 'waiting' && invoice ? (
-            <div className="flex flex-col items-center gap-3 py-6">
-              <span className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500/30 border-t-accent-400" />
-              <p className="text-sm text-dark-200">{t('payment.tariffSheet.waiting')}</p>
-              <button
-                type="button"
-                onClick={() => openPaymentUrl(invoice.paymentUrl, platform, openLink)}
-                className="btn-secondary px-4 py-2 text-sm"
-              >
-                {t('payment.tariffSheet.reopen')}
-              </button>
+          {stage === 'waiting' ? (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center justify-center gap-3 py-2">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-accent-500/30 border-t-accent-400" />
+                <p className="text-sm text-dark-200">{t('payment.tariffSheet.waiting')}</p>
+              </div>
+              <ActiveInvoiceCard
+                invoice={activeInvoice || undefined}
+                showTitle={false}
+                onCancelled={() => {
+                  setActiveInvoice(null);
+                  setInvoice(null);
+                  setStage('methods');
+                  queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
+                }}
+                onPaid={() => {
+                  paidRef.current = true;
+                  setStage('success');
+                  queryClient.invalidateQueries({ queryKey: ['subscription'] });
+                  queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+                  queryClient.invalidateQueries({ queryKey: ['balance'] });
+                  queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
+                  queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
+                }}
+              />
             </div>
           ) : (
             <>

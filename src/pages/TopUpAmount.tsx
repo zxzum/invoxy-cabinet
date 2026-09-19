@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 
 import { balanceApi } from '../api/balance';
@@ -10,7 +10,7 @@ import { checkRateLimit, getRateLimitResetTime, RATE_LIMIT_KEYS } from '../utils
 import { useCloseOnSuccessNotification } from '../store/successNotification';
 import { useHaptic, usePlatform } from '@/platform';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
-import type { PaymentMethod, PaymentMethodOption } from '../types';
+import type { PaymentMethod, PaymentMethodOption, PendingPayment } from '../types';
 import BentoCard from '../components/ui/BentoCard';
 import { saveTopUpPendingInfo } from '../utils/topUpStorage';
 import { getSafeRedirectPath } from '../utils/safeRedirect';
@@ -18,6 +18,7 @@ import { openPaymentUrl } from '../utils/openPaymentUrl';
 import { getApiErrorMessage } from '../utils/api-error';
 import { copyToClipboard } from '@/utils/clipboard';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { ActiveInvoiceCard } from '@/components/balance/ActiveInvoiceCard';
 import {
   CardIcon,
   CheckIcon,
@@ -83,12 +84,14 @@ export default function TopUpAmount() {
     useCurrency();
   const { openInvoice, openTelegramLink, openLink, platform } = usePlatform();
   const haptic = useHaptic();
+  const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [activeInvoice, setActiveInvoice] = useState<PendingPayment | null>(null);
+
   const returnTo = searchParams.get('returnTo');
-  const initialAmountRubles = searchParams.get('amount')
-    ? parseFloat(searchParams.get('amount')!)
-    : undefined;
+  const amountParam = searchParams.get('amount');
+  const initialAmountRubles = amountParam ? parseFloat(amountParam) : undefined;
 
   // Fetch payment methods with a real query (dedupes with the method-selection page and
   // Balance via the shared ['payment-methods'] key). A non-reactive getQueryData read used
@@ -176,7 +179,7 @@ export default function TopUpAmount() {
     if (!optionExists) {
       setSelectedOption(getPreferredOptionId(method.options));
     }
-  }, [method?.id, method?.options, selectedOption]);
+  }, [method?.options, selectedOption]);
 
   const starsPaymentMutation = useMutation({
     mutationFn: (amountKopeks: number) => balanceApi.createStarsInvoice(amountKopeks),
@@ -256,22 +259,42 @@ export default function TopUpAmount() {
           lowerUrl.startsWith('https://t.me/') ||
           lowerUrl.startsWith('http://t.me/') ||
           lowerUrl.startsWith('tg://');
-        if (method?.open_url_direct && !isTelegramDeepLink) {
-          // In the Telegram WebView, same-container navigation to the provider page breaks
-          // when it hands off to a bank app via a custom scheme (SBP) — Android shows
-          // ERR_UNKNOWN_URL_SCHEME, iOS opens nothing (bug #654272). Open externally there;
-          // on web keep same-tab navigation.
-          openPaymentUrl(redirectUrl, platform, openLink);
-          return;
-        }
 
+        // Always show the payment card and keep SPA alive; attempt external auto-open once
+        queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
         setPaymentUrl(redirectUrl);
+        if (!isTelegramDeepLink) {
+          openPaymentUrl(redirectUrl, platform, openLink);
+        }
       }
     },
     onError: (err: unknown) => {
-      const detail = getApiErrorMessage(err, '');
+      const errObj = err as {
+        response?: {
+          status?: number;
+          data?: {
+            detail?: {
+              code?: string;
+              payment?: PendingPayment;
+            };
+          };
+        };
+      };
+      const detail = errObj?.response?.data?.detail;
+      if (
+        errObj?.response?.status === 409 &&
+        detail?.code === 'active_invoice_exists' &&
+        detail?.payment
+      ) {
+        setActiveInvoice(detail.payment);
+        setError(null);
+        return;
+      }
+      const message = getApiErrorMessage(err, '');
       setError(
-        detail.includes('not yet implemented') ? t('balance.useBot') : detail || t('common.error'),
+        message.includes('not yet implemented')
+          ? t('balance.useBot')
+          : message || t('common.error'),
       );
     },
   });
@@ -326,7 +349,7 @@ export default function TopUpAmount() {
       return;
     }
     const amountCurrency = parseFloat(amount);
-    if (isNaN(amountCurrency) || amountCurrency <= 0) {
+    if (Number.isNaN(amountCurrency) || amountCurrency <= 0) {
       setError(t('balance.errors.enterAmount'));
       return;
     }
@@ -558,6 +581,23 @@ export default function TopUpAmount() {
               </BentoCard>
             );
           })}
+        </motion.div>
+      )}
+
+      {/* Active invoice card (e.g. from 409 conflict) */}
+      {activeInvoice && (
+        <motion.div variants={staggerItem} className="space-y-3">
+          <div className="rounded-xl border border-warning-500/30 bg-warning-500/10 p-3 text-sm text-warning-400">
+            {t('balance.pendingPayments.activeExists')}
+          </div>
+          <ActiveInvoiceCard
+            invoice={activeInvoice}
+            onCancelled={() => {
+              setActiveInvoice(null);
+              queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
+            }}
+            onPaid={() => navigate('/balance')}
+          />
         </motion.div>
       )}
 

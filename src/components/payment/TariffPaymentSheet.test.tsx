@@ -71,6 +71,11 @@ vi.mock('@/api/balance', () => ({
     ]),
     getLatestPayment: vi.fn().mockResolvedValue(null),
     getBalance: vi.fn().mockResolvedValue({ balance_kopeks: 4000, balance_rubles: 40 }),
+    getPendingPayments: vi
+      .fn()
+      .mockResolvedValue({ items: [], total: 0, page: 1, per_page: 5, pages: 1 }),
+    cancelPendingPayment: vi.fn().mockResolvedValue({ is_paid: false, status: 'cancelled' }),
+    checkPaymentStatus: vi.fn().mockResolvedValue({ is_paid: false, status_changed: false }),
   },
 }));
 
@@ -197,7 +202,114 @@ describe('TariffPaymentSheet', () => {
     renderSheet({ onOpenChange });
 
     await screen.findByText('Банковская карта');
-    fireEvent.click(document.querySelector('[data-sheet-backdrop]')!);
+    const backdrop = document.querySelector('[data-sheet-backdrop]');
+    if (backdrop) fireEvent.click(backdrop);
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('handles 409 active_invoice_exists by showing the active invoice card', async () => {
+    const { subscriptionApi } = await import('@/api/subscription');
+    const axiosError = {
+      isAxiosError: true,
+      response: {
+        status: 409,
+        data: {
+          detail: {
+            code: 'active_invoice_exists',
+            message: 'У вас уже есть активный счёт.',
+            payment: {
+              id: 99,
+              identifier: 'inv-99',
+              method: 'platega',
+              method_display: 'Platega (СБП)',
+              amount_kopeks: 15000,
+              amount_rubles: 150,
+              status: 'pending',
+              status_emoji: '⏳',
+              status_text: 'Ожидает оплаты',
+              is_paid: false,
+              is_checkable: true,
+              created_at: new Date().toISOString(),
+              expires_at: new Date(Date.now() + 25 * 60 * 1000).toISOString(),
+              payment_url: 'https://pay.example/existing',
+              purpose: 'Пополнение баланса',
+              purpose_code: 'topup',
+              is_active: true,
+              can_cancel: true,
+            },
+          },
+        },
+      },
+    };
+    vi.mocked(subscriptionApi.createTariffInvoice).mockRejectedValueOnce(axiosError);
+
+    renderSheet();
+    await screen.findByText('Банковская карта');
+    fireEvent.click(screen.getByText('Банковская карта'));
+
+    // Should show active invoice card in waiting stage
+    expect(await screen.findByText('Пополнение баланса')).toBeTruthy();
+    expect(screen.getByText('Platega (СБП)')).toBeTruthy();
+    expect(screen.getByText('Оплатить')).toBeTruthy();
+    expect(screen.getByText('Отменить счёт')).toBeTruthy();
+  });
+
+  it('cancelling active invoice returns to methods list', async () => {
+    const { subscriptionApi } = await import('@/api/subscription');
+    const { balanceApi } = await import('@/api/balance');
+    const axiosError = {
+      isAxiosError: true,
+      response: {
+        status: 409,
+        data: {
+          detail: {
+            code: 'active_invoice_exists',
+            message: 'У вас уже есть активный счёт.',
+            payment: {
+              id: 99,
+              identifier: 'inv-99',
+              method: 'platega',
+              method_display: 'Platega (СБП)',
+              amount_kopeks: 15000,
+              amount_rubles: 150,
+              status: 'pending',
+              status_emoji: '⏳',
+              status_text: 'Ожидает оплаты',
+              is_paid: false,
+              is_checkable: true,
+              created_at: new Date().toISOString(),
+              expires_at: new Date(Date.now() + 25 * 60 * 1000).toISOString(),
+              payment_url: 'https://pay.example/existing',
+              purpose: 'Пополнение баланса',
+              purpose_code: 'topup',
+              is_active: true,
+              can_cancel: true,
+            },
+          },
+        },
+      },
+    };
+    vi.mocked(subscriptionApi.createTariffInvoice).mockRejectedValueOnce(axiosError);
+
+    renderSheet();
+    await screen.findByText('Банковская карта');
+    fireEvent.click(screen.getByText('Банковская карта'));
+
+    // Card appears with cancel button
+    const cancelBtn = await screen.findByText('Отменить счёт');
+    fireEvent.click(cancelBtn);
+
+    // Click confirm cancel
+    const confirmBtn = await screen.findByText('Точно?');
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(balanceApi.cancelPendingPayment).toHaveBeenCalledWith('platega', 99);
+    });
+
+    // Should be returned to methods view
+    await waitFor(() => {
+      expect(screen.getByText('Способ оплаты')).toBeTruthy();
+    });
   });
 });

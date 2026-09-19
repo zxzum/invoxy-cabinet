@@ -13,6 +13,7 @@ import type { PaginatedResponse, Transaction } from '../types';
 
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
+import { ActiveInvoiceCard } from '@/components/balance/ActiveInvoiceCard';
 import { ChevronDownIcon, ChevronRightIcon, CreditCardIcon, WalletIcon } from '@/components/icons';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import { isPaidStatus, isFailedStatus } from '../utils/paymentStatus';
@@ -370,6 +371,9 @@ export default function Balance() {
           </Card>
         </motion.div>
       )}
+
+      {/* Active Invoice Card */}
+      <ActiveInvoiceCard className="mb-6" />
 
       {/* Transaction History */}
       <motion.div variants={staggerItem}>

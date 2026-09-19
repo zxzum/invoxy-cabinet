@@ -1,5 +1,5 @@
 import { uiLocale } from '@/utils/uiLocale';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePlatform } from '@/platform';
@@ -25,6 +25,7 @@ import { API, UI } from '../config/constants';
 import { useCurrency } from '../hooks/useCurrency';
 import { Card } from '@/components/data-display/Card';
 import { Button } from '@/components/primitives/Button';
+import { ActiveInvoiceCard } from '@/components/balance/ActiveInvoiceCard';
 import { Switch } from '@/components/primitives/Switch';
 import { staggerContainer, staggerItem } from '@/components/motion/transitions';
 import {
@@ -58,6 +59,11 @@ export default function Profile() {
 
   useEffect(() => {
     if (location.hash !== '#top-up') return;
+    const activeCard = document.getElementById('active-invoice-card');
+    if (activeCard) {
+      activeCard.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     const target = document.getElementById('top-up');
     target?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }, [location.hash]);
@@ -256,20 +262,20 @@ export default function Profile() {
     return () => clearTimeout(timer);
   }, [changeEmailStep, profilePlatform]);
 
-  // Auto-close success after 3s
-  useEffect(() => {
-    if (changeEmailStep !== 'success') return;
-    const timer = setTimeout(() => resetChangeEmail(), 3000);
-    return () => clearTimeout(timer);
-  }, [changeEmailStep]);
-
-  const resetChangeEmail = () => {
+  const resetChangeEmail = useCallback(() => {
     setChangeEmailStep(null);
     setNewEmail('');
     setChangeCode('');
     setChangeError(null);
     startResendCooldown(0);
-  };
+  }, [startResendCooldown]);
+
+  // Auto-close success after 3s
+  useEffect(() => {
+    if (changeEmailStep !== 'success') return;
+    const timer = setTimeout(() => resetChangeEmail(), 3000);
+    return () => clearTimeout(timer);
+  }, [changeEmailStep, resetChangeEmail]);
 
   const handleSendChangeCode = () => {
     setChangeError(null);
@@ -413,6 +419,8 @@ export default function Profile() {
               </div>
             </Card>
 
+            <ActiveInvoiceCard className="mb-4" />
+
             <Card id="top-up" className="ix-profile-topup glass-surface p-5 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -451,6 +459,16 @@ export default function Profile() {
                 className="mt-4 border border-dark-700/70 bg-dark-950 text-dark-50 shadow-none hover:bg-dark-900 active:bg-dark-800"
                 disabled={!topUpAmount || !paymentMethods?.some((method) => method.is_available)}
                 onClick={() => {
+                  const activeCard = document.getElementById('active-invoice-card');
+                  if (activeCard) {
+                    activeCard.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+                    activeCard.classList.add('ring-2', 'ring-accent-400');
+                    setTimeout(
+                      () => activeCard.classList.remove('ring-2', 'ring-accent-400'),
+                      2000,
+                    );
+                    return;
+                  }
                   const method = paymentMethods?.find((item) => item.is_available);
                   if (!method) return;
                   navigate(

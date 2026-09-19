@@ -8,17 +8,30 @@
  * (Telegram bug #654272). Opening in the EXTERNAL browser (openLink) lets the OS hand off to
  * the bank app, and the provider's return_url brings the user back.
  *
- * On the web platform a real browser handles the hand-off inline, so same-tab navigation is
- * correct — and it isn't popup-blocked the way window.open() from an async callback would be.
+ * On the web platform, the cabinet SPA tab must NEVER be unloaded (no window.location.href).
+ * We open the payment gateway in a new tab via window.open(url, '_blank', 'noopener,noreferrer').
+ * If popup blockers block the new window, we return false so the caller can display a direct
+ * fallback link/button, keeping the user in control and the SPA alive with timer and active invoice.
+ *
+ * Returns true if opened successfully, or false if blocked by a popup blocker.
  */
 export function openPaymentUrl(
   url: string,
   platform: string,
   openLink: (url: string) => void,
-): void {
+): boolean {
   if (platform === 'telegram') {
     openLink(url);
-  } else {
-    window.location.href = url;
+    return true;
+  }
+
+  try {
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!win || win.closed || typeof win.closed === 'undefined') {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
   }
 }

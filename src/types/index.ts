@@ -782,6 +782,10 @@ export interface PendingPayment {
   user_telegram_id?: number;
   user_username?: string | null;
   user_email?: string | null;
+  purpose?: string;
+  purpose_code?: 'topup' | 'tariff';
+  is_active?: boolean;
+  can_cancel?: boolean;
 }
 
 export interface ManualCheckResponse {

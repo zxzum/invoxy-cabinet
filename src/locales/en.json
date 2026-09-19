@@ -1045,9 +1045,23 @@
     "noPaymentMethods": "No payment methods available",
     "pendingPayments": {
       "title": "Pending Payments",
+      "activeTitle": "Active Invoice",
+      "activeDescription": "Invoice is awaiting payment or confirmation. You can pay it, check status, or cancel.",
       "pay": "Pay",
+      "copy": "Copy Link",
+      "copied": "Link copied",
       "checkStatus": "Check Status",
-      "checking": "Checking..."
+      "checking": "Checking...",
+      "cancel": "Cancel Invoice",
+      "confirmCancel": "Sure?",
+      "cancelling": "Cancelling...",
+      "cancelled": "Invoice cancelled",
+      "expiresIn": "Expires in {{time}}",
+      "activeExists": "You already have an active invoice. Pay or cancel it before creating a new one.",
+      "openBlocked": "Pop-up window was blocked. Click here to proceed to payment",
+      "checkSuccess": "Payment confirmed! Balance has been updated.",
+      "checkStillPending": "Payment has not arrived yet. Please try again in a few seconds.",
+      "viewInProfile": "View invoice in profile"
     },
     "savedCards": {
       "title": "Saved Cards",
