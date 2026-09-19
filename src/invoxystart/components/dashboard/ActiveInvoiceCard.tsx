@@ -5,6 +5,7 @@ import { PiArrowClockwise, PiClock, PiTrash } from 'react-icons/pi';
 import { usePlatform } from '@/platform';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { balanceApi, type PendingPayment } from '@/invoxystart/api';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 const CANCELLED_STATUSES = new Set([
   'canceled',
@@ -117,8 +118,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
         void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
       }
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { detail?: string } } };
-      const msg = axiosErr?.response?.data?.detail || 'Ошибка проверки статуса платежа';
+      const msg = getApiErrorMessage(err, 'Ошибка проверки статуса платежа');
       showToast(msg);
     } finally {
       setChecking(false);
@@ -133,8 +133,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
       showToast('Счёт успешно отменён');
       void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { detail?: string } } };
-      const msg = axiosErr?.response?.data?.detail || 'Не удалось отменить счёт';
+      const msg = getApiErrorMessage(err, 'Не удалось отменить счёт');
       showToast(msg);
     } finally {
       setCancelling(false);

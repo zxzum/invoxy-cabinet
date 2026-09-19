@@ -120,7 +120,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     e.stopPropagation();
                     dismissToast(t.id);
                   }}
-                  className="ml-auto -mr-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  className="ml-auto -mr-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-dark-400 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label="Закрыть"
                 >
                   <PiX className="h-3 w-3" />

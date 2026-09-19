@@ -98,8 +98,8 @@ export default function ProfilePage() {
 
   function topUp() {
     const amount = Number(topUpAmount);
-    if (!Number.isFinite(amount) || amount < 100) {
-      setTopUpError('Минимальная сумма пополнения — 100 ₽');
+    if (!Number.isFinite(amount) || amount < 10) {
+      setTopUpError('Минимальная сумма пополнения — 10 ₽');
       return;
     }
     setTopUpError('');
