@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   Check,
-  Copy,
   Link2,
   Send,
   Share2,
@@ -14,6 +13,7 @@ import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { referralApi } from '@/invoxystart/api';
 import { formatDate, formatMoney } from '@/invoxystart/components/account/AccountPrimitives';
+import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
 import { copyToClipboard } from '@/utils/clipboard';
 
 export default function ReferralsPage() {
@@ -147,14 +147,12 @@ export default function ReferralsPage() {
                   </p>
                   <p className="mt-1.5 truncate font-mono text-[13px] text-ink/85">{link.value}</p>
                 </div>
-                <button
-                  type="button"
-                  aria-label={`Копировать ${link.label}`}
-                  onClick={() => copy(link.value)}
-                  className="glass-control grid h-12 w-12 shrink-0 place-items-center rounded-full text-mint active:scale-90"
-                >
-                  <Copy size={18} />
-                </button>
+                <LivelyCopyButton
+                  text={link.value}
+                  variant="circle-glass"
+                  label={`Копировать ${link.label}`}
+                  onCopied={() => showToast('Ссылка скопирована', 'success')}
+                />
               </div>
             ))}
           </div>

@@ -13,10 +13,9 @@ import {
   Minus,
   Globe2,
   Bot,
-  Copy,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { BrandLogo } from '@/invoxystart/components/layout/BrandLogo';
-import { copyToClipboard } from '@/utils/clipboard';
+import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
 
 interface DbTariffPeriod {
   days: number;
@@ -226,7 +225,6 @@ export default function LandingPage() {
   const [speedMbps, setSpeedMbps] = useState(940.8);
 
   // Bot test state
-  const [copiedKey, setCopiedKey] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
   const [trialKey, setTrialKey] = useState(
     'vless://invoxy-trial@fi1.invoxy.net:443?security=reality',
@@ -890,27 +888,13 @@ export default function LandingPage() {
 
               {/* Copy & Connect Button */}
               <div className="relative z-10 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    copyToClipboard(trialKey);
-                    setCopiedKey(true);
-                    setTimeout(() => setCopiedKey(false), 2000);
-                  }}
-                  className="w-full py-2 px-3 rounded-xl bg-[#a5e8c4] text-[#0c0f13] font-bold text-xs hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-2 shadow-lg shadow-[#a5e8c4]/20 cursor-pointer"
-                >
-                  {copiedKey ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Скопировано в буфер!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Скопировать ключ
-                    </>
-                  )}
-                </button>
+                <LivelyCopyButton
+                  text={trialKey}
+                  variant="pill"
+                  label="Скопировать ключ"
+                  copiedLabel="Скопировано в буфер!"
+                  className="w-full !h-10 text-xs rounded-xl"
+                />
               </div>
             </div>
 

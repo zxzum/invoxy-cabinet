@@ -17,6 +17,7 @@ import type { LoyaltyTiersResponse } from '@/invoxystart/api';
 import { AddonsCard } from '@/invoxystart/components/dashboard/AddonsCard';
 import { useSearchParams } from 'react-router';
 import { promoApi, subscriptionApi } from '@/invoxystart/api';
+import { TariffSwitchModal } from '@/invoxystart/components/tariffs/TariffSwitchModal';
 
 type PlanPeriod = { days: number; months: number; price: number; discount: number };
 type Plan = {
@@ -82,6 +83,7 @@ export default function TariffsPage() {
   const [tariffStep, setTariffStep] = useState<'options' | 'payment'>('options');
   const [months, setMonths] = useState(1);
   const [devices, setDevices] = useState(5);
+  const [switchPlan, setSwitchPlan] = useState<Plan | null>(null);
 
   const { data: tariffsData, isLoading: tariffsLoading } = useQuery({
     queryKey: ['invoxy-tariffs-page-data'],
@@ -244,10 +246,20 @@ export default function TariffsPage() {
               <button
                 type="button"
                 aria-expanded={expanded}
-                onClick={() => selectPlan(plan.id, plan.devices)}
+                onClick={() => {
+                  if (activeId && !addingSubscription && !active) {
+                    setSwitchPlan(plan);
+                  } else {
+                    selectPlan(plan.id, plan.devices);
+                  }
+                }}
                 className={`button-lift mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold active:scale-[.98] ${expanded || active ? 'glass-control text-ink' : 'bg-ink text-bg'}`}
               >
-                {active ? 'Продлить' : 'Выбрать'}
+                {active
+                  ? 'Продлить'
+                  : activeId && !addingSubscription
+                    ? 'Сменить тариф'
+                    : 'Выбрать'}
                 <ChevronRight size={16} />
               </button>
             </article>
@@ -284,6 +296,24 @@ export default function TariffsPage() {
             void queryClient.invalidateQueries({ queryKey: ['invoxy-tariffs-page-data'] });
             void queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] });
           }}
+        />
+      )}
+
+      {switchPlan && (
+        <TariffSwitchModal
+          open={!!switchPlan}
+          plan={switchPlan}
+          currentPlan={plans.find((p) => p.id === activeId)}
+          subscriptionId={activeSubscriptionId ? Number(activeSubscriptionId) : undefined}
+          onClose={() => setSwitchPlan(null)}
+          onFallbackToPurchase={() => {
+            const planToBuy = switchPlan;
+            setSwitchPlan(null);
+            if (planToBuy) {
+              selectPlan(planToBuy.id, planToBuy.devices);
+            }
+          }}
+          onTopUp={topUp}
         />
       )}
     </div>

@@ -367,6 +367,9 @@ export const subscriptionApi = {
       missing_amount_kopeks: number;
       missing_amount_label: string;
       is_upgrade: boolean;
+      discount_percent?: number;
+      discount_kopeks?: number;
+      base_upgrade_cost_kopeks?: number;
     }>(
       '/cabinet/subscription/tariff/switch/preview',
       { tariff_id: tariffId, period_days: 30 },

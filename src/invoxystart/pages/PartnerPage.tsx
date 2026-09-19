@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Check, Copy, Sparkles, Wallet } from '@/invoxystart/components/ui/RuneIcon';
+import { Check, Sparkles, Wallet } from '@/invoxystart/components/ui/RuneIcon';
 import { referralApi, withdrawalApi } from '@/invoxystart/api';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import {
@@ -9,10 +9,10 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  copyText,
   formatDate,
   formatMoney,
 } from '@/invoxystart/components/account/AccountPrimitives';
+import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
 
 type ReferralInfo = {
   referral_code?: string | null;
@@ -124,16 +124,6 @@ export default function PartnerPage() {
     }));
   }, [terms]);
 
-  async function copyReferralLink() {
-    if (!referralLink) return;
-    try {
-      await copyText(referralLink);
-      showToast('Реферальная ссылка скопирована');
-    } catch {
-      showToast('Не удалось скопировать ссылку');
-    }
-  }
-
   async function chooseReward(value: string) {
     setReward(value);
     setBusy(`reward-${value}`);
@@ -217,15 +207,13 @@ export default function PartnerPage() {
               <div className="glass-control min-w-0 flex-1 truncate rounded-2xl px-4 py-3 font-mono text-xs text-muted">
                 {referralLink || 'Ссылка пока недоступна'}
               </div>
-              <button
-                type="button"
+              <LivelyCopyButton
+                text={referralLink || ''}
+                variant="circle"
                 disabled={!referralLink}
-                onClick={() => void copyReferralLink()}
-                className="button-lift grid h-12 w-12 shrink-0 place-items-center rounded-full bg-mint text-bg"
-                aria-label="Копировать реферальную ссылку"
-              >
-                <Copy size={17} />
-              </button>
+                label="Копировать реферальную ссылку"
+                onCopied={() => showToast('Ссылка скопирована', 'success')}
+              />
             </div>
             <div className="mt-5 grid grid-cols-3 gap-2">
               <Stat label="Приглашено" value={String(info?.total_referrals ?? 0)} />

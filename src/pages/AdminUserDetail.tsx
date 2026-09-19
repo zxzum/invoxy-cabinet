@@ -18,7 +18,7 @@ import {
   type SubscriptionRequestRecord,
 } from '../api/adminUsers';
 import { promocodesApi, type PromoGroup } from '../api/promocodes';
-import { RefreshIcon, TelegramSmallIcon as TelegramIcon } from '@/components/icons';
+import { CheckIcon, RefreshIcon, TelegramSmallIcon as TelegramIcon } from '@/components/icons';
 import { AdminBackButton } from '../components/admin';
 import { GiftsTab } from '../components/admin/userDetail/GiftsTab';
 import { SyncTab } from '../components/admin/userDetail/SyncTab';
@@ -835,6 +835,8 @@ export default function AdminUserDetail() {
     return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
   };
 
+  const [copiedChip, setCopiedChip] = useState<string | null>(null);
+
   const copyToClipboard = async (text: string) => {
     try {
       await copyText(text);
@@ -844,6 +846,14 @@ export default function AdminUserDetail() {
       // the failure to the user instead of swallowing it silently.
       notify.error(t('common.error'));
     }
+  };
+
+  const copyChip = async (key: string, text: string) => {
+    await copyToClipboard(text);
+    setCopiedChip(key);
+    setTimeout(() => {
+      setCopiedChip((current) => (current === key ? null : current));
+    }, 1800);
   };
 
   if (loading) {
@@ -946,9 +956,14 @@ export default function AdminUserDetail() {
           {/* Chip ID */}
           <button
             type="button"
-            onClick={() => copyToClipboard(String(user.id))}
-            className="shrink-0 rounded-md border border-dark-700 bg-dark-800/80 px-2 py-1 text-dark-300 transition-colors hover:border-dark-600 hover:text-dark-100"
+            onClick={() => void copyChip('id', String(user.id))}
+            className={`inline-flex items-center gap-1 shrink-0 rounded-md border px-2 py-1 text-xs transition-all active:scale-95 cursor-pointer ${
+              copiedChip === 'id'
+                ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300'
+                : 'border-dark-700 bg-dark-800/80 text-dark-300 hover:border-dark-600 hover:text-dark-100'
+            }`}
           >
+            {copiedChip === 'id' && <CheckIcon className="h-3 w-3 text-emerald-400" />}
             ID {user.id}
           </button>
 
@@ -956,9 +971,14 @@ export default function AdminUserDetail() {
           {user.telegram_id ? (
             <button
               type="button"
-              onClick={() => copyToClipboard(String(user.telegram_id))}
-              className="shrink-0 rounded-md border border-dark-700 bg-dark-800/80 px-2 py-1 text-dark-300 transition-colors hover:border-dark-600 hover:text-dark-100"
+              onClick={() => void copyChip('tg', String(user.telegram_id))}
+              className={`inline-flex items-center gap-1 shrink-0 rounded-md border px-2 py-1 text-xs transition-all active:scale-95 cursor-pointer ${
+                copiedChip === 'tg'
+                  ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300'
+                  : 'border-dark-700 bg-dark-800/80 text-dark-300 hover:border-dark-600 hover:text-dark-100'
+              }`}
             >
+              {copiedChip === 'tg' && <CheckIcon className="h-3 w-3 text-emerald-400" />}
               TG {user.telegram_id}
             </button>
           ) : null}
@@ -967,10 +987,15 @@ export default function AdminUserDetail() {
           {user.username ? (
             <button
               type="button"
-              onClick={() => copyToClipboard(user.username?.replace(/^@/, '') || '')}
-              className="shrink-0 rounded-md border border-dark-700 bg-dark-800/80 px-2 py-1 text-dark-300 transition-colors hover:border-dark-600 hover:text-dark-100"
+              onClick={() => void copyChip('username', user.username?.replace(/^@/, '') || '')}
+              className={`inline-flex items-center gap-1 shrink-0 rounded-md border px-2 py-1 text-xs transition-all active:scale-95 cursor-pointer ${
+                copiedChip === 'username'
+                  ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300'
+                  : 'border-dark-700 bg-dark-800/80 text-dark-300 hover:border-dark-600 hover:text-dark-100'
+              }`}
             >
-              @{user.username.replace(/^@/, '')}
+              {copiedChip === 'username' && <CheckIcon className="h-3 w-3 text-emerald-400" />}@
+              {user.username.replace(/^@/, '')}
             </button>
           ) : null}
 
@@ -978,9 +1003,14 @@ export default function AdminUserDetail() {
           {user.email ? (
             <button
               type="button"
-              onClick={() => copyToClipboard(user.email || '')}
-              className="shrink-0 rounded-md border border-dark-700 bg-dark-800/80 px-2 py-1 text-dark-300 transition-colors hover:border-dark-600 hover:text-dark-100"
+              onClick={() => void copyChip('email', user.email || '')}
+              className={`inline-flex items-center gap-1 shrink-0 rounded-md border px-2 py-1 text-xs transition-all active:scale-95 cursor-pointer ${
+                copiedChip === 'email'
+                  ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300'
+                  : 'border-dark-700 bg-dark-800/80 text-dark-300 hover:border-dark-600 hover:text-dark-100'
+              }`}
             >
+              {copiedChip === 'email' && <CheckIcon className="h-3 w-3 text-emerald-400" />}
               {user.email}
             </button>
           ) : null}
@@ -998,10 +1028,15 @@ export default function AdminUserDetail() {
                 subscription: activeSub,
                 formatDate,
               });
-              copyToClipboard(text);
+              void copyChip('card', text);
             }}
-            className="shrink-0 rounded-md border border-accent-500/30 bg-accent-500/10 px-2 py-1 font-medium text-accent-400 transition-colors hover:bg-accent-500/20"
+            className={`inline-flex items-center gap-1 shrink-0 rounded-md border px-2 py-1 font-medium text-xs transition-all active:scale-95 cursor-pointer ${
+              copiedChip === 'card'
+                ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300'
+                : 'border-accent-500/30 bg-accent-500/10 text-accent-400 hover:bg-accent-500/20'
+            }`}
           >
+            {copiedChip === 'card' && <CheckIcon className="h-3 w-3 text-emerald-400" />}
             {t('admin.users.detail.copyCard', 'Скопировать карточку')}
           </button>
         </div>

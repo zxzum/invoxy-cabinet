@@ -9,7 +9,7 @@ interface LivelyCopyButtonProps {
   label?: string;
   copiedLabel?: string;
   className?: string;
-  variant?: 'pill' | 'circle' | 'glass';
+  variant?: 'pill' | 'circle' | 'glass' | 'circle-glass';
   onCopied?: () => void;
   disabled?: boolean;
 }
@@ -49,7 +49,9 @@ export function LivelyCopyButton({
     }, 2200);
   }, [text, disabled, haptic, onCopied]);
 
-  if (variant === 'circle') {
+  if (variant === 'circle' || variant === 'circle-glass') {
+    const isGlass = variant === 'circle-glass';
+
     return (
       <m.button
         type="button"
@@ -59,8 +61,14 @@ export function LivelyCopyButton({
         whileHover={{ scale: 1.05 }}
         transition={{ type: 'spring', stiffness: 500, damping: 25 }}
         aria-label={copied ? copiedLabel : label}
-        className={`relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-mint text-bg shadow-[0_0_20px_rgba(6,214,160,0.35)] transition-all duration-300 disabled:opacity-40 cursor-pointer ${
-          copied ? 'bg-mint ring-4 ring-mint/30 shadow-[0_0_25px_rgba(6,214,160,0.6)]' : ''
+        className={`relative grid h-12 w-12 shrink-0 place-items-center rounded-full transition-all duration-300 disabled:opacity-40 cursor-pointer ${
+          isGlass
+            ? copied
+              ? 'border border-mint/50 bg-mint/20 text-mint ring-2 ring-mint/30 shadow-[0_0_20px_rgba(6,214,160,0.3)]'
+              : 'border border-white/10 bg-white/[0.05] text-mint hover:bg-white/[0.1] hover:border-mint/30 shadow-[0_2px_10px_rgba(0,0,0,0.2)]'
+            : copied
+              ? 'bg-mint text-bg ring-4 ring-mint/30 shadow-[0_0_25px_rgba(6,214,160,0.6)]'
+              : 'bg-mint text-bg shadow-[0_0_20px_rgba(6,214,160,0.35)]'
         } ${className}`}
       >
         <AnimatePresence>
@@ -87,7 +95,7 @@ export function LivelyCopyButton({
               animate={{ scale: [0, 1.3, 1], rotate: 0 }}
               exit={{ scale: 0, rotate: 45 }}
               transition={{ type: 'spring', stiffness: 450, damping: 18 }}
-              className="flex items-center justify-center text-bg"
+              className={`flex items-center justify-center ${isGlass ? 'text-mint' : 'text-bg'}`}
             >
               <Check size={18} />
             </m.span>
@@ -98,7 +106,7 @@ export function LivelyCopyButton({
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex items-center justify-center text-bg"
+              className={`flex items-center justify-center ${isGlass ? 'text-mint' : 'text-bg'}`}
             >
               <Copy size={17} />
             </m.span>
