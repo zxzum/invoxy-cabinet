@@ -19,7 +19,13 @@ import { useSearchParams } from 'react-router';
 import { promoApi, subscriptionApi } from '@/invoxystart/api';
 import { TariffSwitchModal } from '@/invoxystart/components/tariffs/TariffSwitchModal';
 
-type PlanPeriod = { days: number; months: number; price: number; discount: number };
+type PlanPeriod = {
+  days: number;
+  months: number;
+  price: number;
+  basePrice: number;
+  discount: number;
+};
 type Plan = {
   id: string;
   name: string;
@@ -37,20 +43,36 @@ function adaptPlan(value: Record<string, unknown>): Plan {
   const periods = Array.isArray(value.periods)
     ? (value.periods as Array<Record<string, unknown>>)
     : [];
+
+  // Determine base 1-month rate to accurately evaluate period length discounts
+  const oneMonthRaw =
+    periods.find((period) => Number(period.days) === 30 || Number(period.months) === 1) ??
+    periods[0];
+  const baseMonthlyPriceKopeks = Number(
+    oneMonthRaw?.original_price_kopeks ?? oneMonthRaw?.price_kopeks ?? 0,
+  );
+
   const adaptedPeriods = periods.map((period) => {
     const days = Number(period.days ?? 30);
     const months = Number(period.months ?? Math.max(1, Math.round(days / 30)));
     const priceKopeks = Number(period.price_kopeks ?? 0);
-    const monthlyKopeks = Number(
-      period.price_per_month_kopeks ?? priceKopeks / Math.max(months, 1),
+    const originalPriceKopeks = Number(
+      period.original_price_kopeks ?? baseMonthlyPriceKopeks * months,
     );
+
+    const explicitDiscount = Number(period.discount_percent ?? 0);
+    const relativeDiscount =
+      originalPriceKopeks > priceKopeks && originalPriceKopeks > 0
+        ? Math.round((1 - priceKopeks / originalPriceKopeks) * 100)
+        : 0;
+    const discount = Math.max(explicitDiscount, relativeDiscount);
+
     return {
       days,
       months,
       price: priceKopeks / 100,
-      discount:
-        Number(period.discount_percent ?? 0) ||
-        Math.max(0, Math.round((1 - priceKopeks / Math.max(monthlyKopeks * months, 1)) * 100)),
+      basePrice: Math.max(priceKopeks, originalPriceKopeks) / 100,
+      discount,
     };
   });
   const month = adaptedPeriods.find((period) => period.days === 30) ??
@@ -135,10 +157,16 @@ export default function TariffsPage() {
     selected?.periods.find((period) => period.months === months) ?? selected?.periods[0];
   const subtotal =
     selected && selectedPeriod
-      ? selectedPeriod.price +
+      ? (selectedPeriod.basePrice ?? selectedPeriod.price) +
         Math.max(0, devices - selected.devices) * selected.devicePrice * selectedPeriod.months
       : 0;
-  const total = Math.round(subtotal);
+  const total =
+    selected && selectedPeriod
+      ? Math.round(
+          selectedPeriod.price +
+            Math.max(0, devices - selected.devices) * selected.devicePrice * selectedPeriod.months,
+        )
+      : 0;
 
   function selectPlan(id: string, baseDevices: number) {
     if (selectedId === id && dialogOpen) {
@@ -586,7 +614,8 @@ function TariffConfigurator({
   activate: () => void;
 }) {
   const extraDevicePrice = Math.max(0, devices - plan.devices) * plan.devicePrice;
-  const saving = subtotal - total;
+  const saving = Math.max(0, subtotal - total);
+  const savingPercent = subtotal > 0 && saving > 0 ? Math.round((saving / subtotal) * 100) : 0;
 
   return (
     <div className="mx-auto w-full max-w-xl">
@@ -603,23 +632,37 @@ function TariffConfigurator({
           {plan.periods.map((period) => {
             const price = Math.round(period.price + extraDevicePrice * period.months);
             const label = period.days === 30 ? `${period.months} мес` : `${period.days} дней`;
+            const isSelected = months === period.months;
             return (
               <button
                 type="button"
                 key={period.days}
-                aria-pressed={months === period.months}
+                aria-pressed={isSelected}
                 onClick={() => setMonths(period.months)}
-                className={`button-lift flex min-h-[66px] min-w-0 flex-col items-center justify-center rounded-2xl px-2 text-xs ${months === period.months ? 'bg-mint font-bold text-bg' : 'glass-control text-muted'}`}
+                className={`relative button-lift flex min-h-[66px] min-w-0 flex-col items-center justify-center rounded-2xl px-2 text-xs transition-colors cursor-pointer ${
+                  isSelected ? 'text-bg font-bold' : 'glass-control text-muted hover:text-ink'
+                }`}
               >
-                <span>
+                {isSelected && (
+                  <m.div
+                    layoutId="tariffPeriodPill"
+                    className="absolute inset-0 rounded-2xl bg-mint shadow-sm"
+                    transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
+                  />
+                )}
+                <span className="relative z-10">
                   {label}{' '}
                   {period.discount > 0 && (
-                    <span className={months === period.months ? 'text-bg/70' : 'text-mint'}>
+                    <span
+                      className={
+                        isSelected ? 'text-bg/75 font-semibold' : 'text-mint font-semibold'
+                      }
+                    >
                       · −{period.discount}%
                     </span>
                   )}
                 </span>
-                <strong className="mt-1 text-sm">{formatRubles(price)}</strong>
+                <strong className="relative z-10 mt-1 text-sm">{formatRubles(price)}</strong>
               </button>
             );
           })}
@@ -653,23 +696,34 @@ function TariffConfigurator({
           </button>
         </div>
       </div>
-      <div className="mt-5 rounded-2xl border border-mint/15 bg-mint/[.06] p-4 text-center">
+      <div className="mt-5 rounded-2xl border border-mint/15 bg-mint/[.06] p-4 text-center overflow-hidden">
         <span className="block text-lg font-medium text-muted">Итого</span>
-        {saving > 0 && (
-          <span className="mt-1 block text-sm text-muted line-through">
-            {formatRubles(subtotal)}
-          </span>
-        )}
-        <strong className="block text-4xl font-medium">{formatRubles(total)}</strong>
-        {saving > 0 && (
-          <span className="mt-1 block text-xs font-medium text-mint">
-            Выгода {formatRubles(saving)} к помесячной оплате
-          </span>
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <m.div
+            key={`${months}-${devices}-${total}`}
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -3 }}
+            transition={{ duration: 0.15 }}
+          >
+            {saving > 0 && (
+              <span className="mt-1 block text-sm text-muted line-through">
+                {formatRubles(subtotal)}
+              </span>
+            )}
+            <strong className="block text-4xl font-medium">{formatRubles(total)}</strong>
+            {saving > 0 && (
+              <span className="mt-1 block text-xs font-medium text-mint">
+                Выгода {formatRubles(saving)} {savingPercent > 0 ? `(−${savingPercent}%) ` : ''}к
+                помесячной оплате
+              </span>
+            )}
+          </m.div>
+        </AnimatePresence>
         <button
           type="button"
           onClick={activate}
-          className="button-lift mt-4 h-12 w-full rounded-full bg-mint px-6 text-sm font-bold text-bg"
+          className="button-lift mt-4 h-12 w-full rounded-full bg-mint px-6 text-sm font-bold text-bg transition-transform active:scale-[0.99] cursor-pointer"
         >
           {active ? 'Продлить тариф' : 'Подключить тариф'}
         </button>
