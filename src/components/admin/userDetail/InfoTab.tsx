@@ -2,19 +2,18 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
 import { backTo } from '../AdminBackButton';
-import { useNotify } from '../../../platform/hooks/useNotify';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { createNumberInputHandler } from '../../../utils/inputHelpers';
-import {
-  adminUsersApi,
-  type UserDetailResponse,
-  type UserListItem,
-  type UserPanelInfo,
-  type UserSubscriptionInfo,
+import type {
+  UserDetailResponse,
+  UserListItem,
+  UserPanelInfo,
+  UserSubscriptionInfo,
 } from '../../../api/adminUsers';
 import type { PromoGroup } from '../../../api/promocodes';
 import { ServerIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { SendMessageModal } from './SendMessageModal';
 
 // ──────────────────────────────────────────────────────────────────
 // Local status badge (parent has its own — duplicating here to keep
@@ -91,6 +90,9 @@ export interface InfoTabProps {
   onResetSubscription: () => Promise<void>;
   onDisableUser: () => Promise<void>;
   onFullDeleteUser: () => Promise<void>;
+
+  // Open send message modal
+  onOpenSendMessage?: () => void;
 }
 
 export function InfoTab(props: InfoTabProps) {
@@ -98,12 +100,9 @@ export function InfoTab(props: InfoTabProps) {
   const { formatWithCurrency } = useCurrency();
   const navigate = useNavigate();
   const location = useLocation();
-  const notify = useNotify();
 
-  // «Отправить сообщение» — паритет с бот-кнопкой в карточке юзера
+  // «Отправить сообщение» — если не передано внешнее управление модалкой
   const [sendMsgOpen, setSendMsgOpen] = useState(false);
-  const [sendMsgText, setSendMsgText] = useState('');
-  const [sendMsgLoading, setSendMsgLoading] = useState(false);
   const {
     user,
     hasPermission,
@@ -134,33 +133,8 @@ export function InfoTab(props: InfoTabProps) {
     onResetSubscription,
     onDisableUser,
     onFullDeleteUser,
+    onOpenSendMessage,
   } = props;
-
-  const handleSendMessage = async () => {
-    const text = sendMsgText.trim();
-    if (!text || sendMsgLoading) return;
-    setSendMsgLoading(true);
-    try {
-      await adminUsersApi.sendMessage(user.id, text);
-      notify.success(t('admin.users.sendMessage.success'), t('common.success'));
-      setSendMsgOpen(false);
-      setSendMsgText('');
-    } catch (err) {
-      const detail = (
-        err as { response?: { data?: { detail?: { code?: string; message?: string } | string } } }
-      )?.response?.data?.detail;
-      const code = typeof detail === 'object' ? detail?.code : undefined;
-      const known = ['no_telegram_id', 'forbidden', 'bad_request'];
-      const message =
-        code && known.includes(code)
-          ? t(`admin.users.sendMessage.errors.${code}`)
-          : (typeof detail === 'object' ? detail?.message : detail) ||
-            t('admin.users.userActions.error');
-      notify.error(message, t('common.error'));
-    } finally {
-      setSendMsgLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -510,9 +484,19 @@ export function InfoTab(props: InfoTabProps) {
         <div className="grid grid-cols-2 gap-2">
           {hasPermission('users:send_message') && (
             <button
-              onClick={() => setSendMsgOpen(true)}
-              disabled={actionLoading || !user.telegram_id}
-              title={!user.telegram_id ? t('admin.users.sendMessage.noTelegram') : undefined}
+              onClick={() => {
+                if (onOpenSendMessage) {
+                  onOpenSendMessage();
+                } else {
+                  setSendMsgOpen(true);
+                }
+              }}
+              disabled={actionLoading || (!user.telegram_id && !user.email)}
+              title={
+                !user.telegram_id && !user.email
+                  ? t('admin.users.sendMessage.noChannels', 'Нет Telegram и почты')
+                  : undefined
+              }
               className="col-span-2 rounded-lg bg-accent-500/15 px-3 py-2 text-sm font-medium text-accent-400 transition-all hover:bg-accent-500/25 disabled:opacity-50"
             >
               {t('admin.users.sendMessage.button')}
@@ -573,53 +557,15 @@ export function InfoTab(props: InfoTabProps) {
         </div>
       </div>
 
-      {/* Send message modal */}
-      {sendMsgOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-dark-950/60"
-            onClick={() => !sendMsgLoading && setSendMsgOpen(false)}
-            aria-hidden="true"
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="send-message-title"
-            className="relative w-full max-w-md rounded-xl border border-dark-700 bg-dark-800 p-5"
-          >
-            <h3 id="send-message-title" className="mb-3 text-base font-semibold text-dark-100">
-              {t('admin.users.sendMessage.title')}
-            </h3>
-            <textarea
-              value={sendMsgText}
-              onChange={(e) => setSendMsgText(e.target.value)}
-              maxLength={4096}
-              rows={5}
-              autoFocus
-              placeholder={t('admin.users.sendMessage.placeholder')}
-              className="w-full resize-y rounded-lg border border-dark-600 bg-dark-900/60 px-3 py-2 text-sm text-dark-100 placeholder-dark-500 focus:border-accent-500 focus:outline-none"
-            />
-            <div className="mt-1 text-right text-xs text-dark-500">{sendMsgText.length}/4096</div>
-            <div className="mt-3 flex justify-end gap-2">
-              <button
-                onClick={() => setSendMsgOpen(false)}
-                disabled={sendMsgLoading}
-                className="rounded-lg bg-dark-700 px-4 py-2 text-sm font-medium text-dark-300 transition-colors hover:bg-dark-600 disabled:opacity-50"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleSendMessage}
-                disabled={sendMsgLoading || !sendMsgText.trim()}
-                className="rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
-              >
-                {sendMsgLoading
-                  ? t('admin.users.sendMessage.sending')
-                  : t('admin.users.sendMessage.send')}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Send message modal fallback when not controlled by parent */}
+      {!onOpenSendMessage && (
+        <SendMessageModal
+          isOpen={sendMsgOpen}
+          onClose={() => setSendMsgOpen(false)}
+          userId={user.id}
+          telegramId={user.telegram_id}
+          email={user.email}
+        />
       )}
     </div>
   );

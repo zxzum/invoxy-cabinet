@@ -27,6 +27,14 @@ export interface UserSubscriptionInfo {
   days_remaining: number;
   purchased_traffic_gb: number;
   traffic_purchases: TrafficPurchaseInfo[];
+  whitelist_traffic_limit_gb?: number;
+  whitelist_traffic_used_gb?: number;
+  whitelist_traffic_used_percent?: number;
+  whitelist_traffic_purchased_gb?: number;
+  whitelist_traffic_reset_at?: string | null;
+  whitelist_exhausted?: boolean;
+  whitelist_squad_attached?: boolean | null;
+  whitelist_traffic_purchases?: TrafficPurchaseInfo[];
 }
 
 export interface UserPromoGroupInfo {
@@ -46,6 +54,8 @@ export interface UserListItemSubscription {
   traffic_used_gb: number;
   traffic_limit_gb: number;
   device_limit: number;
+  whitelist_traffic_limit_gb?: number;
+  whitelist_traffic_used_gb?: number;
 }
 
 export interface UserListItem {
@@ -255,6 +265,9 @@ export interface UserAvailableTariff {
   traffic_topup_enabled: boolean;
   traffic_topup_packages: Record<string, number>;
   max_topup_traffic_gb: number;
+  whitelist_traffic_limit_gb?: number;
+  whitelist_traffic_topup_enabled?: boolean;
+  whitelist_traffic_topup_packages?: Record<string, number>;
   is_available: boolean;
   requires_promo_group: boolean;
 }
@@ -351,7 +364,10 @@ export interface UpdateSubscriptionRequest {
     | 'add_traffic'
     | 'remove_traffic'
     | 'set_device_limit'
-    | 'shorten';
+    | 'shorten'
+    | 'add_whitelist_traffic'
+    | 'remove_whitelist_traffic'
+    | 'reset_whitelist_used';
   subscription_id?: number;
   days?: number;
   end_date?: string;
@@ -559,12 +575,13 @@ export const adminUsersApi = {
     return response.data;
   },
 
-  // Send direct Telegram message to user via bot (parity with bot's admin action)
+  // Send direct message to user via bot or email
   sendMessage: async (
     userId: number,
-    text: string,
+    payload: string | { text: string; channel?: 'telegram' | 'email'; subject?: string | null },
   ): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.post(`/cabinet/admin/users/${userId}/send-message`, { text });
+    const body = typeof payload === 'string' ? { text: payload, channel: 'telegram' } : payload;
+    const response = await apiClient.post(`/cabinet/admin/users/${userId}/send-message`, body);
     return response.data;
   },
 

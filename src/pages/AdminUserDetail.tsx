@@ -28,6 +28,8 @@ import { ActivityTab } from '../components/admin/userDetail/ActivityTab';
 import { TicketsTab } from '../components/admin/userDetail/TicketsTab';
 import { InfoTab } from '../components/admin/userDetail/InfoTab';
 import { SubscriptionTab } from '../components/admin/userDetail/SubscriptionTab';
+import { formatUserCard } from '../components/admin/userDetail/copyUserCard';
+import { SendMessageModal } from '../components/admin/userDetail/SendMessageModal';
 import { buildReachabilityLink } from '../components/admin/reachability/deepLink';
 import { useReachabilityAvailable } from '../components/admin/reachability/useReachabilityStatus';
 import { getApiErrorMessage } from '../utils/api-error';
@@ -101,6 +103,9 @@ export default function AdminUserDetail() {
 
   // Traffic packages
   const [selectedTrafficGb, setSelectedTrafficGb] = useState<string>('');
+
+  // Send message modal
+  const [sendMsgOpen, setSendMsgOpen] = useState(false);
 
   // Devices
   const [devices, setDevices] = useState<
@@ -549,6 +554,74 @@ export default function AdminUserDetail() {
     }
   };
 
+  const handleAddWhitelistTraffic = async (gb: number) => {
+    if (!userId) return;
+    setActionLoading(true);
+    try {
+      await adminUsersApi.updateSubscription(userId, {
+        action: 'add_whitelist_traffic',
+        traffic_gb: gb,
+        ...(activeSubscriptionId ? { subscription_id: activeSubscriptionId } : {}),
+      });
+      notify.success(
+        t(
+          'admin.users.detail.subscription.whitelistTrafficAdded',
+          'Пакет Белого интернета добавлен',
+        ),
+      );
+      await loadUser();
+    } catch {
+      notify.error(t('admin.users.userActions.error'), t('common.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRemoveWhitelistTraffic = async (purchaseId: number) => {
+    if (!userId) return;
+    setActionLoading(true);
+    try {
+      await adminUsersApi.updateSubscription(userId, {
+        action: 'remove_whitelist_traffic',
+        traffic_purchase_id: purchaseId,
+        ...(activeSubscriptionId ? { subscription_id: activeSubscriptionId } : {}),
+      });
+      notify.success(
+        t(
+          'admin.users.detail.subscription.whitelistTrafficRemoved',
+          'Пакет Белого интернета удален',
+        ),
+      );
+      await loadUser();
+    } catch {
+      notify.error(t('admin.users.userActions.error'), t('common.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetWhitelistUsed = async () => {
+    if (!userId) return;
+    setActionLoading(true);
+    try {
+      await adminUsersApi.updateSubscription(userId, {
+        action: 'reset_whitelist_used',
+        ...(activeSubscriptionId ? { subscription_id: activeSubscriptionId } : {}),
+      });
+      notify.success(
+        t(
+          'admin.users.detail.subscription.whitelistTrafficReset',
+          'Расход Белого интернета сброшен',
+        ),
+      );
+      await loadUser();
+    } catch {
+      notify.error(t('admin.users.userActions.error'), t('common.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleSetDeviceLimit = async (newLimit: number) => {
     if (!userId) return;
     setActionLoading(true);
@@ -803,24 +876,135 @@ export default function AdminUserDetail() {
   return (
     <div className="animate-fade-in">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <AdminBackButton to="/admin/users" />
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-lg font-bold text-white">
-            {user.first_name?.[0] || user.username?.[0] || '?'}
-          </div>
-          <div>
-            <div className="font-semibold text-dark-100">{user.full_name}</div>
-            <div className="flex items-center gap-2 text-sm text-dark-400">
-              <TelegramIcon />
-              {user.telegram_id}
-              {user.username && <span>@{user.username}</span>}
+      <div className="mb-6 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-3">
+            <AdminBackButton to="/admin/users" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-lg font-bold text-white">
+              {user.first_name?.[0] || user.username?.[0] || '?'}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate font-semibold text-dark-100">{user.full_name}</div>
+              <div className="flex items-center gap-2 text-sm text-dark-400">
+                <TelegramIcon />
+                {user.telegram_id ? (
+                  user.username ? (
+                    <a
+                      href={`https://t.me/${user.username.replace(/^@/, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="transition-colors hover:text-accent-400"
+                    >
+                      {user.telegram_id}
+                    </a>
+                  ) : (
+                    <span>{user.telegram_id}</span>
+                  )
+                ) : null}
+                {user.username && (
+                  <a
+                    href={`https://t.me/${user.username.replace(/^@/, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate transition-colors hover:text-accent-400"
+                  >
+                    @{user.username.replace(/^@/, '')}
+                  </a>
+                )}
+              </div>
             </div>
           </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {hasPermission('users:send_message') && (
+              <button
+                onClick={() => setSendMsgOpen(true)}
+                disabled={actionLoading || (!user.telegram_id && !user.email)}
+                title={
+                  !user.telegram_id && !user.email
+                    ? t('admin.users.sendMessage.noChannels', 'Нет Telegram и почты')
+                    : undefined
+                }
+                className="flex items-center gap-1.5 rounded-lg bg-accent-500/15 px-3 py-1.5 text-xs font-medium text-accent-400 transition-all hover:bg-accent-500/25 disabled:opacity-40"
+              >
+                {t('admin.users.sendMessage.buttonCompact', 'Написать')}
+              </button>
+            )}
+            <button
+              onClick={loadUser}
+              className="rounded-lg p-2 transition-colors hover:bg-dark-700"
+            >
+              <RefreshIcon className={loading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
-        <button onClick={loadUser} className="rounded-lg p-2 transition-colors hover:bg-dark-700">
-          <RefreshIcon className={loading ? 'animate-spin' : ''} />
-        </button>
+
+        {/* Quick access copy chips */}
+        <div
+          className="scrollbar-hide -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 py-0.5 text-xs"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {/* Chip ID */}
+          <button
+            type="button"
+            onClick={() => copyToClipboard(String(user.id))}
+            className="shrink-0 rounded-md border border-dark-700 bg-dark-800/80 px-2 py-1 text-dark-300 transition-colors hover:border-dark-600 hover:text-dark-100"
+          >
+            ID {user.id}
+          </button>
+
+          {/* Chip TG */}
+          {user.telegram_id ? (
+            <button
+              type="button"
+              onClick={() => copyToClipboard(String(user.telegram_id))}
+              className="shrink-0 rounded-md border border-dark-700 bg-dark-800/80 px-2 py-1 text-dark-300 transition-colors hover:border-dark-600 hover:text-dark-100"
+            >
+              TG {user.telegram_id}
+            </button>
+          ) : null}
+
+          {/* Chip @username */}
+          {user.username ? (
+            <button
+              type="button"
+              onClick={() => copyToClipboard(user.username?.replace(/^@/, '') || '')}
+              className="shrink-0 rounded-md border border-dark-700 bg-dark-800/80 px-2 py-1 text-dark-300 transition-colors hover:border-dark-600 hover:text-dark-100"
+            >
+              @{user.username.replace(/^@/, '')}
+            </button>
+          ) : null}
+
+          {/* Chip email */}
+          {user.email ? (
+            <button
+              type="button"
+              onClick={() => copyToClipboard(user.email || '')}
+              className="shrink-0 rounded-md border border-dark-700 bg-dark-800/80 px-2 py-1 text-dark-300 transition-colors hover:border-dark-600 hover:text-dark-100"
+            >
+              {user.email}
+            </button>
+          ) : null}
+
+          {/* Chip Скопировать карточку */}
+          <button
+            type="button"
+            onClick={() => {
+              const activeSub =
+                userSubscriptions.find((s) => s.id === activeSubscriptionId) ||
+                userSubscriptions[0] ||
+                null;
+              const text = formatUserCard({
+                user,
+                subscription: activeSub,
+                formatDate,
+              });
+              copyToClipboard(text);
+            }}
+            className="shrink-0 rounded-md border border-accent-500/30 bg-accent-500/10 px-2 py-1 font-medium text-accent-400 transition-colors hover:bg-accent-500/20"
+          >
+            {t('admin.users.detail.copyCard', 'Скопировать карточку')}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -902,6 +1086,7 @@ export default function AdminUserDetail() {
             onResetSubscription={handleResetSubscription}
             onDisableUser={handleDisableUser}
             onFullDeleteUser={handleFullDeleteUser}
+            onOpenSendMessage={() => setSendMsgOpen(true)}
           />
         )}
 
@@ -957,6 +1142,9 @@ export default function AdminUserDetail() {
             onSetDeviceLimit={handleSetDeviceLimit}
             onAddTraffic={handleAddTraffic}
             onRemoveTraffic={handleRemoveTraffic}
+            onAddWhitelistTraffic={handleAddWhitelistTraffic}
+            onRemoveWhitelistTraffic={handleRemoveWhitelistTraffic}
+            onResetWhitelistUsed={handleResetWhitelistUsed}
             onResetDevices={handleResetDevices}
             onDeleteDevice={handleDeleteDevice}
             onRenameDevice={handleRenameDevice}
@@ -1021,6 +1209,16 @@ export default function AdminUserDetail() {
           <ActivityTab userId={userId} formatDate={formatDate} />
         )}
       </div>
+
+      {user && (
+        <SendMessageModal
+          isOpen={sendMsgOpen}
+          onClose={() => setSendMsgOpen(false)}
+          userId={user.id}
+          telegramId={user.telegram_id}
+          email={user.email}
+        />
+      )}
     </div>
   );
 }
