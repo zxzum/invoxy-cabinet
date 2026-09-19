@@ -305,51 +305,105 @@ export function DashboardPage() {
                   <TrafficCards subscription={subscription} />
                 </div>
 
-                {/* Immediately after traffic cards: offer card for Standard if trial, or renewal card if paid */}
-                {isTrial ? (
-                  <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
-                    <StandardOfferCard
-                      onPay={(amount, purpose, tariffId, periodDays) =>
-                        openPayment({ amount, purpose, tariffId, periodDays })
-                      }
-                    />
-                  </Reveal>
-                ) : (
-                  <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
-                    <RenewalCard
-                      title={subscription?.tariff_name || selected?.tariff_name || 'Подписка'}
-                      subtitle={
-                        subscription
-                          ? `${subscription.traffic_limit_gb || '∞'} ГБ · ${subscription.whitelist_traffic_limit_gb || 0} ГБ LTE · до ${subscription.device_limit || '—'} устройств`
-                          : 'Параметры тарифа'
-                      }
-                      terms={renewalTerms}
-                      onPay={(_, term, period) =>
-                        openPayment({
-                          amount: renewalTerms.find((option) => option.id === period)?.price ?? 0,
-                          purpose: `Продление подписки · ${term}`,
-                          subscriptionId: activeSubId ?? undefined,
-                          periodDays: Number(period),
-                        })
-                      }
-                    />
-                  </Reveal>
-                )}
+                {/* Active subscription: DevicesCard above Renewal/Offer card.
+                    Expired subscription: Renewal/Offer card above DevicesCard (accent on renewal). */}
+                {isExpired ? (
+                  <>
+                    {isTrial ? (
+                      <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
+                        <StandardOfferCard
+                          onPay={(amount, purpose, tariffId, periodDays) =>
+                            openPayment({ amount, purpose, tariffId, periodDays })
+                          }
+                        />
+                      </Reveal>
+                    ) : (
+                      <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
+                        <RenewalCard
+                          title={subscription?.tariff_name || selected?.tariff_name || 'Подписка'}
+                          subtitle={
+                            subscription
+                              ? `${subscription.traffic_limit_gb || '∞'} ГБ · ${subscription.whitelist_traffic_limit_gb || 0} ГБ LTE · до ${subscription.device_limit || '—'} устройств`
+                              : 'Параметры тарифа'
+                          }
+                          terms={renewalTerms}
+                          onPay={(_, term, period) =>
+                            openPayment({
+                              amount:
+                                renewalTerms.find((option) => option.id === period)?.price ?? 0,
+                              purpose: `Продление подписки · ${term}`,
+                              subscriptionId: activeSubId ?? undefined,
+                              periodDays: Number(period),
+                            })
+                          }
+                        />
+                      </Reveal>
+                    )}
 
-                <Reveal delay={0.1} className="order-4 min-w-0 lg:order-none">
-                  <DevicesCard
-                    devices={managedDevices}
-                    deviceLimit={subscription?.device_limit ?? selected?.device_limit}
-                    isExpired={isExpired}
-                    onRemove={async (device) => {
-                      await subscriptionApi.deleteDevice(device.id, activeSubId ?? undefined);
-                      await queryClient.invalidateQueries({
-                        queryKey: ['invoxy-subscription-details', activeSubId],
-                      });
-                    }}
-                    onConnect={handleOpenConnect}
-                  />
-                </Reveal>
+                    <Reveal delay={0.1} className="order-4 min-w-0 lg:order-none">
+                      <DevicesCard
+                        devices={managedDevices}
+                        deviceLimit={subscription?.device_limit ?? selected?.device_limit}
+                        isExpired={isExpired}
+                        onRemove={async (device) => {
+                          await subscriptionApi.deleteDevice(device.id, activeSubId ?? undefined);
+                          await queryClient.invalidateQueries({
+                            queryKey: ['invoxy-subscription-details', activeSubId],
+                          });
+                        }}
+                        onConnect={handleOpenConnect}
+                      />
+                    </Reveal>
+                  </>
+                ) : (
+                  <>
+                    <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
+                      <DevicesCard
+                        devices={managedDevices}
+                        deviceLimit={subscription?.device_limit ?? selected?.device_limit}
+                        isExpired={isExpired}
+                        onRemove={async (device) => {
+                          await subscriptionApi.deleteDevice(device.id, activeSubId ?? undefined);
+                          await queryClient.invalidateQueries({
+                            queryKey: ['invoxy-subscription-details', activeSubId],
+                          });
+                        }}
+                        onConnect={handleOpenConnect}
+                      />
+                    </Reveal>
+
+                    {isTrial ? (
+                      <Reveal delay={0.1} className="order-4 min-w-0 lg:order-none">
+                        <StandardOfferCard
+                          onPay={(amount, purpose, tariffId, periodDays) =>
+                            openPayment({ amount, purpose, tariffId, periodDays })
+                          }
+                        />
+                      </Reveal>
+                    ) : (
+                      <Reveal delay={0.1} className="order-4 min-w-0 lg:order-none">
+                        <RenewalCard
+                          title={subscription?.tariff_name || selected?.tariff_name || 'Подписка'}
+                          subtitle={
+                            subscription
+                              ? `${subscription.traffic_limit_gb || '∞'} ГБ · ${subscription.whitelist_traffic_limit_gb || 0} ГБ LTE · до ${subscription.device_limit || '—'} устройств`
+                              : 'Параметры тарифа'
+                          }
+                          terms={renewalTerms}
+                          onPay={(_, term, period) =>
+                            openPayment({
+                              amount:
+                                renewalTerms.find((option) => option.id === period)?.price ?? 0,
+                              purpose: `Продление подписки · ${term}`,
+                              subscriptionId: activeSubId ?? undefined,
+                              periodDays: Number(period),
+                            })
+                          }
+                        />
+                      </Reveal>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="contents lg:col-start-2 lg:flex lg:flex-col lg:gap-[1.1vw]">
