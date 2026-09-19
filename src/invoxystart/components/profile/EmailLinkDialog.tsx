@@ -86,7 +86,7 @@ export function EmailLinkDialog({
             </h2>
             <p className="mt-1 text-sm text-muted">Используйте почту для входа без Telegram.</p>
           </div>
-          <form className="mt-6 space-y-4" onSubmit={submit} noValidate>
+          <form className="mt-6 space-y-4 pb-2" onSubmit={submit} noValidate>
             <Field
               label="Email"
               type="email"
@@ -125,7 +125,7 @@ export function EmailLinkDialog({
             <button
               type="submit"
               disabled={busy}
-              className="button-lift h-13 w-full rounded-full bg-mint text-sm font-bold text-bg disabled:cursor-wait disabled:opacity-50"
+              className="button-lift mt-2 h-12 w-full rounded-full bg-mint text-sm font-bold text-bg disabled:cursor-wait disabled:opacity-50"
             >
               {busy ? 'Отправка…' : 'Отправить письмо подтверждения'}
             </button>
@@ -181,7 +181,7 @@ function Field({
         autoComplete={autoComplete}
         placeholder={placeholder}
         aria-invalid={Boolean(error)}
-        className={`glass-control h-13 w-full rounded-2xl px-4 text-sm outline-none transition-colors placeholder:text-muted/60 ${error ? 'border-red-300/50' : 'focus:border-mint/60'}`}
+        className={`glass-control h-12 w-full rounded-2xl px-4 text-sm outline-none transition-colors placeholder:text-muted/60 ${error ? 'border-red-300/50' : 'focus:border-mint/60'}`}
       />
       {error && (
         <span role="alert" className="mt-1.5 block text-xs text-red-200">

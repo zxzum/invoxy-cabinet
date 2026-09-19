@@ -10,6 +10,8 @@ import type {
   SubscriptionStatusResponse,
   SubscriptionsListResponse,
   TrafficPackage,
+  TrafficResetResponse,
+  TrafficResetStatus,
   TrialInfo,
 } from './types';
 
@@ -85,6 +87,15 @@ export const subscriptionApi = {
       gb_added: number;
       amount_paid_kopeks: number;
     }>('/cabinet/subscription/traffic', { gb, scope }, query(subscriptionId)),
+
+  getTrafficReset: (subscriptionId?: number): Promise<TrafficResetStatus> =>
+    apiClient.get('/cabinet/subscription/traffic-reset', query(subscriptionId)),
+
+  resetTraffic: (subscriptionId?: number): Promise<TrafficResetResponse> =>
+    apiClient.post('/cabinet/subscription/traffic-reset', {}, query(subscriptionId)),
+
+  saveTrafficResetCart: (subscriptionId?: number): Promise<void> =>
+    apiClient.post('/cabinet/subscription/traffic-reset/save-cart', {}, query(subscriptionId)),
 
   refreshTraffic: (subscriptionId?: number) =>
     apiClient.post<{

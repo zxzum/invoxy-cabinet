@@ -9,6 +9,7 @@ import { AccessKeyCard } from '@/invoxystart/components/dashboard/AccessKeyCard'
 import { QuickConnect } from '@/invoxystart/components/dashboard/QuickConnect';
 import { RenewalCard } from '@/invoxystart/components/dashboard/RenewalCard';
 import { AddonsCard } from '@/invoxystart/components/dashboard/AddonsCard';
+import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
 import { Reveal } from '@/invoxystart/components/layout/Reveal';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { Link, useNavigate } from 'react-router';
@@ -263,6 +264,8 @@ export function DashboardPage() {
               <ZeroDevicesHeroBanner accessLink={accessLink} onConnect={handleOpenConnect} />
             )}
 
+            <ActiveInvoiceCard />
+
             <div className="flex w-full flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(310px,.85fr)] lg:items-start lg:gap-[1.1vw]">
               <div className="contents lg:col-start-1 lg:flex lg:flex-col lg:gap-[1.1vw]">
                 <Reveal className="order-1 min-w-0 lg:order-none">
@@ -336,7 +339,7 @@ export function DashboardPage() {
                 </Reveal>
 
                 <Reveal delay={0.3} className="order-7 min-w-0 lg:order-none">
-                  <AddonsCard subscriptionId={activeSubId} />
+                  <AddonsCard subscriptionId={activeSubId} subscription={subscription} />
                 </Reveal>
               </div>
             </div>

@@ -76,9 +76,14 @@ export const balanceApi = {
   getLatestPayment: (method: string): Promise<PendingPayment> =>
     apiClient.get(`/cabinet/balance/pending-payments/${encodeURIComponent(method)}/latest`),
 
-  checkPaymentStatus: (method: string, paymentId: number): Promise<ManualCheckResponse> =>
+  checkPaymentStatus: (method: string, paymentId: number | string): Promise<ManualCheckResponse> =>
     apiClient.post(
       `/cabinet/balance/pending-payments/${encodeURIComponent(method)}/${encodeURIComponent(paymentId)}/check`,
+    ),
+
+  cancelPendingPayment: (method: string, paymentId: number | string): Promise<PendingPayment> =>
+    apiClient.post(
+      `/cabinet/balance/pending-payments/${encodeURIComponent(method)}/${encodeURIComponent(paymentId)}/cancel`,
     ),
 
   getSavedCards: (): Promise<SavedCardsResponse> => apiClient.get('/cabinet/balance/saved-cards'),

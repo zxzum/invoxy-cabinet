@@ -19,6 +19,7 @@ import {
   type Balance,
   type PaymentMethod,
 } from '@/invoxystart/api';
+import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
 
 export interface PaymentRequest {
   amount: number;
@@ -29,7 +30,7 @@ export interface PaymentRequest {
   periodDays?: number;
   subscriptionId?: number;
   trafficGb?: number;
-  addonType?: 'devices' | 'traffic' | 'lte';
+  addonType?: 'devices' | 'traffic' | 'lte' | 'lte_reset';
   addonValue?: number;
   onComplete?: () => void;
 }
@@ -67,6 +68,8 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
             payment.subscriptionId,
             payment.addonType === 'lte' ? 'whitelist' : 'regular',
           );
+        } else if (payment.addonType === 'lte_reset') {
+          await subscriptionApi.resetTraffic(payment.subscriptionId);
         } else if (payment.tariffId && payment.periodDays) {
           await subscriptionApi.purchaseTariff(
             payment.tariffId,
@@ -108,8 +111,12 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       if (!result || !isExternalUrl(result.payment_url))
         throw new Error('Платёжная ссылка недоступна');
       window.location.assign(result.payment_url);
-    } catch {
-      showToast('Не удалось создать платёж');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        showToast('У вас уже есть активный счёт. Оплатите или отмените его.');
+      } else {
+        showToast('Не удалось создать платёж');
+      }
     } finally {
       setBusy(false);
     }
@@ -149,6 +156,8 @@ async function createBalanceBackedPayment(
         request.subscriptionId,
         request.addonType === 'lte' ? 'whitelist' : 'regular',
       );
+    } else if (request.addonType === 'lte_reset') {
+      await subscriptionApi.resetTraffic(request.subscriptionId);
     } else if (request.periodDays) {
       await subscriptionApi.renewSubscription(request.periodDays, request.subscriptionId);
     } else {
@@ -221,6 +230,7 @@ function PaymentDialog({
         </h2>
       </div>
       <div className="form-step-enter mt-6">
+        <ActiveInvoiceCard className="mb-4" />
         <div className="payment-dialog-item max-w-full overflow-hidden rounded-2xl bg-white/5 p-4 text-center">
           <p className="text-[10px] font-bold uppercase tracking-[.12em] text-muted">Назначение</p>
           <p className="mt-1 break-words text-sm font-medium">{request?.purpose}</p>
@@ -348,7 +358,7 @@ export function PaymentMethods({
                       <span className="min-w-0">
                         <strong className="block truncate text-xs">{option.name}</strong>
                         <span className="mt-0.5 block text-[10px] text-muted">
-                          {option.description || 'Оплата через ' + method.name}
+                          {option.description || `Оплата через ${method.name}`}
                         </span>
                       </span>
                     </button>

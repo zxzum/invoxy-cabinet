@@ -80,7 +80,7 @@ export function HistoryModal({
           {newest ? 'Сначала новые' : 'Сначала старые'}
         </button>
       </div>
-      <div className="mt-4 divide-y divide-white/8">
+      <div className="mt-4 divide-y divide-white/[0.06]">
         {visible.length ? (
           visible.map(([date, title, type, amount, method, status]) => (
             <article

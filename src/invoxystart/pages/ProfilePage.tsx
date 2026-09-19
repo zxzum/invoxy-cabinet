@@ -17,6 +17,7 @@ import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { HistoryModal } from '@/invoxystart/components/profile/HistoryModal';
 import { EmailLinkDialog } from '@/invoxystart/components/profile/EmailLinkDialog';
+import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
 import { usePayment } from '@/invoxystart/components/payments/PaymentFlow';
 import { useAuth } from '@/invoxystart/auth';
 import {
@@ -154,6 +155,8 @@ export default function ProfilePage() {
             </div>
           </section>
 
+          <ActiveInvoiceCard />
+
           <section
             id="top-up"
             className={`glass-panel motion-card scroll-mt-6 rounded-[30px] p-5 lg:p-7 transition-all duration-500 ${
@@ -219,7 +222,7 @@ export default function ProfilePage() {
                 Все операции →
               </button>
             </div>
-            <div className="mt-3 divide-y divide-white/8">
+            <div className="mt-3 divide-y divide-white/[0.06]">
               {history.map((item) => {
                 const positive = item.amount_kopeks >= 0;
                 return (
@@ -415,11 +418,13 @@ function InfoRow({
       <span className="text-mint transition-transform duration-500 group-hover:scale-110">
         {icon}
       </span>
-      <span className="w-24 text-xs text-muted">{label}</span>
-      <span className="min-w-0 flex-1 truncate text-right text-sm font-medium">{value}</span>
+      <span className="shrink-0 text-xs text-muted">{label}</span>
+      <span className="min-w-0 flex-1 break-all text-right text-xs sm:text-sm font-medium">
+        {value}
+      </span>
       <ChevronRight
         size={14}
-        className="text-muted transition-transform duration-500 group-hover:translate-x-1 group-hover:text-mint"
+        className="shrink-0 text-muted transition-transform duration-500 group-hover:translate-x-1 group-hover:text-mint"
       />
     </button>
   );

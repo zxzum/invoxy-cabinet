@@ -180,7 +180,7 @@ export default function ReferralsPage() {
             <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
               {info?.total_referrals ?? invited.length ?? 0}
             </div>
-            <p className="mt-1 truncate text-[11px] text-mint sm:text-xs">
+            <p className="mt-1 text-[11px] leading-tight text-mint sm:text-xs">
               {info?.active_referrals ?? invited.filter((i) => i.has_paid).length} активных
             </p>
           </div>
@@ -197,7 +197,7 @@ export default function ReferralsPage() {
             <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
               {formatMoney(info?.total_earnings_kopeks, info?.total_earnings_rubles ?? 0)}
             </div>
-            <p className="mt-1 truncate text-[11px] text-muted sm:text-xs">
+            <p className="mt-1 text-[11px] leading-tight text-muted sm:text-xs">
               Пожизненно со всех оплат
             </p>
           </div>
@@ -214,7 +214,7 @@ export default function ReferralsPage() {
             <div className="text-xl font-bold tracking-tight text-mint sm:text-2xl">
               {terms?.commission_percent ?? info?.commission_percent ?? 25}%
             </div>
-            <p className="mt-1 truncate text-[11px] text-muted sm:text-xs">
+            <p className="mt-1 text-[11px] leading-tight text-muted sm:text-xs">
               Вечный процент от оплат
             </p>
           </div>
@@ -231,7 +231,7 @@ export default function ReferralsPage() {
             <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
               +{terms?.inviter_bonus_rubles ?? 50} ₽
             </div>
-            <p className="mt-1 truncate text-[11px] text-muted sm:text-xs">
+            <p className="mt-1 text-[11px] leading-tight text-muted sm:text-xs">
               Обоим при первом старте
             </p>
           </div>

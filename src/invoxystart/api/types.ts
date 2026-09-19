@@ -157,6 +157,36 @@ export interface TrafficPackage {
   next_available_at?: string | null;
 }
 
+export interface TrafficResetStatus {
+  enabled: boolean;
+  chunk_gb: number;
+  price_kopeks: number;
+  price_rubles: number;
+  base_price_kopeks?: number;
+  discount_percent?: number;
+  min_used_gb: number;
+  used_gb: number;
+  limit_gb: number;
+  will_clear_gb: number;
+  used_after_gb: number;
+  max_per_month: number;
+  used_this_month: number;
+  remaining_this_month: number;
+  next_available_at: string | null;
+  unavailable_reason: 'disabled' | 'below_min_used' | 'monthly_limit' | null;
+  exhausted: boolean;
+}
+
+export interface TrafficResetResponse {
+  success: boolean;
+  cleared_gb: number;
+  new_used_gb: number;
+  limit_gb: number;
+  remaining_this_month: number;
+  max_per_month: number;
+  price_kopeks: number;
+}
+
 export interface TrialInfo {
   is_available: boolean;
   duration_days: number;
@@ -267,6 +297,8 @@ export interface PendingPayment {
   created_at: string;
   expires_at: string | null;
   payment_url: string | null;
+  purpose?: string | null;
+  purpose_code?: string | null;
 }
 
 export interface ManualCheckResponse {
