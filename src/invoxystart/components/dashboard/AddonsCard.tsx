@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Gauge, Globe2, Minus, Plus, Users } from '@/invoxystart/components/ui/RuneIcon';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { PaymentMethods, usePayment } from '@/invoxystart/components/payments/PaymentFlow';
-import { subscriptionApi, type TrafficResetStatus } from '@/invoxystart/api';
+import { subscriptionApi } from '@/invoxystart/api';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 type Package = { gb: number; price: number; is_available?: boolean; reason?: string | null };
 
@@ -35,12 +36,6 @@ export function AddonsCard({
   const [step, setStep] = useState<'options' | 'payment'>('options');
   const [deviceCount, setDeviceCount] = useState(1);
   const [mainIndex, setMainIndex] = useState(0);
-  const [mainPackages, setMainPackages] = useState<Package[]>([]);
-  const [devicePrice, setDevicePrice] = useState(0);
-  const [trafficReset, setTrafficReset] = useState<TrafficResetStatus | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState('');
-
   const { data: fetchedSub } = useQuery({
     queryKey: ['invoxy-subscription-details', subscriptionId],
     queryFn: () => subscriptionApi.getSubscriptionById(subscriptionId!),
@@ -54,6 +49,94 @@ export function AddonsCard({
     (effectiveSub?.whitelist_traffic_limit_gb && effectiveSub.whitelist_traffic_limit_gb > 0) ||
       effectiveSub?.tariff_name?.toLowerCase().includes('lte'),
   );
+
+  // Pre-load queries so content is immediately available when dialog opens
+  const {
+    data: trafficReset,
+    isLoading: resetLoading,
+    error: resetError,
+  } = useQuery({
+    queryKey: ['traffic-reset', subscriptionId],
+    queryFn: () => subscriptionApi.getTrafficReset(subscriptionId!),
+    enabled: Boolean(subscriptionId && hasLte),
+    staleTime: 60_000,
+  });
+
+  const { data: trafficPackagesData, isLoading: packagesLoading } = useQuery({
+    queryKey: ['traffic-packages', subscriptionId, 'regular'],
+    queryFn: () => subscriptionApi.getTrafficPackages(subscriptionId!, 'regular'),
+    enabled: Boolean(subscriptionId && !hasLte),
+    staleTime: 60_000,
+  });
+
+  const { data: devicePriceData, isLoading: deviceLoading } = useQuery({
+    queryKey: ['device-price', subscriptionId, deviceCount],
+    queryFn: () => subscriptionApi.getDevicePrice(deviceCount, subscriptionId!),
+    enabled: Boolean(subscriptionId && selected === 'devices'),
+    staleTime: 60_000,
+  });
+
+  const mainPackages = useMemo<Package[]>(() => {
+    if (!trafficPackagesData) return [];
+    return trafficPackagesData.map((item) => ({
+      gb: item.gb,
+      price: item.price_rubles ?? item.price_kopeks / 100,
+      is_available: item.is_available,
+      reason: item.unavailable_reason,
+    }));
+  }, [trafficPackagesData]);
+
+  const devicePrice = useMemo(() => {
+    if (
+      !devicePriceData ||
+      !devicePriceData.available ||
+      devicePriceData.total_price_kopeks == null
+    ) {
+      return 0;
+    }
+    return devicePriceData.total_price_kopeks / 100;
+  }, [devicePriceData]);
+
+  const loading =
+    Boolean(subscriptionId) &&
+    ((selected === 'lte_reset' && resetLoading && !trafficReset) ||
+      (selected === 'traffic' && packagesLoading && !trafficPackagesData) ||
+      (selected === 'devices' && deviceLoading && !devicePriceData));
+
+  const loadError = useMemo(() => {
+    if (selected === 'devices') {
+      if (
+        devicePriceData &&
+        (!devicePriceData.available || devicePriceData.total_price_kopeks == null)
+      ) {
+        return devicePriceData.reason || 'Докупка устройств недоступна';
+      }
+    }
+    if (selected === 'traffic') {
+      if (!packagesLoading && mainPackages.length === 0 && trafficPackagesData) {
+        return 'Докупка трафика на этом тарифе недоступна';
+      }
+    }
+    if (selected === 'lte_reset') {
+      if (resetError) {
+        return getApiErrorMessage(resetError, 'Не удалось загрузить параметры опции');
+      }
+      if (trafficReset && !trafficReset.enabled) {
+        return trafficReset.unavailable_reason === 'disabled'
+          ? 'Сброс LTE недоступен на этом тарифе'
+          : trafficReset.unavailable_reason || 'Сброс LTE временно недоступен';
+      }
+    }
+    return '';
+  }, [
+    selected,
+    devicePriceData,
+    packagesLoading,
+    mainPackages.length,
+    trafficPackagesData,
+    resetError,
+    trafficReset,
+  ]);
 
   const availableCards = useMemo(() => {
     const list: AddonOption[] = [
@@ -93,78 +176,19 @@ export function AddonsCard({
       ? devicePrice
       : selected === 'traffic'
         ? (mainPackages[mainIndex]?.price ?? 50)
-        : 150;
+        : (trafficReset?.price_rubles ?? 150);
 
   const purpose =
     selected === 'devices'
       ? `Доп. устройства · ${deviceCount} шт.`
       : selected === 'traffic'
         ? `Основной трафик · ${mainPackages[mainIndex]?.gb ?? 100} ГБ`
-        : 'Сброс расхода LTE · 50 ГБ';
+        : `Сброс расхода LTE · ${trafficReset?.chunk_gb ?? 50} ГБ`;
 
   function openAddon(id: 'devices' | 'traffic' | 'lte_reset') {
     setStep('options');
     setSelected(id);
-    setLoading(Boolean(subscriptionId));
-    setLoadError('');
-    if (id === 'devices') setDevicePrice(0);
-    if (id === 'traffic') {
-      setMainPackages([]);
-      setMainIndex(0);
-    }
-    if (id === 'lte_reset') {
-      setTrafficReset(null);
-    }
   }
-
-  useEffect(() => {
-    if (!selected || !subscriptionId) return;
-    let mounted = true;
-    setLoading(true);
-    setLoadError('');
-
-    const run = async () => {
-      try {
-        if (selected === 'devices') {
-          const result = await subscriptionApi.getDevicePrice(deviceCount, subscriptionId);
-          if (!mounted) return;
-          if (!result.available || result.total_price_kopeks == null) {
-            setDevicePrice(0);
-            setLoadError(result.reason || 'Докупка устройств недоступна');
-            return;
-          }
-          setDevicePrice(result.total_price_kopeks / 100);
-        } else if (selected === 'traffic') {
-          const packages = await subscriptionApi.getTrafficPackages(subscriptionId, 'regular');
-          if (!mounted) return;
-          const next = packages.map((item) => ({
-            gb: item.gb,
-            price: item.price_rubles ?? item.price_kopeks / 100,
-            is_available: item.is_available,
-            reason: item.unavailable_reason,
-          }));
-          setMainPackages(next);
-          if (!next.length) {
-            setLoadError('Докупка трафика на этом тарифе недоступна');
-          }
-        } else if (selected === 'lte_reset') {
-          const resetStatus = await subscriptionApi.getTrafficReset(subscriptionId);
-          if (!mounted) return;
-          setTrafficReset(resetStatus);
-        }
-      } catch {
-        if (!mounted) return;
-        setLoadError('Не удалось загрузить параметры опции');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    void run();
-    return () => {
-      mounted = false;
-    };
-  }, [deviceCount, selected, subscriptionId]);
 
   const canProceed = useMemo(() => {
     if (loading || !subscriptionId) return false;

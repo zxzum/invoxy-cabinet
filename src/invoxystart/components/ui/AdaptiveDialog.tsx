@@ -26,10 +26,22 @@ export function AdaptiveDialog({
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
 
+  const renderedChildrenRef = useRef<ReactNode>(children);
+  if (open) {
+    renderedChildrenRef.current = children;
+  }
+
   useEffect(() => {
     if (open) {
       setMounted(true);
       setClosing(false);
+      if (panelRef.current) {
+        panelRef.current.style.removeProperty('--adaptive-dialog-drag-y');
+        panelRef.current.style.transition = '';
+        panelRef.current.style.transform = '';
+        panelRef.current.style.opacity = '';
+        panelRef.current.style.animation = '';
+      }
       return;
     }
     if (!mounted) return;
@@ -89,7 +101,10 @@ export function AdaptiveDialog({
       startTime: time,
       lastY: event.clientY,
     };
-    panelRef.current?.classList.add('is-dragging');
+    if (panelRef.current) {
+      panelRef.current.style.transition = 'none';
+      panelRef.current.classList.add('is-dragging');
+    }
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
@@ -109,9 +124,42 @@ export function AdaptiveDialog({
     const velocity = (drag.lastY - drag.startY) / Math.max(1, time - drag.startTime);
     const cancelled = event.type === 'pointercancel' || event.type === 'lostpointercapture';
     dragState.current = null;
-    panelRef.current?.classList.remove('is-dragging');
-    panelRef.current?.style.setProperty('--adaptive-dialog-drag-y', '0px');
-    if (!cancelled && (offset > 88 || (offset > 24 && velocity > 0.7))) closeRef.current();
+    const panel = panelRef.current;
+    if (panel) {
+      panel.classList.remove('is-dragging');
+    }
+
+    if (!cancelled && (offset > 88 || (offset > 24 && velocity > 0.7))) {
+      setClosing(true);
+      if (panel) {
+        const targetY = window.innerHeight;
+        const remaining = Math.max(10, targetY - offset);
+        const duration = Math.min(
+          240,
+          Math.max(140, Math.round(remaining / Math.max(1.5, velocity * 2))),
+        );
+        panel.style.animation = 'none';
+        panel.style.transition = `transform ${duration}ms cubic-bezier(0.25, 1, 0.5, 1), opacity ${duration}ms ease-in`;
+        panel.style.transform = `translate3d(0, ${targetY}px, 0)`;
+        panel.style.opacity = '0';
+        window.setTimeout(() => {
+          closeRef.current();
+          setMounted(false);
+        }, duration);
+      } else {
+        closeRef.current();
+      }
+    } else {
+      if (panel) {
+        panel.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+        panel.style.setProperty('--adaptive-dialog-drag-y', '0px');
+        window.setTimeout(() => {
+          if (panel && !dragState.current) {
+            panel.style.transition = '';
+          }
+        }, 220);
+      }
+    }
   }
 
   if (!mounted) return null;
@@ -147,7 +195,7 @@ export function AdaptiveDialog({
         >
           <X size={18} />
         </button>
-        {children}
+        {closing ? renderedChildrenRef.current : children}
       </section>
     </div>,
     document.body,

@@ -323,31 +323,75 @@ export default function ProfilePage() {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setEmailDialogOpen(true)}
-                className={`button-lift email-link-button group flex items-center gap-3 rounded-2xl border border-dashed px-3.5 py-3 text-left text-sm ${emailLinkSent ? 'border-mint/40 bg-mint/10 text-ink' : 'border-white/15 text-muted'}`}
-              >
-                <span className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                  {emailLinkSent ? (
-                    <Check size={16} className="text-mint" />
-                  ) : (
-                    <Link2 size={16} className="text-mint" />
-                  )}
-                </span>
-                <div>
-                  <p className="font-medium text-ink">
-                    {emailLinkSent ? 'Письмо отправлено' : 'Привязать Email'}
-                  </p>
-                  <p className="mt-0.5 text-[10px]">
-                    {emailLinkSent ? 'Проверьте входящие' : 'Подтвердить почту'}
-                  </p>
+              {user?.email && user?.email_verified ? (
+                <div
+                  onClick={() => setEmailDialogOpen(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') setEmailDialogOpen(true);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="button-lift group flex cursor-pointer items-center gap-3 rounded-2xl bg-mint/10 px-3.5 py-3 text-left text-sm"
+                >
+                  <Check size={16} className="text-mint shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-ink">Email привязан</p>
+                    <p className="mt-0.5 truncate text-[10px] text-muted">{user.email}</p>
+                  </div>
+                  <ChevronRight
+                    size={14}
+                    className="ml-auto shrink-0 text-muted transition-transform duration-300 group-hover:translate-x-1 group-hover:text-mint"
+                  />
                 </div>
-                <ChevronRight
-                  size={14}
-                  className="ml-auto text-muted transition-transform duration-300 group-hover:translate-x-1 group-hover:text-mint"
-                />
-              </button>
+              ) : user?.email ? (
+                <button
+                  type="button"
+                  onClick={() => setEmailDialogOpen(true)}
+                  className="button-lift email-link-button group flex items-center gap-3 rounded-2xl border border-amber-300/30 bg-amber-300/5 px-3.5 py-3 text-left text-sm"
+                >
+                  <span className="shrink-0 transition-transform duration-300 group-hover:scale-110">
+                    <Link2 size={16} className="text-amber-300" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-amber-200">
+                      {emailLinkSent ? 'Письмо отправлено' : 'Email не подтверждён'}
+                    </p>
+                    <p className="mt-0.5 truncate text-[10px] text-amber-200/70">
+                      {emailLinkSent ? 'Проверьте входящие' : user.email}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    size={14}
+                    className="ml-auto shrink-0 text-amber-200/60 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-amber-200"
+                  />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEmailDialogOpen(true)}
+                  className={`button-lift email-link-button group flex items-center gap-3 rounded-2xl border border-dashed px-3.5 py-3 text-left text-sm ${emailLinkSent ? 'border-mint/40 bg-mint/10 text-ink' : 'border-white/15 text-muted'}`}
+                >
+                  <span className="shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    {emailLinkSent ? (
+                      <Check size={16} className="text-mint" />
+                    ) : (
+                      <Link2 size={16} className="text-mint" />
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-ink">
+                      {emailLinkSent ? 'Письмо отправлено' : 'Привязать Email'}
+                    </p>
+                    <p className="mt-0.5 text-[10px]">
+                      {emailLinkSent ? 'Проверьте входящие' : 'Подтвердить почту'}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    size={14}
+                    className="ml-auto shrink-0 text-muted transition-transform duration-300 group-hover:translate-x-1 group-hover:text-mint"
+                  />
+                </button>
+              )}
             </div>
           </section>
 

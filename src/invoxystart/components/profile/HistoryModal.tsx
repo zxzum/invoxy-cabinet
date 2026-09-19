@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AnimatePresence, m } from 'framer-motion';
 import { ChevronLeft, ChevronRight, SlidersHorizontal } from '@/invoxystart/components/ui/RuneIcon';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import type { Transaction } from '@/invoxystart/api';
@@ -58,55 +59,83 @@ export function HistoryModal({
         </h2>
       </div>
       <div className="mt-5 flex flex-wrap gap-2">
-        {['Все', 'Пополнение', 'Списание', 'Бонус'].map((value) => (
-          <button
-            type="button"
-            key={value}
-            onClick={() => {
-              setFilter(value);
-              setPage(0);
-            }}
-            className={`h-9 rounded-full px-4 text-xs ${filter === value ? 'bg-mint font-bold text-bg' : 'glass-control text-muted'}`}
-          >
-            {value}
-          </button>
-        ))}
+        {['Все', 'Пополнение', 'Списание', 'Бонус'].map((value) => {
+          const isActive = filter === value;
+          return (
+            <button
+              type="button"
+              key={value}
+              onClick={() => {
+                setFilter(value);
+                setPage(0);
+              }}
+              className={`relative h-9 rounded-full px-4 text-xs font-medium transition-colors duration-200 ${
+                isActive ? 'font-bold text-bg' : 'glass-control text-muted hover:text-ink'
+              }`}
+            >
+              {isActive && (
+                <m.span
+                  layoutId="historyFilterPill"
+                  className="absolute inset-0 rounded-full bg-mint"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
+                />
+              )}
+              <span className="relative z-10">{value}</span>
+            </button>
+          );
+        })}
         <button
           type="button"
-          onClick={() => setNewest((value) => !value)}
-          className="glass-control ml-auto flex h-9 items-center gap-2 rounded-full px-4 text-xs text-muted"
+          onClick={() => {
+            setNewest((value) => !value);
+            setPage(0);
+          }}
+          className="glass-control ml-auto flex h-9 items-center gap-2 rounded-full px-4 text-xs text-muted transition-colors hover:text-ink"
         >
           <SlidersHorizontal size={14} />
           {newest ? 'Сначала новые' : 'Сначала старые'}
         </button>
       </div>
-      <div className="mt-4 divide-y divide-white/[0.06]">
-        {visible.length ? (
-          visible.map(([date, title, type, amount, method, status]) => (
-            <article
-              key={`${date}-${title}`}
-              className="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:items-center"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <strong className="text-sm">{title}</strong>
-                  <span className="rounded-full bg-white/6 px-2 py-1 text-[9px] text-muted">
-                    {type}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-xs text-muted">
-                  {date} · {method}
-                </p>
-                <p className="mt-1 text-[10px] text-mint">{status}</p>
-              </div>
-              <strong className={`text-base ${amount.startsWith('+') ? 'text-mint' : 'text-ink'}`}>
-                {amount}
-              </strong>
-            </article>
-          ))
-        ) : (
-          <p className="py-8 text-center text-xs text-muted">Пока нет операций</p>
-        )}
+      <div className="mt-4 min-h-[220px]">
+        <AnimatePresence mode="wait" initial={false}>
+          <m.div
+            key={`${filter}-${page}-${newest}`}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="divide-y divide-white/[0.06]"
+          >
+            {visible.length ? (
+              visible.map(([date, title, type, amount, method, status]) => (
+                <article
+                  key={`${date}-${title}-${amount}`}
+                  className="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:items-center"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <strong className="text-sm">{title}</strong>
+                      <span className="rounded-full bg-white/6 px-2 py-1 text-[9px] text-muted">
+                        {type}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted">
+                      {date} · {method}
+                    </p>
+                    <p className="mt-1 text-[10px] text-mint">{status}</p>
+                  </div>
+                  <strong
+                    className={`text-base ${amount.startsWith('+') ? 'text-mint' : 'text-ink'}`}
+                  >
+                    {amount}
+                  </strong>
+                </article>
+              ))
+            ) : (
+              <p className="py-8 text-center text-xs text-muted">Пока нет операций</p>
+            )}
+          </m.div>
+        </AnimatePresence>
       </div>
       <div className="mt-4 flex items-center justify-between">
         <button
