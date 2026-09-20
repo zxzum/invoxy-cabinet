@@ -369,6 +369,8 @@ export const subscriptionApi = {
       is_upgrade: boolean;
       can_convert_days?: boolean;
       converted_days?: number;
+      extra_days?: number;
+      commission_days?: number;
       conversion_fee_percent?: number;
       discount_percent?: number;
       discount_kopeks?: number;
@@ -396,6 +398,8 @@ export const subscriptionApi = {
       balance_label: string;
       switch_mode?: string;
       converted_days?: number | null;
+      extra_days?: number | null;
+      is_upgrade?: boolean;
     }>(
       '/cabinet/subscription/tariff/switch',
       { tariff_id: tariffId, period_days: 30, switch_mode: switchMode },

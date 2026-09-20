@@ -106,6 +106,7 @@ export default function TariffsPage() {
   const [months, setMonths] = useState(1);
   const [devices, setDevices] = useState(5);
   const [switchPlan, setSwitchPlan] = useState<Plan | null>(null);
+  const [switchModalOpen, setSwitchModalOpen] = useState(false);
 
   const { data: tariffsData, isLoading: tariffsLoading } = useQuery({
     queryKey: ['invoxy-tariffs-page-data'],
@@ -284,6 +285,7 @@ export default function TariffsPage() {
                 onClick={() => {
                   if (activeId && !addingSubscription && !active) {
                     setSwitchPlan(plan);
+                    setSwitchModalOpen(true);
                   } else {
                     selectPlan(plan.id, plan.devices);
                   }
@@ -356,14 +358,14 @@ export default function TariffsPage() {
 
       {switchPlan && (
         <TariffSwitchModal
-          open={!!switchPlan}
+          open={switchModalOpen}
           plan={switchPlan}
           currentPlan={plans.find((p) => p.id === activeId)}
           subscriptionId={activeSubscriptionId ? Number(activeSubscriptionId) : undefined}
-          onClose={() => setSwitchPlan(null)}
+          onClose={() => setSwitchModalOpen(false)}
           onFallbackToPurchase={() => {
             const planToBuy = switchPlan;
-            setSwitchPlan(null);
+            setSwitchModalOpen(false);
             if (planToBuy) {
               selectPlan(planToBuy.id, planToBuy.devices);
             }

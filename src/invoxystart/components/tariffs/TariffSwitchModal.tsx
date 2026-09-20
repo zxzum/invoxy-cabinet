@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
@@ -81,7 +81,16 @@ export function TariffSwitchModal({
     charged_kopeks: number;
     switch_mode?: string;
     converted_days?: number | null;
+    extra_days?: number | null;
+    is_upgrade?: boolean;
   } | null>(null);
+
+  // Reset local switch result when opening modal
+  useEffect(() => {
+    if (open) {
+      setSwitchResult(null);
+    }
+  }, [open]);
 
   const tariffId = Number(plan.id);
 
@@ -109,6 +118,8 @@ export function TariffSwitchModal({
         charged_kopeks: data.charged_kopeks,
         switch_mode: data.switch_mode,
         converted_days: data.converted_days,
+        extra_days: data.extra_days,
+        is_upgrade: data.is_upgrade,
       });
 
       // Invalidate relevant queries
@@ -119,7 +130,12 @@ export function TariffSwitchModal({
       void queryClient.invalidateQueries({ queryKey: ['balance'] });
       void queryClient.invalidateQueries({ queryKey: ['user'] });
 
-      showToast(`Тариф успешно изменён на ${data.new_tariff_name || plan.name}`, 'success');
+      const bonusText =
+        data.extra_days && data.extra_days > 0 ? ` (+${data.extra_days} дн. сверх остатка)` : '';
+      showToast(
+        `Тариф успешно изменён на ${data.new_tariff_name || plan.name}${bonusText}`,
+        'success',
+      );
     },
     onError: (err: unknown) => {
       if (shouldUsePurchaseFlow(err)) {
@@ -136,14 +152,18 @@ export function TariffSwitchModal({
   });
 
   const handleClose = () => {
-    setSwitchResult(null);
     onClose();
+    window.setTimeout(() => {
+      setSwitchResult(null);
+    }, 300);
   };
 
   const handleFinish = () => {
-    setSwitchResult(null);
     onClose();
-    navigate('/dashboard');
+    window.setTimeout(() => {
+      setSwitchResult(null);
+      navigate('/dashboard');
+    }, 240);
   };
 
   return (
@@ -201,27 +221,33 @@ export function TariffSwitchModal({
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted">Срок действия</span>
                 <span className="font-medium text-ink">
-                  {switchResult.switch_mode === 'convert_days'
-                    ? `${switchResult.converted_days ?? preview?.converted_days ?? 0} дн. (пересчитан с комиссией 10%)`
-                    : `${preview?.remaining_days ?? '—'} дн. (сохранён)`}
+                  {switchResult.extra_days && switchResult.extra_days > 0
+                    ? `${switchResult.converted_days ?? preview?.converted_days ?? 0} дн. (+${switchResult.extra_days} дн. сверх остатка)`
+                    : switchResult.switch_mode === 'convert_days'
+                      ? `${switchResult.converted_days ?? preview?.converted_days ?? 0} дн. (пересчитан с комиссией 10%)`
+                      : `${preview?.remaining_days ?? '—'} дн. (сохранён)`}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted">Списано</span>
                 <span className="font-medium text-ink">
-                  {switchResult.switch_mode === 'convert_days'
+                  {switchResult.extra_days && switchResult.extra_days > 0
                     ? '0 ₽ (Бесплатно)'
-                    : preview
-                      ? preview.upgrade_cost_label
-                      : `${switchResult.charged_kopeks / 100} ₽`}
+                    : switchResult.switch_mode === 'convert_days'
+                      ? '0 ₽ (Бесплатно)'
+                      : preview
+                        ? preview.upgrade_cost_label
+                        : `${switchResult.charged_kopeks / 100} ₽`}
                 </span>
               </div>
-              {switchResult.switch_mode !== 'convert_days' && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted">Остаток на балансе</span>
-                  <span className="font-semibold text-ink">{switchResult.balance_label}</span>
-                </div>
-              )}
+              {switchResult.switch_mode !== 'convert_days' &&
+                (!switchResult.extra_days || switchResult.extra_days === 0) &&
+                switchResult.charged_kopeks > 0 && (
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted">Остаток на балансе</span>
+                    <span className="font-semibold text-ink">{switchResult.balance_label}</span>
+                  </div>
+                )}
               <div className="border-t border-white/10 pt-3 flex items-center justify-between text-xs">
                 <span className="text-muted">Лимиты тарифа</span>
                 <span className="font-medium text-ink">
@@ -235,8 +261,9 @@ export function TariffSwitchModal({
             <div className="mt-4 rounded-xl border border-mint/20 bg-mint/[0.06] p-3 text-left flex items-start gap-2.5">
               <Sparkles size={16} className="text-mint shrink-0 mt-0.5" />
               <p className="text-xs text-mint/90 leading-relaxed">
-                Новые квоты трафика и устройств уже действуют. Повторная настройка ключа не
-                требуется — подключение продолжит работать автоматически.
+                {switchResult.extra_days && switchResult.extra_days > 0
+                  ? `Неиспользованная стоимость пересчитана в +${switchResult.extra_days} дополнительных дней. Новые квоты трафика и устройств уже действуют.`
+                  : 'Новые квоты трафика и устройств уже действуют. Повторная настройка ключа не требуется — подключение продолжит работать автоматически.'}
               </p>
             </div>
 
@@ -268,7 +295,9 @@ export function TariffSwitchModal({
                 Переход на {plan.name}
               </h2>
               <p className="mt-1 text-xs text-muted">
-                Неиспользованные дни вашей подписки сохраняются и переносятся с перерасчётом
+                {preview?.is_upgrade === false
+                  ? 'Неиспользованная стоимость пересчитывается в дополнительные дни подписки'
+                  : 'Неиспользованные дни вашей подписки сохраняются и переносятся с перерасчётом'}
               </p>
             </div>
 
@@ -365,84 +394,135 @@ export function TariffSwitchModal({
                   </div>
                 </div>
 
-                {/* Switch Mode Selector (if can convert days and upgrade cost > 0) */}
-                {preview.can_convert_days && preview.upgrade_cost_kopeks > 0 && (
-                  <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-white/[0.05] p-1 border border-white/10">
-                    <button
-                      type="button"
-                      onClick={() => setSwitchMode('convert_days')}
-                      className={`relative flex flex-col items-center justify-center rounded-xl py-2 px-3 text-xs font-semibold transition-colors cursor-pointer ${
-                        switchMode === 'convert_days'
-                          ? 'text-bg font-bold'
-                          : 'text-muted hover:text-ink'
-                      }`}
-                    >
-                      {switchMode === 'convert_days' && (
-                        <m.div
-                          layoutId="tariffSwitchModePill"
-                          className="absolute inset-0 rounded-xl bg-mint shadow-sm"
-                          transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
-                        />
-                      )}
-                      <span className="relative z-10">Конвертация дней</span>
-                      <span
-                        className={`relative z-10 text-[10px] ${
-                          switchMode === 'convert_days' ? 'text-bg/85 font-bold' : 'text-mint'
+                {/* Switch Mode Selector (if upgrade, can convert days and upgrade cost > 0) */}
+                {preview.is_upgrade &&
+                  preview.can_convert_days &&
+                  preview.upgrade_cost_kopeks > 0 && (
+                    <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-white/[0.05] p-1 border border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setSwitchMode('convert_days')}
+                        className={`relative flex flex-col items-center justify-center rounded-xl py-2 px-3 text-xs font-semibold transition-colors cursor-pointer ${
+                          switchMode === 'convert_days'
+                            ? 'text-bg font-bold'
+                            : 'text-muted hover:text-ink'
                         }`}
                       >
-                        Бесплатно · {preview.converted_days} дн.
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSwitchMode('prorate_cost')}
-                      className={`relative flex flex-col items-center justify-center rounded-xl py-2 px-3 text-xs font-semibold transition-colors cursor-pointer ${
-                        switchMode === 'prorate_cost'
-                          ? 'text-bg font-bold'
-                          : 'text-muted hover:text-ink'
-                      }`}
-                    >
-                      {switchMode === 'prorate_cost' && (
-                        <m.div
-                          layoutId="tariffSwitchModePill"
-                          className="absolute inset-0 rounded-xl bg-mint shadow-sm"
-                          transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
-                        />
-                      )}
-                      <span className="relative z-10">Доплата разницы</span>
-                      <span
-                        className={`relative z-10 text-[10px] ${
-                          switchMode === 'prorate_cost' ? 'text-bg/85 font-bold' : 'text-muted'
+                        {switchMode === 'convert_days' && (
+                          <m.div
+                            layoutId="tariffSwitchModePill"
+                            className="absolute inset-0 rounded-xl bg-mint shadow-sm"
+                            transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
+                          />
+                        )}
+                        <span className="relative z-10">Конвертация дней</span>
+                        <span
+                          className={`relative z-10 text-[10px] ${
+                            switchMode === 'convert_days' ? 'text-bg/85 font-bold' : 'text-mint'
+                          }`}
+                        >
+                          Бесплатно · {preview.converted_days} дн.
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSwitchMode('prorate_cost')}
+                        className={`relative flex flex-col items-center justify-center rounded-xl py-2 px-3 text-xs font-semibold transition-colors cursor-pointer ${
+                          switchMode === 'prorate_cost'
+                            ? 'text-bg font-bold'
+                            : 'text-muted hover:text-ink'
                         }`}
                       >
-                        {preview.upgrade_cost_label} · {preview.remaining_days} дн.
-                      </span>
-                    </button>
-                  </div>
-                )}
+                        {switchMode === 'prorate_cost' && (
+                          <m.div
+                            layoutId="tariffSwitchModePill"
+                            className="absolute inset-0 rounded-xl bg-mint shadow-sm"
+                            transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
+                          />
+                        )}
+                        <span className="relative z-10">Доплата разницы</span>
+                        <span
+                          className={`relative z-10 text-[10px] ${
+                            switchMode === 'prorate_cost' ? 'text-bg/85 font-bold' : 'text-muted'
+                          }`}
+                        >
+                          {preview.upgrade_cost_label} · {preview.remaining_days} дн.
+                        </span>
+                      </button>
+                    </div>
+                  )}
 
                 {/* Estimate Breakdown (Смета) */}
                 <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 overflow-hidden">
                   <p className="pb-3 text-[11px] font-bold uppercase tracking-[.12em] text-muted">
-                    {switchMode === 'convert_days' &&
-                    preview.can_convert_days &&
-                    preview.upgrade_cost_kopeks > 0
-                      ? 'Смета конвертации дней'
-                      : 'Смета расчёта перехода'}
+                    {!preview.is_upgrade
+                      ? 'Смета перехода с бонусом дней'
+                      : switchMode === 'convert_days' &&
+                          preview.can_convert_days &&
+                          preview.upgrade_cost_kopeks > 0
+                        ? 'Смета конвертации дней'
+                        : 'Смета расчёта перехода'}
                   </p>
 
                   <AnimatePresence mode="wait" initial={false}>
                     <m.div
-                      key={switchMode}
+                      key={preview.is_upgrade ? switchMode : 'downgrade'}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.2 }}
                       className="divide-y divide-white/[0.07]"
                     >
-                      {switchMode === 'convert_days' &&
-                      preview.can_convert_days &&
-                      preview.upgrade_cost_kopeks > 0 ? (
+                      {!preview.is_upgrade ? (
+                        <>
+                          <div className="py-2.5 flex items-center justify-between text-xs">
+                            <span className="text-muted">Текущий остаток</span>
+                            <span className="font-semibold text-ink">
+                              {preview.remaining_days} дн.{' '}
+                              <span className="font-normal text-muted">(сохраняется)</span>
+                            </span>
+                          </div>
+
+                          <div className="py-2.5 flex items-center justify-between text-xs">
+                            <span className="text-muted">Бонус сверх ваших дней</span>
+                            <span className="font-bold text-mint">
+                              +{preview.extra_days ?? 0} дн.
+                            </span>
+                          </div>
+
+                          <div className="py-2.5 flex items-center justify-between text-xs">
+                            <span className="text-muted">
+                              Комиссия сервиса ({preview.conversion_fee_percent ?? 10}%)
+                            </span>
+                            <span className="font-medium text-rose-300">
+                              -{preview.commission_days ?? 0} дн.
+                            </span>
+                          </div>
+
+                          <div className="py-2.5 flex items-center justify-between text-xs">
+                            <span className="font-semibold text-ink">Новый срок подписки</span>
+                            <span className="font-bold text-mint text-sm">
+                              {preview.converted_days ?? preview.remaining_days} дн.
+                            </span>
+                          </div>
+
+                          <div className="py-2.5 flex items-center justify-between text-xs">
+                            <span className="text-muted">К доплате</span>
+                            <span className="font-bold text-mint text-sm">0 ₽ (Бесплатно)</span>
+                          </div>
+
+                          <div className="pt-3">
+                            <div className="rounded-xl border border-mint/20 bg-mint/[0.05] p-2.5 text-[11px] text-mint/90 leading-relaxed">
+                              Так как новый тариф выгоднее, неиспользованная стоимость вашего
+                              текущего плана пересчитана в дополнительные дни подписки с сервисной
+                              комиссией {preview.conversion_fee_percent ?? 10}%. С баланса ничего не
+                              списывается.
+                            </div>
+                          </div>
+                        </>
+                      ) : switchMode === 'convert_days' &&
+                        preview.can_convert_days &&
+                        preview.upgrade_cost_kopeks > 0 ? (
                         <>
                           <div className="py-2.5 flex items-center justify-between text-xs">
                             <span className="text-muted">Текущий остаток срока</span>
@@ -551,15 +631,37 @@ export function TariffSwitchModal({
                 {/* Action buttons */}
                 <AnimatePresence mode="wait" initial={false}>
                   <m.div
-                    key={switchMode}
+                    key={preview.is_upgrade ? switchMode : 'downgrade'}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.18 }}
                   >
-                    {switchMode === 'convert_days' &&
-                    preview.can_convert_days &&
-                    preview.upgrade_cost_kopeks > 0 ? (
+                    {!preview.is_upgrade ? (
+                      <button
+                        type="button"
+                        disabled={switchMutation.isPending}
+                        onClick={() => switchMutation.mutate('prorate_cost')}
+                        className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg shadow-[0_4px_20px_rgba(165,232,196,0.25)] transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                      >
+                        {switchMutation.isPending ? (
+                          <span className="flex items-center gap-2">
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-bg/30 border-t-bg" />
+                            Смена тарифа...
+                          </span>
+                        ) : (
+                          <>
+                            <Sparkles size={16} />
+                            Перейти на тариф{' '}
+                            {preview.extra_days && preview.extra_days > 0
+                              ? `(+${preview.extra_days} дн.)`
+                              : 'бесплатно'}
+                          </>
+                        )}
+                      </button>
+                    ) : switchMode === 'convert_days' &&
+                      preview.can_convert_days &&
+                      preview.upgrade_cost_kopeks > 0 ? (
                       <button
                         type="button"
                         disabled={switchMutation.isPending}
