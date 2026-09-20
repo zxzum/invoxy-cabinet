@@ -407,6 +407,9 @@ function PromoGroup() {
     ? `До ${next.name} осталось ${formatRubles(Math.max(0, next.threshold_rubles - (loyalty?.current_spent_rubles ?? 0)))}`
     : 'Максимальный уровень уже достигнут';
 
+  const rawProgress = loyalty?.progress_percent ?? 0;
+  const progressPercent = Math.min(100, Math.max(0, Math.round(rawProgress * 10) / 10));
+
   return (
     <section className="glass-panel motion-card relative overflow-hidden rounded-[30px] p-4 lg:p-8">
       <img
@@ -434,13 +437,13 @@ function PromoGroup() {
         </div>
         <div>
           <div className="flex items-center justify-between text-xs text-muted">
-            <span>Прогресс до VIP</span>
-            <strong className="text-mint">{loyalty?.progress_percent ?? 0}%</strong>
+            <span>{next ? `Прогресс до ${next.name}` : 'Прогресс'}</span>
+            <strong className="text-mint">{progressPercent}%</strong>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full bg-mint transition-[width] duration-500"
-              style={{ width: `${loyalty?.progress_percent ?? 0}%` }}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
           <div className="mt-3 grid grid-cols-3 gap-1 lg:mt-4 lg:gap-2">

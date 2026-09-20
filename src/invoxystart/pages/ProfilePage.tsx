@@ -276,7 +276,9 @@ export default function ProfilePage() {
             <div className="mt-5 h-2 rounded-full bg-white/8">
               <div
                 className="h-full rounded-full bg-mint transition-[width] duration-500"
-                style={{ width: `${loyalty?.progress_percent ?? 0}%` }}
+                style={{
+                  width: `${Math.min(100, Math.max(0, Math.round((loyalty?.progress_percent ?? 0) * 10) / 10))}%`,
+                }}
               />
             </div>
             <div className="relative mt-5 grid grid-cols-3 text-center before:absolute before:left-[16%] before:right-[16%] before:top-2 before:h-px before:bg-white/12">

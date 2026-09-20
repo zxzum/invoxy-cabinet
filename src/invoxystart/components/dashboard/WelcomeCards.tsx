@@ -358,40 +358,42 @@ export function SupportStrip() {
 
 export function PartnerPromoCard() {
   return (
-    <section className="glass-panel motion-card relative overflow-hidden rounded-[30px] border border-white/12 p-5 sm:p-7 lg:rounded-[clamp(24px,1.2vw,30px)] lg:p-[clamp(24px,1.7vw,34px)]">
+    <section className="glass-panel motion-card relative overflow-hidden rounded-[26px] border border-mint/20 p-4 transition-all hover:border-mint/35 sm:p-5">
       <img
         src="/images/referral-network-bg.png"
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-60"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
         decoding="async"
       />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,rgba(11,12,14,.95),rgba(11,12,14,.45)),radial-gradient(circle_at_90%_10%,rgba(165,232,196,.18),transparent_40%)]" />
-      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div className="min-w-0 max-w-xl">
-          <p className="flex items-center gap-2 text-[10px] font-bold tracking-[.17em] text-mint sm:text-[11px]">
-            <Sparkles size={14} /> ПАРТНЁРСКАЯ ПРОГРАММА
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(165,232,196,.12),transparent_70%)]" />
+
+      <div className="relative z-10 flex flex-col gap-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="flex items-center gap-1.5 text-[10px] font-bold tracking-[.14em] text-mint">
+            <Sparkles size={13} /> ПАРТНЁРКА
           </p>
-          <h2 className="mt-2 text-xl font-medium tracking-[-.04em] sm:text-2xl lg:text-3xl">
-            Зарабатывайте вместе с Invoxy
-            <br />
-            <span className="text-mint">до 50% с каждой оплаты</span>
-          </h2>
-          <p className="mt-2 max-w-md text-xs leading-relaxed text-muted sm:text-sm">
-            Специальные условия для блогеров, Telegram-каналов и вебмастеров. Персональные
-            промокоды, ссылки и регулярные выплаты.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Link
-              to="/partner"
-              className="button-lift inline-flex h-11 items-center gap-2 rounded-full bg-mint px-5 text-xs font-bold text-bg transition-transform hover:-translate-y-0.5 sm:h-12 sm:text-sm"
-            >
-              Подать заявку <ArrowRight size={16} />
-            </Link>
-          </div>
+          <span className="rounded-full bg-mint/15 px-2 py-0.5 text-[10px] font-bold text-mint">
+            до 50%
+          </span>
         </div>
-        <div className="hidden h-20 w-20 shrink-0 place-items-center rounded-full border border-mint/25 bg-mint/10 text-mint lg:grid">
-          <Sparkles size={32} />
+
+        <div>
+          <h3 className="text-sm font-semibold leading-snug tracking-[-.02em] text-ink sm:text-base">
+            Зарабатывайте с Invoxy
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Выплаты за каждую оплату привлечённых клиентов. Персональные условия и промокоды.
+          </p>
+        </div>
+
+        <div className="pt-1">
+          <Link
+            to="/partner"
+            className="button-lift inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-mint px-4 text-xs font-bold text-bg transition-transform hover:-translate-y-0.5"
+          >
+            Подать заявку <ArrowRight size={14} />
+          </Link>
         </div>
       </div>
     </section>

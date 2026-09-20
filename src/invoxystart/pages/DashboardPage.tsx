@@ -227,12 +227,12 @@ export function DashboardPage() {
                 <Reveal delay={0.18}>
                   <SupportStrip />
                 </Reveal>
+                <Reveal delay={0.22}>
+                  <PartnerPromoCard />
+                </Reveal>
               </div>
             </div>
             <NewsLink />
-            <Reveal delay={0.22} className="w-full">
-              <PartnerPromoCard />
-            </Reveal>
           </m.div>
         ) : (
           <m.div
@@ -422,12 +422,13 @@ export function DashboardPage() {
                 <Reveal delay={0.25} className="order-7 min-w-0 lg:order-none">
                   <AddonsCard subscriptionId={activeSubId} subscription={current} />
                 </Reveal>
+
+                <Reveal delay={0.28} className="order-8 min-w-0 lg:order-none">
+                  <PartnerPromoCard />
+                </Reveal>
               </div>
             </div>
             <NewsLink />
-            <Reveal delay={0.28} className="w-full">
-              <PartnerPromoCard />
-            </Reveal>
           </m.div>
         )}
       </AnimatePresence>
