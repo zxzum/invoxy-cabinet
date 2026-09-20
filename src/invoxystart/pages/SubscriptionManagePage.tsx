@@ -6,6 +6,7 @@ import { CalendarDays, Link2, Smartphone, X } from '@/invoxystart/components/ui/
 import { subscriptionApi } from '@/invoxystart/api';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
+import { openDeepLink } from '@/utils/openDeepLink';
 import {
   ConnectDeviceModal,
   type PlatformKey,
@@ -294,10 +295,9 @@ export default function SubscriptionManagePage() {
             </div>
             <div className="mt-3 glass-panel motion-card grid gap-2 rounded-[26px] p-3 2xl:grid-cols-2">
               {happLink ? (
-                <a
-                  href={happLink}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={() => openDeepLink(happLink)}
                   className="glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98]"
                 >
                   <span className="flex h-5 shrink-0 items-center">
@@ -308,11 +308,12 @@ export default function SubscriptionManagePage() {
                     />
                   </span>
                   Подключить в HAPP
-                </a>
+                </button>
               ) : null}
               {incyLink ? (
-                <a
-                  href={incyLink}
+                <button
+                  type="button"
+                  onClick={() => openDeepLink(incyLink)}
                   className="glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98]"
                 >
                   <span className="flex h-5 shrink-0 items-center">
@@ -323,7 +324,7 @@ export default function SubscriptionManagePage() {
                     />
                   </span>
                   Подключить в INCY
-                </a>
+                </button>
               ) : null}
             </div>
             <button

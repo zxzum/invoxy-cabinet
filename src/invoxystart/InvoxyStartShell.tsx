@@ -3,6 +3,7 @@ import { domAnimation, LazyMotion, MotionConfig } from 'framer-motion';
 import { AuthProvider } from '@/invoxystart/auth';
 import { AppShell } from '@/invoxystart/components/layout/AppShell';
 import { ToastProvider } from '@/invoxystart/components/layout/ToastProvider';
+import { InvoxyStartWsListener } from '@/invoxystart/components/layout/InvoxyStartWsListener';
 
 export function InvoxyStartShell({ children }: { children: ReactNode }) {
   return (
@@ -10,6 +11,7 @@ export function InvoxyStartShell({ children }: { children: ReactNode }) {
       <MotionConfig reducedMotion="user">
         <AuthProvider>
           <ToastProvider>
+            <InvoxyStartWsListener />
             <AppShell>{children}</AppShell>
           </ToastProvider>
         </AuthProvider>

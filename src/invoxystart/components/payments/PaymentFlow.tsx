@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { usePlatform } from '@/platform';
+import { openPaymentUrl } from '@/utils/openPaymentUrl';
 import {
   Bot,
   CreditCard,
@@ -9,6 +12,7 @@ import {
   Send,
   Sparkles,
   Wallet,
+  Zap,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
@@ -46,6 +50,8 @@ const PaymentContext = createContext<{
 export function PaymentProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { platform, openLink } = usePlatform();
+  const queryClient = useQueryClient();
   const [request, setRequest] = useState<PaymentRequest | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -110,7 +116,14 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
 
       if (!result || !isExternalUrl(result.payment_url))
         throw new Error('Платёжная ссылка недоступна');
-      window.location.assign(result.payment_url);
+      const opened = openPaymentUrl(result.payment_url, platform, openLink);
+      if (!opened) {
+        window.location.assign(result.payment_url);
+      }
+      queryClient.invalidateQueries({ queryKey: ['active-invoice'] });
+      queryClient.invalidateQueries({ queryKey: ['invoxy-balance'] });
+      showToast('Перенаправляем на страницу оплаты…');
+      setOpen(false);
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
         showToast('У вас уже есть активный счёт. Оплатите или отмените его.');
@@ -327,7 +340,20 @@ export function PaymentMethods({
         </p>
       ) : (
         paymentMethods.map((method) => {
-          const options = method.options || [];
+          const isRollyPay = method.id.toLowerCase() === 'rollypay';
+          const options =
+            method.options && method.options.length > 0
+              ? method.options
+              : isRollyPay
+                ? [
+                    {
+                      id: 'sbp',
+                      name: 'СБП',
+                      description: 'Система быстрых платежей (0% комиссии)',
+                    },
+                    { id: 'card', name: 'Карты РФ', description: 'МИР, Visa, Mastercard' },
+                  ]
+                : [];
           if (options.length > 0) {
             return (
               <div
@@ -341,28 +367,66 @@ export function PaymentMethods({
                   <span>
                     <strong className="text-sm">{method.name}</strong>
                     <span className="mt-0.5 block text-[11px] text-muted">
-                      {method.description || 'Банковские платежи и крипта'}
+                      {method.description || 'Банковские платежи и переводы'}
                     </span>
                   </span>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {options.map((option) => (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      key={option.id}
-                      onClick={() => onPay(method.id, option.id)}
-                      className="button-lift glass-control flex min-w-0 items-center gap-2.5 rounded-xl p-3 text-left hover:border-mint/35 disabled:opacity-50"
-                    >
-                      <CreditCard size={16} className="text-mint" />
-                      <span className="min-w-0">
-                        <strong className="block truncate text-xs">{option.name}</strong>
-                        <span className="mt-0.5 block text-[10px] text-muted">
-                          {option.description || `Оплата через ${method.name}`}
+                  {options.map((option) => {
+                    const isSbp =
+                      option.id.toLowerCase().includes('sbp') ||
+                      option.name.toLowerCase().includes('сбп');
+                    const isCard =
+                      option.id.toLowerCase().includes('card') ||
+                      option.name.toLowerCase().includes('карт') ||
+                      option.name.toLowerCase().includes('рф');
+
+                    return (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        key={option.id}
+                        onClick={() => onPay(method.id, option.id)}
+                        className={`button-lift flex min-w-0 items-center gap-2.5 rounded-xl p-3 text-left transition-all disabled:opacity-50 ${
+                          isSbp
+                            ? 'border border-mint/45 bg-mint/[.09] shadow-[0_0_20px_rgba(165,232,196,.08)] hover:border-mint hover:bg-mint/[.16]'
+                            : isCard
+                              ? 'border border-sky-400/40 bg-sky-500/[.08] shadow-[0_0_20px_rgba(56,189,248,.08)] hover:border-sky-400 hover:bg-sky-500/[.15]'
+                              : 'glass-control hover:border-mint/35'
+                        }`}
+                      >
+                        <span
+                          className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+                            isSbp
+                              ? 'bg-mint/20 text-mint'
+                              : isCard
+                                ? 'bg-sky-400/20 text-sky-300'
+                                : 'bg-white/5 text-mint'
+                          }`}
+                        >
+                          {isSbp ? <Zap size={16} /> : <CreditCard size={16} />}
                         </span>
-                      </span>
-                    </button>
-                  ))}
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5">
+                            <strong className="block truncate text-xs">{option.name}</strong>
+                            {isSbp && (
+                              <span className="rounded bg-mint/25 px-1.5 py-0.5 text-[9px] font-bold text-mint">
+                                0%
+                              </span>
+                            )}
+                            {isCard && (
+                              <span className="rounded bg-sky-400/25 px-1.5 py-0.5 text-[9px] font-bold text-sky-300">
+                                РФ
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-0.5 block text-[10px] text-muted">
+                            {option.description || `Оплата через ${method.name}`}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             );

@@ -10,6 +10,7 @@ import {
   Smartphone,
   Laptop,
 } from '@/invoxystart/components/ui/RuneIcon';
+import { openDeepLink } from '@/utils/openDeepLink';
 
 export interface ConnectDeviceModalProps {
   open: boolean;
@@ -243,15 +244,14 @@ export function ConnectDeviceModal({
 
               <div className="grid gap-2 sm:grid-cols-2">
                 {app.oneClickLink && (
-                  <a
-                    href={app.oneClickLink}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => openDeepLink(app.oneClickLink)}
                     className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-mint px-3 text-center text-xs font-bold text-bg shadow-[0_0_12px_rgba(6,214,160,0.3)] transition-all hover:bg-mint/90 active:scale-[0.98]"
                   >
                     <ArrowUpRight size={14} />
                     {app.oneClickLabel || 'Подключить в 1 клик'}
-                  </a>
+                  </button>
                 )}
                 <a
                   href={app.downloadUrl}

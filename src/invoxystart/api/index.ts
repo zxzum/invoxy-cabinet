@@ -14,6 +14,7 @@ export { notificationsApi } from './notifications';
 export { referralApi } from './referral';
 export type { ReferralEarning, ReferralEarningsList, ReferralItem } from './referral';
 export { partnerApi } from './partners';
+export type { PartnerApplicationRequest, PartnerCampaignStats } from './partners';
 export { withdrawalApi } from './withdrawals';
 export { ticketsApi } from './tickets';
 export { contestsApi } from './contests';

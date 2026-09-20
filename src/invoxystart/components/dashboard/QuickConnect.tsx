@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ConnectionLinkResponse } from '@/invoxystart/api/subscription';
 import { ConnectDeviceModal } from '@/invoxystart/components/connection/ConnectDeviceModal';
 import { Smartphone } from '@/invoxystart/components/ui/RuneIcon';
+import { openDeepLink } from '@/utils/openDeepLink';
 
 const options = [
   { id: 'happ', label: 'Подключить в HAPP', icon: '/images/apps/happ.png' },
@@ -51,12 +52,12 @@ export function QuickConnect({
         {options.map((opt) => {
           const href = links[opt.id];
           return (
-            <a
+            <button
               key={opt.id}
-              href={href || undefined}
-              aria-disabled={!href}
-              onClick={(event) => {
-                if (!href) event.preventDefault();
+              type="button"
+              disabled={!href}
+              onClick={() => {
+                if (href) openDeepLink(href);
               }}
               className={`glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98] ${href ? '' : 'cursor-not-allowed opacity-50'}`}
             >
@@ -64,7 +65,7 @@ export function QuickConnect({
                 <img src={opt.icon} alt="" className="h-4 w-auto max-w-12 object-contain" />
               </span>
               {opt.label}
-            </a>
+            </button>
           );
         })}
       </div>

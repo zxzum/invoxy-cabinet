@@ -11,6 +11,7 @@ import {
   Mail,
   MessageCircle,
   ShieldCheck,
+  Sparkles,
   UserRound,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
@@ -20,6 +21,7 @@ import { EmailLinkDialog } from '@/invoxystart/components/profile/EmailLinkDialo
 import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
 import { usePayment } from '@/invoxystart/components/payments/PaymentFlow';
 import { useAuth } from '@/invoxystart/auth';
+import { AnimatedBalance } from '@/invoxystart/components/ui/AnimatedBalance';
 import {
   balanceApi,
   promoApi,
@@ -68,6 +70,12 @@ export default function ProfilePage() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof user?.balance_rubles === 'number') {
+      setBalance(user.balance_rubles);
+    }
+  }, [user?.balance_rubles]);
 
   useEffect(() => {
     if (location.hash === '#top-up') {
@@ -145,9 +153,9 @@ export default function ProfilePage() {
                 </div>
                 <span className="text-xs text-muted">Баланс Invoxy</span>
               </div>
-              <p className="mt-8 text-[44px] font-light tracking-[-0.055em]">
-                ₽ {balance.toLocaleString('ru-RU')}
-              </p>
+              <div className="mt-8 text-[44px] font-light tracking-[-0.055em]">
+                <AnimatedBalance value={balance} />
+              </div>
               <div className="mt-6 flex items-center justify-between rounded-2xl bg-black/25 px-4 py-3 text-sm">
                 <span className="text-muted">•••• 4821</span>
                 <span className="font-bold tracking-[.18em]">VOXY</span>
@@ -393,6 +401,34 @@ export default function ProfilePage() {
                 </button>
               )}
             </div>
+          </section>
+
+          <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[.13em] text-mint">
+                  Сотрудничество
+                </p>
+                <h2 className="mt-1 text-lg font-medium">Партнёрская программа</h2>
+              </div>
+              <span className="rounded-full bg-mint/10 px-3 py-1 text-[10px] font-bold text-mint">
+                ДО 50%
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              Зарабатывайте на рекомендациях InvoxyVPN. Индивидуальные промокоды, повышенная ставка
+              отчислений и регулярные выплаты.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/partner')}
+              className="button-lift mt-4 flex h-13 w-full items-center justify-between rounded-2xl bg-white/5 px-4 text-sm active:scale-[.99]"
+            >
+              <span className="flex items-center gap-3">
+                <Sparkles size={18} className="text-mint" /> Подать заявку на партнерство
+              </span>
+              <ChevronRight size={16} />
+            </button>
           </section>
 
           <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">

@@ -39,6 +39,7 @@ Thumbs.db
 
 # Test coverage
 coverage/
+.codegraph/
 
 # Temporary files
 tmp/

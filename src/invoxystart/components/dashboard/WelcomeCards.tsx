@@ -355,3 +355,45 @@ export function SupportStrip() {
     </Link>
   );
 }
+
+export function PartnerPromoCard() {
+  return (
+    <section className="glass-panel motion-card relative overflow-hidden rounded-[30px] border border-white/12 p-5 sm:p-7 lg:rounded-[clamp(24px,1.2vw,30px)] lg:p-[clamp(24px,1.7vw,34px)]">
+      <img
+        src="/images/referral-network-bg.png"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-60"
+        decoding="async"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,rgba(11,12,14,.95),rgba(11,12,14,.45)),radial-gradient(circle_at_90%_10%,rgba(165,232,196,.18),transparent_40%)]" />
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div className="min-w-0 max-w-xl">
+          <p className="flex items-center gap-2 text-[10px] font-bold tracking-[.17em] text-mint sm:text-[11px]">
+            <Sparkles size={14} /> ПАРТНЁРСКАЯ ПРОГРАММА
+          </p>
+          <h2 className="mt-2 text-xl font-medium tracking-[-.04em] sm:text-2xl lg:text-3xl">
+            Зарабатывайте вместе с Invoxy
+            <br />
+            <span className="text-mint">до 50% с каждой оплаты</span>
+          </h2>
+          <p className="mt-2 max-w-md text-xs leading-relaxed text-muted sm:text-sm">
+            Специальные условия для блогеров, Telegram-каналов и вебмастеров. Персональные
+            промокоды, ссылки и регулярные выплаты.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Link
+              to="/partner"
+              className="button-lift inline-flex h-11 items-center gap-2 rounded-full bg-mint px-5 text-xs font-bold text-bg transition-transform hover:-translate-y-0.5 sm:h-12 sm:text-sm"
+            >
+              Подать заявку <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+        <div className="hidden h-20 w-20 shrink-0 place-items-center rounded-full border border-mint/25 bg-mint/10 text-mint lg:grid">
+          <Sparkles size={32} />
+        </div>
+      </div>
+    </section>
+  );
+}

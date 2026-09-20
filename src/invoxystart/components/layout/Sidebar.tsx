@@ -10,6 +10,7 @@ import {
 } from '@/invoxystart/components/ui/RuneIcon';
 import { BrandLogo } from './BrandLogo';
 import { useAuth } from '@/invoxystart/auth';
+import { AnimatedBalance } from '@/invoxystart/components/ui/AnimatedBalance';
 
 export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () => void }) {
   const { user, isAdmin } = useAuth();
@@ -81,9 +82,9 @@ export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () =
         <p className="text-[11px] font-bold tracking-[0.6px] text-muted lg:text-[clamp(11px,0.7vw,14px)]">
           БАЛАНС
         </p>
-        <p className="text-[25px] font-bold text-ink lg:text-[clamp(25px,1.6vw,32px)]">
-          ₽ {balance.toLocaleString('ru-RU')}
-        </p>
+        <div className="text-[25px] font-bold text-ink lg:text-[clamp(25px,1.6vw,32px)]">
+          <AnimatedBalance value={balance} />
+        </div>
         <button
           onClick={onTopUp}
           className="flex h-[34px] cursor-pointer items-center justify-center rounded-[10px] border border-mint text-[11px] font-bold text-mint transition-colors hover:bg-mint/10 active:scale-[0.97] lg:h-[clamp(34px,2.3vw,46px)] lg:rounded-[clamp(10px,0.65vw,13px)] lg:text-[clamp(11px,0.7vw,14px)]"

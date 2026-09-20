@@ -464,25 +464,49 @@ export default function TopUpAmount() {
         <motion.div variants={staggerItem} className="space-y-2">
           <label className="text-sm font-medium text-dark-400">{t('balance.paymentMethod')}</label>
           <div className="grid grid-cols-2 gap-2">
-            {orderedOptions.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setSelectedOption(opt.id)}
-                className={`card-interactive relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
-                  selectedOption === opt.id
-                    ? 'card-selected text-accent-400 ring-2 ring-accent-500/40'
-                    : 'text-dark-300 hover:border-accent-500/30'
-                }`}
-              >
-                {opt.name}
-                {selectedOption === opt.id && (
-                  <span className="absolute right-1.5 top-1.5">
-                    <span className="block h-2 w-2 rounded-full bg-accent-500" />
+            {orderedOptions.map((opt) => {
+              const isSbp =
+                opt.id.toLowerCase().includes('sbp') || opt.name.toLowerCase().includes('сбп');
+              const isCard =
+                opt.id.toLowerCase().includes('card') ||
+                opt.name.toLowerCase().includes('карт') ||
+                opt.name.toLowerCase().includes('рф');
+
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  aria-label={opt.name}
+                  onClick={() => setSelectedOption(opt.id)}
+                  className={`card-interactive relative flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
+                    selectedOption === opt.id
+                      ? 'card-selected text-accent-400 ring-2 ring-accent-500/40'
+                      : isSbp
+                        ? 'border border-mint/35 bg-mint/[.06] text-dark-100 hover:border-mint/60'
+                        : isCard
+                          ? 'border border-sky-400/35 bg-sky-500/[.06] text-dark-100 hover:border-sky-400/60'
+                          : 'text-dark-300 hover:border-accent-500/30'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 truncate">
+                    <span>{opt.name}</span>
+                    {isSbp && (
+                      <span className="rounded bg-mint/20 px-1 py-0.5 text-[9px] font-bold text-mint">
+                        0%
+                      </span>
+                    )}
+                    {isCard && (
+                      <span className="rounded bg-sky-400/20 px-1 py-0.5 text-[9px] font-bold text-sky-300">
+                        РФ
+                      </span>
+                    )}
                   </span>
-                )}
-              </button>
-            ))}
+                  {selectedOption === opt.id && (
+                    <span className="ml-2 block h-2 w-2 shrink-0 rounded-full bg-accent-500" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </motion.div>
       )}

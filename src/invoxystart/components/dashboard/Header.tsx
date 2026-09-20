@@ -1,12 +1,13 @@
 import { Wallet } from '@/invoxystart/components/ui/RuneIcon';
 import { NotificationMenu } from '@/invoxystart/components/layout/NotificationMenu';
+import { AnimatedBalance } from '@/invoxystart/components/ui/AnimatedBalance';
 
 export function Header({
   balance,
   userName,
   onWalletClick,
 }: {
-  balance: string;
+  balance: number | string;
   userName?: string | null;
   onWalletClick: () => void;
 }) {
@@ -23,11 +24,13 @@ export function Header({
 
       <button
         onClick={onWalletClick}
-        aria-label={`Пополнить баланс, текущий баланс ${balance}`}
+        aria-label="Пополнить баланс"
         className="glass-panel flex shrink-0 cursor-pointer items-center gap-2 rounded-full px-3 py-2.5 active:scale-[0.96] lg:hidden"
       >
         <Wallet size={18} className="text-mint" />
-        <span className="whitespace-nowrap text-[13px] font-bold text-ink">{balance}</span>
+        <span className="whitespace-nowrap text-[13px] font-bold text-ink">
+          {typeof balance === 'number' ? <AnimatedBalance value={balance} /> : balance}
+        </span>
       </button>
 
       <NotificationMenu className="hidden lg:block" />

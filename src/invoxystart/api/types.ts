@@ -616,11 +616,41 @@ export interface NotificationSettings {
   promo_offers_enabled: boolean;
 }
 
+export interface PartnerApplicationInfo {
+  id: number;
+  status: string;
+  company_name: string | null;
+  website_url: string | null;
+  telegram_channel: string | null;
+  description: string | null;
+  expected_monthly_referrals: number | null;
+  desired_commission_percent: number | null;
+  admin_comment: string | null;
+  approved_commission_percent: number | null;
+  created_at: string;
+  processed_at: string | null;
+}
+
+export interface PartnerCampaignInfo {
+  id: number;
+  name: string;
+  start_parameter: string;
+  bonus_type: string;
+  balance_bonus_kopeks: number;
+  subscription_duration_days: number | null;
+  subscription_traffic_gb: number | null;
+  deep_link: string | null;
+  web_link: string | null;
+  registrations_count: number;
+  referrals_count: number;
+  earnings_kopeks: number;
+}
+
 export interface PartnerStatusResponse {
   partner_status: string;
   commission_percent: number | null;
-  latest_application: Record<string, unknown> | null;
-  campaigns: Array<Record<string, unknown>>;
+  latest_application: PartnerApplicationInfo | null;
+  campaigns: PartnerCampaignInfo[];
 }
 
 export interface WithdrawalBalanceResponse {

@@ -10,6 +10,8 @@ import {
   Sparkles,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { postJson, requestJson, safeExternalUrl } from './_contentApi';
+import { usePlatform } from '@/platform';
+import { openPaymentUrl } from '@/utils/openPaymentUrl';
 
 interface LandingPeriod {
   days: number;
@@ -61,6 +63,7 @@ export default function QuickPurchasePage({
   purchase?: (slug: string, body: Record<string, unknown>) => Promise<PurchaseResponse>;
 }) {
   const { slug = '' } = useParams<{ slug?: string }>();
+  const { platform, openLink } = usePlatform();
   const [landing, setLanding] = useState<LandingConfig | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [tariffId, setTariffId] = useState<number | null>(null);
@@ -143,7 +146,10 @@ export default function QuickPurchasePage({
       setPaymentUrl(result.payment_url);
       setSubmitState('success');
       const safeUrl = safeExternalUrl(result.payment_url);
-      if (safeUrl) window.location.assign(safeUrl);
+      if (safeUrl) {
+        const opened = openPaymentUrl(safeUrl, platform, openLink);
+        if (!opened) window.location.assign(safeUrl);
+      }
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : 'Не удалось создать заказ.');
       setSubmitState('error');

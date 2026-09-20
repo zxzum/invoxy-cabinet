@@ -15,6 +15,7 @@ import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { Link, useNavigate } from 'react-router';
 import { usePayment } from '@/invoxystart/components/payments/PaymentFlow';
 import {
+  PartnerPromoCard,
   ReferralPromoCard,
   StandardOfferCard,
   SupportStrip,
@@ -171,7 +172,7 @@ export function DashboardPage() {
   return (
     <div className="flex w-full flex-col gap-5 pb-28 lg:gap-[1.1vw] lg:pb-0">
       <Header
-        balance={`₽ ${(user?.balance_rubles ?? 0).toLocaleString('ru-RU')}`}
+        balance={user?.balance_rubles ?? 0}
         userName={user?.first_name || user?.username}
         onWalletClick={() => navigate('/profile#top-up')}
       />
@@ -229,6 +230,9 @@ export function DashboardPage() {
               </div>
             </div>
             <NewsLink />
+            <Reveal delay={0.22} className="w-full">
+              <PartnerPromoCard />
+            </Reveal>
           </m.div>
         ) : (
           <m.div
@@ -421,6 +425,9 @@ export function DashboardPage() {
               </div>
             </div>
             <NewsLink />
+            <Reveal delay={0.28} className="w-full">
+              <PartnerPromoCard />
+            </Reveal>
           </m.div>
         )}
       </AnimatePresence>
