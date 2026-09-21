@@ -48,7 +48,54 @@ export const adminAppsApi = {
     }>('/cabinet/admin/apps/remnawave/config');
     return response.data.config;
   },
+
+  // ============== In-App Banners ==============
+  listAppBanners: async (): Promise<AppBanner[]> => {
+    const response = await apiClient.get<AppBanner[]>('/cabinet/admin/app-banners');
+    return response.data;
+  },
+
+  createAppBanner: async (data: AppBannerCreateInput): Promise<AppBanner> => {
+    const response = await apiClient.post<AppBanner>('/cabinet/admin/app-banners', data);
+    return response.data;
+  },
+
+  updateAppBanner: async (
+    bannerId: string,
+    data: Partial<AppBannerCreateInput>,
+  ): Promise<AppBanner> => {
+    const response = await apiClient.put<AppBanner>(`/cabinet/admin/app-banners/${bannerId}`, data);
+    return response.data;
+  },
+
+  deleteAppBanner: async (bannerId: string): Promise<{ success: boolean }> => {
+    const response = await apiClient.delete<{ success: boolean }>(
+      `/cabinet/admin/app-banners/${bannerId}`,
+    );
+    return response.data;
+  },
 };
+
+export interface AppBanner {
+  id: string;
+  title: string;
+  text?: string;
+  type: 'info' | 'promo' | 'warning' | 'mint' | string;
+  action_url?: string | null;
+  icon?: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface AppBannerCreateInput {
+  title: string;
+  text?: string;
+  type?: string;
+  action_url?: string | null;
+  icon?: string | null;
+  is_active?: boolean;
+  sort_order?: number;
+}
 
 // ============== Remnawave Format Types ==============
 
