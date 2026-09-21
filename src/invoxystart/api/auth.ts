@@ -183,6 +183,9 @@ export const authApi = {
 
   getAppLink: () =>
     apiClient.post<{ url: string; token_expires_in: number }>('/cabinet/auth/app-link'),
+
+  getPairCode: () =>
+    apiClient.post<{ code: string; expires_in: number }>('/cabinet/auth/pair-code'),
 };
 
 export type AuthApi = typeof authApi;

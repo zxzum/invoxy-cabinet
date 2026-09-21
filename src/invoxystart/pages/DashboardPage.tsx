@@ -170,6 +170,7 @@ export function DashboardPage() {
       (current?.end_date ? Date.parse(current.end_date) <= Date.now() : false),
   );
   const isTrial = accountState === 'trial' || Boolean(current?.is_trial);
+  const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   return (
     <div className="flex w-full flex-col gap-5 pb-28 lg:gap-[1.1vw] lg:pb-0">
@@ -179,53 +180,53 @@ export function DashboardPage() {
         onWalletClick={() => navigate('/profile#top-up')}
       />
 
-      {/* Prominent App Connect Banner */}
-      <div className="relative overflow-hidden rounded-[26px] border border-mint/30 bg-gradient-to-r from-mint/15 via-mint/5 to-cyan-500/10 p-4 sm:p-5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,255,204,0.08)]">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-mint/20 border border-mint/30 shadow-inner">
-              <img
-                src="/images/apps/invoxy.png"
-                alt="Invoxy VPN"
-                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl object-contain"
-              />
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                  Официальное приложение Invoxy VPN
-                </h3>
-                <span className="rounded-full bg-mint/25 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-mint border border-mint/40 animate-pulse">
-                  В 1 клик
-                </span>
+      {/* App Connect Banner (hidden on iOS) */}
+      {!isIOS && (
+        <div className="relative overflow-hidden rounded-[26px] border border-mint/20 bg-gradient-to-r from-mint/10 via-white/[0.02] to-cyan-500/5 p-3.5 sm:p-4 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-mint/15 border border-mint/25">
+                <img
+                  src="/images/apps/invoxy.png"
+                  alt="Invoxy VPN"
+                  className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg object-contain"
+                />
               </div>
-              <p className="text-xs text-muted mt-1 leading-relaxed max-w-xl">
-                Мгновенное подключение без ввода логина и паролей. Откройте на этом устройстве или
-                отсканируйте QR-код с телефона.
-              </p>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide">
+                    Приложение Invoxy VPN
+                  </h3>
+                  <span className="rounded-full bg-mint/20 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-mint border border-mint/30">
+                    Android / macOS
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted mt-0.5 leading-relaxed max-w-xl">
+                  Вход в 1 клик, по QR-коду или короткому коду с сайта
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-            <button
-              type="button"
-              onClick={() => setAppConnectModalOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-mint px-4 py-2.5 text-xs font-bold text-bg transition hover:bg-mint/90 active:scale-95 shadow-[0_0_20px_rgba(0,255,204,0.3)] cursor-pointer"
-            >
-              <Zap size={14} />
-              <span>Войти в 1 клик / QR</span>
-            </button>
-            <a
-              href="https://github.com/zxzum/InvoxyApp/releases/latest"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2.5 text-xs font-semibold text-white/80 border border-white/10 hover:bg-white/10 transition"
-            >
-              <span>Скачать</span>
-              <span className="text-[10px] text-muted">Android / macOS</span>
-            </a>
+            <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+              <button
+                type="button"
+                onClick={() => setAppConnectModalOpen(true)}
+                className="flex items-center gap-1.5 rounded-xl bg-mint px-3.5 py-2 text-xs font-bold text-bg transition hover:bg-mint/90 active:scale-95 shadow-[0_0_15px_rgba(0,255,204,0.2)] cursor-pointer"
+              >
+                <Zap size={13} />
+                <span>Подключить приложение</span>
+              </button>
+              <a
+                href="https://github.com/zxzum/InvoxyApp/releases/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 border border-white/10 hover:bg-white/10 transition"
+              >
+                <span>Скачать</span>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <AnimatePresence mode="wait">
         {loading || detailsLoading ? (

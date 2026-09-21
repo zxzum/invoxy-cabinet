@@ -21,18 +21,20 @@ export interface AppConnectModalProps {
 export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
   const [loading, setLoading] = useState(false);
   const [appLink, setAppLink] = useState<{ url: string; token_expires_in: number } | null>(null);
+  const [pairCode, setPairCode] = useState<{ code: string; expires_in: number } | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(120);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchToken = useCallback(async () => {
+  const fetchTokens = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await authApi.getAppLink();
-      setAppLink(data);
-      setSecondsLeft(data.token_expires_in || 120);
+      const [linkData, codeData] = await Promise.all([authApi.getAppLink(), authApi.getPairCode()]);
+      setAppLink(linkData);
+      setPairCode(codeData);
+      setSecondsLeft(Math.min(linkData.token_expires_in || 120, codeData.expires_in || 300));
     } catch {
-      setError('Не удалось создать ссылку для входа. Попробуйте снова.');
+      setError('Не удалось создать ссылку или код для входа. Попробуйте снова.');
     } finally {
       setLoading(false);
     }
@@ -40,16 +42,17 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
 
   useEffect(() => {
     if (open) {
-      void fetchToken();
+      void fetchTokens();
     } else {
       setAppLink(null);
+      setPairCode(null);
       setError(null);
     }
-  }, [open, fetchToken]);
+  }, [open, fetchTokens]);
 
   // Countdown timer
   useEffect(() => {
-    if (!open || !appLink || secondsLeft <= 0) return;
+    if (!open || secondsLeft <= 0) return;
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
@@ -60,7 +63,7 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [open, appLink, secondsLeft]);
+  }, [open, secondsLeft]);
 
   const handleConnectThisDevice = () => {
     if (!appLink?.url) return;
@@ -129,7 +132,7 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
             {(isExpired || secondsLeft < 30) && !loading && (
               <button
                 type="button"
-                onClick={() => void fetchToken()}
+                onClick={() => void fetchTokens()}
                 className="text-mint hover:underline font-bold ml-1 cursor-pointer"
               >
                 Обновить
@@ -143,11 +146,39 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
             {error}{' '}
             <button
               type="button"
-              onClick={() => void fetchToken()}
+              onClick={() => void fetchTokens()}
               className="underline font-bold ml-1"
             >
               Повторить
             </button>
+          </div>
+        )}
+
+        {/* Код сопряжения (Pair-Code) для ввода вручную */}
+        {pairCode?.code && !isExpired && (
+          <div className="glass-panel flex flex-col items-center justify-center rounded-2xl p-4 gap-2">
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                <Zap size={15} className="text-mint" /> Код подключения для приложения
+              </span>
+              <span className="text-[11px] text-muted">6 символов</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-1 w-full">
+              <span className="rounded-2xl border border-mint/40 bg-mint/10 px-6 py-2.5 font-mono text-2xl sm:text-3xl font-black tracking-[0.25em] text-mint shadow-[0_0_25px_rgba(165,232,196,0.2)] select-all">
+                {pairCode.code}
+              </span>
+              <div className="w-28 shrink-0">
+                <LivelyCopyButton
+                  text={pairCode.code}
+                  label="Копировать"
+                  copiedLabel="Скопировано!"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-center text-muted max-w-xs mt-1">
+              Введите этот код в приложении Invoxy VPN на экране входа.
+            </p>
           </div>
         )}
 
@@ -160,7 +191,7 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
               </span>
               <button
                 type="button"
-                onClick={() => void fetchToken()}
+                onClick={() => void fetchTokens()}
                 className="text-[11px] font-bold text-mint hover:underline cursor-pointer"
               >
                 Обновить QR

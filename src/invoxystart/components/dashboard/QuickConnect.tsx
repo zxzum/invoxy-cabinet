@@ -38,6 +38,8 @@ export function QuickConnect({
     : null;
   const links: Record<string, string | null> = { happ: happLink || null, incy: incyLink };
 
+  const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   return (
     <div className="flex w-full flex-col gap-2.5">
       <div className="flex items-center justify-between">
@@ -52,21 +54,7 @@ export function QuickConnect({
       </div>
 
       <div className="glass-panel motion-card flex flex-col gap-2 rounded-[26px] p-3">
-        {/* Primary Option: Invoxy VPN Native App */}
-        <button
-          type="button"
-          onClick={() => setAppConnectOpen(true)}
-          className="flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-mint/50 bg-mint/15 px-3.5 text-xs font-bold text-mint transition-all hover:bg-mint/25 hover:border-mint active:scale-[0.98] shadow-[0_0_15px_rgba(165,232,196,0.15)]"
-        >
-          <div className="flex items-center gap-2">
-            <Zap size={16} className="text-mint animate-pulse" />
-            <span className="text-ink font-bold">Приложение Invoxy VPN</span>
-          </div>
-          <span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-extrabold text-bg uppercase">
-            Вход в 1 клик
-          </span>
-        </button>
-
+        {/* Primary Options: HAPP and INCY */}
         <div className="grid w-full gap-2 2xl:grid-cols-2">
           {options.map((opt) => {
             const href = links[opt.id];
@@ -88,6 +76,23 @@ export function QuickConnect({
             );
           })}
         </div>
+
+        {/* Secondary Option: Invoxy VPN Native App (shown after Happ/Incy, hidden on iOS) */}
+        {!isIOS && (
+          <button
+            type="button"
+            onClick={() => setAppConnectOpen(true)}
+            className="flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-xs font-medium text-ink transition-all hover:bg-white/[0.08] hover:border-mint/30 active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-2">
+              <Zap size={14} className="text-mint" />
+              <span className="text-ink font-semibold">Приложение Invoxy VPN</span>
+            </div>
+            <span className="rounded-full bg-mint/15 border border-mint/30 px-2 py-0.5 text-[10px] font-bold text-mint uppercase">
+              Android / macOS
+            </span>
+          </button>
+        )}
       </div>
 
       <ConnectDeviceModal

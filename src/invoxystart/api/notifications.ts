@@ -12,4 +12,8 @@ export const notificationsApi = {
     offset = 0,
   ): Promise<{ notifications: unknown[]; total: number; limit: number; offset: number }> =>
     apiClient.get('/cabinet/notifications/history', { params: { limit, offset } }),
+  markAsRead: (id: number): Promise<{ success: boolean; id: number; read_at: string }> =>
+    apiClient.post(`/cabinet/notifications/${id}/read`),
+  markAllAsRead: (): Promise<{ success: boolean; updated_count: number }> =>
+    apiClient.post('/cabinet/notifications/read-all'),
 };
