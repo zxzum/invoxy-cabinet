@@ -1,9 +1,10 @@
-import { useEffect, useCallback, useContext } from 'react';
+import { useEffect, useCallback, useContext, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { WebSocketContext } from '@/providers/WebSocketContext';
 import type { WSMessage } from '@/providers/WebSocketContext';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { useAuth } from '@/invoxystart/auth';
+import { clearResponseCache } from '@/invoxystart/api/client';
 
 /**
  * Global Real-Time synchronization component for InvoxyStart.
@@ -20,6 +21,7 @@ export function InvoxyStartWsListener() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { refreshUser } = useAuth();
+  const lastResumeAtRef = useRef(0);
 
   const invalidateData = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['invoxy-balance'] });
@@ -95,7 +97,8 @@ export function InvoxyStartWsListener() {
       }
 
       if (type === 'ticket.admin_reply') {
-        showToast('💬 Новый ответ от службы поддержки');
+        // TicketNotificationBell owns the toast and unread counter. Keep the
+        // list fresh here without showing the same event twice.
         queryClient.invalidateQueries({ queryKey: ['tickets'] });
       }
     },
@@ -109,21 +112,27 @@ export function InvoxyStartWsListener() {
   }, [ws, handleMessage]);
 
   // Window focus / visibility change fallback:
-  // When user returns from external browser (after paying in SBP / bank app)
+  // When user returns from external browser (after paying in SBP / bank app).
+  // Chrome emits both events for one resume; coalesce them so two concurrent
+  // refetches cannot race a partially updated dashboard.
   useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        void refreshUser();
-        invalidateData();
-      }
+    const onResume = () => {
+      if (document.visibilityState === 'hidden') return;
+      const now = Date.now();
+      if (now - lastResumeAtRef.current < 500) return;
+      lastResumeAtRef.current = now;
+
+      clearResponseCache();
+      void refreshUser();
+      invalidateData();
     };
 
-    window.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('focus', onVisibilityChange);
+    document.addEventListener('visibilitychange', onResume);
+    window.addEventListener('focus', onResume);
 
     return () => {
-      window.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('focus', onVisibilityChange);
+      document.removeEventListener('visibilitychange', onResume);
+      window.removeEventListener('focus', onResume);
     };
   }, [refreshUser, invalidateData]);
 

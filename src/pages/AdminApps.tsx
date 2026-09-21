@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { adminAppsApi, type AppBanner } from '../api/adminApps';
 import { usePlatform } from '../platform/hooks/usePlatform';
 import { useNativeDialog } from '../platform/hooks/useNativeDialog';
+import { useNotify } from '@/platform';
+import { getApiErrorMessage } from '@/utils/api-error';
+import { usePermissionStore } from '@/store/permissions';
 import { BackIcon, PlusIcon, PencilIcon, TrashIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 
@@ -14,6 +17,8 @@ export default function AdminApps() {
   const queryClient = useQueryClient();
   const { capabilities } = usePlatform();
   const dialog = useNativeDialog();
+  const notify = useNotify();
+  const canEditBanners = usePermissionStore((state) => state.hasPermission('settings:edit'));
 
   // Remnawave status
   const { data: status } = useQuery({
@@ -96,6 +101,9 @@ export default function AdminApps() {
       queryClient.invalidateQueries({ queryKey: ['admin-app-banners'] });
       setIsBannerModalOpen(false);
     },
+    onError: (error) => {
+      notify.error(getApiErrorMessage(error, 'Не удалось сохранить баннер'));
+    },
   });
 
   const toggleBannerMutation = useMutation({
@@ -105,12 +113,18 @@ export default function AdminApps() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-app-banners'] });
     },
+    onError: (error) => {
+      notify.error(getApiErrorMessage(error, 'Не удалось изменить баннер'));
+    },
   });
 
   const deleteBannerMutation = useMutation({
     mutationFn: adminAppsApi.deleteAppBanner,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-app-banners'] });
+    },
+    onError: (error) => {
+      notify.error(getApiErrorMessage(error, 'Не удалось удалить баннер'));
     },
   });
 
@@ -194,13 +208,17 @@ export default function AdminApps() {
               Управление акциями, предупреждениями и объявлениями на главном экране Invoxy App
             </p>
           </div>
-          <button
-            onClick={() => handleOpenBannerModal()}
-            className="flex items-center gap-1.5 rounded-xl bg-accent-500 px-3.5 py-2 text-xs font-semibold text-white transition-all hover:bg-accent-600 active:scale-95"
-          >
-            <PlusIcon className="h-4 w-4" />
-            Добавить баннер
-          </button>
+          {canEditBanners ? (
+            <button
+              onClick={() => handleOpenBannerModal()}
+              className="flex items-center gap-1.5 rounded-xl bg-accent-500 px-3.5 py-2 text-xs font-semibold text-white transition-all hover:bg-accent-600 active:scale-95"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Добавить баннер
+            </button>
+          ) : (
+            <span className="text-xs text-dark-500">Требуется право settings:edit</span>
+          )}
         </div>
 
         {isLoadingBanners ? (
@@ -251,39 +269,41 @@ export default function AdminApps() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() =>
-                          toggleBannerMutation.mutate({ id: b.id, is_active: !b.is_active })
-                        }
-                        className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                          b.is_active
-                            ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
-                            : 'bg-dark-700 text-dark-400 hover:bg-dark-600'
-                        }`}
-                      >
-                        {b.is_active ? 'Активен' : 'Скрыт'}
-                      </button>
-                      <button
-                        onClick={() => handleOpenBannerModal(b)}
-                        className="p-1.5 rounded-lg text-dark-400 hover:text-dark-200 hover:bg-dark-700 transition-colors"
-                        title="Редактировать"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={async () => {
-                          const confirmed = await dialog.confirm(`Удалить баннер "${b.title}"?`);
-                          if (confirmed) {
-                            deleteBannerMutation.mutate(b.id);
+                    {canEditBanners && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() =>
+                            toggleBannerMutation.mutate({ id: b.id, is_active: !b.is_active })
                           }
-                        }}
-                        className="p-1.5 rounded-lg text-error-400 hover:text-error-300 hover:bg-error-500/10 transition-colors"
-                        title="Удалить"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                          className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
+                            b.is_active
+                              ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
+                              : 'bg-dark-700 text-dark-400 hover:bg-dark-600'
+                          }`}
+                        >
+                          {b.is_active ? 'Активен' : 'Скрыт'}
+                        </button>
+                        <button
+                          onClick={() => handleOpenBannerModal(b)}
+                          className="p-1.5 rounded-lg text-dark-400 hover:text-dark-200 hover:bg-dark-700 transition-colors"
+                          title="Редактировать"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const confirmed = await dialog.confirm(`Удалить баннер "${b.title}"?`);
+                            if (confirmed) {
+                              deleteBannerMutation.mutate(b.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg text-error-400 hover:text-error-300 hover:bg-error-500/10 transition-colors"
+                          title="Удалить"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -62,6 +62,9 @@ function clearResponseCache() {
   responseCache.clear();
 }
 
+/** Drop the short-lived GET cache before a lifecycle revalidation. */
+export { clearResponseCache };
+
 function storage(name: 'localStorage' | 'sessionStorage'): Storage | null {
   try {
     return typeof window === 'undefined' ? null : window[name];

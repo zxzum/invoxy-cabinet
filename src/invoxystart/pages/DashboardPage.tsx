@@ -43,6 +43,7 @@ export function DashboardPage() {
   const { data: subsData, isLoading: subsLoading } = useQuery({
     queryKey: ['invoxy-subscriptions'],
     queryFn: () => subscriptionApi.getSubscriptions(),
+    placeholderData: (previous) => previous,
     staleTime: 60_000,
   });
 
@@ -69,6 +70,12 @@ export function DashboardPage() {
     queryKey: ['invoxy-subscription-details', activeSubId],
     queryFn: async () => {
       if (!activeSubId) return null;
+      const previous = queryClient.getQueryData<{
+        subscription: Awaited<ReturnType<typeof subscriptionApi.getSubscription>>['subscription'];
+        connection: Awaited<ReturnType<typeof subscriptionApi.getConnectionLink>> | null;
+        devices: Awaited<ReturnType<typeof subscriptionApi.getDevices>>['devices'];
+        renewalOptions: Awaited<ReturnType<typeof subscriptionApi.getRenewalOptions>>;
+      }>(['invoxy-subscription-details', activeSubId]);
       const [detailResult, connectionResult, devicesResult, renewalResult] =
         await Promise.allSettled([
           subscriptionApi.getSubscription(activeSubId),
@@ -77,10 +84,22 @@ export function DashboardPage() {
           subscriptionApi.getRenewalOptions(activeSubId),
         ]);
       return {
-        subscription: detailResult.status === 'fulfilled' ? detailResult.value.subscription : null,
-        connection: connectionResult.status === 'fulfilled' ? connectionResult.value : null,
-        devices: devicesResult.status === 'fulfilled' ? devicesResult.value.devices : [],
-        renewalOptions: renewalResult.status === 'fulfilled' ? renewalResult.value : [],
+        subscription:
+          detailResult.status === 'fulfilled'
+            ? detailResult.value.subscription
+            : (previous?.subscription ?? null),
+        connection:
+          connectionResult.status === 'fulfilled'
+            ? connectionResult.value
+            : (previous?.connection ?? null),
+        devices:
+          devicesResult.status === 'fulfilled'
+            ? devicesResult.value.devices
+            : (previous?.devices ?? []),
+        renewalOptions:
+          renewalResult.status === 'fulfilled'
+            ? renewalResult.value
+            : (previous?.renewalOptions ?? []),
       };
     },
     enabled: Boolean(activeSubId),
@@ -100,8 +119,7 @@ export function DashboardPage() {
       ? 'active'
       : 'new';
 
-  const loading =
-    subsLoading || (subscriptions.length > 0 && detailsLoading && !detailsData && !selected);
+  const loading = subsLoading || (subscriptions.length > 0 && detailsLoading && !detailsData);
 
   async function activateTrial() {
     if (!trialInfo?.is_available) return;

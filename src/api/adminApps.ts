@@ -56,7 +56,12 @@ export const adminAppsApi = {
   },
 
   createAppBanner: async (data: AppBannerCreateInput): Promise<AppBanner> => {
-    const response = await apiClient.post<AppBanner>('/cabinet/admin/app-banners', data);
+    const response = await apiClient.post<AppBanner>('/cabinet/admin/app-banners', {
+      ...data,
+      title: data.title.trim(),
+      text: data.text?.trim() ?? '',
+      action_url: data.action_url?.trim() || null,
+    });
     return response.data;
   },
 
@@ -64,7 +69,12 @@ export const adminAppsApi = {
     bannerId: string,
     data: Partial<AppBannerCreateInput>,
   ): Promise<AppBanner> => {
-    const response = await apiClient.put<AppBanner>(`/cabinet/admin/app-banners/${bannerId}`, data);
+    const response = await apiClient.put<AppBanner>(`/cabinet/admin/app-banners/${bannerId}`, {
+      ...data,
+      ...(data.title !== undefined ? { title: data.title.trim() } : {}),
+      ...(data.text !== undefined ? { text: data.text.trim() } : {}),
+      ...(data.action_url !== undefined ? { action_url: data.action_url?.trim() || null } : {}),
+    });
     return response.data;
   },
 

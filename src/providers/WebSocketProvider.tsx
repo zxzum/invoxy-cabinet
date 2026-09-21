@@ -44,6 +44,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const connectionGenerationRef = useRef(0);
   const ticketRequestRef = useRef<AbortController | null>(null);
   const isConnectingRef = useRef(false);
+  const pageVisibleRef = useRef(
+    typeof document === 'undefined' || document.visibilityState === 'visible',
+  );
   const [isConnected, setIsConnected] = useState(false);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = WS.MAX_RECONNECT_ATTEMPTS;
@@ -72,7 +75,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const connect = useCallback(async () => {
-    if (!accessToken || !isAuthenticated) {
+    if (!accessToken || !isAuthenticated || !pageVisibleRef.current) {
       return;
     }
 
@@ -93,6 +96,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         generation !== connectionGenerationRef.current ||
         !accessToken ||
         !isAuthenticated ||
+        !pageVisibleRef.current ||
         reconnectTimeoutRef.current ||
         reconnectAttemptsRef.current >= maxReconnectAttempts
       ) {
@@ -214,6 +218,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         if (isDev) console.error('[WS] Error:', error);
       };
     } catch (e) {
+      if (generation === connectionGenerationRef.current) {
+        isConnectingRef.current = false;
+        scheduleReconnect();
+      }
       if (isDev) console.error('[WS] Failed to connect:', e);
     }
   }, [accessToken, isAuthenticated, cleanup]);
@@ -229,6 +237,30 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
     return cleanup;
   }, [isAuthenticated, accessToken, connect, cleanup]);
+
+  // A hidden browser tab cannot usefully consume the live stream. Closing it
+  // prevents reconnect/ping loops while the browser throttles the page; the
+  // next visible state obtains a fresh one-time ticket and reconnects.
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = document.visibilityState === 'visible';
+      pageVisibleRef.current = visible;
+
+      if (!visible) {
+        cleanup();
+        setIsConnected(false);
+        return;
+      }
+
+      if (isAuthenticated && accessToken) {
+        reconnectAttemptsRef.current = 0;
+        void connect();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [accessToken, isAuthenticated, connect, cleanup]);
 
   // Subscribe function for components
   const subscribe = useCallback((handler: MessageHandler) => {

@@ -38,6 +38,10 @@ const instances: FakeWebSocket[] = [];
 
 beforeEach(() => {
   instances.length = 0;
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    value: 'visible',
+  });
   mocks.authState.accessToken = 'access-jwt';
   mocks.authState.isAuthenticated = true;
   mocks.getWebSocketTicket
@@ -50,6 +54,10 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    value: 'visible',
+  });
 });
 
 describe('WebSocketProvider', () => {
@@ -141,5 +149,51 @@ describe('WebSocketProvider', () => {
     await Promise.resolve();
 
     expect(instances).toHaveLength(0);
+  });
+
+  it('pauses the socket while the tab is hidden and reconnects on return', async () => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden',
+    });
+
+    render(
+      <WebSocketProvider>
+        <span>child</span>
+      </WebSocketProvider>,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(mocks.getWebSocketTicket).not.toHaveBeenCalled();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(instances).toHaveLength(1));
+    expect(mocks.getWebSocketTicket).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the active socket when the tab becomes hidden', async () => {
+    render(
+      <WebSocketProvider>
+        <span>child</span>
+      </WebSocketProvider>,
+    );
+    await waitFor(() => expect(instances).toHaveLength(1));
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden',
+    });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+
+    expect(instances[0].readyState).toBe(3);
   });
 });

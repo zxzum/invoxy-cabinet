@@ -1,6 +1,7 @@
 import { Wallet } from '@/invoxystart/components/ui/RuneIcon';
 import { NotificationMenu } from '@/invoxystart/components/layout/NotificationMenu';
 import { AnimatedBalance } from '@/invoxystart/components/ui/AnimatedBalance';
+import TicketNotificationBell from '@/components/TicketNotificationBell';
 
 export function Header({
   balance,
@@ -43,6 +44,7 @@ export function Header({
         </button>
 
         <NotificationMenu className="hidden lg:block" />
+        <TicketNotificationBell />
       </div>
     </div>
   );

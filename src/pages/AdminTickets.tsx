@@ -22,6 +22,7 @@ import {
 } from '@/components/icons';
 import { StatCard } from '@/components/stats';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import TicketNotificationBell from '../components/TicketNotificationBell';
 
 interface MediaAttachment {
   id: string;
@@ -296,13 +297,16 @@ export default function AdminTickets() {
           )}
           <h1 className="text-xl font-bold text-dark-100">{t('admin.tickets.title')}</h1>
         </div>
-        <button
-          onClick={() => navigate('/admin/tickets/settings')}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <SettingsIcon className="h-5 w-5" />
-          {t('admin.tickets.settings')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/admin/tickets/settings')}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <SettingsIcon className="h-5 w-5" />
+            {t('admin.tickets.settings')}
+          </button>
+          <TicketNotificationBell isAdmin />
+        </div>
       </div>
 
       {/* Stats */}
