@@ -467,10 +467,15 @@ export default function TopUpAmount() {
             {orderedOptions.map((opt) => {
               const isSbp =
                 opt.id.toLowerCase().includes('sbp') || opt.name.toLowerCase().includes('сбп');
+              const isForeign =
+                opt.id.toLowerCase().includes('foreign') ||
+                opt.name.toLowerCase().includes('зарубеж') ||
+                opt.name.toLowerCase().includes('international');
               const isCard =
-                opt.id.toLowerCase().includes('card') ||
-                opt.name.toLowerCase().includes('карт') ||
-                opt.name.toLowerCase().includes('рф');
+                !isForeign &&
+                (opt.id.toLowerCase().includes('card') ||
+                  opt.name.toLowerCase().includes('карт') ||
+                  opt.name.toLowerCase().includes('рф'));
 
               return (
                 <button

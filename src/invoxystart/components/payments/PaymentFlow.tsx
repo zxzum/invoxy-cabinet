@@ -352,6 +352,12 @@ export function PaymentMethods({
                       description: 'Система быстрых платежей',
                     },
                     { id: 'card', name: 'Карты РФ', description: 'МИР, Visa, Mastercard' },
+                    {
+                      id: 'foreign_card',
+                      name: 'Зарубежные карты',
+                      description: 'Visa, Mastercard банков мира',
+                    },
+                    { id: 'crypto', name: 'Криптовалюта', description: 'USDT, TON, BTC и другие' },
                   ]
                 : [];
           if (options.length > 0) {
@@ -376,10 +382,15 @@ export function PaymentMethods({
                     const isSbp =
                       option.id.toLowerCase().includes('sbp') ||
                       option.name.toLowerCase().includes('сбп');
+                    const isForeign =
+                      option.id.toLowerCase().includes('foreign') ||
+                      option.name.toLowerCase().includes('зарубеж') ||
+                      option.name.toLowerCase().includes('international');
                     const isCard =
-                      option.id.toLowerCase().includes('card') ||
-                      option.name.toLowerCase().includes('карт') ||
-                      option.name.toLowerCase().includes('рф');
+                      !isForeign &&
+                      (option.id.toLowerCase().includes('card') ||
+                        option.name.toLowerCase().includes('карт') ||
+                        option.name.toLowerCase().includes('рф'));
                     const cleanName = option.name.replace(/\s*\(?0%\s*комиссии\)?/gi, '').trim();
                     const cleanDesc = (option.description || `Оплата через ${method.name}`)
                       .replace(/\s*\(?0%\s*комиссии\)?/gi, '')

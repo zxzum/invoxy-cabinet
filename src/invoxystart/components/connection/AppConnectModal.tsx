@@ -25,8 +25,10 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
   const [secondsLeft, setSecondsLeft] = useState(120);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTokens = useCallback(async () => {
-    setLoading(true);
+  const fetchTokens = useCallback(async (isBackground = false) => {
+    if (!isBackground) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const [linkData, codeData] = await Promise.all([authApi.getAppLink(), authApi.getPairCode()]);
@@ -34,9 +36,13 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
       setPairCode(codeData);
       setSecondsLeft(Math.min(linkData.token_expires_in || 120, codeData.expires_in || 300));
     } catch {
-      setError('Не удалось создать ссылку или код для входа. Попробуйте снова.');
+      if (!isBackground) {
+        setError('Не удалось создать ссылку или код для входа. Попробуйте снова.');
+      }
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -50,27 +56,25 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
     }
   }, [open, fetchTokens]);
 
-  // Countdown timer
+  // Countdown timer with auto-refresh
   useEffect(() => {
-    if (!open || secondsLeft <= 0) return;
+    if (!open) return;
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
+          void fetchTokens(true);
+          return 120;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [open, secondsLeft]);
+  }, [open, fetchTokens]);
 
   const handleConnectThisDevice = () => {
     if (!appLink?.url) return;
     openDeepLink(appLink.url);
   };
-
-  const isExpired = secondsLeft <= 0;
 
   return (
     <AdaptiveDialog
@@ -108,31 +112,29 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
 
           <button
             type="button"
-            disabled={loading || isExpired || !appLink}
+            disabled={loading || !appLink}
             onClick={handleConnectThisDevice}
             className={`flex h-12 w-full max-w-xs cursor-pointer items-center justify-center gap-2 rounded-xl bg-mint px-5 text-sm font-bold text-bg transition-all hover:bg-mint/90 active:scale-95 shadow-[0_0_20px_rgba(165,232,196,0.3)] ${
-              loading || isExpired || !appLink ? 'opacity-50 cursor-not-allowed' : ''
+              loading || !appLink ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
             <ShieldCheck size={18} />
             <span>Подключить это устройство</span>
           </button>
 
-          {/* Таймер жизни ссылки */}
+          {/* Таймер жизни ссылки с автообновлением */}
           <div className="flex items-center gap-2 text-[11px] text-muted">
             {loading ? (
               <span>Генерация защищённого токена...</span>
-            ) : isExpired ? (
-              <span className="text-error font-medium">Ссылка истекла</span>
             ) : (
               <span>
-                Код действителен ещё: <b className="text-mint">{secondsLeft}с</b>
+                Автообновление через: <b className="text-mint">{secondsLeft}с</b>
               </span>
             )}
-            {(isExpired || secondsLeft < 30) && !loading && (
+            {!loading && (
               <button
                 type="button"
-                onClick={() => void fetchTokens()}
+                onClick={() => void fetchTokens(false)}
                 className="text-mint hover:underline font-bold ml-1 cursor-pointer"
               >
                 Обновить
@@ -155,7 +157,7 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
         )}
 
         {/* Код сопряжения (Pair-Code) для ввода вручную */}
-        {pairCode?.code && !isExpired && (
+        {pairCode?.code && (
           <div className="glass-panel flex flex-col items-center justify-center rounded-2xl p-4 gap-2">
             <div className="flex items-center justify-between w-full">
               <span className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
@@ -183,7 +185,7 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
         )}
 
         {/* QR-код для смартфона */}
-        {appLink?.url && !isExpired && (
+        {appLink?.url && (
           <div className="glass-panel flex flex-col items-center justify-center rounded-2xl p-4 gap-2">
             <div className="flex items-center justify-between w-full">
               <span className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
@@ -191,7 +193,7 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
               </span>
               <button
                 type="button"
-                onClick={() => void fetchTokens()}
+                onClick={() => void fetchTokens(false)}
                 className="text-[11px] font-bold text-mint hover:underline cursor-pointer"
               >
                 Обновить QR
@@ -215,7 +217,7 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
         )}
 
         {/* Копирование ссылки */}
-        {appLink?.url && !isExpired && (
+        {appLink?.url && (
           <div className="glass-panel flex flex-col gap-2 rounded-2xl p-3.5">
             <span className="text-xs font-bold uppercase tracking-wider text-muted">
               Прямая ссылка для входа
