@@ -84,9 +84,11 @@ export function DashboardPage() {
       };
     },
     enabled: Boolean(activeSubId),
+    placeholderData: (prev) => prev,
     staleTime: 60_000,
   });
 
+  const selected = subscriptions.find((item) => item.id === activeSubId);
   const subscription = detailsData?.subscription ?? null;
   const connection = detailsData?.connection ?? null;
   const devices = detailsData?.devices ?? [];
@@ -98,7 +100,8 @@ export function DashboardPage() {
       ? 'active'
       : 'new';
 
-  const loading = subsLoading || (subscriptions.length > 0 && detailsLoading && !detailsData);
+  const loading =
+    subsLoading || (subscriptions.length > 0 && detailsLoading && !detailsData && !selected);
 
   async function activateTrial() {
     if (!trialInfo?.is_available) return;
@@ -113,20 +116,17 @@ export function DashboardPage() {
     }
   }
 
-  const selected = subscriptions.find((item) => item.id === activeSubId);
   const current = subscription ?? selected;
   const endDate = current?.end_date ? formatDate(current.end_date) : '—';
+  const currentStartDate = (current as { start_date?: string | null } | undefined)?.start_date;
   const totalDays =
-    subscription?.start_date && subscription.end_date
-      ? Math.max(
-          1,
-          (Date.parse(subscription.end_date) - Date.parse(subscription.start_date)) / 86400000,
-        )
+    currentStartDate && current?.end_date
+      ? Math.max(1, (Date.parse(current.end_date) - Date.parse(currentStartDate)) / 86400000)
       : 0;
-  const progress = subscription
+  const progress = current
     ? Math.min(
         100,
-        Math.max(0, totalDays ? ((totalDays - subscription.days_left) / totalDays) * 100 : 0),
+        Math.max(0, totalDays ? ((totalDays - (current.days_left ?? 0)) / totalDays) * 100 : 0),
       )
     : 0;
   const accessLink =
@@ -156,6 +156,11 @@ export function DashboardPage() {
     status: `${device.platform || 'Неизвестная платформа'}${device.created_at ? ` · ${formatDate(device.created_at)}` : ''}`,
     platform: device.platform,
   }));
+  const effectiveDevicesCount =
+    managedDevices.length ||
+    (current?.device_limit && current.device_limit > 0
+      ? ((current as { active_devices_count?: number })?.active_devices_count ?? 0)
+      : 0);
   const renewalTerms = renewalOptions.map((option) => ({
     id: String(option.period_days),
     label: `${option.period_days} дней`,
@@ -323,7 +328,7 @@ export function DashboardPage() {
               </div>
             )}
 
-            {!isExpired && managedDevices.length === 0 && (
+            {!isExpired && effectiveDevicesCount === 0 && (
               <ZeroDevicesHeroBanner accessLink={accessLink} onConnect={handleOpenConnect} />
             )}
 
@@ -334,15 +339,12 @@ export function DashboardPage() {
                 <Reveal className="order-1 min-w-0 lg:order-none">
                   <SubscriptionCard
                     trial={isTrial}
-                    name={subscription?.tariff_name || selected?.tariff_name || 'Подписка'}
-                    days={subscription?.days_left ?? 0}
+                    name={current?.tariff_name || 'Подписка'}
+                    days={current?.days_left ?? 0}
                     endDate={endDate}
-                    hasLte={Boolean(
-                      subscription?.whitelist_traffic_limit_gb ??
-                        selected?.whitelist_traffic_limit_gb,
-                    )}
+                    hasLte={Boolean(current?.whitelist_traffic_limit_gb)}
                     progress={progress}
-                    devicesCount={managedDevices.length}
+                    devicesCount={effectiveDevicesCount}
                     isExpired={isExpired}
                     onManage={() => {
                       if (isExpired && isTrial) {
@@ -357,7 +359,7 @@ export function DashboardPage() {
                 </Reveal>
 
                 <div className="deferred-section order-2 lg:order-none">
-                  <TrafficCards subscription={subscription} />
+                  <TrafficCards subscription={current} />
                 </div>
 
                 {/* Active subscription: DevicesCard above Renewal/Offer card.

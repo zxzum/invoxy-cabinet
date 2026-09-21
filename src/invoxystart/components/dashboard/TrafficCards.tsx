@@ -1,5 +1,3 @@
-import type { Subscription } from '@/invoxystart/api';
-
 interface TrafficItem {
   label: string;
   amount: string;
@@ -50,15 +48,14 @@ function formatTraffic(used: number | null | undefined, limit: number | null | u
 export function TrafficCards({
   subscription,
 }: {
-  subscription?: Pick<
-    Subscription,
-    | 'traffic_limit_gb'
-    | 'traffic_used_gb'
-    | 'traffic_used_percent'
-    | 'whitelist_traffic_limit_gb'
-    | 'whitelist_traffic_used_gb'
-    | 'whitelist_traffic_used_percent'
-  > | null;
+  subscription?: {
+    traffic_limit_gb?: number | null;
+    traffic_used_gb?: number | null;
+    traffic_used_percent?: number | null;
+    whitelist_traffic_limit_gb?: number | null;
+    whitelist_traffic_used_gb?: number | null;
+    whitelist_traffic_used_percent?: number | null;
+  } | null;
 }) {
   const hasLte = Boolean(
     subscription?.whitelist_traffic_limit_gb && subscription.whitelist_traffic_limit_gb > 0,

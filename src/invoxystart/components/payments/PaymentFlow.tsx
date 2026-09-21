@@ -349,7 +349,7 @@ export function PaymentMethods({
                     {
                       id: 'sbp',
                       name: 'СБП',
-                      description: 'Система быстрых платежей (0% комиссии)',
+                      description: 'Система быстрых платежей',
                     },
                     { id: 'card', name: 'Карты РФ', description: 'МИР, Visa, Mastercard' },
                   ]
@@ -380,6 +380,10 @@ export function PaymentMethods({
                       option.id.toLowerCase().includes('card') ||
                       option.name.toLowerCase().includes('карт') ||
                       option.name.toLowerCase().includes('рф');
+                    const cleanName = option.name.replace(/\s*\(?0%\s*комиссии\)?/gi, '').trim();
+                    const cleanDesc = (option.description || `Оплата через ${method.name}`)
+                      .replace(/\s*\(?0%\s*комиссии\)?/gi, '')
+                      .trim();
 
                     return (
                       <button
@@ -408,21 +412,14 @@ export function PaymentMethods({
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-1.5">
-                            <strong className="block truncate text-xs">{option.name}</strong>
-                            {isSbp && (
-                              <span className="rounded bg-mint/25 px-1.5 py-0.5 text-[9px] font-bold text-mint">
-                                0%
-                              </span>
-                            )}
+                            <strong className="block truncate text-xs">{cleanName}</strong>
                             {isCard && (
                               <span className="rounded bg-sky-400/25 px-1.5 py-0.5 text-[9px] font-bold text-sky-300">
                                 РФ
                               </span>
                             )}
                           </span>
-                          <span className="mt-0.5 block text-[10px] text-muted">
-                            {option.description || `Оплата через ${method.name}`}
-                          </span>
+                          <span className="mt-0.5 block text-[10px] text-muted">{cleanDesc}</span>
                         </span>
                       </button>
                     );
