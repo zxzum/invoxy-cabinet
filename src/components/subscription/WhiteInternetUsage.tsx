@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import TrafficProgressBar from '../dashboard/TrafficProgressBar';
 import type { TrafficResetStatus } from '../../types';
+import { formatCalendarBoundaryMonth } from '../../utils/calendarBoundary';
 
 export interface WhiteInternetUsageProps {
   subscription: { whitelist_traffic_limit_gb?: number; whitelist_traffic_used_gb?: number };
@@ -37,10 +38,7 @@ export function WhiteInternetUsage({
     }
 
     if (trafficReset.unavailable_reason === 'monthly_limit') {
-      const nextDate = trafficReset.next_available_at
-        ? new Date(trafficReset.next_available_at)
-        : null;
-      const monthName = nextDate ? nextDate.toLocaleString('default', { month: 'long' }) : '';
+      const monthName = formatCalendarBoundaryMonth(trafficReset.next_available_at);
       return (
         <div className="mt-1.5 text-xs text-dark-400">
           {t('subscription.trafficReset.monthlyLimitReached', {

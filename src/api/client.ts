@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { getTelegramInitData as readTelegramInitData } from '../utils/telegramInitData';
 import {
   tokenStorage,
@@ -9,8 +9,9 @@ import {
 import { useBlockingStore } from '../store/blocking';
 import { reportPossibleBackendDown, markBackendReached } from './health';
 import { API } from '../config/constants';
+import { resolveApiBaseUrl } from '../config/apiUrl';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
 
 tokenRefreshManager.setRefreshEndpoint(`${API_BASE_URL}/cabinet/auth/refresh`);
 

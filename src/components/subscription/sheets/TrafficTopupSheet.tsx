@@ -8,6 +8,10 @@ import { ChevronRightIcon } from '../../icons';
 import type { PurchaseOptions, Subscription } from '../../../types';
 import { useSuccessNotification } from '../../../store/successNotification';
 import { formatPrice } from '../../../utils/format';
+import {
+  formatCalendarBoundaryDate,
+  formatCalendarBoundaryMonth,
+} from '../../../utils/calendarBoundary';
 
 // ──────────────────────────────────────────────────────────────────
 // Buy-traffic sheet. Self-owns the packages query + purchase mutation;
@@ -154,10 +158,7 @@ export function TrafficTopupSheet({
           defaultValue: `Сброс доступен после ${trafficReset.min_used_gb} ГБ расхода`,
         });
       } else if (trafficReset.unavailable_reason === 'monthly_limit') {
-        const nextDate = trafficReset.next_available_at
-          ? new Date(trafficReset.next_available_at)
-          : null;
-        const monthName = nextDate ? nextDate.toLocaleString('default', { month: 'long' }) : '';
+        const monthName = formatCalendarBoundaryMonth(trafficReset.next_available_at);
         statusSubtitle = t('subscription.trafficReset.monthlyLimitReached', {
           month: monthName,
           defaultValue: `Лимит сбросов на этот месяц исчерпан. Следующий сброс с 1 ${monthName}`,
@@ -325,11 +326,7 @@ export function TrafficTopupSheet({
           <div className="alert-warning mb-4 text-xs">
             ⚠️{' '}
             {t('subscription.trafficReset.monthlyLimitReached', {
-              month: trafficReset.next_available_at
-                ? new Date(trafficReset.next_available_at).toLocaleString('default', {
-                    month: 'long',
-                  })
-                : '',
+              month: formatCalendarBoundaryMonth(trafficReset.next_available_at),
               defaultValue: 'Лимит сбросов на этот месяц исчерпан',
             })}
           </div>
@@ -472,7 +469,7 @@ export function TrafficTopupSheet({
                   <div className="mt-2 text-xs leading-snug text-dark-400">
                     {pkg.next_available_at
                       ? t('subscription.additionalOptions.availableAgain', {
-                          date: new Date(pkg.next_available_at).toLocaleDateString(),
+                          date: formatCalendarBoundaryDate(pkg.next_available_at),
                         })
                       : pkg.unavailable_reason}
                   </div>

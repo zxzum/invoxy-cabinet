@@ -169,6 +169,17 @@ export const authApi = {
     });
   },
 
+  getWebSocketTicket: async (
+    signal?: AbortSignal,
+  ): Promise<{ ticket: string; expires_in: number }> => {
+    const response = await apiClient.post<{ ticket: string; expires_in: number }>(
+      '/cabinet/auth/ws-ticket',
+      undefined,
+      { signal },
+    );
+    return response.data;
+  },
+
   forgotPassword: async (email: string): Promise<{ message: string }> => {
     const response = await apiClient.post('/cabinet/auth/password/forgot', { email });
     return response.data;

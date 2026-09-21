@@ -1,5 +1,6 @@
 import apiClient from './client';
 import { tokenStorage } from '../utils/token';
+import { resolveApiBaseUrl } from '../config/apiUrl';
 
 export type BulkActionType =
   | 'extend_subscription'
@@ -72,7 +73,7 @@ export interface BulkCompleteEvent {
 
 export type BulkSSEEvent = BulkProgressEvent | BulkCompleteEvent;
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
 
 export const adminBulkActionsApi = {
   execute: async (data: BulkActionRequest): Promise<BulkActionResult> => {

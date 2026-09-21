@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '../store/auth';
+import { authApi } from '../api/auth';
 import { WebSocketContext, type MessageHandler, type WSMessage } from './WebSocketContext';
 import { WS } from '../config/constants';
+import { resolveApiBaseUrl } from '../config/apiUrl';
 
 // Re-export for backward compatibility
 export type { WSMessage } from './WebSocketContext';
 
 const isDev = import.meta.env.DEV;
 
-function buildWebSocketUrl(accessToken: string): string {
-  const apiUrl = String(import.meta.env.VITE_API_URL || '/api').trim();
+function buildWebSocketUrl(ticket: string): string {
+  const apiUrl = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
   const windowWsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 
-  const withToken = (base: string) => `${base}?token=${encodeURIComponent(accessToken)}`;
+  const withTicket = (base: string) => `${base}?ticket=${encodeURIComponent(ticket)}`;
 
   if (apiUrl.startsWith('http://') || apiUrl.startsWith('https://')) {
     try {
@@ -20,7 +22,7 @@ function buildWebSocketUrl(accessToken: string): string {
       const wsProtocol = api.protocol === 'https:' ? 'wss:' : 'ws:';
       const basePath = api.pathname.replace(/\/+$/, '');
       const wsPath = basePath.endsWith('/cabinet') ? `${basePath}/ws` : `${basePath}/cabinet/ws`;
-      return withToken(`${wsProtocol}//${api.host}${wsPath}`);
+      return withTicket(`${wsProtocol}//${api.host}${wsPath}`);
     } catch {
       // fall through to relative-path handling
     }
@@ -30,7 +32,7 @@ function buildWebSocketUrl(accessToken: string): string {
   const wsPath = normalizedBasePath.endsWith('/cabinet')
     ? `${normalizedBasePath}/ws`
     : `${normalizedBasePath}/cabinet/ws`;
-  return withToken(`${windowWsProtocol}//${window.location.host}${wsPath}`);
+  return withTicket(`${windowWsProtocol}//${window.location.host}${wsPath}`);
 }
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
@@ -39,6 +41,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const connectionGenerationRef = useRef(0);
+  const ticketRequestRef = useRef<AbortController | null>(null);
+  const isConnectingRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = WS.MAX_RECONNECT_ATTEMPTS;
@@ -47,6 +52,11 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const handlersRef = useRef<Set<MessageHandler>>(new Set());
 
   const cleanup = useCallback(() => {
+    connectionGenerationRef.current += 1;
+    ticketRequestRef.current?.abort();
+    ticketRequestRef.current = null;
+    isConnectingRef.current = false;
+
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
@@ -61,25 +71,83 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (!accessToken || !isAuthenticated) {
       return;
     }
 
     // Don't reconnect if already connected
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+    if (wsRef.current?.readyState === WebSocket.OPEN || isConnectingRef.current) {
       return;
     }
 
     cleanup();
 
-    const wsUrl = buildWebSocketUrl(accessToken);
+    const generation = connectionGenerationRef.current;
+    const controller = new AbortController();
+    ticketRequestRef.current = controller;
+    isConnectingRef.current = true;
+
+    const scheduleReconnect = () => {
+      if (
+        generation !== connectionGenerationRef.current ||
+        !accessToken ||
+        !isAuthenticated ||
+        reconnectTimeoutRef.current ||
+        reconnectAttemptsRef.current >= maxReconnectAttempts
+      ) {
+        return;
+      }
+
+      const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, WS.MAX_RECONNECT_DELAY_MS);
+      if (isDev)
+        console.log(`[WS] Retrying in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1})`);
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectTimeoutRef.current = null;
+        if (generation !== connectionGenerationRef.current) return;
+        reconnectAttemptsRef.current++;
+        void connect();
+      }, delay);
+    };
+
+    let ticket: string;
+    try {
+      const response = await authApi.getWebSocketTicket(controller.signal);
+      if (typeof response.ticket !== 'string' || response.ticket.length === 0) {
+        throw new Error('WebSocket ticket response is invalid');
+      }
+      ticket = response.ticket;
+    } catch (error) {
+      if (generation !== connectionGenerationRef.current || controller.signal.aborted) {
+        return;
+      }
+      isConnectingRef.current = false;
+      ticketRequestRef.current = null;
+      if (isDev) console.error('[WS] Failed to obtain ticket:', error);
+      scheduleReconnect();
+      return;
+    }
+
+    if (
+      generation !== connectionGenerationRef.current ||
+      controller.signal.aborted ||
+      !accessToken ||
+      !isAuthenticated
+    ) {
+      return;
+    }
+
+    isConnectingRef.current = false;
+    ticketRequestRef.current = null;
 
     try {
+      const wsUrl = buildWebSocketUrl(ticket);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
+        if (generation !== connectionGenerationRef.current) return;
         if (isDev) console.log('[WS] Connected');
         setIsConnected(true);
         reconnectAttemptsRef.current = 0;
@@ -93,6 +161,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       };
 
       ws.onmessage = (event) => {
+        if (generation !== connectionGenerationRef.current) return;
         try {
           const parsed = JSON.parse(event.data);
           if (!parsed || typeof parsed !== 'object' || typeof parsed.type !== 'string') {
@@ -120,7 +189,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       };
 
       ws.onclose = (event) => {
+        if (generation !== connectionGenerationRef.current) return;
         if (isDev) console.log('[WS] Disconnected:', event.code, event.reason);
+        if (wsRef.current === ws) wsRef.current = null;
         setIsConnected(false);
 
         if (pingIntervalRef.current) {
@@ -135,30 +206,17 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Attempt to reconnect if not closed intentionally
-        if (event.code !== 1000 && reconnectAttemptsRef.current < maxReconnectAttempts) {
-          const delay = Math.min(
-            1000 * Math.pow(2, reconnectAttemptsRef.current),
-            WS.MAX_RECONNECT_DELAY_MS,
-          );
-          if (isDev)
-            console.log(
-              `[WS] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1})`,
-            );
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttemptsRef.current++;
-            connect();
-          }, delay);
-        }
+        if (event.code !== 1000) scheduleReconnect();
       };
 
       ws.onerror = (error) => {
+        if (generation !== connectionGenerationRef.current) return;
         if (isDev) console.error('[WS] Error:', error);
       };
     } catch (e) {
       if (isDev) console.error('[WS] Failed to connect:', e);
     }
-  }, [accessToken, isAuthenticated, cleanup, maxReconnectAttempts]);
+  }, [accessToken, isAuthenticated, cleanup]);
 
   // Connect when authenticated
   useEffect(() => {
