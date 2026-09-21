@@ -185,16 +185,17 @@ export const subscriptionApi = {
   resetTraffic: async (subscriptionId?: number): Promise<TrafficResetResponse> => {
     const response = await apiClient.post<TrafficResetResponse>(
       '/cabinet/subscription/traffic-reset',
-      ...bodyWithSubId({ yandex_cid: getYandexCid() || undefined }, subscriptionId),
+      ...bodyWithSubId({}, subscriptionId),
     );
     return response.data;
   },
 
   saveTrafficResetCart: async (subscriptionId?: number): Promise<void> => {
-    await apiClient.post(
-      '/cabinet/subscription/traffic-reset/save-cart',
-      ...bodyWithSubId({}, subscriptionId),
-    );
+    // The bot endpoint reads this optional id from its JSON body (unlike the
+    // other subscription mutations, which accept it as a query parameter).
+    await apiClient.post('/cabinet/subscription/traffic-reset/save-cart', {
+      ...(subscriptionId != null && { subscription_id: subscriptionId }),
+    });
   },
 
   refreshTraffic: async (

@@ -42,4 +42,15 @@ describe('openPaymentUrl', () => {
     const result = openPaymentUrl('https://pay.example.com', 'web', openLink);
     expect(result).toBe(false);
   });
+
+  it('rejects unsafe provider URLs before handing them to the platform', () => {
+    const openLink = vi.fn();
+    window.open = vi.fn();
+
+    const result = openPaymentUrl('javascript:alert(1)', 'telegram', openLink);
+
+    expect(result).toBe(false);
+    expect(openLink).not.toHaveBeenCalled();
+    expect(window.open).not.toHaveBeenCalled();
+  });
 });

@@ -11,6 +11,7 @@ import { usePlatform } from '@/platform';
 import { useToast } from '@/components/Toast';
 import { useCurrency } from '@/hooks/useCurrency';
 import { openPaymentUrl } from '@/utils/openPaymentUrl';
+import { getSafeExternalUrl } from '@/utils/safeExternalUrl';
 import { copyToClipboard } from '@/utils/clipboard';
 import { balanceApi } from '@/api/balance';
 import type { PendingPayment } from '@/types';
@@ -149,20 +150,21 @@ export function ActiveInvoiceCard({
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
   const timeFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  const safePaymentUrl = getSafeExternalUrl(activeInvoice.payment_url);
 
   const handleOpen = () => {
-    if (!activeInvoice.payment_url) return;
+    if (!safePaymentUrl) return;
     setPopupBlocked(false);
-    const opened = openPaymentUrl(activeInvoice.payment_url, platform, openLink);
+    const opened = openPaymentUrl(safePaymentUrl, platform, openLink);
     if (!opened) {
       setPopupBlocked(true);
     }
   };
 
   const handleCopy = async () => {
-    if (!activeInvoice.payment_url) return;
+    if (!safePaymentUrl) return;
     try {
-      await copyToClipboard(activeInvoice.payment_url);
+      await copyToClipboard(safePaymentUrl);
       setCopied(true);
       showToast({
         type: 'success',
@@ -314,14 +316,14 @@ export function ActiveInvoiceCard({
       </div>
 
       {/* Popup Blocked Warning */}
-      {popupBlocked && activeInvoice.payment_url && (
+      {popupBlocked && safePaymentUrl && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded-linear border border-warning-500/40 bg-warning-500/10 p-3 text-xs text-warning-400">
           <div className="flex items-center gap-2">
             <PiWarning className="h-4 w-4 shrink-0 text-warning-400" />
             <span>{t('balance.pendingPayments.openBlocked')}</span>
           </div>
           <a
-            href={activeInvoice.payment_url}
+            href={safePaymentUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 rounded-lg bg-warning-500/20 px-3 py-1 font-semibold text-warning-300 hover:bg-warning-500/30"
@@ -334,7 +336,7 @@ export function ActiveInvoiceCard({
       {/* Actions Row */}
       <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
         {/* Pay / Open */}
-        {activeInvoice.payment_url && (
+        {safePaymentUrl && (
           <Button
             variant="primary"
             size="sm"
@@ -347,7 +349,7 @@ export function ActiveInvoiceCard({
         )}
 
         {/* Copy Link */}
-        {activeInvoice.payment_url && (
+        {safePaymentUrl && (
           <Button
             variant="secondary"
             size="sm"

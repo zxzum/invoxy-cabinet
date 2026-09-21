@@ -209,10 +209,13 @@ export interface TrafficResetResponse {
   success: boolean;
   cleared_gb: number;
   new_used_gb: number;
+  used_after_gb: number;
   limit_gb: number;
   remaining_this_month: number;
   max_per_month: number;
   price_kopeks: number;
+  amount_paid_kopeks: number;
+  message: string;
 }
 
 export interface TrialInfo {

@@ -1,3 +1,5 @@
+import { getSafeExternalUrl } from './safeExternalUrl';
+
 /**
  * Open a payment-provider URL the right way for the current platform.
  *
@@ -20,13 +22,16 @@ export function openPaymentUrl(
   platform: string,
   openLink: (url: string) => void,
 ): boolean {
+  const safeUrl = getSafeExternalUrl(url);
+  if (!safeUrl) return false;
+
   if (platform === 'telegram') {
-    openLink(url);
+    openLink(safeUrl);
     return true;
   }
 
   try {
-    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    const win = window.open(safeUrl, '_blank', 'noopener,noreferrer');
     if (!win || win.closed || typeof win.closed === 'undefined') {
       return false;
     }
