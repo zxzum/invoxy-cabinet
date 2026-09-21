@@ -1,5 +1,17 @@
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
-const AUTH_PATHS = ['/cabinet/auth/'];
+const UNAUTH_PATHS = [
+  '/cabinet/auth/telegram',
+  '/cabinet/auth/email/login',
+  '/cabinet/auth/email/register',
+  '/cabinet/auth/email/verify',
+  '/cabinet/auth/refresh',
+  '/cabinet/auth/password/',
+  '/cabinet/auth/oauth/',
+  '/cabinet/auth/deeplink/',
+  '/cabinet/auth/login/auto',
+  '/cabinet/auth/app-link/exchange',
+  '/cabinet/landing/',
+];
 
 export interface RequestOptions extends Omit<RequestInit, 'body' | 'headers'> {
   body?: unknown;
@@ -162,7 +174,7 @@ function ensureCsrfToken(): string {
 }
 
 function isAuthPath(path: string): boolean {
-  return path.startsWith('/cabinet/auth/') || path.startsWith('/cabinet/landing/');
+  return UNAUTH_PATHS.some((unauth) => path.startsWith(unauth));
 }
 
 function makeUrl(path: string, params?: RequestOptions['params']): string {
@@ -273,11 +285,7 @@ export async function request<T>(
   }
   const data = await readResponse(response);
 
-  if (
-    response.status === 401 &&
-    !retried &&
-    !AUTH_PATHS.some((authPath) => path.startsWith(authPath))
-  ) {
+  if (response.status === 401 && !retried && !isAuthPath(path)) {
     const nextToken = await refreshAccessToken();
     if (nextToken) return request<T>(path, options, true);
   }
