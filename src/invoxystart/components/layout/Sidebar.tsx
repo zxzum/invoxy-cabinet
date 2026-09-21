@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router';
 import {
   House,
@@ -7,13 +8,16 @@ import {
   Info,
   Bell,
   ShieldCheck,
+  Smartphone,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { BrandLogo } from './BrandLogo';
 import { useAuth } from '@/invoxystart/auth';
 import { AnimatedBalance } from '@/invoxystart/components/ui/AnimatedBalance';
+import { AppConnectModal } from '@/invoxystart/components/connection/AppConnectModal';
 
 export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () => void }) {
   const { user, isAdmin } = useAuth();
+  const [appModalOpen, setAppModalOpen] = useState(false);
   const balance = user?.balance_rubles ?? 0;
   const navItems = [
     { to: '/dashboard', label: 'Кабинет', icon: House },
@@ -61,6 +65,30 @@ export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () =
           </NavLink>
         ))}
       </nav>
+
+      {/* Приложение Invoxy VPN */}
+      <button
+        type="button"
+        aria-label="Подключить приложение Invoxy"
+        onClick={() => setAppModalOpen(true)}
+        className="glass-control group flex flex-col gap-2 rounded-2xl p-3.5 text-left border border-mint/30 bg-mint/5 hover:bg-mint/15 transition-all lg:gap-[clamp(8px,0.5vw,10px)] lg:rounded-[clamp(16px,1vw,20px)] lg:p-[clamp(14px,1.2vw,20px)] shadow-[0_0_15px_rgba(165,232,196,0.1)] cursor-pointer"
+      >
+        <div className="flex items-center justify-between w-full">
+          <Smartphone
+            size={18}
+            className="text-mint transition-transform duration-500 group-hover:scale-110"
+          />
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-mint text-bg">
+            1 клик
+          </span>
+        </div>
+        <p className="text-xs font-bold text-ink lg:text-[clamp(12px,0.8vw,15px)]">
+          Приложение Invoxy
+        </p>
+        <p className="text-[11px] text-muted lg:text-[clamp(11px,0.7vw,13px)]">
+          Вход без пароля & QR-код
+        </p>
+      </button>
 
       <div className="flex-1" />
 
@@ -115,6 +143,8 @@ export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () =
           </>
         )}
       </NavLink>
+
+      <AppConnectModal open={appModalOpen} onClose={() => setAppModalOpen(false)} />
     </aside>
   );
 }

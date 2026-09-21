@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { ConnectionLinkResponse } from '@/invoxystart/api/subscription';
 import { ConnectDeviceModal } from '@/invoxystart/components/connection/ConnectDeviceModal';
-import { Smartphone } from '@/invoxystart/components/ui/RuneIcon';
+import { AppConnectModal } from '@/invoxystart/components/connection/AppConnectModal';
+import { Smartphone, Zap } from '@/invoxystart/components/ui/RuneIcon';
 import { openDeepLink } from '@/utils/openDeepLink';
 
 const options = [
@@ -23,6 +24,7 @@ export function QuickConnect({
   > | null;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [appConnectOpen, setAppConnectOpen] = useState(false);
 
   const happLink =
     connection?.happ_redirect_link ||
@@ -48,26 +50,44 @@ export function QuickConnect({
           <Smartphone size={14} /> Все устройства →
         </button>
       </div>
-      <div className="glass-panel motion-card grid w-full gap-2 rounded-[26px] p-3 2xl:grid-cols-2">
-        {options.map((opt) => {
-          const href = links[opt.id];
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              disabled={!href}
-              onClick={() => {
-                if (href) openDeepLink(href);
-              }}
-              className={`glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98] ${href ? '' : 'cursor-not-allowed opacity-50'}`}
-            >
-              <span className="flex h-5 shrink-0 items-center">
-                <img src={opt.icon} alt="" className="h-4 w-auto max-w-12 object-contain" />
-              </span>
-              {opt.label}
-            </button>
-          );
-        })}
+
+      <div className="glass-panel motion-card flex flex-col gap-2 rounded-[26px] p-3">
+        {/* Primary Option: Invoxy VPN Native App */}
+        <button
+          type="button"
+          onClick={() => setAppConnectOpen(true)}
+          className="flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-mint/50 bg-mint/15 px-3.5 text-xs font-bold text-mint transition-all hover:bg-mint/25 hover:border-mint active:scale-[0.98] shadow-[0_0_15px_rgba(165,232,196,0.15)]"
+        >
+          <div className="flex items-center gap-2">
+            <Zap size={16} className="text-mint animate-pulse" />
+            <span className="text-ink font-bold">Приложение Invoxy VPN</span>
+          </div>
+          <span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-extrabold text-bg uppercase">
+            Вход в 1 клик
+          </span>
+        </button>
+
+        <div className="grid w-full gap-2 2xl:grid-cols-2">
+          {options.map((opt) => {
+            const href = links[opt.id];
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                disabled={!href}
+                onClick={() => {
+                  if (href) openDeepLink(href);
+                }}
+                className={`glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98] ${href ? '' : 'cursor-not-allowed opacity-50'}`}
+              >
+                <span className="flex h-5 shrink-0 items-center">
+                  <img src={opt.icon} alt="" className="h-4 w-auto max-w-12 object-contain" />
+                </span>
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <ConnectDeviceModal
@@ -77,6 +97,8 @@ export function QuickConnect({
         happLink={happLink}
         incyLink={incyLink}
       />
+
+      <AppConnectModal open={appConnectOpen} onClose={() => setAppConnectOpen(false)} />
     </div>
   );
 }

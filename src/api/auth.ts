@@ -374,4 +374,11 @@ export const authApi = {
     );
     return response.data;
   },
+
+  getAppLink: async (): Promise<{ url: string; token_expires_in: number }> => {
+    const response = await apiClient.post<{ url: string; token_expires_in: number }>(
+      '/cabinet/auth/app-link',
+    );
+    return response.data;
+  },
 };

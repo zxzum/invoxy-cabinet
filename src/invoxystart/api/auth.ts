@@ -180,6 +180,9 @@ export const authApi = {
 
   pollDeepLinkToken: (token: string) =>
     apiClient.post<AuthResponse>('/cabinet/auth/deeplink/poll', { token }),
+
+  getAppLink: () =>
+    apiClient.post<{ url: string; token_expires_in: number }>('/cabinet/auth/app-link'),
 };
 
 export type AuthApi = typeof authApi;

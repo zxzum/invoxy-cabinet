@@ -78,6 +78,16 @@ export function ConnectDeviceModal({
   const appMap: Record<PlatformKey, AppInfo[]> = {
     ios: [
       {
+        name: 'Invoxy VPN (Официальное)',
+        icon: '/images/apps/invoxy.png',
+        badge: 'Официальное',
+        description: 'Фирменное приложение с мгновенной синхронизацией в 1 клик',
+        downloadUrl: 'https://github.com/zxzum/InvoxyApp/releases/latest',
+        downloadLabel: 'GitHub / App',
+        oneClickLink: 'https://invoxy.my/app/connect',
+        oneClickLabel: 'Подключить Invoxy VPN',
+      },
+      {
         name: 'HAPP',
         icon: '/images/apps/happ.png',
         badge: 'Рекомендуем',
@@ -98,6 +108,18 @@ export function ConnectDeviceModal({
       },
     ],
     android: [
+      {
+        name: 'Invoxy VPN (Официальное)',
+        icon: '/images/apps/invoxy.png',
+        badge: 'Официальное',
+        description:
+          'Фирменное приложение с входом в 1 клик, обходом ТСПУ и умным выбором серверов',
+        downloadUrl:
+          'https://github.com/zxzum/InvoxyApp/releases/latest/download/app-arm64-v8a-release.apk',
+        downloadLabel: 'Скачать APK (ARM64)',
+        oneClickLink: 'https://invoxy.my/app/connect',
+        oneClickLabel: 'Подключить Invoxy VPN',
+      },
       {
         name: 'HAPP',
         icon: '/images/apps/happ.png',
@@ -120,6 +142,16 @@ export function ConnectDeviceModal({
     ],
     windows: [
       {
+        name: 'Invoxy VPN Windows (Официальное)',
+        icon: '/images/apps/invoxy.png',
+        badge: 'Официальное',
+        description: 'Фирменный клиент для Windows с автозапуском и раздельным туннелированием',
+        downloadUrl: 'https://github.com/zxzum/InvoxyApp/releases/latest',
+        downloadLabel: 'Скачать для Windows',
+        oneClickLink: 'https://invoxy.my/app/connect',
+        oneClickLabel: 'Подключить Invoxy VPN',
+      },
+      {
         name: 'HAPP Windows',
         icon: '/images/apps/happ.png',
         badge: 'Рекомендуем',
@@ -138,6 +170,18 @@ export function ConnectDeviceModal({
       },
     ],
     macos: [
+      {
+        name: 'Invoxy VPN macOS (Официальное)',
+        icon: '/images/apps/invoxy.png',
+        badge: 'Официальное',
+        description:
+          'Фирменное приложение: системный прокси без пароля root, Apple Silicon & Intel',
+        downloadUrl:
+          'https://github.com/zxzum/InvoxyApp/releases/latest/download/Invoxy_VPN_macOS.dmg',
+        downloadLabel: 'Скачать DMG',
+        oneClickLink: 'https://invoxy.my/app/connect',
+        oneClickLabel: 'Подключить Invoxy VPN',
+      },
       {
         name: 'HAPP macOS',
         icon: '/images/apps/happ.png',

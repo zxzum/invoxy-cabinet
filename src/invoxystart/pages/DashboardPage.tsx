@@ -27,6 +27,7 @@ import {
   ConnectDeviceModal,
   type PlatformKey,
 } from '@/invoxystart/components/connection/ConnectDeviceModal';
+import { AppConnectModal } from '@/invoxystart/components/connection/AppConnectModal';
 import { subscriptionApi, type TrialInfo } from '@/invoxystart/api';
 import { useAuth } from '@/invoxystart/auth';
 
@@ -57,6 +58,7 @@ export function DashboardPage() {
   const [selectedSubscription, setSelectedSubscription] = useState<number | null>(null);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
+  const [appConnectModalOpen, setAppConnectModalOpen] = useState(false);
 
   const activeSubId =
     selectedSubscription && subscriptions.some((s) => s.id === selectedSubscription)
@@ -176,6 +178,54 @@ export function DashboardPage() {
         userName={user?.first_name || user?.username}
         onWalletClick={() => navigate('/profile#top-up')}
       />
+
+      {/* Prominent App Connect Banner */}
+      <div className="relative overflow-hidden rounded-[26px] border border-mint/30 bg-gradient-to-r from-mint/15 via-mint/5 to-cyan-500/10 p-4 sm:p-5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,255,204,0.08)]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-mint/20 border border-mint/30 shadow-inner">
+              <img
+                src="/images/apps/invoxy.png"
+                alt="Invoxy VPN"
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl object-contain"
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">
+                  Официальное приложение Invoxy VPN
+                </h3>
+                <span className="rounded-full bg-mint/25 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-mint border border-mint/40 animate-pulse">
+                  В 1 клик
+                </span>
+              </div>
+              <p className="text-xs text-muted mt-1 leading-relaxed max-w-xl">
+                Мгновенное подключение без ввода логина и паролей. Откройте на этом устройстве или
+                отсканируйте QR-код с телефона.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+            <button
+              type="button"
+              onClick={() => setAppConnectModalOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-mint px-4 py-2.5 text-xs font-bold text-bg transition hover:bg-mint/90 active:scale-95 shadow-[0_0_20px_rgba(0,255,204,0.3)] cursor-pointer"
+            >
+              <Zap size={14} />
+              <span>Войти в 1 клик / QR</span>
+            </button>
+            <a
+              href="https://github.com/zxzum/InvoxyApp/releases/latest"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2.5 text-xs font-semibold text-white/80 border border-white/10 hover:bg-white/10 transition"
+            >
+              <span>Скачать</span>
+              <span className="text-[10px] text-muted">Android / macOS</span>
+            </a>
+          </div>
+        </div>
+      </div>
 
       <AnimatePresence mode="wait">
         {loading || detailsLoading ? (
@@ -441,6 +491,8 @@ export function DashboardPage() {
         incyLink={incyLink}
         initialPlatform={connectPlatform}
       />
+
+      <AppConnectModal open={appConnectModalOpen} onClose={() => setAppConnectModalOpen(false)} />
     </div>
   );
 }

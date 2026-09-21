@@ -31,6 +31,7 @@ const MIGRATED_ASSETS = [
   'shape-5.webp',
   'subscription-status-bg.webp',
   'trial-gift.png',
+  'apps/invoxy.png',
   ...LUNA_ASSETS,
 ] as const;
 
