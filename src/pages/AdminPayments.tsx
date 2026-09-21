@@ -8,7 +8,7 @@ import { DateField } from '../components/DateField';
 import { useCurrency } from '../hooks/useCurrency';
 import type { PendingPayment, PaginatedResponse } from '../types';
 import { usePlatform } from '../platform/hooks/usePlatform';
-import { getSafeExternalUrl } from '../utils/safeExternalUrl';
+import { getSafeHttpUrl } from '../utils/safeExternalUrl';
 import { StatCard } from '@/components/stats';
 import {
   BackIcon,
@@ -406,7 +406,7 @@ export default function AdminPayments() {
               const paymentKey = `${payment.method}_${payment.id}`;
               const isChecking = checkingPaymentId === paymentKey;
               const isCancelled = payment.status.toLowerCase().includes('cancel');
-              const safePaymentUrl = getSafeExternalUrl(payment.payment_url);
+              const safePaymentUrl = getSafeHttpUrl(payment.payment_url);
 
               return (
                 <div

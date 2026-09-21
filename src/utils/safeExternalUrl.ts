@@ -14,3 +14,11 @@ export function getSafeExternalUrl(value: unknown): string | null {
     return null;
   }
 }
+
+export function getSafeHttpUrl(value: unknown): string | null {
+  const url = getSafeExternalUrl(value);
+  if (!url) return null;
+
+  const protocol = new URL(url).protocol.toLowerCase();
+  return protocol === 'http:' || protocol === 'https:' ? url : null;
+}

@@ -11,7 +11,7 @@ import { usePlatform } from '@/platform';
 import { useToast } from '@/components/Toast';
 import { useCurrency } from '@/hooks/useCurrency';
 import { openPaymentUrl } from '@/utils/openPaymentUrl';
-import { getSafeExternalUrl } from '@/utils/safeExternalUrl';
+import { getSafeHttpUrl } from '@/utils/safeExternalUrl';
 import { copyToClipboard } from '@/utils/clipboard';
 import { balanceApi } from '@/api/balance';
 import type { PendingPayment } from '@/types';
@@ -150,7 +150,7 @@ export function ActiveInvoiceCard({
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
   const timeFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  const safePaymentUrl = getSafeExternalUrl(activeInvoice.payment_url);
+  const safePaymentUrl = getSafeHttpUrl(activeInvoice.payment_url);
 
   const handleOpen = () => {
     if (!safePaymentUrl) return;

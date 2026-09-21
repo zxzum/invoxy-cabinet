@@ -53,4 +53,18 @@ describe('openPaymentUrl', () => {
     expect(openLink).not.toHaveBeenCalled();
     expect(window.open).not.toHaveBeenCalled();
   });
+
+  it.each(['ftp://pay.example.com/invoice', 'custom://pay.example.com/invoice'])(
+    'rejects non-HTTP payment URLs: %s',
+    (url) => {
+      const openLink = vi.fn();
+      window.open = vi.fn();
+
+      const result = openPaymentUrl(url, 'telegram', openLink);
+
+      expect(result).toBe(false);
+      expect(openLink).not.toHaveBeenCalled();
+      expect(window.open).not.toHaveBeenCalled();
+    },
+  );
 });
