@@ -258,30 +258,35 @@ export function ActiveInvoiceCard({
     <Card
       id="active-invoice-card"
       className={cn(
-        'glass-surface relative overflow-hidden border-accent-500/40 p-5 sm:p-6 shadow-lg shadow-accent-500/5',
+        'glass-surface relative overflow-hidden border-accent-500/40 p-4 sm:p-6 shadow-lg shadow-accent-500/5',
         className,
       )}
     >
       {/* Header with Title and Countdown */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dark-700/60 pb-3">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-400 opacity-75" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent-500" />
-          </span>
-          {showTitle && (
-            <h3 className="text-sm font-semibold text-dark-100">
-              {t('balance.pendingPayments.activeTitle', 'Активный счёт')}
-            </h3>
-          )}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 border-b border-dark-700/60 pb-3">
+        <div className="flex items-center justify-between sm:justify-start gap-2">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent-500" />
+            </span>
+            {showTitle && (
+              <h3 className="text-sm font-semibold text-dark-100 truncate">
+                {t('balance.pendingPayments.activeTitle', 'Активный счёт')}
+              </h3>
+            )}
+          </div>
+          {activeInvoice.id ? (
+            <span className="text-xs text-dark-400 font-mono sm:ml-1">#{activeInvoice.id}</span>
+          ) : null}
         </div>
 
         {/* Countdown Badge */}
         <div
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent-500/10 px-2.5 py-1 text-xs font-medium text-accent-400 border border-accent-500/20"
+          className="self-start sm:self-auto inline-flex items-center gap-1.5 rounded-full bg-accent-500/10 px-2.5 py-1 text-xs font-medium text-accent-400 border border-accent-500/20 whitespace-nowrap"
           title={t('balance.pendingPayments.expiresIn', { time: timeFormatted })}
         >
-          <PiClock className="h-3.5 w-3.5 animate-pulse" />
+          <PiClock className="h-3.5 w-3.5 animate-pulse shrink-0" />
           <span>{t('balance.pendingPayments.expiresIn', { time: timeFormatted })}</span>
         </div>
       </div>
@@ -334,7 +339,7 @@ export function ActiveInvoiceCard({
             variant="primary"
             size="sm"
             onClick={handleOpen}
-            className="col-span-2 sm:col-auto gap-1.5"
+            className="col-span-2 sm:col-auto gap-1.5 min-h-[44px] sm:min-h-9"
           >
             <ExternalLinkIcon className="h-4 w-4" />
             <span>{t('balance.pendingPayments.pay', 'Оплатить')}</span>
@@ -348,7 +353,7 @@ export function ActiveInvoiceCard({
             size="sm"
             onClick={handleCopy}
             disabled={copied}
-            className="gap-1.5"
+            className="gap-1.5 min-h-[44px] sm:min-h-9"
             title={t('balance.pendingPayments.copy', 'Скопировать ссылку')}
           >
             {copied ? (
@@ -370,7 +375,7 @@ export function ActiveInvoiceCard({
           size="sm"
           onClick={handleCheck}
           disabled={checking}
-          className="gap-1.5"
+          className="gap-1.5 min-h-[44px] sm:min-h-9"
           title={t('balance.pendingPayments.checkStatus', 'Проверить статус')}
         >
           <RefreshIcon spinning={checking} className="h-4 w-4" />
@@ -388,7 +393,7 @@ export function ActiveInvoiceCard({
           onClick={handleCancel}
           disabled={cancelling}
           className={cn(
-            'gap-1.5 text-xs transition-all duration-150',
+            'col-span-2 sm:col-auto gap-1.5 text-xs transition-all duration-150 min-h-[44px] sm:min-h-9',
             confirmCancel
               ? 'bg-danger-500/20 text-danger-300 border border-danger-500/40 hover:bg-danger-500/30'
               : 'text-dark-400 hover:text-danger-400 hover:bg-danger-500/10',
