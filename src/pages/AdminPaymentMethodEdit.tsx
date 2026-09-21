@@ -272,6 +272,7 @@ export default function AdminPaymentMethodEdit() {
     mutationFn: (data: Record<string, unknown>) => adminPaymentMethodsApi.update(methodId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-payment-methods'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-methods'] });
       navigate('/admin/payment-methods');
     },
   });

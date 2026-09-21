@@ -174,6 +174,7 @@ export default function AdminPaymentMethods() {
     onSuccess: () => {
       setOrderChanged(false);
       queryClient.invalidateQueries({ queryKey: ['admin-payment-methods'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-methods'] });
       notify.success(t('admin.paymentMethods.orderSaved'));
     },
     onError: () => {

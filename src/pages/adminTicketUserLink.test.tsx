@@ -24,6 +24,10 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
+vi.mock('@/hooks/useWebSocket', () => ({
+  useWebSocket: () => ({ isConnected: false, subscribe: () => () => {} }),
+}));
+
 const ticketUser: AdminTicketUser = {
   id: 42,
   telegram_id: 777,
