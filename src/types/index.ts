@@ -836,6 +836,8 @@ export interface ManualCheckResponse {
   status_changed: boolean;
   old_status: string | null;
   new_status: string | null;
+  is_paid?: boolean;
+  settled?: boolean;
 }
 
 // Saved payment method (card) for recurrent payments

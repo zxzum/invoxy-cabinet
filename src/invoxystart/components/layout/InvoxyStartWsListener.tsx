@@ -24,11 +24,14 @@ export function InvoxyStartWsListener() {
   const lastResumeAtRef = useRef(0);
 
   const invalidateData = useCallback(() => {
+    clearResponseCache();
     queryClient.invalidateQueries({ queryKey: ['invoxy-balance'] });
     queryClient.invalidateQueries({ queryKey: ['balance'] });
     queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] });
     queryClient.invalidateQueries({ queryKey: ['invoxy-subscription-details'] });
     queryClient.invalidateQueries({ queryKey: ['active-invoice'] });
+    queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
+    queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
     queryClient.invalidateQueries({ queryKey: ['partner-status'] });
   }, [queryClient]);

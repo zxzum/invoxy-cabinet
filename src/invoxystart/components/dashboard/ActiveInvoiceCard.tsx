@@ -16,10 +16,13 @@ const CANCELLED_STATUSES = new Set([
   'expired',
 ]);
 
+const TERMINAL_SUCCESS_STATUSES = new Set(['paid', 'success', 'succeeded', 'completed']);
+
 function isInvoiceActive(p: PendingPayment): boolean {
   if (p.is_paid) return false;
   const statusLower = (p.status || '').toLowerCase().trim();
   if (CANCELLED_STATUSES.has(statusLower)) return false;
+  if (TERMINAL_SUCCESS_STATUSES.has(statusLower)) return false;
 
   const now = Date.now();
   let expiryTime: number;
@@ -103,12 +106,15 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
     setChecking(true);
     try {
       const res = await balanceApi.checkPaymentStatus(activeInvoice.method, activeInvoice.id);
-      if (
-        res.payment?.is_paid ||
-        res.new_status === 'succeeded' ||
-        res.new_status === 'paid' ||
-        res.payment?.status === 'paid'
-      ) {
+      const isPaid = Boolean(
+        res.is_paid ||
+          res.settled ||
+          res.payment?.is_paid ||
+          (res.payment?.status === 'paid' && res.payment?.is_paid) ||
+          (res.new_status === 'paid' && res.is_paid !== false) ||
+          (res.new_status === 'succeeded' && res.is_paid !== false),
+      );
+      if (isPaid) {
         showToast('Платёж подтверждён! Баланс пополнен.');
         void queryClient.invalidateQueries({ queryKey: ['balance'] });
         void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });

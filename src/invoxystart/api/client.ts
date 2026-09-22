@@ -1,4 +1,6 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+import { resolveApiBaseUrl } from '../../config/apiUrl';
+
+const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL).replace(/\/$/, '');
 const UNAUTH_PATHS = [
   '/cabinet/auth/telegram',
   '/cabinet/auth/email/login',
@@ -236,7 +238,8 @@ export async function request<T>(
 ): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
   const token = tokenStorage.getAccessToken();
-  const shouldCache = method === 'GET' && options.cache !== 'no-store';
+  const shouldCache =
+    method === 'GET' && options.cache !== 'no-store' && !path.includes('/payment-methods');
   const cacheKey = shouldCache
     ? `${options.skipAuth ? 'public' : 'private'}:${token || 'anonymous'}:${makeUrl(path, options.params)}`
     : null;

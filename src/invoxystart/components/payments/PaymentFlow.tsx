@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePlatform } from '@/platform';
 import { openPaymentUrl } from '@/utils/openPaymentUrl';
 import {
@@ -16,13 +16,7 @@ import {
 } from '@/invoxystart/components/ui/RuneIcon';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
-import {
-  ApiError,
-  balanceApi,
-  subscriptionApi,
-  type Balance,
-  type PaymentMethod,
-} from '@/invoxystart/api';
+import { ApiError, balanceApi, subscriptionApi, type PaymentMethod } from '@/invoxystart/api';
 import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
 
 export interface PaymentRequest {
@@ -270,26 +264,25 @@ export function PaymentMethods({
   onPay: PayHandler;
   onTopUp: () => void;
 }) {
-  const [balance, setBalance] = useState<Balance | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: balance } = useQuery({
+    queryKey: ['balance'],
+    queryFn: () => balanceApi.getBalance(),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
 
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    void Promise.allSettled([balanceApi.getBalance(), balanceApi.getPaymentMethods()]).then(
-      ([balanceResult, methodsResult]) => {
-        if (!mounted) return;
-        if (balanceResult.status === 'fulfilled') setBalance(balanceResult.value);
-        if (methodsResult.status === 'fulfilled')
-          setPaymentMethods(methodsResult.value.filter((method) => method.is_available));
-        setLoading(false);
-      },
-    );
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const { data: methodsData, isLoading: methodsLoading } = useQuery({
+    queryKey: ['paymentMethods'],
+    queryFn: () => balanceApi.getPaymentMethods(),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  const paymentMethods = useMemo(
+    () => (methodsData || []).filter((method) => method.is_available),
+    [methodsData],
+  );
+  const loading = methodsLoading && !methodsData;
 
   const canUseBalance = (balance?.balance_kopeks ?? 0) >= Math.round(request.amount * 100);
   const showBalance = request.allowBalance !== false && !request.topUp;

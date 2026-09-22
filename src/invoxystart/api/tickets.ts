@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { resolveApiBaseUrl } from '../../config/apiUrl';
 import type {
   PaginatedResponse,
   Ticket,
@@ -41,6 +42,6 @@ export const ticketsApi = {
   },
   getMediaUrl: (fileId: string, token?: string | null): string => {
     const suffix = token ? `?token=${encodeURIComponent(token)}` : '';
-    return `${(import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')}/cabinet/media/${encodeURIComponent(fileId)}${suffix}`;
+    return `${resolveApiBaseUrl(import.meta.env.VITE_API_URL).replace(/\/$/, '')}/cabinet/media/${encodeURIComponent(fileId)}${suffix}`;
   },
 };
