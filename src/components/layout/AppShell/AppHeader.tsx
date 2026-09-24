@@ -184,17 +184,14 @@ export function AppHeader({
               className={cn('flex min-w-0 flex-shrink-0 items-center gap-2.5', !appName && 'mr-4')}
             >
               <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-linear-lg border border-dark-700/50 bg-dark-800/80 shadow-md">
-                {logoUrl ? (
-                  <img
-                    src={logoUrl}
-                    alt={appName || 'Invoxy VPN'}
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <span className="text-sm font-bold text-accent-300">
-                    {branding?.logo_letter || appName.slice(0, 1)}
-                  </span>
-                )}
+                <img
+                  src={logoUrl || LOCAL_LOGO_URL}
+                  alt={appName || 'Invoxy VPN'}
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = LOCAL_LOGO_URL;
+                  }}
+                />
               </div>
               <div className="min-w-0">
                 {appName && (

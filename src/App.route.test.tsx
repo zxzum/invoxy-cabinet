@@ -31,7 +31,11 @@ const { auth, authApi, blocking, landingApi, permissions, translation } = vi.hoi
     linkProviderCallback: vi.fn(),
   },
   blocking: {
-    state: { blockingType: null as string | null },
+    state: {
+      blockingType: null as string | null,
+      setBackendUnavailable: vi.fn(),
+      clearBlocking: vi.fn(),
+    },
   },
   landingApi: {
     getPurchaseStatus: vi.fn(),
@@ -66,10 +70,11 @@ vi.mock('./store/permissions', () => ({
     selector(permissions.state),
 }));
 
-vi.mock('./store/blocking', () => ({
-  useBlockingStore: (selector: (state: typeof blocking.state) => unknown) =>
-    selector(blocking.state),
-}));
+vi.mock('./store/blocking', () => {
+  const store = (selector: (state: typeof blocking.state) => unknown) => selector(blocking.state);
+  store.getState = () => blocking.state;
+  return { useBlockingStore: store };
+});
 
 vi.mock('./hooks/useAnalyticsCounters', () => ({ useAnalyticsCounters: () => {} }));
 vi.mock('./hooks/useSiteVerification', () => ({ useSiteVerification: () => {} }));

@@ -14,6 +14,7 @@ import {
   ChevronRightIcon,
   RefreshIcon,
   TelegramSmallIcon as TelegramIcon,
+  MailIcon,
   UsersIcon,
   CheckCircleIcon,
   SubscriptionIcon,
@@ -53,24 +54,40 @@ function UserRow({ user, onClick, formatAmount }: UserRowProps) {
     >
       {/* Avatar */}
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-500 to-accent-700 text-sm font-medium text-white sm:text-base">
-        {user.first_name?.[0] || user.username?.[0] || '?'}
+        {user.first_name?.[0] || user.username?.[0] || user.email?.[0]?.toUpperCase() || '?'}
       </div>
 
       {/* Info - flex column on mobile, row on desktop */}
       <div className="min-w-0 flex-1">
-        {/* Name and username */}
+        {/* Name and username / email */}
         <div className="mb-1 flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
           <span className="truncate font-medium text-dark-100">{user.full_name}</span>
-          {user.username && (
+          {user.username ? (
             <span className="truncate text-xs text-dark-500 sm:text-xs">@{user.username}</span>
-          )}
+          ) : user.email ? (
+            <span
+              className="max-w-[180px] truncate text-xs text-dark-500 sm:max-w-[220px]"
+              title={user.email}
+            >
+              {user.email}
+            </span>
+          ) : null}
         </div>
 
-        {/* Telegram ID - full width on mobile */}
-        <div className="mb-1 flex items-center gap-1 text-xs text-dark-400 sm:mb-0">
-          <TelegramIcon />
-          <span className="truncate">{user.telegram_id}</span>
-        </div>
+        {/* Telegram ID or Email - full width on mobile */}
+        {user.telegram_id ? (
+          <div className="mb-1 flex items-center gap-1 text-xs text-dark-400 sm:mb-0">
+            <TelegramIcon className="shrink-0" />
+            <span className="truncate">{user.telegram_id}</span>
+          </div>
+        ) : user.email ? (
+          <div className="mb-1 flex items-center gap-1.5 text-xs text-dark-400 sm:mb-0">
+            <MailIcon className="h-3.5 w-3.5 shrink-0 text-dark-400" />
+            <span className="max-w-[200px] truncate sm:max-w-[260px]" title={user.email}>
+              {user.email}
+            </span>
+          </div>
+        ) : null}
 
         {/* Status badges - wrap on mobile */}
         <div className="mt-1 flex flex-wrap items-center gap-1.5">

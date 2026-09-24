@@ -60,8 +60,9 @@ export interface UserListItemSubscription {
 
 export interface UserListItem {
   id: number;
-  telegram_id: number;
+  telegram_id: number | null;
   username: string | null;
+  email?: string | null;
   first_name: string | null;
   last_name: string | null;
   full_name: string;
@@ -376,6 +377,7 @@ export interface UpdateSubscriptionRequest {
   tariff_id?: number;
   traffic_limit_gb?: number;
   traffic_used_gb?: number;
+  whitelist_traffic_limit_gb?: number;
   autopay_enabled?: boolean;
   is_trial?: boolean;
   device_limit?: number;

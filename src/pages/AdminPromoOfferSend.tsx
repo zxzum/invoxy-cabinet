@@ -115,7 +115,7 @@ export default function AdminPromoOfferSend() {
   // Handle user selection
   const handleSelectUser = (user: UserListItem) => {
     setSelectedUser(user);
-    setUserId(user.telegram_id.toString());
+    setUserId((user.telegram_id ?? user.id).toString());
     setSearchQuery('');
     setShowDropdown(false);
   };

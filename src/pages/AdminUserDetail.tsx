@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import i18n from '../i18n';
 import { useNotify } from '../platform/hooks/useNotify';
 import { copyToClipboard as copyText } from '../utils/clipboard';
@@ -47,6 +47,7 @@ export default function AdminUserDetail() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const notify = useNotify();
+  const queryClient = useQueryClient();
   const { id } = useParams<{ id: string }>();
   const hasPermission = usePermissionStore((s) => s.hasPermission);
 
@@ -686,6 +687,49 @@ export default function AdminUserDetail() {
     }
   };
 
+  const handleSetTrafficLimit = async (newLimitGb: number) => {
+    if (!userId) return;
+    setActionLoading(true);
+    try {
+      await adminUsersApi.updateSubscription(userId, {
+        action: 'set_traffic',
+        traffic_limit_gb: newLimitGb,
+        ...(activeSubscriptionId ? { subscription_id: activeSubscriptionId } : {}),
+      });
+      notify.success(
+        t('admin.users.detail.subscription.trafficLimitUpdated', 'Лимит трафика обновлен'),
+      );
+      await loadUser();
+    } catch {
+      notify.error(t('admin.users.userActions.error'), t('common.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSetWhitelistTrafficLimit = async (newLimitGb: number) => {
+    if (!userId) return;
+    setActionLoading(true);
+    try {
+      await adminUsersApi.updateSubscription(userId, {
+        action: 'set_traffic',
+        whitelist_traffic_limit_gb: newLimitGb,
+        ...(activeSubscriptionId ? { subscription_id: activeSubscriptionId } : {}),
+      });
+      notify.success(
+        t(
+          'admin.users.detail.subscription.whitelistTrafficLimitUpdated',
+          'Лимит Белого интернета обновлен',
+        ),
+      );
+      await loadUser();
+    } catch {
+      notify.error(t('admin.users.userActions.error'), t('common.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Multi-subscription: pick active subscription or first from list
   const userSubscriptions = useMemo(() => user?.subscriptions ?? [], [user?.subscriptions]);
   const selectedSub =
@@ -838,6 +882,20 @@ export default function AdminUserDetail() {
       const result = await adminUsersApi.fullDeleteUser(userId);
       if (result.success) {
         notify.success(t('admin.users.userActions.success.delete'), t('common.success'));
+        queryClient.setQueriesData(
+          { queryKey: ['admin-users'] },
+          (old: { users?: Array<{ id: number }>; total?: number } | undefined) => {
+            if (!old?.users) return old;
+            return {
+              ...old,
+              users: old.users.filter((u) => u.id !== userId),
+              total: Math.max(0, (old.total ?? old.users.length) - 1),
+            };
+          },
+        );
+        await queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        await queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
+        queryClient.removeQueries({ queryKey: ['admin-user', userId] });
         navigate('/admin/users');
       } else {
         notify.error(result.message || t('admin.users.userActions.error'), t('common.error'));
@@ -1221,6 +1279,8 @@ export default function AdminUserDetail() {
             onInlineConfirm={handleInlineConfirm}
             onUpdateSubscription={handleUpdateSubscription}
             onSetDeviceLimit={handleSetDeviceLimit}
+            onSetTrafficLimit={handleSetTrafficLimit}
+            onSetWhitelistTrafficLimit={handleSetWhitelistTrafficLimit}
             onAddTraffic={handleAddTraffic}
             onRemoveTraffic={handleRemoveTraffic}
             onResetMainTraffic={handleResetMainTraffic}

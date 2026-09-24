@@ -29,6 +29,7 @@ export interface PaymentRequest {
   tariffId?: number;
   periodDays?: number;
   subscriptionId?: number;
+  devices?: number;
   trafficGb?: number;
   addonType?: 'devices' | 'traffic' | 'lte' | 'lte_reset' | 'main_reset';
   addonValue?: number;
@@ -90,6 +91,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
             payment.periodDays,
             payment.trafficGb,
             payment.subscriptionId,
+            payment.devices,
           );
         } else if (payment.periodDays) {
           await subscriptionApi.renewSubscription(payment.periodDays, payment.subscriptionId);
@@ -111,6 +113,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
               period_days: payment.periodDays,
               traffic_gb: payment.trafficGb,
               subscription_id: payment.subscriptionId,
+              devices: payment.devices,
               payment_method: method,
               payment_option: paymentOption,
             })

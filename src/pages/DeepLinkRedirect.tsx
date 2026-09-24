@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { brandingApi } from '../api/branding';
+import { brandingApi, LOCAL_LOGO_URL } from '../api/branding';
 import { copyToClipboard } from '../utils/clipboard';
 import { openAppScheme } from '../utils/openAppScheme';
 import {
@@ -68,7 +68,6 @@ export default function DeepLinkRedirect() {
   });
 
   const projectName = branding ? branding.name : import.meta.env.VITE_APP_NAME || 'VPN';
-  const logoLetter = branding?.logo_letter || import.meta.env.VITE_APP_LOGO || 'V';
   const logoUrl = branding ? brandingApi.getLogoUrl(branding) : null;
 
   // Parse raw query string to preserve '+' chars in base64 crypto links.
@@ -170,11 +169,14 @@ export default function DeepLinkRedirect() {
       <div className="relative w-full max-w-sm text-center">
         {/* Logo with pulse animation */}
         <div className="mx-auto mb-6 flex h-20 w-20 animate-pulse items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-accent-400 to-accent-600 shadow-lg shadow-accent-500/30">
-          {branding?.has_custom_logo && logoUrl ? (
-            <img src={logoUrl} alt={projectName || 'Logo'} className="h-full w-full object-cover" />
-          ) : (
-            <span className="text-3xl font-bold text-white">{logoLetter}</span>
-          )}
+          <img
+            src={branding?.has_custom_logo && logoUrl ? logoUrl : LOCAL_LOGO_URL}
+            alt={projectName || 'Logo'}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = LOCAL_LOGO_URL;
+            }}
+          />
         </div>
 
         <h1 className="mb-1 text-2xl font-bold text-dark-50">{projectName || 'VPN'}</h1>

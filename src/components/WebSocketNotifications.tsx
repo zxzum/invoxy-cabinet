@@ -50,6 +50,26 @@ export default function WebSocketNotifications() {
       if (type === 'balance.change') {
         const amount = message.amount_rubles ?? (message.amount_kopeks ?? 0) / 100;
         const isPositive = amount >= 0;
+
+        if (message.new_balance_rubles != null || message.new_balance_kopeks != null) {
+          const newRubles =
+            typeof message.new_balance_rubles === 'number'
+              ? message.new_balance_rubles
+              : (message.new_balance_kopeks ?? 0) / 100;
+          const newKopeks =
+            typeof message.new_balance_kopeks === 'number'
+              ? message.new_balance_kopeks
+              : Math.round(newRubles * 100);
+          const currentUser = useAuthStore.getState().user;
+          if (currentUser) {
+            useAuthStore.getState().setUser({
+              ...currentUser,
+              balance_rubles: newRubles,
+              balance_kopeks: newKopeks,
+            });
+          }
+        }
+
         showToast({
           type: isPositive ? 'success' : 'info',
           title: t('wsNotifications.balance.changeTitle', 'Balance updated'),

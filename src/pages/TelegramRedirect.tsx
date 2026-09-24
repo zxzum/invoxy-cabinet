@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/auth';
 import { useShallow } from 'zustand/shallow';
-import { brandingApi } from '../api/branding';
+import { brandingApi, LOCAL_LOGO_URL } from '../api/branding';
 import { isInTelegramWebApp, getTelegramInitData } from '../hooks/useTelegramSDK';
 import { tokenStorage } from '../utils/token';
 import { getSafeRedirectPath } from '../utils/safeRedirect';
@@ -50,7 +50,6 @@ export default function TelegramRedirect() {
   });
 
   const appName = branding ? branding.name : import.meta.env.VITE_APP_NAME || 'VPN';
-  const logoLetter = branding?.logo_letter || import.meta.env.VITE_APP_LOGO || 'V';
   const logoUrl = branding ? brandingApi.getLogoUrl(branding) : null;
 
   // Get redirect target from URL params (validated)
@@ -160,11 +159,14 @@ export default function TelegramRedirect() {
       <div className="relative w-full max-w-sm text-center">
         {/* Logo */}
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-accent-400 to-accent-600 shadow-lg shadow-accent-500/30">
-          {branding?.has_custom_logo && logoUrl ? (
-            <img src={logoUrl} alt={appName} className="h-full w-full object-cover" />
-          ) : (
-            <span className="text-3xl font-bold text-white">{logoLetter}</span>
-          )}
+          <img
+            src={branding?.has_custom_logo && logoUrl ? logoUrl : LOCAL_LOGO_URL}
+            alt={appName}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = LOCAL_LOGO_URL;
+            }}
+          />
         </div>
 
         <h1 className="mb-2 text-2xl font-bold text-dark-50">{appName}</h1>

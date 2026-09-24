@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Gauge, Globe2, Minus, Plus, Users } from '@/invoxystart/components/ui/RuneIcon';
@@ -33,6 +33,7 @@ export function AddonsCard({
     traffic_used_percent?: number | null;
     is_trial?: boolean | null;
     main_traffic_reset_enabled?: boolean | null;
+    device_limit?: number | null;
   } | null;
 }) {
   const { pay, topUp } = usePayment();
@@ -40,7 +41,6 @@ export function AddonsCard({
     'devices' | 'traffic' | 'lte_reset' | 'main_reset' | null
   >(null);
   const [step, setStep] = useState<'options' | 'payment'>('options');
-  const [deviceCount, setDeviceCount] = useState(1);
   const [mainIndex, setMainIndex] = useState(0);
   const { data: fetchedSub } = useQuery({
     queryKey: ['invoxy-subscription-details', subscriptionId],
@@ -50,6 +50,18 @@ export function AddonsCard({
   });
 
   const effectiveSub = subscription ?? fetchedSub ?? null;
+  const baseDeviceCount = effectiveSub?.device_limit ?? 5;
+  const [totalDevices, setTotalDevices] = useState(baseDeviceCount);
+  const prevTotalRef = useRef(totalDevices);
+
+  useEffect(() => {
+    if (selected === 'devices') {
+      setTotalDevices(baseDeviceCount);
+      prevTotalRef.current = baseDeviceCount;
+    }
+  }, [selected, baseDeviceCount]);
+
+  const extraDevices = Math.max(0, totalDevices - baseDeviceCount);
 
   const hasLte = Boolean(
     (effectiveSub?.whitelist_traffic_limit_gb && effectiveSub.whitelist_traffic_limit_gb > 0) ||
@@ -104,12 +116,20 @@ export function AddonsCard({
     staleTime: 60_000,
   });
 
-  const { data: devicePriceData, isLoading: deviceLoading } = useQuery({
-    queryKey: ['device-price', subscriptionId, deviceCount],
-    queryFn: () => subscriptionApi.getDevicePrice(deviceCount, subscriptionId!),
+  const queryDevices = extraDevices > 0 ? extraDevices : 1;
+  const { data: devicePriceData } = useQuery({
+    queryKey: ['device-price', subscriptionId, queryDevices],
+    queryFn: () => subscriptionApi.getDevicePrice(queryDevices, subscriptionId!),
     enabled: Boolean(subscriptionId && selected === 'devices'),
     staleTime: 60_000,
   });
+
+  const maxDeviceLimit = devicePriceData?.max_device_limit ?? 10;
+  const canAdd =
+    devicePriceData?.can_add != null
+      ? devicePriceData.can_add
+      : Math.max(0, maxDeviceLimit - baseDeviceCount);
+  const maxAllowedDevices = Math.min(maxDeviceLimit, baseDeviceCount + canAdd);
 
   const mainPackages = useMemo<Package[]>(() => {
     if (!trafficPackagesData) return [];
@@ -122,6 +142,9 @@ export function AddonsCard({
   }, [trafficPackagesData]);
 
   const devicePrice = useMemo(() => {
+    if (extraDevices === 0) {
+      return 0;
+    }
     if (
       !devicePriceData ||
       !devicePriceData.available ||
@@ -130,20 +153,21 @@ export function AddonsCard({
       return 0;
     }
     return devicePriceData.total_price_kopeks / 100;
-  }, [devicePriceData]);
+  }, [extraDevices, devicePriceData]);
 
   const loading =
     Boolean(subscriptionId) &&
     ((selected === 'lte_reset' && resetLoading && !trafficReset) ||
       (selected === 'main_reset' && mainResetLoading && !mainTrafficReset) ||
-      (selected === 'traffic' && packagesLoading && !trafficPackagesData) ||
-      (selected === 'devices' && deviceLoading && !devicePriceData));
+      (selected === 'traffic' && packagesLoading && !trafficPackagesData));
 
   const loadError = useMemo(() => {
     if (selected === 'devices') {
       if (
+        extraDevices > 0 &&
         devicePriceData &&
-        (!devicePriceData.available || devicePriceData.total_price_kopeks == null)
+        !devicePriceData.available &&
+        devicePriceData.reason_code !== 'can_add_limited'
       ) {
         return devicePriceData.reason || 'Докупка устройств недоступна';
       }
@@ -176,6 +200,7 @@ export function AddonsCard({
     return '';
   }, [
     selected,
+    extraDevices,
     devicePriceData,
     packagesLoading,
     mainPackages.length,
@@ -245,7 +270,7 @@ export function AddonsCard({
 
   const purpose =
     selected === 'devices'
-      ? `Доп. устройства · ${deviceCount} шт.`
+      ? `Доп. устройства · ${extraDevices} шт.`
       : selected === 'traffic'
         ? `Основной трафик · ${mainPackages[mainIndex]?.gb ?? 100} ГБ`
         : selected === 'main_reset'
@@ -259,7 +284,7 @@ export function AddonsCard({
 
   const canProceed = useMemo(() => {
     if (loading || !subscriptionId) return false;
-    if (selected === 'devices') return devicePrice > 0;
+    if (selected === 'devices') return extraDevices > 0 && devicePrice > 0;
     if (selected === 'traffic') {
       const pkg = mainPackages[mainIndex];
       return Boolean(pkg && pkg.is_available !== false);
@@ -282,6 +307,7 @@ export function AddonsCard({
     return false;
   }, [
     devicePrice,
+    extraDevices,
     loading,
     mainIndex,
     mainPackages,
@@ -290,6 +316,8 @@ export function AddonsCard({
     trafficReset,
     mainTrafficReset,
   ]);
+
+  const counterDirection = totalDevices >= prevTotalRef.current ? 1 : -1;
 
   return (
     <div className="flex w-full flex-col gap-3">
@@ -373,7 +401,7 @@ export function AddonsCard({
                           : 'traffic',
                   addonValue:
                     selected === 'devices'
-                      ? deviceCount
+                      ? extraDevices
                       : selected === 'traffic'
                         ? (mainPackages[mainIndex]?.gb ?? 100)
                         : selected === 'main_reset'
@@ -396,7 +424,7 @@ export function AddonsCard({
                             : 'traffic',
                     addonValue:
                       selected === 'devices'
-                        ? deviceCount
+                        ? extraDevices
                         : selected === 'traffic'
                           ? (mainPackages[mainIndex]?.gb ?? 100)
                           : selected === 'main_reset'
@@ -435,26 +463,48 @@ export function AddonsCard({
                   <div>
                     <p className="text-sm font-medium">Количество устройств</p>
                     <p className="mt-1 text-xs text-muted">
-                      Стоимость рассчитывается для выбранного количества
+                      {extraDevices > 0
+                        ? `В тарифе ${baseDeviceCount} + ${extraDevices} доп. (всего ${totalDevices})`
+                        : `В тарифе ${baseDeviceCount} шт. (максимум ${maxAllowedDevices})`}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       aria-label="Уменьшить количество"
-                      disabled={deviceCount === 1}
-                      onClick={() => setDeviceCount((value) => Math.max(1, value - 1))}
-                      className="grid h-9 w-9 place-items-center rounded-full bg-white/8 disabled:opacity-30"
+                      disabled={totalDevices <= baseDeviceCount}
+                      onClick={() => {
+                        prevTotalRef.current = totalDevices;
+                        setTotalDevices((value: number) => Math.max(baseDeviceCount, value - 1));
+                      }}
+                      className="grid h-9 w-9 place-items-center rounded-full bg-white/8 transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <Minus size={14} />
                     </button>
-                    <strong className="w-5 text-center">{deviceCount}</strong>
+                    <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden">
+                      <AnimatePresence mode="popLayout" initial={false} custom={counterDirection}>
+                        <m.strong
+                          key={totalDevices}
+                          custom={counterDirection}
+                          initial={{ opacity: 0, y: counterDirection > 0 ? 14 : -14 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: counterDirection > 0 ? -14 : 14 }}
+                          transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                          className="absolute text-base font-bold text-ink"
+                        >
+                          {totalDevices}
+                        </m.strong>
+                      </AnimatePresence>
+                    </div>
                     <button
                       type="button"
                       aria-label="Увеличить количество"
-                      disabled={deviceCount === 10}
-                      onClick={() => setDeviceCount((value) => Math.min(10, value + 1))}
-                      className="grid h-9 w-9 place-items-center rounded-full bg-mint text-bg disabled:opacity-30"
+                      disabled={totalDevices >= maxAllowedDevices}
+                      onClick={() => {
+                        prevTotalRef.current = totalDevices;
+                        setTotalDevices((value: number) => Math.min(maxAllowedDevices, value + 1));
+                      }}
+                      className="grid h-9 w-9 place-items-center rounded-full bg-mint text-bg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <Plus size={14} />
                     </button>
@@ -624,9 +674,11 @@ export function AddonsCard({
                 onClick={() => setStep('payment')}
                 className="button-lift mt-5 h-12 w-full rounded-full bg-ink text-sm font-bold text-bg disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {subscriptionId
-                  ? `Выбрать способ оплаты · ${amount.toLocaleString('ru-RU')} ₽`
-                  : 'Нужна активная подписка'}
+                {!subscriptionId
+                  ? 'Нужна активная подписка'
+                  : selected === 'devices' && extraDevices === 0
+                    ? 'Выберите количество устройств'
+                    : `Выбрать способ оплаты · ${amount.toLocaleString('ru-RU')} ₽`}
               </button>
             </m.div>
           )}

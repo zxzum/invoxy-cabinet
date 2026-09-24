@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -33,6 +33,7 @@ type Plan = {
   mainTraffic: number;
   lteTraffic: number | null;
   devices: number;
+  maxDevices: number;
   devicePrice: number;
   icon: typeof ShieldCheck;
   recommended?: boolean;
@@ -79,13 +80,17 @@ function adaptPlan(value: Record<string, unknown>): Plan {
     adaptedPeriods[0] ?? { days: 30, months: 1, price: 0, discount: 0 };
   const lteTraffic = Number(value.whitelist_traffic_limit_gb ?? 0) || null;
   const rawName = String(value.name ?? 'Тариф').trim();
+  const baseDevices = Math.max(1, Number(value.device_limit ?? value.base_device_limit ?? 1));
+  const rawMax = Number(value.max_device_limit ?? 0);
+  const maxDevices = rawMax > 0 ? Math.max(baseDevices, rawMax) : Math.max(baseDevices, 10);
   return {
     id: String(value.id),
     name: lteTraffic && !/\blte\b/i.test(rawName) ? `${rawName} LTE` : rawName,
     price: month.price,
     mainTraffic: Number(value.traffic_limit_gb ?? 0),
     lteTraffic,
-    devices: Number(value.device_limit ?? 0),
+    devices: baseDevices,
+    maxDevices,
     devicePrice: Number(value.device_price_kopeks ?? 0) / 100,
     icon: Number(value.whitelist_traffic_limit_gb ?? 0) > 0 ? Globe2 : ShieldCheck,
     recommended: Boolean(value.is_highlighted),
@@ -174,9 +179,13 @@ export default function TariffsPage() {
       setDialogOpen(false);
       return;
     }
+    const targetPlan = plans.find((plan) => plan.id === id);
+    const initialDevices = targetPlan
+      ? Math.max(targetPlan.devices, Math.min(targetPlan.maxDevices, baseDevices))
+      : baseDevices;
     setSelectedId(id);
-    setDevices(baseDevices);
-    setMonths(plans.find((plan) => plan.id === id)?.periods[0]?.months ?? 1);
+    setDevices(initialDevices);
+    setMonths(targetPlan?.periods[0]?.months ?? 1);
     setTariffStep('options');
     setDialogOpen(true);
   }
@@ -517,6 +526,7 @@ function TariffConfiguratorDialog({
       tariffId?: number;
       periodDays?: number;
       subscriptionId?: number;
+      devices?: number;
     },
   ) => void;
   onTopUp: () => void;
@@ -561,6 +571,7 @@ function TariffConfiguratorDialog({
                 tariffId: Number(plan.id),
                 periodDays,
                 subscriptionId,
+                devices,
               }}
               onPay={(method) =>
                 onPay(method, {
@@ -570,6 +581,7 @@ function TariffConfiguratorDialog({
                   tariffId: Number(plan.id),
                   periodDays,
                   subscriptionId,
+                  devices,
                 })
               }
               onTopUp={onTopUp}
@@ -625,6 +637,8 @@ function TariffConfigurator({
   const extraDevicePrice = Math.max(0, devices - plan.devices) * plan.devicePrice;
   const saving = Math.max(0, subtotal - total);
   const savingPercent = subtotal > 0 && saving > 0 ? Math.round((saving / subtotal) * 100) : 0;
+  const prevDevicesRef = useRef(devices);
+  const counterDirection = devices >= prevDevicesRef.current ? 1 : -1;
 
   return (
     <div className="mx-auto w-full max-w-xl">
@@ -681,7 +695,9 @@ function TariffConfigurator({
         <div>
           <p className="text-xs font-semibold text-muted">Устройства</p>
           <p className="mt-1 text-[11px] text-muted">
-            Минимум {plan.devices} · +{formatRubles(plan.devicePrice)} за дополнительное
+            {plan.maxDevices > plan.devices
+              ? `От ${plan.devices} до ${plan.maxDevices} · +${formatRubles(plan.devicePrice)} за дополнительное`
+              : `${plan.devices} шт. (максимум для тарифа)`}
           </p>
         </div>
         <div className="glass-control flex items-center rounded-full p-1">
@@ -689,17 +705,38 @@ function TariffConfigurator({
             type="button"
             aria-label="Уменьшить"
             disabled={devices <= plan.devices}
-            onClick={() => setDevices((value) => Math.max(plan.devices, value - 1))}
+            onClick={() => {
+              prevDevicesRef.current = devices;
+              setDevices((value) => Math.max(plan.devices, value - 1));
+            }}
             className="button-lift grid h-9 w-9 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Minus size={15} />
           </button>
-          <span className="w-7 text-center text-sm font-bold">{devices}</span>
+          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden">
+            <AnimatePresence mode="popLayout" initial={false} custom={counterDirection}>
+              <m.strong
+                key={devices}
+                custom={counterDirection}
+                initial={{ opacity: 0, y: counterDirection > 0 ? 12 : -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: counterDirection > 0 ? -12 : 12 }}
+                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                className="absolute text-sm font-bold text-ink"
+              >
+                {devices}
+              </m.strong>
+            </AnimatePresence>
+          </div>
           <button
             type="button"
             aria-label="Увеличить"
-            onClick={() => setDevices((value) => Math.min(20, value + 1))}
-            className="button-lift grid h-9 w-9 place-items-center rounded-full"
+            disabled={devices >= plan.maxDevices}
+            onClick={() => {
+              prevDevicesRef.current = devices;
+              setDevices((value) => Math.min(plan.maxDevices, value + 1));
+            }}
+            className="button-lift grid h-9 w-9 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Plus size={15} />
           </button>

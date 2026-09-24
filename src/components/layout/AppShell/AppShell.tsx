@@ -208,6 +208,9 @@ export function AppShell({ children }: AppShellProps) {
               src={isModernCustomerRoute ? '/images/brand-mark.png' : logoUrl || LOCAL_LOGO_URL}
               alt={isModernCustomerRoute ? 'InvoxyVPN' : appName || 'Invoxy VPN'}
               className="h-full w-full object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = LOCAL_LOGO_URL;
+              }}
             />
           </div>
           <div className="truncate text-xl font-bold text-dark-50">

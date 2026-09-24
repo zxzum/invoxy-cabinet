@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   type BrandingInfo,
+  LOCAL_LOGO_URL,
   brandingApi,
   getCachedBranding,
   getLogoBlobUrl,
@@ -119,6 +120,27 @@ async function buildBrandIcons(
       ]);
       return { favicon, hint, ...shortcuts };
     }
+  }
+
+  // INVOXY: Prefer the bundled app logo over the letter monogram for Invoxy/Cabinet
+  if (
+    branding.name?.toLowerCase().includes('invoxy') ||
+    branding.name === 'Cabinet' ||
+    !branding.name
+  ) {
+    const [favicon, hint, shortcuts] = await Promise.all([
+      roundedFaviconDataUri(LOCAL_LOGO_URL, 64, LOGO_TILE_RADIUS),
+      roundedFaviconDataUri(LOCAL_LOGO_URL, 64, SAFARI_TILE_RADIUS),
+      shortcutIcons(LOCAL_LOGO_URL, background),
+    ]);
+    return {
+      favicon: favicon ?? LOCAL_LOGO_URL,
+      hint: hint ?? LOCAL_LOGO_URL,
+      touch: shortcuts.touch ?? LOCAL_LOGO_URL,
+      manifest: shortcuts.manifest.length
+        ? shortcuts.manifest
+        : [{ src: LOCAL_LOGO_URL, sizes: 'any', type: 'image/png' }],
+    };
   }
 
   const monogram = letterFaviconDataUri(letter, {

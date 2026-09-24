@@ -42,6 +42,7 @@ vi.mock('../hooks/useTelegramSDK', () => ({
 }));
 
 vi.mock('../api/branding', () => ({
+  LOCAL_LOGO_URL: '/invoxy-logo-square.png',
   brandingApi: {
     getBranding: () => Promise.resolve({ name: 'VPN', logo_letter: 'V', has_custom_logo: false }),
     getLogoUrl: () => null,

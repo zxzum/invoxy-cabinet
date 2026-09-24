@@ -38,18 +38,11 @@ function clearCode(): void {
 export function captureReferralFromUrl(): void {
   try {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('ref');
+    const code = params.get('ref') || params.get('start');
     if (!code || !CODE_PATTERN.test(code)) return;
 
     localStorage.setItem(REFERRAL_KEY, code);
     localStorage.setItem(REFERRAL_TTL_KEY, String(Date.now() + TTL_MS));
-
-    // Clean URL
-    params.delete('ref');
-    const newSearch = params.toString();
-    const newUrl =
-      window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
-    window.history.replaceState(null, '', newUrl);
   } catch {}
 }
 

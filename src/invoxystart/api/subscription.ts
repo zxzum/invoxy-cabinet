@@ -296,6 +296,7 @@ export const subscriptionApi = {
     periodDays: number,
     trafficGb?: number,
     subscriptionId?: number,
+    devices?: number,
   ) =>
     apiClient.post<{
       success: boolean;
@@ -310,6 +311,7 @@ export const subscriptionApi = {
       period_days: periodDays,
       traffic_gb: trafficGb,
       subscription_id: subscriptionId,
+      devices,
     }),
 
   createTariffInvoice: (payload: {
@@ -317,6 +319,7 @@ export const subscriptionApi = {
     period_days?: number;
     traffic_gb?: number;
     subscription_id?: number;
+    devices?: number;
     payment_method: string;
     payment_option?: string;
   }): Promise<TariffInvoiceResult> =>

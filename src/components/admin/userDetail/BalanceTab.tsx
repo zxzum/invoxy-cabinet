@@ -8,6 +8,7 @@ import { promoOffersApi } from '../../../api/promoOffers';
 import { createNumberInputHandler, toNumber } from '../../../utils/inputHelpers';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { PlusIcon, MinusIcon } from '@/components/icons';
+import { useAuthStore } from '@/store/auth';
 
 // ──────────────────────────────────────────────────────────────────
 // Balance tab — current balance, add/subtract form, active promo
@@ -70,7 +71,7 @@ export function BalanceTab({
     setActionLoading(true);
     try {
       const amount = Math.round(num * 100);
-      await adminUsersApi.updateBalance(userId, {
+      const response = await adminUsersApi.updateBalance(userId, {
         amount_kopeks: isAdd ? amount : -amount,
         description:
           balanceDescription.trim() ||
@@ -78,6 +79,14 @@ export function BalanceTab({
             ? t('admin.users.detail.balance.addByAdmin')
             : t('admin.users.detail.balance.subtractByAdmin')),
       });
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser && currentUser.id === userId && response?.new_balance_kopeks != null) {
+        useAuthStore.getState().setUser({
+          ...currentUser,
+          balance_kopeks: response.new_balance_kopeks,
+          balance_rubles: response.new_balance_kopeks / 100,
+        });
+      }
       notify.success(
         isAdd ? 'Баланс успешно начислен' : 'Баланс успешно списан',
         t('common.success'),

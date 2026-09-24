@@ -131,6 +131,8 @@ export interface SubscriptionTabProps {
   onInlineConfirm: (key: string, fn: () => Promise<void>) => void;
   onUpdateSubscription: (overrideAction?: string) => Promise<void>;
   onSetDeviceLimit: (newLimit: number) => Promise<void>;
+  onSetTrafficLimit?: (newLimitGb: number) => Promise<void>;
+  onSetWhitelistTrafficLimit?: (newLimitGb: number) => Promise<void>;
   onAddTraffic: (gb: number) => Promise<void>;
   onRemoveTraffic: (purchaseId: number) => Promise<void>;
   onResetMainTraffic?: () => Promise<void>;
@@ -203,6 +205,8 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
     onInlineConfirm,
     onUpdateSubscription,
     onSetDeviceLimit,
+    onSetTrafficLimit,
+    onSetWhitelistTrafficLimit,
     onAddTraffic,
     onRemoveTraffic,
     onResetMainTraffic,
@@ -228,6 +232,12 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
   const [selectedWhitelistTrafficGb, setSelectedWhitelistTrafficGb] = useState<string>('');
   const [manualWhitelistGb, setManualWhitelistGb] = useState<number | ''>('');
   const [adjustWhitelistVal, setAdjustWhitelistVal] = useState<string>('');
+  const [editingTrafficLimit, setEditingTrafficLimit] = useState(false);
+  const [trafficLimitInput, setTrafficLimitInput] = useState<number | ''>('');
+  const [editingWhitelistLimit, setEditingWhitelistLimit] = useState(false);
+  const [whitelistLimitInput, setWhitelistLimitInput] = useState<number | ''>('');
+  const [customTrafficLimitVal, setCustomTrafficLimitVal] = useState<number | ''>('');
+  const [customWhitelistLimitVal, setCustomWhitelistLimitVal] = useState<number | ''>('');
 
   return (
     <div className="space-y-4">
@@ -380,12 +390,71 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 <div className="text-xs text-dark-500">
                   {t('admin.users.detail.subscription.traffic')}
                 </div>
-                <div className="text-dark-100">
-                  {panelInfo?.found
-                    ? (panelInfo.used_traffic_bytes / (1024 * 1024 * 1024)).toFixed(1)
-                    : selectedSub.traffic_used_gb.toFixed(1)}{' '}
-                  / {selectedSub.traffic_limit_gb} {t('common.units.gb')}
-                </div>
+                {editingTrafficLimit ? (
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100000}
+                      value={trafficLimitInput}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                        setTrafficLimitInput(Number.isNaN(val) ? '' : val);
+                      }}
+                      className="input h-7 w-20 px-2 text-xs"
+                      autoFocus
+                    />
+                    <span className="text-xs text-dark-400">{t('common.units.gb')}</span>
+                    <button
+                      onClick={async () => {
+                        if (
+                          trafficLimitInput !== '' &&
+                          trafficLimitInput >= 0 &&
+                          onSetTrafficLimit
+                        ) {
+                          await onSetTrafficLimit(Number(trafficLimitInput));
+                          setEditingTrafficLimit(false);
+                        }
+                      }}
+                      disabled={actionLoading || trafficLimitInput === '' || trafficLimitInput < 0}
+                      className="rounded bg-accent-500 p-1 text-on-accent hover:bg-accent-600 disabled:opacity-50"
+                      title={t('common.save', 'Сохранить')}
+                    >
+                      <CheckIcon className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setEditingTrafficLimit(false)}
+                      className="rounded bg-dark-700 p-1 text-dark-400 hover:text-dark-200"
+                      title={t('common.cancel', 'Отмена')}
+                    >
+                      <XIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-dark-100">
+                      {panelInfo?.found
+                        ? (panelInfo.used_traffic_bytes / (1024 * 1024 * 1024)).toFixed(1)
+                        : selectedSub.traffic_used_gb.toFixed(1)}{' '}
+                      / {selectedSub.traffic_limit_gb} {t('common.units.gb')}
+                    </span>
+                    {onSetTrafficLimit && hasPermission('users:subscription') && (
+                      <button
+                        onClick={() => {
+                          setTrafficLimitInput(selectedSub.traffic_limit_gb);
+                          setEditingTrafficLimit(true);
+                        }}
+                        className="rounded p-1 text-dark-400 hover:bg-dark-700 hover:text-accent-400"
+                        title={t(
+                          'admin.users.detail.subscription.editTrafficLimit',
+                          'Изменить лимит трафика',
+                        )}
+                      >
+                        <EditIcon className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <div className="text-xs text-dark-500">
@@ -460,10 +529,70 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                           )}
                         </span>
                       )}
-                      <span className="font-mono text-[11px] text-dark-400">
-                        {(selectedSub.whitelist_traffic_used_gb ?? 0).toFixed(1)} /{' '}
-                        {selectedSub.whitelist_traffic_limit_gb ?? 0} {t('common.units.gb')}
-                      </span>
+                      {editingWhitelistLimit ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={0}
+                            max={10000}
+                            value={whitelistLimitInput}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                              setWhitelistLimitInput(Number.isNaN(val) ? '' : val);
+                            }}
+                            className="input h-6 w-16 px-1.5 text-[11px]"
+                            autoFocus
+                          />
+                          <button
+                            onClick={async () => {
+                              if (
+                                whitelistLimitInput !== '' &&
+                                whitelistLimitInput >= 0 &&
+                                onSetWhitelistTrafficLimit
+                              ) {
+                                await onSetWhitelistTrafficLimit(Number(whitelistLimitInput));
+                                setEditingWhitelistLimit(false);
+                              }
+                            }}
+                            disabled={
+                              actionLoading || whitelistLimitInput === '' || whitelistLimitInput < 0
+                            }
+                            className="rounded bg-accent-500 p-0.5 text-on-accent hover:bg-accent-600 disabled:opacity-50"
+                            title={t('common.save', 'Сохранить')}
+                          >
+                            <CheckIcon className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => setEditingWhitelistLimit(false)}
+                            className="rounded bg-dark-700 p-0.5 text-dark-400 hover:text-dark-200"
+                            title={t('common.cancel', 'Отмена')}
+                          >
+                            <XIcon className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono text-[11px] text-dark-400">
+                            {(selectedSub.whitelist_traffic_used_gb ?? 0).toFixed(1)} /{' '}
+                            {selectedSub.whitelist_traffic_limit_gb ?? 0} {t('common.units.gb')}
+                          </span>
+                          {onSetWhitelistTrafficLimit && hasPermission('users:subscription') && (
+                            <button
+                              onClick={() => {
+                                setWhitelistLimitInput(selectedSub.whitelist_traffic_limit_gb ?? 0);
+                                setEditingWhitelistLimit(true);
+                              }}
+                              className="rounded p-0.5 text-dark-400 hover:bg-dark-700 hover:text-accent-400"
+                              title={t(
+                                'admin.users.detail.subscription.editWhitelistLimit',
+                                'Изменить лимит LTE',
+                              )}
+                            >
+                              <EditIcon className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <TrafficProgressBar
@@ -620,6 +749,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
           {/* Add Traffic */}
           {hasPermission('users:subscription') &&
             (onResetMainTraffic ||
+              onSetTrafficLimit ||
               (currentTariff &&
                 currentTariff.traffic_topup_enabled &&
                 Object.keys(currentTariff.traffic_topup_packages).length > 0)) && (
@@ -649,6 +779,48 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                     </button>
                   )}
                 </div>
+
+                {onSetTrafficLimit && (
+                  <div className="mb-3">
+                    <div className="mb-1 text-xs text-dark-400">
+                      {t(
+                        'admin.users.detail.subscription.setTrafficLimit',
+                        'Задать лимит трафика:',
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100000}
+                        value={customTrafficLimitVal}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                          setCustomTrafficLimitVal(Number.isNaN(val) ? '' : val);
+                        }}
+                        placeholder={t(
+                          'admin.users.detail.subscription.setTrafficLimitPlaceholder',
+                          'Лимит в ГБ (0 = безлимит)',
+                        )}
+                        className="input flex-1"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (customTrafficLimitVal !== '' && customTrafficLimitVal >= 0) {
+                            await onSetTrafficLimit(Number(customTrafficLimitVal));
+                            setCustomTrafficLimitVal('');
+                          }
+                        }}
+                        disabled={
+                          actionLoading || customTrafficLimitVal === '' || customTrafficLimitVal < 0
+                        }
+                        className="shrink-0 rounded-lg bg-accent-500 px-4 py-2 text-sm text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
+                      >
+                        {t('common.save', 'Сохранить')}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {currentTariff &&
                   currentTariff.traffic_topup_enabled &&
                   Object.keys(currentTariff.traffic_topup_packages).length > 0 && (
@@ -756,13 +928,16 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
 
           {/* Add White Internet Traffic (LTE) & Adjust Usage */}
           {hasPermission('users:subscription') &&
-            (onAddWhitelistTraffic || onResetWhitelistUsed || onAdjustWhitelistTraffic) && (
+            (onAddWhitelistTraffic ||
+              onSetWhitelistTrafficLimit ||
+              onResetWhitelistUsed ||
+              onAdjustWhitelistTraffic) && (
               <div className="rounded-xl bg-dark-800/50 p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-medium text-dark-200">
                     {t(
                       'admin.users.detail.subscription.addWhitelistTraffic',
-                      'Добавить Белый интернет (LTE)',
+                      'Белый интернет (LTE)',
                     )}
                   </span>
                   {onResetWhitelistUsed && (
@@ -789,6 +964,50 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                     </button>
                   )}
                 </div>
+
+                {onSetWhitelistTrafficLimit && (
+                  <div className="mb-3">
+                    <div className="mb-1 text-xs text-dark-400">
+                      {t(
+                        'admin.users.detail.subscription.setWhitelistLimit',
+                        'Задать лимит Белого интернета:',
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        max={10000}
+                        value={customWhitelistLimitVal}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                          setCustomWhitelistLimitVal(Number.isNaN(val) ? '' : val);
+                        }}
+                        placeholder={t(
+                          'admin.users.detail.subscription.setWhitelistLimitPlaceholder',
+                          'Лимит в ГБ',
+                        )}
+                        className="input flex-1"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (customWhitelistLimitVal !== '' && customWhitelistLimitVal >= 0) {
+                            await onSetWhitelistTrafficLimit(Number(customWhitelistLimitVal));
+                            setCustomWhitelistLimitVal('');
+                          }
+                        }}
+                        disabled={
+                          actionLoading ||
+                          customWhitelistLimitVal === '' ||
+                          customWhitelistLimitVal < 0
+                        }
+                        className="shrink-0 rounded-lg bg-accent-500 px-4 py-2 text-sm text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
+                      >
+                        {t('common.save', 'Сохранить')}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {onAddWhitelistTraffic &&
                   (currentTariff?.whitelist_traffic_topup_enabled &&

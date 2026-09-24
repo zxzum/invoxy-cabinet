@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, type ReactNode } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, m } from 'framer-motion';
@@ -13,7 +13,6 @@ import {
   getCachedBranding,
   setCachedBranding,
   preloadLogo,
-  isLogoPreloaded,
   type BrandingInfo,
   type EmailAuthEnabled,
 } from '../api/branding';
@@ -67,11 +66,17 @@ export default function Login() {
     })),
   );
 
-  // Get referral code from localStorage (captured from ?ref= param at module level in auth store)
-  const referralCode = getPendingReferralCode() || '';
+  // Get referral code from search params (primary) or pending storage (only if registering)
+  const [searchParams] = useSearchParams();
+  const urlReferralCode = searchParams.get('ref') || searchParams.get('start') || '';
+  const isExplicitRegister =
+    location.pathname === '/register' || searchParams.get('mode') === 'register';
+
+  const referralCode =
+    urlReferralCode || (isExplicitRegister ? getPendingReferralCode() || '' : '');
 
   const [authMode, setAuthMode] = useState<'login' | 'register'>(() =>
-    referralCode || location.pathname === '/register' ? 'register' : 'login',
+    isExplicitRegister || urlReferralCode ? 'register' : 'login',
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -83,7 +88,6 @@ export default function Login() {
     () => !isRegistrationRoute && isInTelegramWebApp() && Boolean(getTelegramInitData()),
   );
   const telegramAuthAttemptedRef = useRef(false);
-  const [logoLoaded, setLogoLoaded] = useState(() => isLogoPreloaded());
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
@@ -200,7 +204,6 @@ export default function Login() {
     (import.meta.env.VITE_APP_NAME && import.meta.env.VITE_APP_NAME !== 'Cabinet'
       ? import.meta.env.VITE_APP_NAME
       : 'Invoxy VPN');
-  const appLogo = branding?.logo_letter || import.meta.env.VITE_APP_LOGO || 'V';
   const logoUrl =
     (branding?.has_custom_logo ? brandingApi.getLogoUrl?.(branding) : null) || DEFAULT_LOGO_URL;
 
@@ -543,24 +546,19 @@ export default function Login() {
             className="inline-flex items-center gap-3 text-lg font-bold text-ink"
           >
             <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-              <span
-                className={`absolute text-sm font-bold text-mint transition-opacity duration-200 ${branding?.has_custom_logo && logoLoaded ? 'opacity-0' : 'opacity-100'}`}
-              >
-                {appLogo}
-              </span>
-              {branding?.has_custom_logo && logoUrl && (
-                <img
-                  src={logoUrl}
-                  alt={appName || 'Logo'}
-                  className={`absolute h-full w-full object-contain transition-opacity duration-200 ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  onLoad={() => setLogoLoaded(true)}
-                />
-              )}
+              <img
+                src={logoUrl || DEFAULT_LOGO_URL}
+                alt={appName || 'Invoxy VPN'}
+                className="h-full w-full object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = DEFAULT_LOGO_URL;
+                }}
+              />
             </span>
             {appName && <span>{appName}</span>}
           </Link>
 
-          {referralCode && isEmailAuthEnabled && (
+          {authMode === 'register' && referralCode && isEmailAuthEnabled && (
             <div className="mt-4 rounded-2xl border border-accent-500/30 bg-accent-500/10 p-2.5">
               <div className="flex items-center justify-center gap-2 text-accent-400">
                 <UsersIcon className="h-4 w-4 flex-shrink-0" />

@@ -50,7 +50,6 @@ export function DashboardPage() {
     queryFn: () => subscriptionApi.getSubscriptions(),
     placeholderData: (previous) => previous,
     staleTime: 30_000,
-    refetchOnWindowFocus: 'always',
   });
 
   const subscriptions = subsData?.subscriptions ?? [];
@@ -71,7 +70,7 @@ export function DashboardPage() {
       ? selectedSubscription
       : (subscriptions[0]?.id ?? null);
 
-  const { data: detailsData, isLoading: detailsLoading } = useQuery({
+  const { data: detailsData } = useQuery({
     queryKey: ['invoxy-subscription-details', activeSubId, 'dashboard'],
     queryFn: async () => {
       if (!activeSubId) return null;
@@ -117,7 +116,6 @@ export function DashboardPage() {
     queryFn: () => subscriptionApi.getSubscriptionById(activeSubId!),
     enabled: Boolean(activeSubId),
     staleTime: 30_000,
-    refetchOnWindowFocus: 'always',
   });
 
   const { data: trafficUsage } = useQuery({
@@ -126,7 +124,6 @@ export function DashboardPage() {
       activeSubId === null ? Promise.resolve(null) : subscriptionApi.refreshTraffic(activeSubId),
     enabled: Boolean(activeSubId),
     staleTime: 60_000,
-    refetchOnWindowFocus: 'always',
     retry: false,
   });
 
@@ -142,7 +139,7 @@ export function DashboardPage() {
       ? 'active'
       : 'new';
 
-  const loading = subsLoading || (subscriptions.length > 0 && detailsLoading && !detailsData);
+  const loading = !subsData && subsLoading;
 
   async function activateTrial() {
     if (!trialInfo?.is_available) return;
@@ -237,7 +234,7 @@ export function DashboardPage() {
       />
 
       <AnimatePresence mode="wait">
-        {loading || detailsLoading ? (
+        {loading ? (
           <m.div
             key="loading"
             initial={{ opacity: 0 }}
