@@ -31,6 +31,7 @@ function isInvoxyStartCustomerPath(pathname: string) {
   );
 }
 import { useBlockingStore } from './store/blocking';
+import { captureReferralFromUrl, isValidReferralCode } from './utils/referral';
 import Layout from './components/layout/Layout';
 import { MainPagesReady } from './components/layout/MainPagesReady';
 import PageLoader from './components/common/PageLoader';
@@ -253,12 +254,54 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 function MainTabsRoute() {
   const location = useLocation();
   const outlet = useOutlet();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
 
   if (location.pathname === '/') {
-    return isInTelegramWebApp() && getTelegramInitData() ? <Login /> : <Landing />;
+    if (isInTelegramWebApp() && getTelegramInitData()) {
+      return <Login />;
+    }
+
+    const searchParams = new URLSearchParams(location.search);
+    const refCode = searchParams.get('ref') || searchParams.get('start');
+    if (isValidReferralCode(refCode)) {
+      captureReferralFromUrl();
+      if (isLoading) {
+        return <PageLoader variant="dark" />;
+      }
+      if (!isAuthenticated) {
+        return <Navigate to={`/register${location.search}${location.hash}`} replace />;
+      }
+      return <Navigate to="/dashboard" replace />;
+    }
+
+    return <Landing />;
   }
 
   return <ProtectedRoute>{outlet}</ProtectedRoute>;
+}
+
+function ReferralRedirectRoute() {
+  const { code } = useParams<{ code: string }>();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  if (isValidReferralCode(code)) {
+    try {
+      localStorage.setItem('referral_code', code);
+      localStorage.setItem('referral_code_ttl', String(Date.now() + 24 * 60 * 60 * 1000));
+    } catch {}
+  }
+
+  if (isLoading) {
+    return <PageLoader variant="dark" />;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Navigate to={`/register?ref=${encodeURIComponent(code || '')}`} replace />;
 }
 
 // Suspense + error boundary wrapper for lazy routes. The boundary lives
@@ -355,6 +398,8 @@ function App() {
         <Route path="/offer" element={<PublicLegal doc="offer" />} />
         <Route path="/privacy" element={<PublicLegal doc="privacy" />} />
         <Route path="/recurrent-payments" element={<PublicLegal doc="recurrent" />} />
+        <Route path="/r/:code" element={<ReferralRedirectRoute />} />
+        <Route path="/invite/:code" element={<ReferralRedirectRoute />} />
         <Route
           path="/merge/:mergeToken"
           element={

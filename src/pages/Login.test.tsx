@@ -109,7 +109,10 @@ vi.mock('../hooks/useTelegramSDK', () => ({
 vi.mock('../utils/api-error', () => ({
   getApiErrorMessage: (error: { detail?: string }, fallback: string) => error.detail || fallback,
 }));
-vi.mock('../utils/referral', () => ({ getPendingReferralCode: () => referral.code }));
+vi.mock('../utils/referral', () => ({
+  getPendingReferralCode: () => referral.code,
+  captureReferralFromUrl: vi.fn(),
+}));
 vi.mock('../utils/token', () => ({
   getAndClearReturnUrl: () => null,
   tokenStorage: { clearTokens: vi.fn() },

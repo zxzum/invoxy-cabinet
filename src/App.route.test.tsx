@@ -407,12 +407,22 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('cabinet route boundary', () => {
-  it('keeps an ordinary unauthenticated root public with its query and hash', async () => {
+  it('redirects an unauthenticated visitor with referral query to registration', async () => {
     await renderApp('/?ref=invite-42#plans');
+
+    await waitFor(() =>
+      expect(screen.getByTestId('location').textContent).toContain(
+        '/register?ref=invite-42#plans[REPLACE]',
+      ),
+    );
+  });
+
+  it('keeps an ordinary unauthenticated root public with its query and hash', async () => {
+    await renderApp('/?source=google#plans');
 
     expect(await screen.findByTestId('landing-page')).toBeTruthy();
     expect(auth.state.loginWithTelegram).not.toHaveBeenCalled();
-    expect(screen.getByTestId('location').textContent).toContain('/?ref=invite-42#plans');
+    expect(screen.getByTestId('location').textContent).toContain('/?source=google#plans');
   });
 
   it('keeps the public root data-free for authenticated visitors', async () => {
