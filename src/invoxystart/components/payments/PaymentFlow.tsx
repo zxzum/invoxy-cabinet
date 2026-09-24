@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePlatform } from '@/platform';
 import { openPaymentUrl } from '@/utils/openPaymentUrl';
+import { useAuth } from '@/invoxystart/auth';
+import { clearResponseCache } from '@/invoxystart/api/client';
 import {
   Bot,
   CreditCard,
@@ -28,7 +30,7 @@ export interface PaymentRequest {
   periodDays?: number;
   subscriptionId?: number;
   trafficGb?: number;
-  addonType?: 'devices' | 'traffic' | 'lte' | 'lte_reset';
+  addonType?: 'devices' | 'traffic' | 'lte' | 'lte_reset' | 'main_reset';
   addonValue?: number;
   onComplete?: () => void;
 }
@@ -45,6 +47,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { platform, openLink } = usePlatform();
+  const { refreshUser } = useAuth();
   const queryClient = useQueryClient();
   const [request, setRequest] = useState<PaymentRequest | null>(null);
   const [open, setOpen] = useState(false);
@@ -53,6 +56,15 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
   function openPayment(nextRequest: PaymentRequest) {
     setRequest(nextRequest);
     setOpen(true);
+  }
+
+  function refreshPurchasedData() {
+    clearResponseCache();
+    void refreshUser();
+    void queryClient.invalidateQueries({ queryKey: ['balance'] });
+    void queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] });
+    void queryClient.invalidateQueries({ queryKey: ['invoxy-subscription-details'] });
+    void queryClient.invalidateQueries({ queryKey: ['invoxy-subscription-status'] });
   }
 
   async function pay(method: string, payment = request ?? undefined, paymentOption?: string) {
@@ -70,6 +82,8 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
           );
         } else if (payment.addonType === 'lte_reset') {
           await subscriptionApi.resetTraffic(payment.subscriptionId);
+        } else if (payment.addonType === 'main_reset') {
+          await subscriptionApi.resetTraffic(payment.subscriptionId, 'regular');
         } else if (payment.tariffId && payment.periodDays) {
           await subscriptionApi.purchaseTariff(
             payment.tariffId,
@@ -82,6 +96,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
         } else {
           throw new Error('Недостаточно данных для оплаты с баланса');
         }
+        refreshPurchasedData();
         showToast('Оплачено с баланса');
         payment.onComplete?.();
         setOpen(false);
@@ -102,6 +117,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
           : await createBalanceBackedPayment(payment, method, paymentOption);
 
       if (!result) {
+        refreshPurchasedData();
         showToast('Оплачено с баланса');
         payment.onComplete?.();
         setOpen(false);
@@ -116,6 +132,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       }
       queryClient.invalidateQueries({ queryKey: ['active-invoice'] });
       queryClient.invalidateQueries({ queryKey: ['invoxy-balance'] });
+      void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
       showToast('Перенаправляем на страницу оплаты…');
       setOpen(false);
     } catch (error) {
@@ -165,6 +182,8 @@ async function createBalanceBackedPayment(
       );
     } else if (request.addonType === 'lte_reset') {
       await subscriptionApi.resetTraffic(request.subscriptionId);
+    } else if (request.addonType === 'main_reset') {
+      await subscriptionApi.resetTraffic(request.subscriptionId, 'regular');
     } else if (request.periodDays) {
       await subscriptionApi.renewSubscription(request.periodDays, request.subscriptionId);
     } else {

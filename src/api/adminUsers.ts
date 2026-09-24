@@ -367,7 +367,9 @@ export interface UpdateSubscriptionRequest {
     | 'shorten'
     | 'add_whitelist_traffic'
     | 'remove_whitelist_traffic'
-    | 'reset_whitelist_used';
+    | 'reset_whitelist_used'
+    | 'adjust_whitelist_used'
+    | 'reset_main_traffic';
   subscription_id?: number;
   days?: number;
   end_date?: string;
@@ -379,6 +381,8 @@ export interface UpdateSubscriptionRequest {
   device_limit?: number;
   traffic_gb?: number;
   traffic_purchase_id?: number;
+  whitelist_traffic_used_gb?: number;
+  whitelist_traffic_delta_gb?: number;
 }
 
 export interface UpdateSubscriptionResponse {

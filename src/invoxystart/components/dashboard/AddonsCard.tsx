@@ -10,11 +10,13 @@ import { getApiErrorMessage } from '@/utils/api-error';
 type Package = { gb: number; price: number; is_available?: boolean; reason?: string | null };
 
 type AddonOption = {
-  id: 'devices' | 'traffic' | 'lte_reset';
+  id: 'devices' | 'traffic' | 'lte_reset' | 'main_reset';
   icon: typeof Users;
   title: string;
   desc: string;
   price: string;
+  disabled?: boolean;
+  actionText?: string;
 };
 
 export function AddonsCard({
@@ -28,11 +30,15 @@ export function AddonsCard({
     whitelist_traffic_used_gb?: number | null;
     traffic_limit_gb?: number | null;
     traffic_used_gb?: number | null;
+    traffic_used_percent?: number | null;
     is_trial?: boolean | null;
+    main_traffic_reset_enabled?: boolean | null;
   } | null;
 }) {
   const { pay, topUp } = usePayment();
-  const [selected, setSelected] = useState<'devices' | 'traffic' | 'lte_reset' | null>(null);
+  const [selected, setSelected] = useState<
+    'devices' | 'traffic' | 'lte_reset' | 'main_reset' | null
+  >(null);
   const [step, setStep] = useState<'options' | 'payment'>('options');
   const [deviceCount, setDeviceCount] = useState(1);
   const [mainIndex, setMainIndex] = useState(0);
@@ -50,6 +56,24 @@ export function AddonsCard({
       effectiveSub?.tariff_name?.toLowerCase().includes('lte'),
   );
 
+  const usedMainGb = effectiveSub?.traffic_used_gb ?? 0;
+  const limitMainGb = effectiveSub?.traffic_limit_gb ?? 0;
+  const usedMainPercent =
+    typeof effectiveSub?.traffic_used_percent === 'number' &&
+    Number.isFinite(effectiveSub.traffic_used_percent)
+      ? effectiveSub.traffic_used_percent
+      : limitMainGb > 0
+        ? (usedMainGb / limitMainGb) * 100
+        : 0;
+
+  // Предлагаем сброс основного трафика, когда израсходовано > 80% лимита тарифа
+  const showMainReset = Boolean(
+    subscriptionId &&
+      limitMainGb > 0 &&
+      (usedMainPercent >= 80 || usedMainGb >= limitMainGb * 0.8) &&
+      effectiveSub?.main_traffic_reset_enabled !== false,
+  );
+
   // Pre-load queries so content is immediately available when dialog opens
   const {
     data: trafficReset,
@@ -59,6 +83,17 @@ export function AddonsCard({
     queryKey: ['traffic-reset', subscriptionId],
     queryFn: () => subscriptionApi.getTrafficReset(subscriptionId!),
     enabled: Boolean(subscriptionId && hasLte),
+    staleTime: 60_000,
+  });
+
+  const {
+    data: mainTrafficReset,
+    isLoading: mainResetLoading,
+    error: mainResetError,
+  } = useQuery({
+    queryKey: ['traffic-reset', subscriptionId, 'regular'],
+    queryFn: () => subscriptionApi.getTrafficReset(subscriptionId!, 'regular'),
+    enabled: Boolean(subscriptionId && showMainReset),
     staleTime: 60_000,
   });
 
@@ -100,6 +135,7 @@ export function AddonsCard({
   const loading =
     Boolean(subscriptionId) &&
     ((selected === 'lte_reset' && resetLoading && !trafficReset) ||
+      (selected === 'main_reset' && mainResetLoading && !mainTrafficReset) ||
       (selected === 'traffic' && packagesLoading && !trafficPackagesData) ||
       (selected === 'devices' && deviceLoading && !devicePriceData));
 
@@ -127,6 +163,16 @@ export function AddonsCard({
           : trafficReset.unavailable_reason || 'Сброс LTE временно недоступен';
       }
     }
+    if (selected === 'main_reset') {
+      if (mainResetError) {
+        return getApiErrorMessage(mainResetError, 'Не удалось загрузить параметры опции');
+      }
+      if (mainTrafficReset && !mainTrafficReset.enabled) {
+        return mainTrafficReset.unavailable_reason === 'disabled'
+          ? 'Сброс основного трафика недоступен на этом тарифе'
+          : mainTrafficReset.unavailable_reason || 'Сброс трафика временно недоступен';
+      }
+    }
     return '';
   }, [
     selected,
@@ -136,6 +182,8 @@ export function AddonsCard({
     trafficPackagesData,
     resetError,
     trafficReset,
+    mainResetError,
+    mainTrafficReset,
   ]);
 
   const availableCards = useMemo(() => {
@@ -150,12 +198,11 @@ export function AddonsCard({
     ];
 
     if (hasLte) {
-      const lteLimit = effectiveSub?.whitelist_traffic_limit_gb ?? 50;
       list.push({
         id: 'lte_reset' as const,
         icon: Globe2,
         title: 'Сброс LTE',
-        desc: `Сброс до ${lteLimit} ГБ расхода Белого интернета`,
+        desc: 'Списание 50 ГБ израсходованного трафика',
         price: '150 ₽',
       });
     } else if (effectiveSub && !effectiveSub?.is_trial) {
@@ -168,24 +215,44 @@ export function AddonsCard({
       });
     }
 
+    if (showMainReset) {
+      const minUsed = mainTrafficReset?.min_used_gb ?? 100;
+      const canResetNow = usedMainGb >= minUsed;
+      const priceText = mainTrafficReset ? `${mainTrafficReset.price_rubles} ₽` : 'Рассчитывается…';
+
+      list.push({
+        id: 'main_reset' as const,
+        icon: Gauge,
+        title: 'Сброс трафика',
+        desc: 'Обнуление израсходованного трафика',
+        price: priceText,
+        disabled: !canResetNow,
+        actionText: canResetNow ? 'Сбросить' : `Доступно от ${minUsed} ГБ`,
+      });
+    }
+
     return list;
-  }, [hasLte, effectiveSub]);
+  }, [hasLte, effectiveSub, showMainReset, mainTrafficReset, usedMainGb]);
 
   const amount =
     selected === 'devices'
       ? devicePrice
       : selected === 'traffic'
         ? (mainPackages[mainIndex]?.price ?? 50)
-        : (trafficReset?.price_rubles ?? 150);
+        : selected === 'main_reset'
+          ? (mainTrafficReset?.price_rubles ?? 0)
+          : (trafficReset?.price_rubles ?? 150);
 
   const purpose =
     selected === 'devices'
       ? `Доп. устройства · ${deviceCount} шт.`
       : selected === 'traffic'
         ? `Основной трафик · ${mainPackages[mainIndex]?.gb ?? 100} ГБ`
-        : `Сброс расхода LTE · ${trafficReset?.chunk_gb ?? 50} ГБ`;
+        : selected === 'main_reset'
+          ? `Сброс основного трафика · ${mainTrafficReset?.will_clear_gb ?? effectiveSub?.traffic_used_gb ?? 0} ГБ`
+          : `Сброс расхода LTE · ${trafficReset?.chunk_gb ?? 50} ГБ`;
 
-  function openAddon(id: 'devices' | 'traffic' | 'lte_reset') {
+  function openAddon(id: 'devices' | 'traffic' | 'lte_reset' | 'main_reset') {
     setStep('options');
     setSelected(id);
   }
@@ -204,8 +271,25 @@ export function AddonsCard({
       if (trafficReset.remaining_this_month <= 0) return false;
       return true;
     }
+    if (selected === 'main_reset') {
+      if (!mainTrafficReset) return false;
+      if (!mainTrafficReset.enabled) return false;
+      if (mainTrafficReset.used_gb < mainTrafficReset.min_used_gb) return false;
+      if (mainTrafficReset.max_per_month > 0 && mainTrafficReset.remaining_this_month <= 0)
+        return false;
+      return true;
+    }
     return false;
-  }, [devicePrice, loading, mainIndex, mainPackages, selected, subscriptionId, trafficReset]);
+  }, [
+    devicePrice,
+    loading,
+    mainIndex,
+    mainPackages,
+    selected,
+    subscriptionId,
+    trafficReset,
+    mainTrafficReset,
+  ]);
 
   return (
     <div className="flex w-full flex-col gap-3">
@@ -226,10 +310,12 @@ export function AddonsCard({
             </div>
             <button
               type="button"
+              disabled={addon.disabled}
               onClick={() => openAddon(addon.id)}
-              className="button-lift h-9 shrink-0 rounded-full bg-mint px-4 text-[11px] font-bold text-bg"
+              className="button-lift h-9 shrink-0 rounded-full bg-mint px-4 text-[11px] font-bold text-bg disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {addon.id === 'lte_reset' ? 'Сбросить' : 'Добавить'}
+              {addon.actionText ??
+                (addon.id === 'lte_reset' || addon.id === 'main_reset' ? 'Сбросить' : 'Добавить')}
             </button>
           </div>
         ))}
@@ -282,13 +368,17 @@ export function AddonsCard({
                       ? 'devices'
                       : selected === 'lte_reset'
                         ? 'lte_reset'
-                        : 'traffic',
+                        : selected === 'main_reset'
+                          ? 'main_reset'
+                          : 'traffic',
                   addonValue:
                     selected === 'devices'
                       ? deviceCount
                       : selected === 'traffic'
                         ? (mainPackages[mainIndex]?.gb ?? 100)
-                        : 50,
+                        : selected === 'main_reset'
+                          ? (mainTrafficReset?.will_clear_gb ?? 0)
+                          : 50,
                   onComplete: () => setSelected(null),
                 }}
                 onPay={(method) =>
@@ -301,13 +391,17 @@ export function AddonsCard({
                         ? 'devices'
                         : selected === 'lte_reset'
                           ? 'lte_reset'
-                          : 'traffic',
+                          : selected === 'main_reset'
+                            ? 'main_reset'
+                            : 'traffic',
                     addonValue:
                       selected === 'devices'
                         ? deviceCount
                         : selected === 'traffic'
                           ? (mainPackages[mainIndex]?.gb ?? 100)
-                          : 50,
+                          : selected === 'main_reset'
+                            ? (mainTrafficReset?.will_clear_gb ?? 0)
+                            : 50,
                     onComplete: () => setSelected(null),
                   })
                 }
@@ -453,6 +547,72 @@ export function AddonsCard({
                     >
                       Лимит сбросов на этот месяц исчерпан ({trafficReset.max_per_month} из{' '}
                       {trafficReset.max_per_month}).
+                    </p>
+                  ) : null}
+                </div>
+              )}
+
+              {!loading && !loadError && selected === 'main_reset' && mainTrafficReset && (
+                <div className="flex flex-col gap-4">
+                  <div className="rounded-2xl bg-white/[0.04] p-4 text-xs leading-relaxed text-muted">
+                    <p className="font-semibold text-ink">Как работает сброс основного трафика:</p>
+                    <p className="mt-1">
+                      Лимит тарифа не изменяется. Израсходованный трафик обнуляется до 0 ГБ. Если
+                      подписка была ограничена по исчерпанию лимита, она снова перейдёт в активный
+                      статус.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="rounded-2xl bg-white/5 p-3">
+                      <span className="text-[11px] text-muted">Потрачено сейчас</span>
+                      <p className="mt-0.5 text-base font-bold text-ink">
+                        {mainTrafficReset.used_gb}{' '}
+                        {mainTrafficReset.limit_gb ? `/ ${mainTrafficReset.limit_gb}` : ''} ГБ
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white/5 p-3">
+                      <span className="text-[11px] text-muted">Будет списано</span>
+                      <p className="mt-0.5 text-base font-bold text-mint">
+                        −{mainTrafficReset.will_clear_gb} ГБ (до 0)
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white/5 p-3">
+                      <span className="text-[11px] text-muted">Расход после сброса</span>
+                      <p className="mt-0.5 text-base font-bold text-ink">0 ГБ</p>
+                    </div>
+                    {mainTrafficReset.max_per_month > 0 ? (
+                      <div className="rounded-2xl bg-white/5 p-3">
+                        <span className="text-[11px] text-muted">Сбросов в этом месяце</span>
+                        <p className="mt-0.5 text-base font-bold text-ink">
+                          {mainTrafficReset.remaining_this_month} из{' '}
+                          {mainTrafficReset.max_per_month}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl bg-white/5 p-3">
+                        <span className="text-[11px] text-muted">Лимит в месяц</span>
+                        <p className="mt-0.5 text-base font-bold text-mint">Без ограничений</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {mainTrafficReset.used_gb < mainTrafficReset.min_used_gb ? (
+                    <p
+                      role="alert"
+                      className="rounded-2xl border border-amber-300/25 bg-amber-300/10 p-3 text-center text-xs text-amber-200"
+                    >
+                      Сброс доступен после {mainTrafficReset.min_used_gb} ГБ расхода трафика (сейчас
+                      потрачено {mainTrafficReset.used_gb} ГБ).
+                    </p>
+                  ) : mainTrafficReset.max_per_month > 0 &&
+                    mainTrafficReset.remaining_this_month <= 0 ? (
+                    <p
+                      role="alert"
+                      className="rounded-2xl border border-red-300/25 bg-red-300/10 p-3 text-center text-xs text-red-200"
+                    >
+                      Лимит сбросов на этот месяц исчерпан ({mainTrafficReset.max_per_month} из{' '}
+                      {mainTrafficReset.max_per_month}).
                     </p>
                   ) : null}
                 </div>

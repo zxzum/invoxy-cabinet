@@ -81,12 +81,7 @@ export default function NewsPage({ load = loadNews }: { load?: NewsLoader }) {
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <PageHeader
-        title="Новости"
-        subtitle="Обновления сервиса и полезные материалы"
-        notifications
-        mobileNotifications
-      />
+      <PageHeader title="Новости" subtitle="Обновления сервиса и полезные материалы" />
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
         <label className="glass-control flex h-14 min-w-0 w-full items-center rounded-[20px] px-5">
           <span className="sr-only">Поиск новостей</span>

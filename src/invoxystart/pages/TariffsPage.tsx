@@ -203,7 +203,7 @@ export default function TariffsPage() {
           aria-label="Загрузка тарифов"
         />
       ) : (
-        <PromoGroup />
+        <PromoGroup loyalty={tariffsData?.loyalty} />
       )}
 
       <div className="motion-grid grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -247,17 +247,17 @@ export default function TariffsPage() {
                 </span>
               )}
               <div className="mt-5 grid grid-cols-2 gap-2">
-                <div className="rounded-[20px] bg-white/[.055] p-3.5">
+                <div className="flex flex-col justify-between rounded-[20px] bg-white/[.055] p-3.5">
                   <p className="text-[9px] font-bold tracking-[.11em] text-muted">
                     ОСНОВНОЙ ТРАФИК
                   </p>
-                  <strong className="mt-2 block text-2xl font-medium">
+                  <strong className="mt-auto block text-2xl font-medium">
                     {plan.mainTraffic}
                     <span className="ml-1 text-xs text-muted">ГБ</span>
                   </strong>
                 </div>
                 <div
-                  className={`rounded-[20px] p-3.5 ${plan.lteTraffic ? 'bg-mint/10 ring-1 ring-mint/25' : 'bg-white/[.025]'}`}
+                  className={`flex flex-col justify-between rounded-[20px] p-3.5 ${plan.lteTraffic ? 'bg-mint/10 ring-1 ring-mint/25' : 'bg-white/[.025]'}`}
                 >
                   <p
                     className={`text-[9px] font-bold tracking-[.11em] ${plan.lteTraffic ? 'text-mint' : 'text-muted'}`}
@@ -265,12 +265,12 @@ export default function TariffsPage() {
                     LTE-ТРАФИК
                   </p>
                   {plan.lteTraffic ? (
-                    <strong className="mt-2 block text-2xl font-medium text-mint">
+                    <strong className="mt-auto block text-2xl font-medium text-mint">
                       {plan.lteTraffic}
                       <span className="ml-1 text-xs">ГБ</span>
                     </strong>
                   ) : (
-                    <span className="mt-2 block text-xs font-medium text-muted/70 leading-snug">
+                    <span className="mt-auto block text-xs font-medium text-muted/70 leading-snug">
                       Нет в тарифе
                     </span>
                   )}
@@ -377,14 +377,18 @@ export default function TariffsPage() {
   );
 }
 
-function PromoGroup() {
-  const [loyalty, setLoyalty] = useState<LoyaltyTiersResponse | null>(null);
+function PromoGroup({ loyalty: initialLoyalty }: { loyalty?: LoyaltyTiersResponse | null }) {
+  const [loyalty, setLoyalty] = useState<LoyaltyTiersResponse | null>(initialLoyalty ?? null);
   useEffect(() => {
+    if (initialLoyalty) {
+      setLoyalty(initialLoyalty);
+      return;
+    }
     void promoApi
       .getLoyaltyTiers()
       .then(setLoyalty)
       .catch(() => undefined);
-  }, []);
+  }, [initialLoyalty]);
   const apiTiers = loyalty?.tiers ?? [];
   const baseTier = {
     id: 0,
@@ -419,7 +423,7 @@ function PromoGroup() {
         alt=""
         className="absolute inset-0 h-full w-full object-cover opacity-80"
         loading="eager"
-        decoding="sync"
+        decoding="async"
         // @ts-expect-error React 18 fetchPriority support
         fetchpriority="high"
       />

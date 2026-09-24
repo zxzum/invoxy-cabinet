@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router';
 import {
   Check,
   Link2,
@@ -42,6 +43,7 @@ const fallbackProviders: OAuthProvider[] = [
 ];
 
 export default function AccountSecurityPage() {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const confirm = useDestructiveConfirm();
   const [providers, setProviders] = useState<LinkedProvider[]>([]);
@@ -116,6 +118,10 @@ export default function AccountSecurityPage() {
   }
 
   async function connect(provider: string) {
+    if (provider === 'telegram') {
+      navigate('/profile/accounts');
+      return;
+    }
     setBusy(`connect-${provider}`);
     try {
       const result = await accountApi.linkProviderInit(provider);
@@ -236,7 +242,7 @@ export default function AccountSecurityPage() {
                         {isLinked ? linked?.identifier || 'Подключён' : 'Не подключён'}
                       </p>
                     </div>
-                    {isLinked ? (
+                    {isLinked && available.name !== 'telegram' ? (
                       <button
                         type="button"
                         disabled={busy === `unlink-${available.name}`}
@@ -245,6 +251,8 @@ export default function AccountSecurityPage() {
                       >
                         <X size={14} /> Отвязать
                       </button>
+                    ) : isLinked ? (
+                      <span className="px-3 py-2 text-xs text-mint">Подключён</span>
                     ) : (
                       <button
                         type="button"

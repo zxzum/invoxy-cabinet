@@ -32,13 +32,15 @@ export const LINK_TELEGRAM_STATE_KEY = 'link_telegram_state';
 const LINK_SCRIPT_LOAD_TIMEOUT_MS = 8000;
 
 /** Telegram account linking widget (browser only). Supports OIDC popup and legacy widget. */
-function TelegramLinkWidget() {
+export function TelegramLinkWidget({ onLinked }: { onLinked?: () => void } = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const inTelegram = useIsTelegram();
   const [oidcLoading, setOidcLoading] = useState(false);
+  const [miniAppLoading, setMiniAppLoading] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [scriptFailed, setScriptFailed] = useState(false);
   const mountedRef = useRef(true);
@@ -66,11 +68,28 @@ function TelegramLinkWidget() {
         navigate(`/merge/${response.merge_token}`, { replace: true });
       } else {
         queryClient.invalidateQueries({ queryKey: ['linked-providers'] });
+        onLinked?.();
         showToast({ type: 'success', message: t('profile.accounts.linkSuccess') });
       }
     },
-    [navigate, queryClient, showToast, t],
+    [navigate, onLinked, queryClient, showToast, t],
   );
+
+  const handleMiniAppLink = async () => {
+    const initData = getTelegramInitData();
+    if (!initData || miniAppLoading) return;
+    setMiniAppLoading(true);
+    try {
+      await handleLinkResult(await authApi.linkTelegram({ init_data: initData }));
+    } catch (err: unknown) {
+      showToast({
+        type: 'error',
+        message: getErrorDetail(err) || t('profile.accounts.linkError'),
+      });
+    } finally {
+      setMiniAppLoading(false);
+    }
+  };
 
   // Handle script load failure (timeout or error)
   const handleScriptFailed = useCallback(() => {
@@ -207,8 +226,9 @@ function TelegramLinkWidget() {
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?23';
     script.setAttribute('data-telegram-login', botUsername);
-    script.setAttribute('data-size', 'small');
-    script.setAttribute('data-radius', '8');
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-radius', '20');
+    script.setAttribute('data-userpic', 'false');
     script.setAttribute('data-onauth', `${callbackName}(user)`);
     script.setAttribute('data-request-access', 'write');
     script.async = true;
@@ -234,6 +254,21 @@ function TelegramLinkWidget() {
       }
     };
   }, [isOIDC, botUsername, handleScriptFailed]);
+
+  if (inTelegram && getTelegramInitData()) {
+    return (
+      <Button
+        variant="primary"
+        size="sm"
+        className="button-lift rounded-full px-4 text-xs font-bold"
+        disabled={miniAppLoading}
+        loading={miniAppLoading}
+        onClick={() => void handleMiniAppLink()}
+      >
+        {t('profile.accounts.link')}
+      </Button>
+    );
+  }
 
   if (!botUsername && !isOIDC) {
     return null;
@@ -262,7 +297,9 @@ function TelegramLinkWidget() {
     return (
       <Button
         variant="primary"
-        size="sm"
+        size="lg"
+        fullWidth
+        className="button-lift rounded-full bg-mint font-bold text-bg shadow-none hover:bg-mint/90"
         disabled={oidcLoading || !scriptLoaded}
         loading={oidcLoading}
         onClick={() => {
@@ -279,7 +316,12 @@ function TelegramLinkWidget() {
     );
   }
 
-  return <div ref={containerRef} className="flex items-center" />;
+  return (
+    <div
+      ref={containerRef}
+      className="flex w-full items-center justify-center [&_iframe]:scale-125"
+    />
+  );
 }
 
 function LoadingSkeleton() {

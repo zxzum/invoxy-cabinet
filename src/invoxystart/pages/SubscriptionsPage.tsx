@@ -9,6 +9,7 @@ import {
   Plus,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { subscriptionApi } from '@/invoxystart/api';
+import { formatTraffic } from '@/utils/formatTraffic';
 import {
   AccountPage,
   AccountPanel,
@@ -54,7 +55,8 @@ export default function SubscriptionsPage() {
   } = useQuery({
     queryKey: ['invoxy-subscriptions'],
     queryFn: () => subscriptionApi.getSubscriptions(),
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: 'always',
   });
 
   const items = (data?.subscriptions ?? []) as SubscriptionItem[];
@@ -130,7 +132,9 @@ export default function SubscriptionsPage() {
                     label="Трафик"
                     value={
                       item.traffic_limit_gb
-                        ? `${item.traffic_used_gb ?? 0} / ${item.traffic_limit_gb} ГБ`
+                        ? `${formatTraffic(item.traffic_used_gb ?? 0)} / ${formatTraffic(
+                            item.traffic_limit_gb,
+                          )}`
                         : 'Безлимит'
                     }
                   />

@@ -12,7 +12,6 @@ import { promoApi, type LoyaltyTierInfo } from '../api/promo';
 import type { FaqItem, ReplacesTab } from '../api/infoPages';
 import { DocumentIcon, QuestionIcon, ShieldIcon, StarIcon } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
-import TicketNotificationBell from '../components/TicketNotificationBell';
 
 const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
   <PiCaretDown className={`h-5 w-5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -807,7 +806,6 @@ export default function Info() {
           <h1>{t('info.title')}</h1>
           <p>{t('info.subtitle', 'Ответы, правила и документы InvoxyVPN')}</p>
         </div>
-        <TicketNotificationBell />
       </header>
       <nav aria-label={t('info.title')} className="flex flex-wrap gap-4 text-xs text-accent-300">
         <Link to="/offer" className="underline underline-offset-4">

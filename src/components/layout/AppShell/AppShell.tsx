@@ -19,7 +19,6 @@ import { displayName } from '@/utils/displayName';
 import { cn } from '@/lib/utils';
 import { API } from '@/config/constants';
 
-import WebSocketNotifications from '@/components/WebSocketNotifications';
 import CampaignBonusNotifier from '@/components/CampaignBonusNotifier';
 import SuccessNotificationModal from '@/components/SuccessNotificationModal';
 import { PromptDialogHost } from '@/components/PromptDialogHost';
@@ -198,7 +197,6 @@ export function AppShell({ children }: AppShellProps) {
       data-mobile-nav={showMobileNav ? 'on' : 'off'}
       data-customer-ui={isModernCustomerRoute ? 'modern' : 'legacy'}
     >
-      <WebSocketNotifications />
       <CampaignBonusNotifier />
       <SuccessNotificationModal />
       <PromptDialogHost />

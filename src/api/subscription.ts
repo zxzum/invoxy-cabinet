@@ -50,9 +50,17 @@ const withSubId = (subscriptionId?: number, extra?: Record<string, unknown>) => 
 const bodyWithSubId = (
   body: Record<string, unknown>,
   subscriptionId?: number,
+  extra?: Record<string, unknown>,
 ): [Record<string, unknown>, { params?: Record<string, unknown> }] => [
   body,
-  subscriptionId != null ? { params: { subscription_id: subscriptionId } } : {},
+  subscriptionId != null || extra != null
+    ? {
+        params: {
+          ...(subscriptionId != null && { subscription_id: subscriptionId }),
+          ...extra,
+        },
+      }
+    : {},
 ];
 
 export const subscriptionApi = {
@@ -174,27 +182,37 @@ export const subscriptionApi = {
 
   // ── Traffic Reset (LTE) ─────────────────────────────────────────────
 
-  getTrafficReset: async (subscriptionId?: number): Promise<TrafficResetStatus> => {
+  getTrafficReset: async (
+    subscriptionId?: number,
+    scope: 'whitelist' | 'regular' = 'whitelist',
+  ): Promise<TrafficResetStatus> => {
     const response = await apiClient.get<TrafficResetStatus>(
       '/cabinet/subscription/traffic-reset',
-      withSubId(subscriptionId),
+      withSubId(subscriptionId, { scope }),
     );
     return response.data;
   },
 
-  resetTraffic: async (subscriptionId?: number): Promise<TrafficResetResponse> => {
+  resetTraffic: async (
+    subscriptionId?: number,
+    scope: 'whitelist' | 'regular' = 'whitelist',
+  ): Promise<TrafficResetResponse> => {
     const response = await apiClient.post<TrafficResetResponse>(
       '/cabinet/subscription/traffic-reset',
-      ...bodyWithSubId({}, subscriptionId),
+      ...bodyWithSubId({}, subscriptionId, { scope }),
     );
     return response.data;
   },
 
-  saveTrafficResetCart: async (subscriptionId?: number): Promise<void> => {
+  saveTrafficResetCart: async (
+    subscriptionId?: number,
+    scope: 'whitelist' | 'regular' = 'whitelist',
+  ): Promise<void> => {
     // The bot endpoint reads this optional id from its JSON body (unlike the
     // other subscription mutations, which accept it as a query parameter).
     await apiClient.post('/cabinet/subscription/traffic-reset/save-cart', {
       ...(subscriptionId != null && { subscription_id: subscriptionId }),
+      ...(scope !== 'whitelist' && { scope }),
     });
   },
 

@@ -2,21 +2,21 @@ import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
-import {
-  ArrowRight,
-  ArrowUpRight,
-  ShieldCheck,
-  Smartphone,
-  Laptop,
-  Zap,
-} from '@/invoxystart/components/ui/RuneIcon';
+import { ShieldCheck, Smartphone, Laptop, Zap } from '@/invoxystart/components/ui/RuneIcon';
 import { openDeepLink } from '@/utils/openDeepLink';
 import { authApi } from '@/invoxystart/api';
+import { findInvoxyAsset, useLatestInvoxyRelease, type InvoxyPlatform } from './invoxyDownloads';
 
 export interface AppConnectModalProps {
   open: boolean;
   onClose: () => void;
 }
+
+const INVOXY_PLATFORMS: { key: InvoxyPlatform; label: string; icon: typeof Smartphone }[] = [
+  { key: 'android', label: 'Android', icon: Smartphone },
+  { key: 'windows', label: 'Windows', icon: Laptop },
+  { key: 'macos', label: 'macOS', icon: Laptop },
+];
 
 export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
   const [loading, setLoading] = useState(false);
@@ -24,6 +24,12 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
   const [pairCode, setPairCode] = useState<{ code: string; expires_in: number } | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(120);
   const [error, setError] = useState<string | null>(null);
+  const [downloadsOpen, setDownloadsOpen] = useState(false);
+  const {
+    release,
+    status: releaseStatus,
+    retry: retryRelease,
+  } = useLatestInvoxyRelease(open && downloadsOpen);
 
   const fetchTokens = useCallback(async (isBackground = false) => {
     if (!isBackground) {
@@ -75,6 +81,8 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
     if (!appLink?.url) return;
     openDeepLink(appLink.url);
   };
+  const hasInvoxyDownload =
+    release && INVOXY_PLATFORMS.some(({ key }) => findInvoxyAsset(release.assets, key));
 
   return (
     <AdaptiveDialog
@@ -237,54 +245,64 @@ export function AppConnectModal({ open, onClose }: AppConnectModalProps) {
           </div>
         )}
 
-        {/* Скачать приложение */}
-        <div className="glass-panel flex flex-col gap-3 rounded-2xl p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted">
-              📥 Скачать приложение Invoxy VPN
-            </span>
-            <a
-              href="https://github.com/zxzum/InvoxyApp/releases/latest"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-bold text-mint hover:underline flex items-center gap-1"
-            >
-              Все версии <ArrowUpRight size={12} />
-            </a>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <a
-              href="https://github.com/zxzum/InvoxyApp/releases/latest/download/app-arm64-v8a-release.apk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass-control flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold text-ink hover:border-mint/30 hover:bg-white/[.08] transition-all"
-            >
-              <Smartphone size={16} className="text-mint" />
-              <span>Android (APK)</span>
-            </a>
-
-            <a
-              href="https://github.com/zxzum/InvoxyApp/releases/latest/download/Invoxy_VPN_macOS.dmg"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass-control flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold text-ink hover:border-mint/30 hover:bg-white/[.08] transition-all"
-            >
-              <Laptop size={16} className="text-mint" />
-              <span>macOS (DMG)</span>
-            </a>
-
-            <a
-              href="https://github.com/zxzum/InvoxyApp/releases/latest"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass-control col-span-2 sm:col-span-1 flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold text-ink hover:border-mint/30 hover:bg-white/[.08] transition-all"
-            >
-              <ArrowRight size={16} className="text-mint" />
-              <span>Windows / iOS</span>
-            </a>
-          </div>
-        </div>
+        <details
+          className="border-t border-white/8 pt-3"
+          onToggle={(event) => setDownloadsOpen(event.currentTarget.open)}
+        >
+          <summary className="cursor-pointer text-xs text-muted underline decoration-white/20 underline-offset-4 transition-colors hover:text-ink">
+            Дополнительно: скачать приложение Invoxy VPN
+          </summary>
+          {downloadsOpen && (
+            <div className="mt-3 rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+              <p className="text-xs text-muted">
+                Приложение доступно для Android, Windows и macOS. На iOS используйте HAPP или INCY.
+              </p>
+              <div aria-live="polite" className="mt-3">
+                {releaseStatus === 'loading' || releaseStatus === 'idle' ? (
+                  <p className="text-xs text-muted">Получаем актуальные файлы…</p>
+                ) : releaseStatus === 'error' ? (
+                  <div className="flex items-center gap-2 text-xs text-muted">
+                    <span>Не удалось получить ссылки на загрузку.</span>
+                    <button
+                      type="button"
+                      onClick={retryRelease}
+                      className="cursor-pointer font-semibold text-mint hover:underline"
+                    >
+                      Повторить
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {INVOXY_PLATFORMS.map(({ key, label, icon: Icon }) => {
+                        const asset = release && findInvoxyAsset(release.assets, key);
+                        return asset ? (
+                          <a
+                            key={key}
+                            href={asset.downloadUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="glass-control flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.08]"
+                          >
+                            <Icon size={15} className="text-mint" /> {label}
+                          </a>
+                        ) : null;
+                      })}
+                    </div>
+                    {!hasInvoxyDownload && (
+                      <p className="mt-2 text-xs text-muted">
+                        Файлы для загрузки пока не опубликованы.
+                      </p>
+                    )}
+                  </>
+                )}
+                {releaseStatus === 'ready' && release?.version && (
+                  <p className="mt-2 text-[11px] text-muted">Последняя версия: {release.version}</p>
+                )}
+              </div>
+            </div>
+          )}
+        </details>
       </div>
     </AdaptiveDialog>
   );

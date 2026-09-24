@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpRight, CreditCard } from '@/invoxystart/components/ui/RuneIcon';
 import { PiArrowClockwise, PiClock, PiTrash } from 'react-icons/pi';
 import { usePlatform } from '@/platform';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { balanceApi, type PendingPayment } from '@/invoxystart/api';
+import { useAuth } from '@/invoxystart/auth';
+import { clearResponseCache } from '@/invoxystart/api/client';
 import { getApiErrorMessage } from '@/utils/api-error';
 
 const CANCELLED_STATUSES = new Set([
@@ -40,17 +42,38 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
   const { openLink } = usePlatform();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { refreshUser } = useAuth();
+  const previousInvoiceIdRef = useRef<number | null>(null);
 
   const { data: pendingData } = useQuery({
     queryKey: ['pendingPayments'],
     queryFn: () => balanceApi.getPendingPayments({ per_page: 5 }),
-    refetchInterval: 6_000,
+    refetchInterval: (query) => (query.state.data?.items.some(isInvoiceActive) ? 6_000 : false),
   });
 
   const activeInvoice = useMemo(() => {
     const items = pendingData?.items ?? [];
     return items.find(isInvoiceActive) ?? null;
   }, [pendingData]);
+
+  const refreshPurchasedData = useCallback(() => {
+    clearResponseCache();
+    void refreshUser();
+    for (const queryKey of [
+      ['balance'],
+      ['invoxy-subscriptions'],
+      ['invoxy-subscription-details'],
+      ['invoxy-subscription-status'],
+    ]) {
+      void queryClient.invalidateQueries({ queryKey });
+    }
+  }, [queryClient, refreshUser]);
+
+  useEffect(() => {
+    const nextId = activeInvoice?.id ?? null;
+    if (previousInvoiceIdRef.current !== null && nextId === null) refreshPurchasedData();
+    previousInvoiceIdRef.current = nextId;
+  }, [activeInvoice?.id, refreshPurchasedData]);
 
   const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
   const [checking, setChecking] = useState(false);
@@ -115,10 +138,9 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
           (res.new_status === 'succeeded' && res.is_paid !== false),
       );
       if (isPaid) {
-        showToast('Платёж подтверждён! Баланс пополнен.');
-        void queryClient.invalidateQueries({ queryKey: ['balance'] });
+        showToast('Платёж подтверждён.');
+        refreshPurchasedData();
         void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
-        void queryClient.invalidateQueries({ queryKey: ['invoxy-subscription-details'] });
       } else {
         showToast('Платёж ещё не поступил. Попробуйте через пару секунд.');
         void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
@@ -150,18 +172,18 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
     <div
       className={`glass-panel motion-card relative overflow-hidden rounded-[24px] sm:rounded-[28px] border border-mint/35 bg-gradient-to-r from-mint/[0.07] via-surface to-surface p-4.5 sm:p-6 shadow-[0_4px_30px_rgba(165,232,196,0.08)] ${className ?? ''}`}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-3">
+      <div className="flex flex-col items-stretch gap-2 border-b border-white/[0.06] pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 min-w-0">
           <span className="relative flex h-2.5 w-2.5 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-75" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-mint" />
           </span>
-          <span className="truncate text-xs font-bold uppercase tracking-[0.12em] text-mint">
+          <span className="text-xs font-bold uppercase tracking-[0.12em] text-mint">
             Счёт ожидает оплаты
           </span>
         </div>
 
-        <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-mint/10 px-2.5 py-1 text-xs font-bold text-mint border border-mint/20">
+        <div className="inline-flex shrink-0 items-center gap-1.5 self-end rounded-full bg-mint/10 px-2.5 py-1 text-xs font-bold text-mint border border-mint/20 sm:self-auto">
           <PiClock className="h-3.5 w-3.5 animate-pulse" />
           <span className="font-mono">Осталось {timeFormatted}</span>
         </div>
@@ -199,12 +221,12 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
           </button>
         )}
 
-        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+        <div className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row">
           <button
             type="button"
             disabled={checking}
             onClick={handleCheck}
-            className="button-lift glass-control flex h-11 flex-1 sm:flex-none items-center justify-center gap-2 rounded-full px-4 text-xs font-medium text-ink disabled:opacity-50"
+            className="button-lift glass-control flex h-11 w-full items-center justify-center gap-2 rounded-full px-4 text-xs font-medium text-ink disabled:opacity-50 sm:w-auto"
           >
             <PiArrowClockwise className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
             <span>{checking ? 'Проверка…' : 'Проверить оплату'}</span>
@@ -214,7 +236,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
             type="button"
             disabled={cancelling}
             onClick={handleCancel}
-            className="button-lift glass-control flex h-11 items-center justify-center gap-1.5 rounded-full px-4 text-xs font-medium text-red-300 hover:bg-red-500/10 border-red-500/20 disabled:opacity-50"
+            className="button-lift glass-control flex h-11 w-full items-center justify-center gap-1.5 rounded-full px-4 text-xs font-medium text-red-300 hover:bg-red-500/10 border-red-500/20 disabled:opacity-50 sm:w-auto"
           >
             <PiTrash className="h-4 w-4" />
             <span>{cancelling ? 'Отмена…' : 'Отменить'}</span>

@@ -108,6 +108,7 @@ export interface SubscriptionListItem {
   tariff_name: string | null;
   traffic_limit_gb: number;
   traffic_used_gb: number;
+  traffic_used_percent?: number;
   device_limit: number;
   end_date: string | null;
   subscription_url: string | null;
@@ -119,6 +120,8 @@ export interface SubscriptionListItem {
   connected_squads: string[] | null;
   whitelist_traffic_limit_gb?: number;
   whitelist_traffic_used_gb?: number;
+  whitelist_traffic_used_percent?: number;
+  main_traffic_reset_enabled?: boolean;
   days_left?: number;
   is_expired?: boolean;
 }

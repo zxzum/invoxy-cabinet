@@ -23,6 +23,8 @@ export default function TicketNotificationBell({ isAdmin = false }: TicketNotifi
   const { showToast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const previousUnreadCountRef = useRef<number | null>(null);
+  const lastWebSocketNotificationAtRef = useRef(0);
   const { mobile: dropdownTop, isMobileFullscreen } = useHeaderHeight();
 
   // Show toast for WebSocket notification
@@ -91,6 +93,7 @@ export default function TicketNotificationBell({ isAdmin = false }: TicketNotifi
       const isUserNotification = message.type === 'ticket.admin_reply';
 
       if ((isAdmin && isAdminNotification) || (!isAdmin && isUserNotification)) {
+        lastWebSocketNotificationAtRef.current = Date.now();
         // Show toast
         showWSNotificationToast(message);
 
@@ -120,7 +123,29 @@ export default function TicketNotificationBell({ isAdmin = false }: TicketNotifi
     enabled: isAuthenticated,
     refetchInterval: 60000, // Poll every 60 seconds as fallback
     staleTime: 30000,
+    refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    const count = unreadData?.unread_count;
+    if (count === undefined) return;
+
+    const previousCount = previousUnreadCountRef.current;
+    previousUnreadCountRef.current = count;
+    if (previousCount === null || count <= previousCount) return;
+    if (Date.now() - lastWebSocketNotificationAtRef.current < 5000) return;
+
+    showToast({
+      type: 'info',
+      title: isAdmin
+        ? t('notifications.newTicketTitle', 'New Ticket')
+        : t('notifications.newReplyTitle', 'New Reply'),
+      message: t('notifications.unreadReply', 'You have a new support ticket reply'),
+      icon: <span className="text-lg">💬</span>,
+      onClick: () => navigate(isAdmin ? '/admin/tickets' : '/support'),
+      duration: 8000,
+    });
+  }, [unreadData?.unread_count, isAdmin, showToast, t, navigate]);
 
   // Fetch notifications when dropdown is open
   const { data: notificationsData, isLoading } = useQuery({
@@ -131,6 +156,7 @@ export default function TicketNotificationBell({ isAdmin = false }: TicketNotifi
         : ticketNotificationsApi.getNotifications(false, 10),
     enabled: isAuthenticated && isOpen,
     staleTime: 5000,
+    refetchOnWindowFocus: true,
   });
 
   // Mark all as read mutation

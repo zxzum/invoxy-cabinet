@@ -26,6 +26,7 @@ export function AdaptiveDialog({
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
 
+  const isClosing = closing || !open;
   const renderedChildrenRef = useRef<ReactNode>(children);
   if (open) {
     renderedChildrenRef.current = children;
@@ -166,7 +167,7 @@ export function AdaptiveDialog({
 
   return createPortal(
     <div
-      className={`adaptive-dialog-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-0 lg:items-center lg:p-5 ${closing ? 'is-closing' : ''}`}
+      className={`adaptive-dialog-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-0 lg:items-center lg:p-5 ${isClosing ? 'is-closing' : ''}`}
       onClick={(event) => event.target === event.currentTarget && closeRef.current()}
     >
       <section
@@ -174,7 +175,7 @@ export function AdaptiveDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`adaptive-dialog-panel glass-panel relative max-h-[92dvh] w-full overflow-y-auto rounded-t-[30px] p-5 pb-[calc(20px+env(safe-area-inset-bottom))] sm:p-7 lg:rounded-[30px] lg:p-8 ${maxWidth} ${closing ? 'is-closing' : ''}`}
+        className={`adaptive-dialog-panel glass-panel relative max-h-[92dvh] w-full overflow-y-auto rounded-t-[30px] p-5 pb-[calc(20px+env(safe-area-inset-bottom))] sm:p-7 lg:rounded-[30px] lg:p-8 ${maxWidth} ${isClosing ? 'is-closing' : ''}`}
         onClick={(event) => event.stopPropagation()}
       >
         <div
@@ -195,7 +196,7 @@ export function AdaptiveDialog({
         >
           <X size={18} />
         </button>
-        {closing ? renderedChildrenRef.current : children}
+        {isClosing ? renderedChildrenRef.current : children}
       </section>
     </div>,
     document.body,

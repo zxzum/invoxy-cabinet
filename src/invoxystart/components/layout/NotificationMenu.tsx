@@ -1,32 +1,51 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
+import { useNavigate } from 'react-router';
 import { Bell, CheckCircle2 } from '@/invoxystart/components/ui/RuneIcon';
 import { notificationsApi } from '@/invoxystart/api';
+import ticketNotificationsApi from '@/api/ticketNotifications';
 
-type NotificationRecord = Record<string, unknown>;
+type NotificationRecord = Record<string, unknown> & { source?: 'cabinet' | 'ticket' };
 
 function textValue(value: unknown, fallback: string) {
   return typeof value === 'string' && value.trim() ? value : fallback;
 }
 
 export function NotificationMenu({ className = '' }: { className?: string }) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const root = useRef<HTMLDivElement>(null);
 
   const loadNotifications = useCallback(async () => {
-    try {
-      const result = await notificationsApi.getHistory(30, 0);
-      if (Array.isArray(result?.notifications)) {
-        setNotifications(
-          result.notifications.filter((item): item is NotificationRecord =>
+    if (document.visibilityState === 'hidden') return;
+    const [history, tickets] = await Promise.allSettled([
+      notificationsApi.getHistory(30, 0),
+      ticketNotificationsApi.getNotifications(false, 30, 0),
+    ]);
+    const generalItems =
+      history.status === 'fulfilled' && Array.isArray(history.value?.notifications)
+        ? history.value.notifications.filter((item): item is NotificationRecord =>
             Boolean(item && typeof item === 'object'),
-          ),
-        );
-      }
-    } catch {
-      // ignore
-    }
+          )
+        : [];
+    const ticketItems: NotificationRecord[] =
+      tickets.status === 'fulfilled'
+        ? tickets.value.items.map((ticket) => ({
+            id: ticket.id,
+            ticket_id: ticket.ticket_id,
+            source: 'ticket',
+            title: ticket.notification_type === 'admin_reply' ? 'Ответ поддержки' : 'Обращение',
+            body: ticket.message || `Новое событие в обращении №${ticket.ticket_id}`,
+            created_at: ticket.created_at,
+            read_at: ticket.read_at ?? (ticket.is_read ? ticket.created_at : null),
+          }))
+        : [];
+    setNotifications(
+      [...generalItems, ...ticketItems].sort(
+        (a, b) => Date.parse(textValue(b.created_at, '')) - Date.parse(textValue(a.created_at, '')),
+      ),
+    );
   }, []);
 
   useEffect(() => {
@@ -34,7 +53,13 @@ export function NotificationMenu({ className = '' }: { className?: string }) {
     const interval = setInterval(() => {
       void loadNotifications();
     }, 20000);
-    return () => clearInterval(interval);
+    document.addEventListener('visibilitychange', loadNotifications);
+    window.addEventListener('focus', loadNotifications);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', loadNotifications);
+      window.removeEventListener('focus', loadNotifications);
+    };
   }, [loadNotifications]);
 
   useEffect(() => {
@@ -56,21 +81,28 @@ export function NotificationMenu({ className = '' }: { className?: string }) {
   const unreadCount = notifications.filter((item) => !item.read_at).length;
 
   const handleMarkAllRead = async () => {
-    try {
-      await notificationsApi.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, read_at: new Date().toISOString() })));
-    } catch {
-      // ignore
-    }
+    await Promise.allSettled([
+      notificationsApi.markAllAsRead(),
+      ticketNotificationsApi.markAllAsRead(),
+    ]);
+    void loadNotifications();
   };
 
-  const handleMarkItemRead = async (id: unknown) => {
+  const handleMarkItemRead = async (item: NotificationRecord) => {
+    const id = item.id;
     if (typeof id !== 'number') return;
     try {
-      await notificationsApi.markAsRead(id);
+      if (item.source === 'ticket') await ticketNotificationsApi.markAsRead(id);
+      else await notificationsApi.markAsRead(id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)),
+        prev.map((n) =>
+          n.id === id && n.source === item.source ? { ...n, read_at: new Date().toISOString() } : n,
+        ),
       );
+      if (item.source === 'ticket' && typeof item.ticket_id === 'number') {
+        setOpen(false);
+        navigate(`/support?ticket=${item.ticket_id}`);
+      }
     } catch {
       // ignore
     }
@@ -145,11 +177,11 @@ export function NotificationMenu({ className = '' }: { className?: string }) {
                     const isUnread = !item.read_at;
                     return (
                       <m.div
-                        key={`${textValue(item.id, String(index))}-${index}`}
+                        key={`${item.source ?? 'cabinet'}-${textValue(item.id, String(index))}`}
                         initial={{ opacity: 0, x: 8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.04 }}
-                        onClick={() => handleMarkItemRead(item.id)}
+                        onClick={() => void handleMarkItemRead(item)}
                         className={`flex gap-3 rounded-xl p-2.5 transition-all cursor-pointer ${
                           isUnread
                             ? 'bg-mint/[0.08] border border-mint/20 hover:bg-mint/[0.12]'

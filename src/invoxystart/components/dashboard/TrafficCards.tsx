@@ -1,3 +1,5 @@
+import { formatTraffic as formatTrafficAmount } from '@/utils/formatTraffic';
+
 interface TrafficItem {
   label: string;
   amount: string;
@@ -11,22 +13,22 @@ function TrafficCard({ item }: { item: TrafficItem }) {
       <p className="truncate text-[14px] leading-5 text-muted lg:text-[clamp(14px,0.9vw,18px)]">
         {item.label}
       </p>
-      <div className="flex w-full items-center justify-between">
+      <div className="flex min-w-0 w-full items-center justify-between gap-1">
         <span
-          className={`whitespace-nowrap leading-6 ${
+          className={`min-w-0 truncate leading-6 ${
             item.disabled
-              ? 'text-[13.5px] font-medium text-muted/70 lg:text-[clamp(13.5px,0.85vw,16px)]'
-              : 'text-[16px] font-bold text-ink lg:text-[clamp(17px,1.1vw,22px)]'
+              ? 'text-[clamp(11px,3.2vw,13.5px)] font-medium text-muted/70 lg:text-[clamp(13.5px,0.85vw,16px)]'
+              : 'text-[clamp(11.5px,3.3vw,15px)] font-bold tracking-tight text-ink lg:text-[clamp(17px,1.1vw,22px)]'
           }`}
         >
           {item.amount}
         </span>
         <span
-          className={`text-[15px] font-bold leading-6 lg:text-[clamp(16px,1vw,20px)] ${
+          className={`shrink-0 text-[clamp(12px,3.4vw,15px)] font-bold leading-6 lg:text-[clamp(16px,1vw,20px)] ${
             item.disabled ? 'text-muted/30 font-normal' : 'text-mint'
           }`}
         >
-          {item.disabled ? '—' : `${item.percent}%`}
+          {item.disabled ? '—' : `${Math.round(item.percent)}%`}
         </span>
       </div>
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2/60 lg:h-[clamp(8px,0.5vw,10px)]">
@@ -39,10 +41,21 @@ function TrafficCard({ item }: { item: TrafficItem }) {
   );
 }
 
+function formatNumber(val: number): string {
+  const fixed = val.toFixed(1);
+  return fixed.endsWith('.0') ? fixed.slice(0, -2) : fixed;
+}
+
 function formatTraffic(used: number | null | undefined, limit: number | null | undefined) {
-  const usedLabel = Number.isFinite(used) ? String(used) : '0';
-  if (!limit) return `${usedLabel} / ∞ ГБ`;
-  return `${usedLabel} / ${limit} ГБ`;
+  const u = typeof used === 'number' && Number.isFinite(used) ? Math.max(0, used) : 0;
+  const lStr = limit && Number.isFinite(limit) ? formatNumber(limit) : '∞';
+
+  if (u >= 1 || u === 0) {
+    const uStr = formatNumber(u);
+    return `${uStr} / ${lStr} ГБ`;
+  }
+  const usedLabel = formatTrafficAmount(u);
+  return `${usedLabel} / ${lStr} ГБ`;
 }
 
 export function TrafficCards({

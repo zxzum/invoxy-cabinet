@@ -42,7 +42,6 @@ import {
 } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import TicketNotificationBell from '../components/TicketNotificationBell';
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
@@ -374,7 +373,6 @@ export default function Profile() {
           <h1>{t('nav.profile', 'Профиль')}</h1>
           <p>{t('profile.subtitle', 'Баланс, данные и поддержка')}</p>
         </div>
-        <TicketNotificationBell />
       </motion.header>
 
       <motion.div variants={staggerItem} data-testid="profile-financial-overview">

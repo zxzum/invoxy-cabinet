@@ -13,7 +13,7 @@ export function AccountPage({
 }) {
   return (
     <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <PageHeader title={title} subtitle={subtitle} mobileNotifications />
+      <PageHeader title={title} subtitle={subtitle} />
       {children}
     </div>
   );

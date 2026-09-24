@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
@@ -7,6 +7,7 @@ import { subscriptionApi } from '@/invoxystart/api';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
 import { openDeepLink } from '@/utils/openDeepLink';
+import { formatTraffic } from '@/utils/formatTraffic';
 import {
   ConnectDeviceModal,
   type PlatformKey,
@@ -89,6 +90,7 @@ export default function SubscriptionManagePage() {
   const [qrOpen, setQrOpen] = useState(false);
   const [deviceModalOpen, setDeviceModalOpen] = useState(false);
   const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
+  const lastStatusRefreshAtRef = useRef(0);
   const load = useCallback(async () => {
     if (!Number.isInteger(id) || id < 1) {
       setError('Некорректный идентификатор подписки');
@@ -130,6 +132,28 @@ export default function SubscriptionManagePage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const refreshStatus = () => {
+      if (document.visibilityState === 'hidden' || !Number.isInteger(id) || id < 1) return;
+      const now = Date.now();
+      if (now - lastStatusRefreshAtRef.current < 500) return;
+      lastStatusRefreshAtRef.current = now;
+      void subscriptionApi
+        .getSubscriptionById(id)
+        .then((latest) => {
+          setDetail(latest);
+          setAutopay(Boolean(latest.autopay_enabled));
+        })
+        .catch(() => {});
+    };
+    document.addEventListener('visibilitychange', refreshStatus);
+    window.addEventListener('focus', refreshStatus);
+    return () => {
+      document.removeEventListener('visibilitychange', refreshStatus);
+      window.removeEventListener('focus', refreshStatus);
+    };
+  }, [id]);
 
   const accessLink = useMemo(
     () =>
@@ -256,7 +280,9 @@ export default function SubscriptionManagePage() {
                 label="Трафик"
                 value={
                   detail.traffic_limit_gb
-                    ? `${detail.traffic_used_gb ?? 0} / ${detail.traffic_limit_gb} ГБ`
+                    ? `${formatTraffic(detail.traffic_used_gb ?? 0)} / ${formatTraffic(
+                        detail.traffic_limit_gb,
+                      )}`
                     : 'Безлимит'
                 }
               />
@@ -264,7 +290,9 @@ export default function SubscriptionManagePage() {
                 label="LTE-трафик"
                 value={
                   detail.whitelist_traffic_limit_gb
-                    ? `${detail.whitelist_traffic_used_gb ?? 0} / ${detail.whitelist_traffic_limit_gb} ГБ`
+                    ? `${formatTraffic(detail.whitelist_traffic_used_gb ?? 0)} / ${formatTraffic(
+                        detail.whitelist_traffic_limit_gb,
+                      )}`
                     : 'Не включён'
                 }
               />

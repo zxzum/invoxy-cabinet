@@ -91,6 +91,7 @@ const TopUpMethodSelect = lazyWithRetry(() => import('./pages/TopUpMethodSelect'
 const TopUpAmount = lazyWithRetry(() => import('./pages/TopUpAmount'));
 const TopUpResult = lazyWithRetry(() => import('./pages/TopUpResult'));
 const LinkTelegramCallback = lazyWithRetry(() => import('./pages/LinkTelegramCallback'));
+const ConnectedAccountsPage = lazyWithRetry(() => import('./pages/ConnectedAccounts'));
 const MergeAccounts = lazyWithRetry(() => import('./pages/MergeAccounts'));
 
 // Admin pages - lazy load (only for admins)
@@ -608,7 +609,9 @@ function App() {
           path="/profile/accounts"
           element={
             <ProtectedRoute>
-              <InvoxyAccountSecurityPage />
+              <LazyPage fallback={null}>
+                <ConnectedAccountsPage />
+              </LazyPage>
             </ProtectedRoute>
           }
         />

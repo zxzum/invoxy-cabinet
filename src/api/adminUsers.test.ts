@@ -57,3 +57,61 @@ describe('adminUsersApi.sendMessage', () => {
     });
   });
 });
+
+describe('adminUsersApi.updateSubscription', () => {
+  beforeEach(() => {
+    post.mockClear();
+  });
+
+  it('sends reset_main_traffic action', async () => {
+    const { adminUsersApi } = await import('./adminUsers');
+    await adminUsersApi.updateSubscription(42, {
+      action: 'reset_main_traffic',
+      subscription_id: 10,
+    });
+
+    expect(post).toHaveBeenCalledTimes(1);
+    const [url, body] = post.mock.calls[0];
+    expect(url).toBe('/cabinet/admin/users/42/subscription');
+    expect(body).toEqual({
+      action: 'reset_main_traffic',
+      subscription_id: 10,
+    });
+  });
+
+  it('sends adjust_whitelist_used action with deltaGb', async () => {
+    const { adminUsersApi } = await import('./adminUsers');
+    await adminUsersApi.updateSubscription(42, {
+      action: 'adjust_whitelist_used',
+      whitelist_traffic_delta_gb: 15.5,
+      subscription_id: 10,
+    });
+
+    expect(post).toHaveBeenCalledTimes(1);
+    const [url, body] = post.mock.calls[0];
+    expect(url).toBe('/cabinet/admin/users/42/subscription');
+    expect(body).toEqual({
+      action: 'adjust_whitelist_used',
+      whitelist_traffic_delta_gb: 15.5,
+      subscription_id: 10,
+    });
+  });
+
+  it('sends adjust_whitelist_used action with usedGb', async () => {
+    const { adminUsersApi } = await import('./adminUsers');
+    await adminUsersApi.updateSubscription(42, {
+      action: 'adjust_whitelist_used',
+      whitelist_traffic_used_gb: 0,
+      subscription_id: 10,
+    });
+
+    expect(post).toHaveBeenCalledTimes(1);
+    const [url, body] = post.mock.calls[0];
+    expect(url).toBe('/cabinet/admin/users/42/subscription');
+    expect(body).toEqual({
+      action: 'adjust_whitelist_used',
+      whitelist_traffic_used_gb: 0,
+      subscription_id: 10,
+    });
+  });
+});

@@ -14,7 +14,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { PlatformProvider } from './platform/PlatformProvider';
 import { ThemeColorsProvider } from './providers/ThemeColorsProvider';
 import { DocumentBranding } from './components/DocumentBranding';
-import { WebSocketProvider } from './providers/WebSocketProvider';
 import { ToastProvider } from './components/Toast';
 import { TooltipProvider } from './components/primitives/Tooltip';
 import { isInTelegramWebApp, closeTelegramApp } from './hooks/useTelegramSDK';
@@ -248,11 +247,9 @@ export function AppWithNavigator() {
             <DocumentBranding />
             <TooltipProvider>
               <ToastProvider>
-                <WebSocketProvider>
-                  <Twemoji options={TWEMOJI_OPTIONS}>
-                    <App />
-                  </Twemoji>
-                </WebSocketProvider>
+                <Twemoji options={TWEMOJI_OPTIONS}>
+                  <App />
+                </Twemoji>
               </ToastProvider>
             </TooltipProvider>
           </ThemeColorsProvider>

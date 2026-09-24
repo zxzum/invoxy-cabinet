@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/invoxystart/components/dashboard/Header';
@@ -27,7 +27,6 @@ import {
   ConnectDeviceModal,
   type PlatformKey,
 } from '@/invoxystart/components/connection/ConnectDeviceModal';
-import { AppConnectModal } from '@/invoxystart/components/connection/AppConnectModal';
 import { subscriptionApi, type TrialInfo } from '@/invoxystart/api';
 import { useAuth } from '@/invoxystart/auth';
 
@@ -39,12 +38,19 @@ export function DashboardPage() {
   const { openPayment } = usePayment();
   const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const { data: subsData, isLoading: subsLoading } = useQuery({
     queryKey: ['invoxy-subscriptions'],
     queryFn: () => subscriptionApi.getSubscriptions(),
     placeholderData: (previous) => previous,
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: 'always',
   });
 
   const subscriptions = subsData?.subscriptions ?? [];
@@ -59,7 +65,6 @@ export function DashboardPage() {
   const [selectedSubscription, setSelectedSubscription] = useState<number | null>(null);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
-  const [appConnectModalOpen, setAppConnectModalOpen] = useState(false);
 
   const activeSubId =
     selectedSubscription && subscriptions.some((s) => s.id === selectedSubscription)
@@ -67,7 +72,7 @@ export function DashboardPage() {
       : (subscriptions[0]?.id ?? null);
 
   const { data: detailsData, isLoading: detailsLoading } = useQuery({
-    queryKey: ['invoxy-subscription-details', activeSubId],
+    queryKey: ['invoxy-subscription-details', activeSubId, 'dashboard'],
     queryFn: async () => {
       if (!activeSubId) return null;
       const previous = queryClient.getQueryData<{
@@ -75,7 +80,7 @@ export function DashboardPage() {
         connection: Awaited<ReturnType<typeof subscriptionApi.getConnectionLink>> | null;
         devices: Awaited<ReturnType<typeof subscriptionApi.getDevices>>['devices'];
         renewalOptions: Awaited<ReturnType<typeof subscriptionApi.getRenewalOptions>>;
-      }>(['invoxy-subscription-details', activeSubId]);
+      }>(['invoxy-subscription-details', activeSubId, 'dashboard']);
       const [detailResult, connectionResult, devicesResult, renewalResult] =
         await Promise.allSettled([
           subscriptionApi.getSubscription(activeSubId),
@@ -107,6 +112,24 @@ export function DashboardPage() {
     staleTime: 60_000,
   });
 
+  const { data: latestSubscription } = useQuery({
+    queryKey: ['invoxy-subscription-status', activeSubId],
+    queryFn: () => subscriptionApi.getSubscriptionById(activeSubId!),
+    enabled: Boolean(activeSubId),
+    staleTime: 30_000,
+    refetchOnWindowFocus: 'always',
+  });
+
+  const { data: trafficUsage } = useQuery({
+    queryKey: ['invoxy-dashboard-traffic', activeSubId],
+    queryFn: () =>
+      activeSubId === null ? Promise.resolve(null) : subscriptionApi.refreshTraffic(activeSubId),
+    enabled: Boolean(activeSubId),
+    staleTime: 60_000,
+    refetchOnWindowFocus: 'always',
+    retry: false,
+  });
+
   const selected = subscriptions.find((item) => item.id === activeSubId);
   const subscription = detailsData?.subscription ?? null;
   const connection = detailsData?.connection ?? null;
@@ -134,18 +157,31 @@ export function DashboardPage() {
     }
   }
 
-  const current = subscription ?? selected;
+  const baseCurrent = subscription ?? latestSubscription ?? selected;
+  const current =
+    baseCurrent && trafficUsage
+      ? {
+          ...baseCurrent,
+          traffic_used_gb: trafficUsage.traffic_used_gb,
+          traffic_used_percent: trafficUsage.traffic_used_percent,
+        }
+      : baseCurrent;
+  const endTime = current?.end_date ? Date.parse(current.end_date) : Number.NaN;
+  const remainingMs = Number.isFinite(endTime) ? Math.max(0, endTime - now) : 0;
+  const daysLeft = Math.floor(remainingMs / 86_400_000);
+  const hoursLeft = Math.floor((remainingMs % 86_400_000) / 3_600_000);
+  const timeLeft = !Number.isFinite(endTime)
+    ? '—'
+    : remainingMs <= 0
+      ? '0 ч.'
+      : `${daysLeft} дн. ${hoursLeft} ч.`;
   const endDate = current?.end_date ? formatDate(current.end_date) : '—';
   const currentStartDate = (current as { start_date?: string | null } | undefined)?.start_date;
-  const totalDays =
-    currentStartDate && current?.end_date
-      ? Math.max(1, (Date.parse(current.end_date) - Date.parse(currentStartDate)) / 86400000)
-      : 0;
+  const startTime = currentStartDate ? Date.parse(currentStartDate) : Number.NaN;
+  const totalDuration =
+    Number.isFinite(startTime) && Number.isFinite(endTime) ? endTime - startTime : 0;
   const progress = current
-    ? Math.min(
-        100,
-        Math.max(0, totalDays ? ((totalDays - (current.days_left ?? 0)) / totalDays) * 100 : 0),
-      )
+    ? Math.min(100, Math.max(0, totalDuration > 0 ? ((now - startTime) / totalDuration) * 100 : 0))
     : 0;
   const accessLink =
     connection?.subscription_url || connection?.display_link || current?.subscription_url || null;
@@ -189,12 +225,9 @@ export function DashboardPage() {
   const isExpired = Boolean(
     current?.status === 'expired' ||
       current?.is_expired ||
-      (current?.days_left !== undefined && current.days_left <= 0) ||
-      (current?.end_date ? Date.parse(current.end_date) <= Date.now() : false),
+      (Number.isFinite(endTime) && endTime <= now),
   );
   const isTrial = accountState === 'trial' || Boolean(current?.is_trial);
-  const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
   return (
     <div className="flex w-full flex-col gap-5 pb-28 lg:gap-[1.1vw] lg:pb-0">
       <Header
@@ -202,54 +235,6 @@ export function DashboardPage() {
         userName={user?.first_name || user?.username}
         onWalletClick={() => navigate('/profile#top-up')}
       />
-
-      {/* App Connect Banner (hidden on iOS) */}
-      {!isIOS && (
-        <div className="relative overflow-hidden rounded-[26px] border border-mint/20 bg-gradient-to-r from-mint/10 via-white/[0.02] to-cyan-500/5 p-3.5 sm:p-4 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-mint/15 border border-mint/25">
-                <img
-                  src="/images/apps/invoxy.png"
-                  alt="Invoxy VPN"
-                  className="h-6 w-6 sm:h-7 sm:w-7 rounded-lg object-contain"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide">
-                    Приложение Invoxy VPN
-                  </h3>
-                  <span className="rounded-full bg-mint/20 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-mint border border-mint/30">
-                    Android / macOS
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted mt-0.5 leading-relaxed max-w-xl">
-                  Вход в 1 клик, по QR-коду или короткому коду с сайта
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-              <button
-                type="button"
-                onClick={() => setAppConnectModalOpen(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-mint px-3.5 py-2 text-xs font-bold text-bg transition hover:bg-mint/90 active:scale-95 shadow-[0_0_15px_rgba(0,255,204,0.2)] cursor-pointer"
-              >
-                <Zap size={13} />
-                <span>Подключить приложение</span>
-              </button>
-              <a
-                href="https://github.com/zxzum/InvoxyApp/releases/latest"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 border border-white/10 hover:bg-white/10 transition"
-              >
-                <span>Скачать</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
 
       <AnimatePresence mode="wait">
         {loading || detailsLoading ? (
@@ -358,7 +343,7 @@ export function DashboardPage() {
                   <SubscriptionCard
                     trial={isTrial}
                     name={current?.tariff_name || 'Подписка'}
-                    days={current?.days_left ?? 0}
+                    timeLeft={timeLeft}
                     endDate={endDate}
                     hasLte={Boolean(current?.whitelist_traffic_limit_gb)}
                     progress={progress}
@@ -423,7 +408,7 @@ export function DashboardPage() {
                         onRemove={async (device) => {
                           await subscriptionApi.deleteDevice(device.id, activeSubId ?? undefined);
                           await queryClient.invalidateQueries({
-                            queryKey: ['invoxy-subscription-details', activeSubId],
+                            queryKey: ['invoxy-subscription-details', activeSubId, 'dashboard'],
                           });
                         }}
                         onConnect={handleOpenConnect}
@@ -440,7 +425,7 @@ export function DashboardPage() {
                         onRemove={async (device) => {
                           await subscriptionApi.deleteDevice(device.id, activeSubId ?? undefined);
                           await queryClient.invalidateQueries({
-                            queryKey: ['invoxy-subscription-details', activeSubId],
+                            queryKey: ['invoxy-subscription-details', activeSubId, 'dashboard'],
                           });
                         }}
                         onConnect={handleOpenConnect}
@@ -512,8 +497,6 @@ export function DashboardPage() {
         incyLink={incyLink}
         initialPlatform={connectPlatform}
       />
-
-      <AppConnectModal open={appConnectModalOpen} onClose={() => setAppConnectModalOpen(false)} />
     </div>
   );
 }

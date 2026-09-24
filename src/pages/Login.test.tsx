@@ -250,7 +250,10 @@ describe('Login integration shell', () => {
       prechecked: false,
       documents: CONSENT_DOCUMENTS,
     });
-    auth.state.registerWithEmail.mockResolvedValue({ email: 'new@example.com' });
+    auth.state.registerWithEmail.mockResolvedValue({
+      email: 'new@example.com',
+      requires_verification: true,
+    });
     const telegram = installTelegramLoginStub();
 
     renderLogin('/register');
@@ -298,6 +301,26 @@ describe('Login integration shell', () => {
     expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeTruthy();
     expect(screen.getByText('new@example.com')).toBeTruthy();
     expect(screen.getByRole('contentinfo')).toBeTruthy();
+  });
+
+  it('signs in when registration does not require email verification', async () => {
+    auth.state.registerWithEmail.mockResolvedValue({
+      email: 'new@example.com',
+      requires_verification: false,
+    });
+    renderLogin('/register');
+
+    fillLoginForm('new@example.com', 'password123');
+    fireEvent.change(screen.getByLabelText('Confirm Password'), {
+      target: { value: 'password123' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: 'Register' }));
+
+    await waitFor(() =>
+      expect(auth.state.loginWithEmail).toHaveBeenCalledWith('new@example.com', 'password123'),
+    );
+    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/dashboard'));
+    expect(screen.queryByRole('heading', { name: 'Check your email' })).toBeNull();
   });
 
   it('keeps Telegram consent retry inside the auth shell', async () => {

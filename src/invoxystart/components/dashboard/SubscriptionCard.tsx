@@ -2,7 +2,7 @@ export function SubscriptionCard({
   onManage,
   trial = false,
   name = 'Подписка',
-  days = 0,
+  timeLeft = '0 ч.',
   endDate = '—',
   hasLte = false,
   progress = 0,
@@ -13,7 +13,7 @@ export function SubscriptionCard({
   onManage: () => void;
   trial?: boolean;
   name?: string;
-  days?: number;
+  timeLeft?: string;
   endDate?: string;
   hasLte?: boolean;
   progress?: number;
@@ -99,21 +99,24 @@ export function SubscriptionCard({
 
       <div className="relative z-10 flex items-baseline gap-2">
         <span
-          className={`text-[64px] font-normal leading-none tracking-[-3px] lg:text-[clamp(64px,4.2vw,84px)] lg:tracking-[clamp(-2px,-0.1vw,-1.5px)] ${
+          className={`text-[clamp(48px,4.2vw,64px)] font-normal leading-none tracking-[-2px] lg:text-[clamp(64px,4.2vw,84px)] lg:tracking-[clamp(-2px,-0.1vw,-1.5px)] ${
             isExpired ? 'text-rose-300/80' : 'text-ink'
           }`}
         >
-          {isExpired ? 0 : days}
+          {isExpired ? '0 ч.' : timeLeft}
         </span>
       </div>
-      <p className="relative z-10 text-sm text-muted lg:text-[clamp(14px,0.9vw,18px)]">
-        {days === 1 && !isExpired ? 'день' : 'дней'} &nbsp;·&nbsp;{' '}
-        {isExpired
-          ? `Истекла: ${endDate}`
-          : trial
-            ? `Активен до: ${endDate}`
-            : `Активна до: ${endDate}`}
-      </p>
+      <div className="relative z-10 flex max-w-[58%] flex-col gap-0.5 text-sm text-muted sm:max-w-none sm:flex-row sm:items-center lg:text-[clamp(14px,0.9vw,18px)]">
+        <span>Осталось времени</span>
+        <span className="hidden sm:inline">&nbsp;·&nbsp;</span>
+        <span>
+          {isExpired
+            ? `Истекла: ${endDate}`
+            : trial
+              ? `Активен до: ${endDate}`
+              : `Активна до: ${endDate}`}
+        </span>
+      </div>
 
       <div className="relative z-10 hidden h-2 w-full overflow-hidden rounded-full bg-surface-2 lg:block lg:h-[clamp(8px,0.5vw,10px)]">
         <div

@@ -120,6 +120,9 @@ export const authApi = {
 
   getMe: (): Promise<User> => apiClient.get<User>('/cabinet/auth/me'),
 
+  updateMyName: (first_name: string): Promise<User> =>
+    apiClient.patch<User>('/cabinet/auth/me/name', { first_name }),
+
   getMyAvatar: (): Promise<{ photo_url: string | null }> =>
     apiClient.get<{ photo_url: string | null }>('/cabinet/auth/me/avatar'),
 

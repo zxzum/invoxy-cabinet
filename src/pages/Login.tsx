@@ -303,6 +303,20 @@ export default function Login() {
     }
   };
 
+  const finishEmailRegistration = async (result: {
+    email: string;
+    requires_verification: boolean;
+  }) => {
+    if (result.requires_verification) {
+      setRegisteredEmail(result.email);
+      return;
+    }
+
+    setAuthMode('login');
+    await loginWithEmail(email, password);
+    navigate(getReturnUrl(), { replace: true });
+  };
+
   const handleEmailSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setError('');
@@ -339,8 +353,7 @@ export default function Login() {
           referralCode || undefined,
           consent.acceptedKeys,
         );
-        // Show "check your email" screen
-        setRegisteredEmail(result.email);
+        await finishEmailRegistration(result);
       }
     } catch (err: unknown) {
       const error = err as { response?: { status?: number } };
@@ -357,7 +370,7 @@ export default function Login() {
           referralCode || undefined,
           accepted,
         );
-        setRegisteredEmail(retried.email);
+        await finishEmailRegistration(retried);
       });
       if (needsConsent) {
         setIsLoading(false);

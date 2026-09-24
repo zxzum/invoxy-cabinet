@@ -133,9 +133,11 @@ export interface SubscriptionTabProps {
   onSetDeviceLimit: (newLimit: number) => Promise<void>;
   onAddTraffic: (gb: number) => Promise<void>;
   onRemoveTraffic: (purchaseId: number) => Promise<void>;
+  onResetMainTraffic?: () => Promise<void>;
   onAddWhitelistTraffic?: (gb: number) => Promise<void>;
   onRemoveWhitelistTraffic?: (purchaseId: number) => Promise<void>;
   onResetWhitelistUsed?: () => Promise<void>;
+  onAdjustWhitelistTraffic?: (params: { usedGb?: number; deltaGb?: number }) => Promise<void>;
   onResetDevices: () => Promise<void>;
   onCancelSbpRecurring: () => Promise<void>;
   onDeleteSubscription: () => Promise<void>;
@@ -203,9 +205,11 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
     onSetDeviceLimit,
     onAddTraffic,
     onRemoveTraffic,
+    onResetMainTraffic,
     onAddWhitelistTraffic,
     onRemoveWhitelistTraffic,
     onResetWhitelistUsed,
+    onAdjustWhitelistTraffic,
     onResetDevices,
     onCancelSbpRecurring,
     onDeleteSubscription,
@@ -223,6 +227,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
 
   const [selectedWhitelistTrafficGb, setSelectedWhitelistTrafficGb] = useState<string>('');
   const [manualWhitelistGb, setManualWhitelistGb] = useState<number | ''>('');
+  const [adjustWhitelistVal, setAdjustWhitelistVal] = useState<string>('');
 
   return (
     <div className="space-y-4">
@@ -613,39 +618,73 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
           )}
 
           {/* Add Traffic */}
-          {currentTariff &&
-            currentTariff.traffic_topup_enabled &&
-            Object.keys(currentTariff.traffic_topup_packages).length > 0 && (
+          {hasPermission('users:subscription') &&
+            (onResetMainTraffic ||
+              (currentTariff &&
+                currentTariff.traffic_topup_enabled &&
+                Object.keys(currentTariff.traffic_topup_packages).length > 0)) && (
               <div className="rounded-xl bg-dark-800/50 p-4">
-                <div className="mb-3 text-sm font-medium text-dark-200">
-                  {t('admin.users.detail.subscription.addTraffic')}
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-medium text-dark-200">
+                    {t('admin.users.detail.subscription.addTraffic')}
+                  </span>
+                  {onResetMainTraffic && (
+                    <button
+                      onClick={() =>
+                        onInlineConfirm(`resetMainTraffic_${selectedSub.id}`, onResetMainTraffic)
+                      }
+                      disabled={actionLoading}
+                      className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all disabled:opacity-50 ${
+                        confirmingAction === `resetMainTraffic_${selectedSub.id}`
+                          ? 'bg-warning-500 text-white'
+                          : 'bg-warning-500/15 text-warning-400 hover:bg-warning-500/25'
+                      }`}
+                    >
+                      {confirmingAction === `resetMainTraffic_${selectedSub.id}`
+                        ? t('admin.users.detail.actions.areYouSure')
+                        : t(
+                            'admin.users.detail.subscription.resetMainTraffic',
+                            'Сбросить расход трафика',
+                          )}
+                    </button>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedTrafficGb}
-                    onChange={(e) => onSelectedTrafficGbChange(e.target.value)}
-                    className="input flex-1"
-                  >
-                    <option value="">{t('admin.users.detail.subscription.selectPackage')}</option>
-                    {Object.entries(currentTariff.traffic_topup_packages)
-                      .sort(([a], [b]) => Number(a) - Number(b))
-                      .map(([gb]) => (
-                        <option key={gb} value={gb}>
-                          {gb} {t('common.units.gb')}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    onClick={() => selectedTrafficGb && onAddTraffic(Number(selectedTrafficGb))}
-                    disabled={actionLoading || !selectedTrafficGb}
-                    className="shrink-0 rounded-lg bg-accent-500 px-4 py-2 text-sm text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
-                  >
-                    {t('admin.users.detail.subscription.addButton')}
-                  </button>
-                </div>
-                <div className="mt-2 text-xs text-dark-500">
-                  {t('admin.users.detail.subscription.addTrafficNote')}
-                </div>
+                {currentTariff &&
+                  currentTariff.traffic_topup_enabled &&
+                  Object.keys(currentTariff.traffic_topup_packages).length > 0 && (
+                    <>
+                      <div className="flex gap-2">
+                        <select
+                          value={selectedTrafficGb}
+                          onChange={(e) => onSelectedTrafficGbChange(e.target.value)}
+                          className="input flex-1"
+                        >
+                          <option value="">
+                            {t('admin.users.detail.subscription.selectPackage')}
+                          </option>
+                          {Object.entries(currentTariff.traffic_topup_packages)
+                            .sort(([a], [b]) => Number(a) - Number(b))
+                            .map(([gb]) => (
+                              <option key={gb} value={gb}>
+                                {gb} {t('common.units.gb')}
+                              </option>
+                            ))}
+                        </select>
+                        <button
+                          onClick={() =>
+                            selectedTrafficGb && onAddTraffic(Number(selectedTrafficGb))
+                          }
+                          disabled={actionLoading || !selectedTrafficGb}
+                          className="shrink-0 rounded-lg bg-accent-500 px-4 py-2 text-sm text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
+                        >
+                          {t('admin.users.detail.subscription.addButton')}
+                        </button>
+                      </div>
+                      <div className="mt-2 text-xs text-dark-500">
+                        {t('admin.users.detail.subscription.addTrafficNote')}
+                      </div>
+                    </>
+                  )}
               </div>
             )}
 
@@ -715,104 +754,240 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
               </div>
             )}
 
-          {/* Add White Internet Traffic (LTE) */}
-          {hasPermission('users:subscription') && onAddWhitelistTraffic && (
-            <div className="rounded-xl bg-dark-800/50 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-dark-200">
-                  {t(
-                    'admin.users.detail.subscription.addWhitelistTraffic',
-                    'Добавить Белый интернет (LTE)',
+          {/* Add White Internet Traffic (LTE) & Adjust Usage */}
+          {hasPermission('users:subscription') &&
+            (onAddWhitelistTraffic || onResetWhitelistUsed || onAdjustWhitelistTraffic) && (
+              <div className="rounded-xl bg-dark-800/50 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-medium text-dark-200">
+                    {t(
+                      'admin.users.detail.subscription.addWhitelistTraffic',
+                      'Добавить Белый интернет (LTE)',
+                    )}
+                  </span>
+                  {onResetWhitelistUsed && (
+                    <button
+                      onClick={() =>
+                        onInlineConfirm(
+                          `resetWhitelistUsed_${selectedSub.id}`,
+                          onResetWhitelistUsed,
+                        )
+                      }
+                      disabled={actionLoading}
+                      className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all disabled:opacity-50 ${
+                        confirmingAction === `resetWhitelistUsed_${selectedSub.id}`
+                          ? 'bg-warning-500 text-white'
+                          : 'bg-warning-500/15 text-warning-400 hover:bg-warning-500/25'
+                      }`}
+                    >
+                      {confirmingAction === `resetWhitelistUsed_${selectedSub.id}`
+                        ? t('admin.users.detail.actions.areYouSure')
+                        : t(
+                            'admin.users.detail.subscription.resetWhitelistUsed',
+                            'Сбросить расход LTE',
+                          )}
+                    </button>
                   )}
-                </span>
-                {onResetWhitelistUsed && (
-                  <button
-                    onClick={() =>
-                      onInlineConfirm(`resetWhitelistUsed_${selectedSub.id}`, onResetWhitelistUsed)
-                    }
-                    disabled={actionLoading}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all disabled:opacity-50 ${
-                      confirmingAction === `resetWhitelistUsed_${selectedSub.id}`
-                        ? 'bg-warning-500 text-white'
-                        : 'bg-warning-500/15 text-warning-400 hover:bg-warning-500/25'
-                    }`}
-                  >
-                    {confirmingAction === `resetWhitelistUsed_${selectedSub.id}`
-                      ? t('admin.users.detail.actions.areYouSure')
-                      : t(
-                          'admin.users.detail.subscription.resetWhitelistUsed',
-                          'Сбросить расход LTE',
+                </div>
+
+                {onAddWhitelistTraffic &&
+                  (currentTariff?.whitelist_traffic_topup_enabled &&
+                  Object.keys(currentTariff.whitelist_traffic_topup_packages || {}).length > 0 ? (
+                    <div className="flex gap-2">
+                      <select
+                        value={selectedWhitelistTrafficGb}
+                        onChange={(e) => setSelectedWhitelistTrafficGb(e.target.value)}
+                        className="input flex-1"
+                      >
+                        <option value="">
+                          {t('admin.users.detail.subscription.selectPackage')}
+                        </option>
+                        {Object.entries(currentTariff.whitelist_traffic_topup_packages || {})
+                          .sort(([a], [b]) => Number(a) - Number(b))
+                          .map(([gb]) => (
+                            <option key={gb} value={gb}>
+                              {gb} {t('common.units.gb')}
+                            </option>
+                          ))}
+                      </select>
+                      <button
+                        onClick={async () => {
+                          if (!selectedWhitelistTrafficGb) return;
+                          await onAddWhitelistTraffic(Number(selectedWhitelistTrafficGb));
+                          setSelectedWhitelistTrafficGb('');
+                        }}
+                        disabled={actionLoading || !selectedWhitelistTrafficGb}
+                        className="shrink-0 rounded-lg bg-accent-500 px-4 py-2 text-sm text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
+                      >
+                        {t('admin.users.detail.subscription.addButton')}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={500}
+                        value={manualWhitelistGb}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                          setManualWhitelistGb(Number.isNaN(val) ? '' : val);
+                        }}
+                        placeholder={t(
+                          'admin.users.detail.subscription.addWhitelistTrafficManualPlaceholder',
+                          'Количество ГБ (1…500)',
                         )}
-                  </button>
+                        className="input flex-1"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!manualWhitelistGb || manualWhitelistGb < 1) return;
+                          await onAddWhitelistTraffic(Number(manualWhitelistGb));
+                          setManualWhitelistGb('');
+                        }}
+                        disabled={
+                          actionLoading ||
+                          !manualWhitelistGb ||
+                          manualWhitelistGb < 1 ||
+                          manualWhitelistGb > 500
+                        }
+                        className="shrink-0 rounded-lg bg-accent-500 px-4 py-2 text-sm text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
+                      >
+                        {t('admin.users.detail.subscription.addButton')}
+                      </button>
+                    </div>
+                  ))}
+
+                {/* Adjust used LTE traffic UI */}
+                {onAdjustWhitelistTraffic && (
+                  <div className="mt-4 border-t border-dark-700/60 pt-3">
+                    <div className="mb-2 flex items-center justify-between text-xs">
+                      <span className="font-medium text-dark-300">
+                        {t(
+                          'admin.users.detail.subscription.adjustWhitelistTraffic',
+                          'Корректировка расхода LTE',
+                        )}
+                      </span>
+                      <span className="font-mono text-dark-400">
+                        {t('admin.users.detail.subscription.currentUsed', 'Текущий расход')}:{' '}
+                        <span className="font-semibold text-dark-200">
+                          {(selectedSub.whitelist_traffic_used_gb ?? 0).toFixed(2)}{' '}
+                          {t('common.units.gb')}
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Quick buttons */}
+                    <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                      <span className="mr-1 text-[11px] text-dark-400">
+                        {t('admin.users.detail.subscription.quickAdjust', 'Быстро')}:
+                      </span>
+                      {[
+                        { label: '+10 ГБ', delta: 10 },
+                        { label: '+50 ГБ', delta: 50 },
+                        { label: '-10 ГБ', delta: -10 },
+                        { label: '-50 ГБ', delta: -50 },
+                      ].map((btn) => (
+                        <button
+                          key={btn.label}
+                          type="button"
+                          onClick={() => onAdjustWhitelistTraffic({ deltaGb: btn.delta })}
+                          disabled={actionLoading}
+                          className="rounded-lg border border-dark-600/70 bg-dark-700/60 px-2.5 py-1 text-xs font-medium text-dark-200 transition-colors hover:border-dark-500 hover:bg-dark-600 disabled:opacity-50"
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Custom value input and action buttons */}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <input
+                        type="number"
+                        step="any"
+                        min={0}
+                        value={adjustWhitelistVal}
+                        onChange={(e) => setAdjustWhitelistVal(e.target.value)}
+                        placeholder={t(
+                          'admin.users.detail.subscription.adjustWhitelistPlaceholder',
+                          'Значение в ГБ (напр. 15.5)',
+                        )}
+                        disabled={actionLoading}
+                        className="input min-w-[130px] flex-1"
+                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const val = parseFloat(adjustWhitelistVal);
+                            if (Number.isNaN(val) || val <= 0) return;
+                            await onAdjustWhitelistTraffic({ deltaGb: val });
+                            setAdjustWhitelistVal('');
+                          }}
+                          disabled={
+                            actionLoading ||
+                            !adjustWhitelistVal ||
+                            Number.isNaN(parseFloat(adjustWhitelistVal)) ||
+                            parseFloat(adjustWhitelistVal) <= 0
+                          }
+                          className="rounded-lg border border-dark-600 bg-dark-700 px-2.5 py-2 text-xs font-medium text-dark-200 transition-colors hover:bg-dark-600 disabled:opacity-50"
+                          title={t(
+                            'admin.users.detail.subscription.addUsageHint',
+                            'Увеличить расход на указанное количество ГБ',
+                          )}
+                        >
+                          {t('admin.users.detail.subscription.addUsage', 'Добавить расход (+)')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const val = parseFloat(adjustWhitelistVal);
+                            if (Number.isNaN(val) || val <= 0) return;
+                            await onAdjustWhitelistTraffic({ deltaGb: -val });
+                            setAdjustWhitelistVal('');
+                          }}
+                          disabled={
+                            actionLoading ||
+                            !adjustWhitelistVal ||
+                            Number.isNaN(parseFloat(adjustWhitelistVal)) ||
+                            parseFloat(adjustWhitelistVal) <= 0
+                          }
+                          className="rounded-lg border border-dark-600 bg-dark-700 px-2.5 py-2 text-xs font-medium text-dark-200 transition-colors hover:bg-dark-600 disabled:opacity-50"
+                          title={t(
+                            'admin.users.detail.subscription.deductUsageHint',
+                            'Уменьшить расход на указанное количество ГБ',
+                          )}
+                        >
+                          {t('admin.users.detail.subscription.deductUsage', 'Списать расход (-)')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const val = parseFloat(adjustWhitelistVal);
+                            if (Number.isNaN(val) || val < 0) return;
+                            await onAdjustWhitelistTraffic({ usedGb: val });
+                            setAdjustWhitelistVal('');
+                          }}
+                          disabled={
+                            actionLoading ||
+                            adjustWhitelistVal === '' ||
+                            Number.isNaN(parseFloat(adjustWhitelistVal)) ||
+                            parseFloat(adjustWhitelistVal) < 0
+                          }
+                          className="rounded-lg bg-accent-500 px-3 py-2 text-xs font-medium text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
+                          title={t(
+                            'admin.users.detail.subscription.setExactHint',
+                            'Установить точное значение расхода в ГБ',
+                          )}
+                        >
+                          {t('admin.users.detail.subscription.setExact', 'Установить точно')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {currentTariff?.whitelist_traffic_topup_enabled &&
-              Object.keys(currentTariff.whitelist_traffic_topup_packages || {}).length > 0 ? (
-                <div className="flex gap-2">
-                  <select
-                    value={selectedWhitelistTrafficGb}
-                    onChange={(e) => setSelectedWhitelistTrafficGb(e.target.value)}
-                    className="input flex-1"
-                  >
-                    <option value="">{t('admin.users.detail.subscription.selectPackage')}</option>
-                    {Object.entries(currentTariff.whitelist_traffic_topup_packages || {})
-                      .sort(([a], [b]) => Number(a) - Number(b))
-                      .map(([gb]) => (
-                        <option key={gb} value={gb}>
-                          {gb} {t('common.units.gb')}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    onClick={async () => {
-                      if (!selectedWhitelistTrafficGb) return;
-                      await onAddWhitelistTraffic(Number(selectedWhitelistTrafficGb));
-                      setSelectedWhitelistTrafficGb('');
-                    }}
-                    disabled={actionLoading || !selectedWhitelistTrafficGb}
-                    className="shrink-0 rounded-lg bg-accent-500 px-4 py-2 text-sm text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
-                  >
-                    {t('admin.users.detail.subscription.addButton')}
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={manualWhitelistGb}
-                    onChange={(e) => {
-                      const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
-                      setManualWhitelistGb(Number.isNaN(val) ? '' : val);
-                    }}
-                    placeholder={t(
-                      'admin.users.detail.subscription.addWhitelistTrafficManualPlaceholder',
-                      'Количество ГБ (1…500)',
-                    )}
-                    className="input flex-1"
-                  />
-                  <button
-                    onClick={async () => {
-                      if (!manualWhitelistGb || manualWhitelistGb < 1) return;
-                      await onAddWhitelistTraffic(Number(manualWhitelistGb));
-                      setManualWhitelistGb('');
-                    }}
-                    disabled={
-                      actionLoading ||
-                      !manualWhitelistGb ||
-                      manualWhitelistGb < 1 ||
-                      manualWhitelistGb > 500
-                    }
-                    className="shrink-0 rounded-lg bg-accent-500 px-4 py-2 text-sm text-on-accent transition-colors hover:bg-accent-600 disabled:opacity-50"
-                  >
-                    {t('admin.users.detail.subscription.addButton')}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+            )}
 
           {props.reachabilityLink && (
             <Link to={props.reachabilityLink} className="btn-secondary w-full text-center">

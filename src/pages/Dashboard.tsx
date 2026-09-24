@@ -51,7 +51,6 @@ import { uiLocale } from '../utils/uiLocale';
 import { formatTraffic } from '../utils/formatTraffic';
 import { isHappCryptolinkMode, resolveConnectionUrlForUi } from '../utils/connectionLink';
 import { copyToClipboard } from '../utils/clipboard';
-import TicketNotificationBell from '../components/TicketNotificationBell';
 import { openAppScheme } from '../utils/openAppScheme';
 import { isInTelegramWebApp } from '../hooks/useTelegramSDK';
 import { useNativeDialog, useNotify } from '@/platform';
@@ -857,9 +856,6 @@ export default function Dashboard() {
               {formatAmount(balanceData?.balance_rubles ?? 0)} {currencySymbol}
             </span>
           </Link>
-          <div className="hidden lg:block">
-            <TicketNotificationBell />
-          </div>
         </div>
       </motion.div>
 

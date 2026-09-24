@@ -158,7 +158,6 @@ export default function ActivitiesPage({ mode: requestedMode }: { mode?: Activit
       <PageHeader
         title={mode === 'polls' ? 'Опросы' : mode === 'contests' ? 'Конкурсы' : 'Колесо призов'}
         subtitle="Активности и бонусы InvoxyVPN"
-        mobileNotifications
       />
       <div className="flex gap-2 overflow-x-auto">
         <ActivityTab

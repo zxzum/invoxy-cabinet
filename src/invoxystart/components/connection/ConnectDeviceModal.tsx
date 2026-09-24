@@ -11,6 +11,7 @@ import {
   Laptop,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { openDeepLink } from '@/utils/openDeepLink';
+import { findInvoxyAsset, useLatestInvoxyRelease, type InvoxyPlatform } from './invoxyDownloads';
 
 export interface ConnectDeviceModalProps {
   open: boolean;
@@ -34,7 +35,7 @@ interface AppInfo {
   oneClickLabel?: string;
 }
 
-function detectUserOS(): PlatformKey {
+export function detectUserOS(): PlatformKey {
   if (typeof window === 'undefined' || !navigator?.userAgent) return 'ios';
   const ua = navigator.userAgent.toLowerCase();
   if (/iphone|ipad|ipod/.test(ua)) return 'ios';
@@ -56,12 +57,23 @@ export function ConnectDeviceModal({
   const initialOS = useMemo(() => initialPlatform || detectUserOS(), [initialPlatform]);
   const [selectedOS, setSelectedOS] = useState<PlatformKey>(initialOS);
   const [qrOpen, setQrOpen] = useState(false);
+  const [showInvoxyApp, setShowInvoxyApp] = useState(false);
 
   useEffect(() => {
     if (initialPlatform) {
       setSelectedOS(initialPlatform);
     }
   }, [initialPlatform]);
+
+  const supportedInvoxyPlatform: InvoxyPlatform | null =
+    selectedOS === 'android' || selectedOS === 'windows' || selectedOS === 'macos'
+      ? selectedOS
+      : null;
+  const {
+    release: latestInvoxyRelease,
+    status: invoxyReleaseStatus,
+    retry: retryInvoxyRelease,
+  } = useLatestInvoxyRelease(open && showInvoxyApp && !!supportedInvoxyPlatform);
 
   const effectiveHappLink = happLink || (accessLink ? `happ://add/${accessLink}` : null);
   const effectiveIncyLink = incyLink || (accessLink ? `incy://import/${accessLink}` : null);
@@ -77,16 +89,6 @@ export function ConnectDeviceModal({
 
   const appMap: Record<PlatformKey, AppInfo[]> = {
     ios: [
-      {
-        name: 'Invoxy VPN (Официальное)',
-        icon: '/images/apps/invoxy.png',
-        badge: 'Официальное',
-        description: 'Фирменное приложение с мгновенной синхронизацией в 1 клик',
-        downloadUrl: 'https://github.com/zxzum/InvoxyApp/releases/latest',
-        downloadLabel: 'GitHub / App',
-        oneClickLink: 'https://invoxy.my/app/connect',
-        oneClickLabel: 'Подключить Invoxy VPN',
-      },
       {
         name: 'HAPP',
         icon: '/images/apps/happ.png',
@@ -109,18 +111,6 @@ export function ConnectDeviceModal({
     ],
     android: [
       {
-        name: 'Invoxy VPN (Официальное)',
-        icon: '/images/apps/invoxy.png',
-        badge: 'Официальное',
-        description:
-          'Фирменное приложение с входом в 1 клик, обходом ТСПУ и умным выбором серверов',
-        downloadUrl:
-          'https://github.com/zxzum/InvoxyApp/releases/latest/download/app-arm64-v8a-release.apk',
-        downloadLabel: 'Скачать APK (ARM64)',
-        oneClickLink: 'https://invoxy.my/app/connect',
-        oneClickLabel: 'Подключить Invoxy VPN',
-      },
-      {
         name: 'HAPP',
         icon: '/images/apps/happ.png',
         badge: 'Рекомендуем',
@@ -142,16 +132,6 @@ export function ConnectDeviceModal({
     ],
     windows: [
       {
-        name: 'Invoxy VPN Windows (Официальное)',
-        icon: '/images/apps/invoxy.png',
-        badge: 'Официальное',
-        description: 'Фирменный клиент для Windows с автозапуском и раздельным туннелированием',
-        downloadUrl: 'https://github.com/zxzum/InvoxyApp/releases/latest',
-        downloadLabel: 'Скачать для Windows',
-        oneClickLink: 'https://invoxy.my/app/connect',
-        oneClickLabel: 'Подключить Invoxy VPN',
-      },
-      {
         name: 'HAPP Windows',
         icon: '/images/apps/happ.png',
         badge: 'Рекомендуем',
@@ -170,18 +150,6 @@ export function ConnectDeviceModal({
       },
     ],
     macos: [
-      {
-        name: 'Invoxy VPN macOS (Официальное)',
-        icon: '/images/apps/invoxy.png',
-        badge: 'Официальное',
-        description:
-          'Фирменное приложение: системный прокси без пароля root, Apple Silicon & Intel',
-        downloadUrl:
-          'https://github.com/zxzum/InvoxyApp/releases/latest/download/Invoxy_VPN_macOS.dmg',
-        downloadLabel: 'Скачать DMG',
-        oneClickLink: 'https://invoxy.my/app/connect',
-        oneClickLabel: 'Подключить Invoxy VPN',
-      },
       {
         name: 'HAPP macOS',
         icon: '/images/apps/happ.png',
@@ -217,6 +185,10 @@ export function ConnectDeviceModal({
   };
 
   const currentApps = appMap[selectedOS] || appMap.ios;
+  const invoxyAsset =
+    supportedInvoxyPlatform && latestInvoxyRelease
+      ? findInvoxyAsset(latestInvoxyRelease.assets, supportedInvoxyPlatform)
+      : undefined;
 
   return (
     <AdaptiveDialog
@@ -234,7 +206,7 @@ export function ConnectDeviceModal({
             Подключить устройство
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Выберите ваше устройство, установите приложение и подключитесь в один клик.
+            Скачайте и установите HAPP или INCY, нажмите «Подключить» и включите VPN в приложении.
           </p>
         </div>
 
@@ -259,6 +231,40 @@ export function ConnectDeviceModal({
             );
           })}
         </div>
+
+        <ol className="grid gap-2.5 lg:grid-cols-3">
+          <li className="glass-panel flex items-start gap-3 rounded-2xl p-3.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-mint/25 bg-mint/10 text-xs font-bold text-mint">
+              1
+            </span>
+            <div>
+              <p className="text-xs font-semibold text-ink">Установите приложение</p>
+              <p className="mt-1 text-xs leading-5 text-muted">Выберите HAPP или INCY ниже.</p>
+            </div>
+          </li>
+          <li className="glass-panel flex items-start gap-3 rounded-2xl p-3.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-mint/25 bg-mint/10 text-xs font-bold text-mint">
+              2
+            </span>
+            <div>
+              <p className="text-xs font-semibold text-ink">Импортируйте подписку</p>
+              <p className="mt-1 text-xs leading-5 text-muted">
+                Нажмите «Подключить» в карточке приложения.
+              </p>
+            </div>
+          </li>
+          <li className="glass-panel flex items-start gap-3 rounded-2xl p-3.5">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-mint/25 bg-mint/10 text-xs font-bold text-mint">
+              3
+            </span>
+            <div>
+              <p className="text-xs font-semibold text-ink">Включите VPN</p>
+              <p className="mt-1 text-xs leading-5 text-muted">
+                Активируйте переключатель в приложении.
+              </p>
+            </div>
+          </li>
+        </ol>
 
         {/* Приложения для выбранной ОС */}
         <div className="flex flex-col gap-3">
@@ -287,16 +293,6 @@ export function ConnectDeviceModal({
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
-                {app.oneClickLink && (
-                  <button
-                    type="button"
-                    onClick={() => openDeepLink(app.oneClickLink)}
-                    className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-mint px-3 text-center text-xs font-bold text-bg shadow-[0_0_12px_rgba(6,214,160,0.3)] transition-all hover:bg-mint/90 active:scale-[0.98]"
-                  >
-                    <ArrowUpRight size={14} />
-                    {app.oneClickLabel || 'Подключить в 1 клик'}
-                  </button>
-                )}
                 <a
                   href={app.downloadUrl}
                   target="_blank"
@@ -308,10 +304,76 @@ export function ConnectDeviceModal({
                   <ArrowRight size={14} />
                   {app.downloadLabel}
                 </a>
+                {app.oneClickLink && (
+                  <button
+                    type="button"
+                    onClick={() => openDeepLink(app.oneClickLink)}
+                    className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-mint px-3 text-center text-xs font-bold text-bg shadow-[0_0_12px_rgba(6,214,160,0.3)] transition-all hover:bg-mint/90 active:scale-[0.98]"
+                  >
+                    <ArrowUpRight size={14} />
+                    {app.oneClickLabel || 'Подключить в 1 клик'}
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
+
+        <details
+          className="border-t border-white/8 pt-3"
+          onToggle={(event) => setShowInvoxyApp(event.currentTarget.open)}
+        >
+          <summary className="cursor-pointer text-xs text-muted underline decoration-white/20 underline-offset-4 transition-colors hover:text-ink">
+            Дополнительно: приложение Invoxy VPN
+          </summary>
+          {showInvoxyApp && (
+            <div className="mt-3 rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+              <p className="text-xs text-muted">
+                HAPP и INCY — рекомендуемые клиенты. Invoxy VPN доступно для Android, Windows и
+                macOS.
+              </p>
+              <div aria-live="polite" className="mt-3">
+                {!supportedInvoxyPlatform ? (
+                  <p className="text-xs text-muted">
+                    {selectedOS === 'ios'
+                      ? 'Для iOS приложения Invoxy VPN нет — установите HAPP или INCY выше.'
+                      : 'Для этой платформы Invoxy VPN недоступно — выберите приложение выше.'}
+                  </p>
+                ) : invoxyReleaseStatus === 'loading' || invoxyReleaseStatus === 'idle' ? (
+                  <p className="text-xs text-muted">Получаем актуальную версию…</p>
+                ) : invoxyReleaseStatus === 'error' ? (
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                    <span>Не удалось получить ссылку на загрузку.</span>
+                    <button
+                      type="button"
+                      onClick={retryInvoxyRelease}
+                      className="cursor-pointer font-semibold text-mint hover:underline"
+                    >
+                      Повторить
+                    </button>
+                  </div>
+                ) : invoxyAsset ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <a
+                      href={invoxyAsset.downloadUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="glass-control inline-flex h-9 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.08]"
+                    >
+                      <ArrowRight size={14} /> Скачать Invoxy VPN
+                    </a>
+                    <span className="text-[11px] text-muted">
+                      {latestInvoxyRelease?.version && `Версия ${latestInvoxyRelease.version} · `}
+                      {invoxyAsset.name}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted">Файл для этого устройства сейчас недоступен.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </details>
 
         {/* Ссылка доступа и ручная настройка */}
         <div className="glass-panel flex flex-col gap-3 rounded-2xl p-4">

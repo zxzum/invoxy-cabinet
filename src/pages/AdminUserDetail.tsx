@@ -622,6 +622,52 @@ export default function AdminUserDetail() {
     }
   };
 
+  const handleResetMainTraffic = async () => {
+    if (!userId) return;
+    setActionLoading(true);
+    try {
+      await adminUsersApi.updateSubscription(userId, {
+        action: 'reset_main_traffic',
+        ...(activeSubscriptionId ? { subscription_id: activeSubscriptionId } : {}),
+      });
+      notify.success(
+        t(
+          'admin.users.detail.subscription.mainTrafficReset',
+          'Расход основного трафика сброшен до 0',
+        ),
+      );
+      await loadUser();
+    } catch {
+      notify.error(t('admin.users.userActions.error'), t('common.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAdjustWhitelistTraffic = async (params: { usedGb?: number; deltaGb?: number }) => {
+    if (!userId) return;
+    setActionLoading(true);
+    try {
+      await adminUsersApi.updateSubscription(userId, {
+        action: 'adjust_whitelist_used',
+        whitelist_traffic_used_gb: params.usedGb,
+        whitelist_traffic_delta_gb: params.deltaGb,
+        ...(activeSubscriptionId ? { subscription_id: activeSubscriptionId } : {}),
+      });
+      notify.success(
+        t(
+          'admin.users.detail.subscription.whitelistTrafficAdjusted',
+          'Расход Белого интернета успешно обновлен',
+        ),
+      );
+      await loadUser();
+    } catch {
+      notify.error(t('admin.users.userActions.error'), t('common.error'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleSetDeviceLimit = async (newLimit: number) => {
     if (!userId) return;
     setActionLoading(true);
@@ -1177,9 +1223,11 @@ export default function AdminUserDetail() {
             onSetDeviceLimit={handleSetDeviceLimit}
             onAddTraffic={handleAddTraffic}
             onRemoveTraffic={handleRemoveTraffic}
+            onResetMainTraffic={handleResetMainTraffic}
             onAddWhitelistTraffic={handleAddWhitelistTraffic}
             onRemoveWhitelistTraffic={handleRemoveWhitelistTraffic}
             onResetWhitelistUsed={handleResetWhitelistUsed}
+            onAdjustWhitelistTraffic={handleAdjustWhitelistTraffic}
             onResetDevices={handleResetDevices}
             onDeleteDevice={handleDeleteDevice}
             onRenameDevice={handleRenameDevice}

@@ -2,23 +2,20 @@ import { Wallet } from '@/invoxystart/components/ui/RuneIcon';
 import { useNavigate } from 'react-router';
 import { NotificationMenu } from '@/invoxystart/components/layout/NotificationMenu';
 import { useAuth } from '@/invoxystart/auth';
-import TicketNotificationBell from '@/components/TicketNotificationBell';
 
 export function PageHeader({
   title,
   subtitle,
-  mobileNotifications = false,
   notifications = false,
   action,
 }: {
   title: string;
   subtitle: string;
-  mobileNotifications?: boolean;
   notifications?: boolean;
   action?: React.ReactNode;
 }) {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const balance = user?.balance_rubles ?? 0;
   return (
     <header className="relative z-40 flex items-center justify-between gap-4 px-1 lg:px-0">
@@ -28,9 +25,8 @@ export function PageHeader({
       </div>
       <div className="flex items-center gap-3 shrink-0">
         {action}
-        <TicketNotificationBell isAdmin={isAdmin} />
-        {mobileNotifications || notifications ? (
-          <NotificationMenu className={`shrink-0 ${notifications ? '' : 'lg:hidden'}`} />
+        {notifications ? (
+          <NotificationMenu className="shrink-0" />
         ) : (
           <button
             type="button"

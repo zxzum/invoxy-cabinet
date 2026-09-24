@@ -88,14 +88,27 @@ export const subscriptionApi = {
       amount_paid_kopeks: number;
     }>('/cabinet/subscription/traffic', { gb, scope }, query(subscriptionId)),
 
-  getTrafficReset: (subscriptionId?: number): Promise<TrafficResetStatus> =>
-    apiClient.get('/cabinet/subscription/traffic-reset', query(subscriptionId)),
+  getTrafficReset: (
+    subscriptionId?: number,
+    scope: 'whitelist' | 'regular' = 'whitelist',
+  ): Promise<TrafficResetStatus> =>
+    apiClient.get('/cabinet/subscription/traffic-reset', query(subscriptionId, { scope })),
 
-  resetTraffic: (subscriptionId?: number): Promise<TrafficResetResponse> =>
-    apiClient.post('/cabinet/subscription/traffic-reset', {}, query(subscriptionId)),
+  resetTraffic: (
+    subscriptionId?: number,
+    scope: 'whitelist' | 'regular' = 'whitelist',
+  ): Promise<TrafficResetResponse> =>
+    apiClient.post('/cabinet/subscription/traffic-reset', {}, query(subscriptionId, { scope })),
 
-  saveTrafficResetCart: (subscriptionId?: number): Promise<void> =>
-    apiClient.post('/cabinet/subscription/traffic-reset/save-cart', {}, query(subscriptionId)),
+  saveTrafficResetCart: (
+    subscriptionId?: number,
+    scope: 'whitelist' | 'regular' = 'whitelist',
+  ): Promise<void> =>
+    apiClient.post(
+      '/cabinet/subscription/traffic-reset/save-cart',
+      { ...(subscriptionId != null && { subscription_id: subscriptionId }), scope },
+      query(subscriptionId, { scope }),
+    ),
 
   refreshTraffic: (subscriptionId?: number) =>
     apiClient.post<{

@@ -66,7 +66,7 @@ export const balanceApi = {
     page?: number;
     per_page?: number;
   }): Promise<PaginatedResponse<PendingPayment>> =>
-    apiClient.get('/cabinet/balance/pending-payments', { params }),
+    apiClient.get('/cabinet/balance/pending-payments', { params, cache: 'no-store' }),
 
   getPendingPayment: (method: string, paymentId: number): Promise<PendingPayment> =>
     apiClient.get(

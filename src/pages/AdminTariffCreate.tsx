@@ -207,6 +207,12 @@ export default function AdminTariffCreate() {
   const [whitelistResetMinUsedGb, setWhitelistResetMinUsedGb] = useState<number | ''>(10);
   const [whitelistResetMaxPerMonth, setWhitelistResetMaxPerMonth] = useState<number | ''>(0);
 
+  // Main traffic reset
+  const [mainTrafficResetEnabled, setMainTrafficResetEnabled] = useState(true);
+  const [mainTrafficResetPriceRubles, setMainTrafficResetPriceRubles] = useState<number | ''>('');
+  const [mainTrafficResetMinUsedGb, setMainTrafficResetMinUsedGb] = useState<number | ''>(100);
+  const [mainTrafficResetMaxPerMonth, setMainTrafficResetMaxPerMonth] = useState<number | ''>(0);
+
   // Traffic reset mode
   const [trafficResetMode, setTrafficResetMode] = useState<string | null>(null);
 
@@ -284,6 +290,14 @@ export default function AdminTariffCreate() {
       );
       setWhitelistResetMinUsedGb(data.whitelist_reset_min_used_gb ?? 10);
       setWhitelistResetMaxPerMonth(data.whitelist_reset_max_per_month || 0);
+      setMainTrafficResetEnabled(data.main_traffic_reset_enabled ?? true);
+      setMainTrafficResetPriceRubles(
+        data.main_traffic_reset_price_kopeks
+          ? Math.round(data.main_traffic_reset_price_kopeks / 100)
+          : '',
+      );
+      setMainTrafficResetMinUsedGb(data.main_traffic_reset_min_used_gb ?? 100);
+      setMainTrafficResetMaxPerMonth(data.main_traffic_reset_max_per_month || 0);
       setTrafficResetMode(data.traffic_reset_mode || null);
       setShowInGift(data.show_in_gift ?? true);
       setIsTariffHighlighted(data.is_highlighted ?? false);
@@ -344,6 +358,13 @@ export default function AdminTariffCreate() {
       whitelist_reset_price_kopeks: toNumber(whitelistResetPriceRubles, 150) * 100,
       whitelist_reset_min_used_gb: toNumber(whitelistResetMinUsedGb, 10),
       whitelist_reset_max_per_month: toNumber(whitelistResetMaxPerMonth),
+      main_traffic_reset_enabled: mainTrafficResetEnabled,
+      main_traffic_reset_price_kopeks:
+        mainTrafficResetPriceRubles !== '' && Number(mainTrafficResetPriceRubles) > 0
+          ? Number(mainTrafficResetPriceRubles) * 100
+          : null,
+      main_traffic_reset_min_used_gb: toNumber(mainTrafficResetMinUsedGb, 100),
+      main_traffic_reset_max_per_month: toNumber(mainTrafficResetMaxPerMonth),
       whitelist_traffic_topup_packages: {},
       is_daily: isDaily,
       daily_price_kopeks: isDaily ? toNumber(dailyPriceKopeks) : 0,
@@ -1238,6 +1259,94 @@ export default function AdminTariffCreate() {
               )}
             </div>
           )}
+
+          {/* Main Traffic Reset */}
+          <div className="card space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-medium text-dark-200">
+                  {t('admin.tariffs.mainTrafficResetTitle')}
+                </h4>
+                <p className="text-xs text-dark-500">
+                  {t('admin.tariffs.mainTrafficResetEnabled')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMainTrafficResetEnabled(!mainTrafficResetEnabled)}
+                role="switch"
+                aria-checked={mainTrafficResetEnabled}
+                aria-label={t('admin.tariffs.mainTrafficResetTitle')}
+                className={`relative h-6 w-11 rounded-full transition-colors ${
+                  mainTrafficResetEnabled ? 'bg-accent-500' : 'bg-dark-600'
+                }`}
+              >
+                <span
+                  className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
+                    mainTrafficResetEnabled ? 'left-6' : 'left-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {mainTrafficResetEnabled && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-dark-400">
+                    {t('admin.tariffs.mainTrafficResetPriceLabel')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={mainTrafficResetPriceRubles}
+                      onChange={createNumberInputHandler(setMainTrafficResetPriceRubles, 0)}
+                      className="input w-full"
+                      min={0}
+                      placeholder={t('admin.tariffs.mainTrafficResetPriceHint')}
+                    />
+                    <span className="text-xs text-dark-400">₽</span>
+                  </div>
+                  <span className="text-[11px] text-dark-500">
+                    {t('admin.tariffs.mainTrafficResetPriceHint')}
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs text-dark-400">
+                    {t('admin.tariffs.mainTrafficResetMinUsedLabel')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={mainTrafficResetMinUsedGb}
+                      onChange={createNumberInputHandler(setMainTrafficResetMinUsedGb, 0)}
+                      className="input w-full"
+                      min={0}
+                      placeholder="100"
+                    />
+                    <span className="text-xs text-dark-400">{t('admin.tariffs.gbUnit')}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs text-dark-400">
+                    {t('admin.tariffs.mainTrafficResetMaxPerMonthLabel')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={mainTrafficResetMaxPerMonth}
+                      onChange={createNumberInputHandler(setMainTrafficResetMaxPerMonth, 0)}
+                      className="input w-full"
+                      min={0}
+                      placeholder="0"
+                    />
+                    <span className="text-xs text-dark-500">{t('admin.tariffs.noLimitHint')}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Traffic reset mode */}
           <div className="card space-y-3">

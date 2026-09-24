@@ -337,8 +337,18 @@ html.scroll-lock-active .ix-sidebar-island {
 }
 
 .topup-highlight {
-  animation: invoxy-topup-glow 1.4s ease-in-out 1 !important;
+  position: relative;
   border-color: rgba(165, 232, 196, 0.8) !important;
+}
+
+.topup-highlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1px solid transparent;
+  animation: invoxy-topup-glow 1.4s ease-in-out 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

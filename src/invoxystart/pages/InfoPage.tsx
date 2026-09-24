@@ -111,11 +111,7 @@ export default function InfoPage({
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <PageHeader
-        title={title}
-        subtitle="Ответы, правила и документы InvoxyVPN"
-        mobileNotifications
-      />
+      <PageHeader title={title} subtitle="Ответы, правила и документы InvoxyVPN" />
 
       <nav
         aria-label="Разделы информации"

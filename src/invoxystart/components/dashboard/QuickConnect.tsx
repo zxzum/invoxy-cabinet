@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { ConnectionLinkResponse } from '@/invoxystart/api/subscription';
-import { ConnectDeviceModal } from '@/invoxystart/components/connection/ConnectDeviceModal';
+import {
+  ConnectDeviceModal,
+  detectUserOS,
+} from '@/invoxystart/components/connection/ConnectDeviceModal';
 import { AppConnectModal } from '@/invoxystart/components/connection/AppConnectModal';
 import { Smartphone, Zap } from '@/invoxystart/components/ui/RuneIcon';
 import { openDeepLink } from '@/utils/openDeepLink';
@@ -38,16 +41,21 @@ export function QuickConnect({
     : null;
   const links: Record<string, string | null> = { happ: happLink || null, incy: incyLink };
 
-  const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const supportsInvoxyApp = ['android', 'windows', 'macos'].includes(detectUserOS());
 
   return (
     <div className="flex w-full flex-col gap-2.5">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[17px] font-bold text-ink">Быстрое подключение</h3>
+      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-[17px] font-bold text-ink">Быстрое подключение</h3>
+          <p className="mt-0.5 text-[11px] text-muted">
+            Первый раз? Откройте «Все устройства» для инструкции.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-1.5 text-xs font-bold text-mint hover:underline cursor-pointer"
+          className="flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs font-bold text-mint hover:underline"
         >
           <Smartphone size={14} /> Все устройства →
         </button>
@@ -78,18 +86,20 @@ export function QuickConnect({
         </div>
 
         {/* Secondary Option: Invoxy VPN Native App (shown after Happ/Incy, hidden on iOS) */}
-        {!isIOS && (
+        {supportsInvoxyApp && (
           <button
             type="button"
             onClick={() => setAppConnectOpen(true)}
-            className="flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 text-xs font-medium text-ink transition-all hover:bg-white/[0.08] hover:border-mint/30 active:scale-[0.98]"
+            className="flex min-h-10 w-full cursor-pointer flex-col items-start justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-left text-xs font-medium text-ink transition-all hover:border-mint/30 hover:bg-white/[0.08] active:scale-[0.98] md:flex-row md:items-center md:justify-between md:gap-3 md:py-2"
           >
-            <div className="flex items-center gap-2">
-              <Zap size={14} className="text-mint" />
-              <span className="text-ink font-semibold">Приложение Invoxy VPN</span>
+            <div className="flex min-w-0 items-center gap-2">
+              <Zap size={14} className="shrink-0 text-mint" />
+              <span className="whitespace-nowrap font-semibold text-ink">
+                Приложение Invoxy VPN
+              </span>
             </div>
-            <span className="rounded-full bg-mint/15 border border-mint/30 px-2 py-0.5 text-[10px] font-bold text-mint uppercase">
-              Android / macOS
+            <span className="max-w-full whitespace-nowrap rounded-full border border-mint/30 bg-mint/15 px-2 py-0.5 text-[9px] font-bold uppercase text-mint md:text-[10px]">
+              Android · Windows · macOS
             </span>
           </button>
         )}

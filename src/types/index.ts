@@ -129,6 +129,7 @@ export interface SubscriptionListItem {
   tariff_name: string | null;
   traffic_limit_gb: number;
   traffic_used_gb: number;
+  traffic_used_percent?: number;
   device_limit: number;
   end_date: string | null;
   subscription_url: string | null;
@@ -138,6 +139,8 @@ export interface SubscriptionListItem {
   is_daily_paused?: boolean;
   autopay_enabled: boolean;
   connected_squads: string[] | null;
+  whitelist_traffic_used_percent?: number;
+  main_traffic_reset_enabled?: boolean;
 }
 
 // Response from GET /cabinet/subscriptions (multi-tariff)
@@ -373,6 +376,11 @@ export interface Tariff {
   whitelist_reset_price_kopeks?: number;
   whitelist_reset_min_used_gb?: number;
   whitelist_reset_max_per_month?: number;
+  // Main traffic reset
+  main_traffic_reset_enabled?: boolean;
+  main_traffic_reset_price_kopeks?: number | null;
+  main_traffic_reset_min_used_gb?: number;
+  main_traffic_reset_max_per_month?: number;
   // Daily tariff options
   is_daily?: boolean;
   daily_price_kopeks?: number;

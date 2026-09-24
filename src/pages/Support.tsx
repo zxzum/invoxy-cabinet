@@ -21,7 +21,6 @@ import { usePlatform } from '@/platform';
 import { linkifyText } from '../utils/linkify';
 import { resolveSupportContact } from '../utils/supportContact';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
-import TicketNotificationBell from '../components/TicketNotificationBell';
 
 const log = logger.createLogger('Support');
 
@@ -437,7 +436,6 @@ export default function Support() {
           <p>{t('support.subtitle', 'Ответим и поможем решить вопрос')}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <TicketNotificationBell />
           <Button
             onClick={() => {
               clearTicketQuery();

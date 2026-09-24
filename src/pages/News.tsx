@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import TicketNotificationBell from '../components/TicketNotificationBell';
 import { CalendarIcon, ImageIcon, ArrowRightIcon } from '../components/icons';
 import { newsApi } from '../api/news';
 import type { NewsListItem } from '../types/news';
@@ -57,7 +56,6 @@ export default function News() {
           <h1>{t('news.pageTitle', 'Новости')}</h1>
           <p>{t('news.pageSubtitle', 'Обновления сервиса и полезные материалы')}</p>
         </div>
-        <TicketNotificationBell />
       </header>
 
       <div className="flex flex-col gap-3 sm:flex-row">

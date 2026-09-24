@@ -18,4 +18,15 @@ describe('saveTrafficResetCart', () => {
       subscription_id: 42,
     });
   });
+
+  it('sends scope in the JSON body when regular', async () => {
+    const { subscriptionApi } = await import('./subscription');
+
+    await subscriptionApi.saveTrafficResetCart(42, 'regular');
+
+    expect(post).toHaveBeenCalledWith('/cabinet/subscription/traffic-reset/save-cart', {
+      subscription_id: 42,
+      scope: 'regular',
+    });
+  });
 });

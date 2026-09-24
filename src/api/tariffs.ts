@@ -100,6 +100,11 @@ export interface TariffDetail {
   whitelist_reset_price_kopeks: number;
   whitelist_reset_min_used_gb: number;
   whitelist_reset_max_per_month: number;
+  // Сброс основного трафика
+  main_traffic_reset_enabled: boolean;
+  main_traffic_reset_price_kopeks: number | null;
+  main_traffic_reset_min_used_gb: number;
+  main_traffic_reset_max_per_month: number;
   // Дневной тариф
   is_daily: boolean;
   daily_price_kopeks: number;
@@ -154,6 +159,11 @@ export interface TariffCreateRequest {
   whitelist_reset_price_kopeks?: number;
   whitelist_reset_min_used_gb?: number;
   whitelist_reset_max_per_month?: number;
+  // Сброс основного трафика
+  main_traffic_reset_enabled?: boolean;
+  main_traffic_reset_price_kopeks?: number | null;
+  main_traffic_reset_min_used_gb?: number;
+  main_traffic_reset_max_per_month?: number;
   // Дневной тариф
   is_daily?: boolean;
   daily_price_kopeks?: number;
@@ -213,6 +223,11 @@ export interface TariffUpdateRequest {
   whitelist_reset_price_kopeks?: number;
   whitelist_reset_min_used_gb?: number;
   whitelist_reset_max_per_month?: number;
+  // Сброс основного трафика
+  main_traffic_reset_enabled?: boolean;
+  main_traffic_reset_price_kopeks?: number | null;
+  main_traffic_reset_min_used_gb?: number;
+  main_traffic_reset_max_per_month?: number;
   // Дневной тариф
   is_daily?: boolean;
   daily_price_kopeks?: number;

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import { useSearchParams } from 'react-router';
 import {
   CheckCircle2,
   Image,
@@ -13,6 +14,10 @@ import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { ticketsApi, type Ticket as ApiTicket, type TicketDetail } from '@/invoxystart/api';
 
 export default function SupportPage() {
+  const [searchParams] = useSearchParams();
+  const requestedTicket = searchParams.get('ticket');
+  const lastRequestedTicketRef = useRef<string | null>(null);
+  const lastTicketRefreshAtRef = useRef(0);
   const [tickets, setTickets] = useState<ApiTicket[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selected, setSelected] = useState<TicketDetail | null>(null);
@@ -45,7 +50,7 @@ export default function SupportPage() {
     void loadTickets();
   }, [loadTickets]);
 
-  async function selectTicket(id: number) {
+  const selectTicket = useCallback(async (id: number) => {
     setSelectedId(id);
     setSelected(null);
     setComposing(false);
@@ -58,7 +63,49 @@ export default function SupportPage() {
     } finally {
       setDetailLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (requestedTicket === lastRequestedTicketRef.current) return;
+    lastRequestedTicketRef.current = requestedTicket;
+    const ticketId = Number(requestedTicket);
+    if (Number.isInteger(ticketId) && ticketId > 0) void selectTicket(ticketId);
+  }, [requestedTicket, selectTicket]);
+
+  const refreshVisibleTickets = useCallback(() => {
+    if (document.visibilityState === 'hidden') return;
+    const now = Date.now();
+    if (now - lastTicketRefreshAtRef.current < 500) return;
+    lastTicketRefreshAtRef.current = now;
+    const currentId = selectedId;
+    void ticketsApi
+      .getTickets({ per_page: 100 })
+      .then((result) => {
+        setTickets(result.items);
+        setListError('');
+      })
+      .catch(() => {});
+    if (currentId !== null) {
+      void ticketsApi
+        .getTicket(currentId)
+        .then((ticket) => {
+          setSelected((current) => (current?.id === currentId ? ticket : current));
+          setDetailError('');
+        })
+        .catch(() => {});
+    }
+  }, [selectedId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(refreshVisibleTickets, 60_000);
+    document.addEventListener('visibilitychange', refreshVisibleTickets);
+    window.addEventListener('focus', refreshVisibleTickets);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshVisibleTickets);
+      window.removeEventListener('focus', refreshVisibleTickets);
+    };
+  }, [refreshVisibleTickets]);
 
   function startComposing() {
     setComposing(true);

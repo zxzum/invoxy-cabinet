@@ -21,7 +21,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useUserAvatar } from '@/hooks/useUserAvatar';
 
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import TicketNotificationBell from '@/components/TicketNotificationBell';
 
 // Icons
 import {
@@ -262,9 +261,6 @@ export function AppHeader({
                 </button>
               )}
 
-              <div onClick={() => setMobileMenuOpen(false)}>
-                <TicketNotificationBell isAdmin={isAdminActive()} />
-              </div>
               <div onClick={() => setMobileMenuOpen(false)}>
                 <LanguageSwitcher />
               </div>
