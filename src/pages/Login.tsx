@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, type ReactNode } fro
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AnimatePresence, m } from 'framer-motion';
+import { AnimatePresence, LazyMotion, domMax, m } from 'framer-motion';
 import { subscriptionApi } from '@/invoxystart/api';
 import { useAuthStore } from '../store/auth';
 import { useShallow } from 'zustand/shallow';
@@ -25,8 +25,12 @@ import TelegramLoginButton from '../components/TelegramLoginButton';
 import OAuthProviderIcon from '../components/OAuthProviderIcon';
 import { saveOAuthState } from '../utils/oauth';
 import { captureReferralFromUrl, getPendingReferralCode } from '../utils/referral';
-import { PiEye, PiEyeSlash, PiGift } from 'react-icons/pi';
-import { ArrowRightIcon, EmailIcon, LockIcon, RefreshIcon, UserIcon } from '@/components/icons';
+import { PiCheck, PiGift, PiX } from 'react-icons/pi';
+import { EmailIcon, LockIcon, RefreshIcon, UserIcon } from '@/components/icons';
+import { AuthInput } from '@/components/auth/AuthInput';
+import { AuthAlert } from '@/components/auth/AuthAlert';
+import { AuthSubmitButton } from '@/components/auth/AuthSubmitButton';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { CheckEmailCard } from '@/components/auth/CheckEmailCard';
 import LegalFooter from '../components/LegalFooter';
 import LegalConsent from '../components/LegalConsent';
@@ -40,6 +44,36 @@ import brandLogo from '@/assets/logo.png';
 
 // Fallback to /images/brand-mark.png keeps test asset scans satisfied while runtime uses brandLogo
 const DEFAULT_LOGO_URL = brandLogo || '/images/brand-mark.png?v=20260924_shield';
+
+/** Направление смены состояния карточки: «вперёд» к шагу восстановления — слева направо. */
+type AuthView = 'form' | 'consent' | 'forgot' | 'check-email';
+const VIEW_ORDER: Record<AuthView, number> = { form: 0, consent: 1, forgot: 1, 'check-email': 2 };
+
+const viewVariants = {
+  enter: (dir: number) => ({ opacity: 0, x: dir >= 0 ? 44 : -44 }),
+  center: { opacity: 1, x: 0 },
+  exit: (dir: number) => ({ opacity: 0, x: dir >= 0 ? -44 : 44 }),
+};
+
+/** Поля регистрации появляются/уходят без скачка высоты карточки. */
+function collapsible(field: ReactNode, key: string, visible: boolean) {
+  return (
+    <AnimatePresence initial={false}>
+      {visible && (
+        <m.div
+          key={key}
+          initial={{ opacity: 0, height: 0, y: -6 }}
+          animate={{ opacity: 1, height: 'auto', y: 0 }}
+          exit={{ opacity: 0, height: 0, y: -6 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          className="overflow-hidden"
+        >
+          {field}
+        </m.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -84,6 +118,7 @@ export default function Login() {
     () => !isRegistrationRoute && isInTelegramWebApp() && Boolean(getTelegramInitData()),
   );
   const telegramAuthAttemptedRef = useRef(false);
+  const prevViewRef = useRef<AuthView>('form');
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
@@ -95,16 +130,6 @@ export default function Login() {
   useEffect(() => {
     captureReferralFromUrl();
   }, []);
-
-  const passwordStrength = useMemo(() => {
-    if (!password) return 0;
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-    if (/\d/.test(password)) score++;
-    if (/[^a-zA-Z0-9]/.test(password) || password.length >= 12) score++;
-    return score;
-  }, [password]);
 
   // Гейт согласия с офертой/политикой для НОВОГО пользователя. Конфиг публичный:
   // нужен до авторизации, чтобы нарисовать чекбоксы ещё на экране входа.
@@ -312,7 +337,7 @@ export default function Login() {
       // Close miniapp — Telegram will provide fresh initData on reopen
       closeMiniApp();
     } catch {
-      // If closeMiniApp fails, force a clean page reload
+      // if closeMiniApp fails, force a clean page reload
       window.location.reload();
     }
   };
@@ -463,7 +488,9 @@ export default function Login() {
 
   if (isAutoAuthenticating) {
     return (
-      <AnimatePresence mode="wait">
+      // Роут входа живёт вне InvoxyStartShell: без LazyMotion m-компоненты не
+      // анимируются и остаются в initial-стилях (прозрачный экран).
+      <LazyMotion features={domMax} strict>
         <m.main
           key="preloader"
           initial={{ opacity: 0 }}
@@ -526,200 +553,253 @@ export default function Login() {
             </div>
           </m.div>
         </m.main>
-      </AnimatePresence>
+      </LazyMotion>
     );
   }
 
+  const activeView: AuthView = consent.pending
+    ? 'consent'
+    : registeredEmail
+      ? 'check-email'
+      : showForgotPassword && isEmailAuthEnabled
+        ? 'forgot'
+        : 'form';
+  const viewDirection = VIEW_ORDER[activeView] >= VIEW_ORDER[prevViewRef.current] ? 1 : -1;
+  prevViewRef.current = activeView;
+
+  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
+
   return (
-    <main
-      className="auth-page ix-login relative isolate flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 py-10 text-ink sm:px-6 lg:px-8"
-      style={{
-        paddingTop:
-          safeTop > 0 ? `${safeTop + 16}px` : 'calc(1rem + env(safe-area-inset-top, 0px))',
-        paddingBottom:
-          safeBottom > 0 ? `${safeBottom + 16}px` : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-      }}
-    >
-      <div
-        className="fixed right-3 z-50"
+    <LazyMotion features={domMax} strict>
+      <main
+        className="auth-page ix-login relative isolate flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 py-10 text-ink sm:px-6 lg:px-8"
         style={{
-          top: safeTop > 0 ? `${safeTop + 12}px` : 'calc(12px + env(safe-area-inset-top, 0px))',
+          paddingTop:
+            safeTop > 0 ? `${safeTop + 16}px` : 'calc(1rem + env(safe-area-inset-top, 0px))',
+          paddingBottom:
+            safeBottom > 0
+              ? `${safeBottom + 16}px`
+              : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <LanguageSwitcher />
-      </div>
+        <BackgroundShapes />
 
-      <div className="relative z-10 w-full max-w-[440px] space-y-5">
-        <m.div
-          layout="position"
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="glass-panel motion-card relative w-full rounded-[36px] p-6 sm:p-8"
+        <div
+          className="fixed right-3 z-50"
+          style={{
+            top: safeTop > 0 ? `${safeTop + 12}px` : 'calc(12px + env(safe-area-inset-top, 0px))',
+          }}
         >
-          <Link
-            to="/"
-            aria-label={appName || 'Logo'}
-            className="inline-flex items-center gap-3 text-lg font-bold text-ink"
+          <LanguageSwitcher />
+        </div>
+
+        <div className="relative z-10 w-full max-w-[440px] space-y-5">
+          <m.div
+            layout="position"
+            initial={{ opacity: 0, y: 24, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="glass-panel motion-card relative w-full rounded-[36px] p-6 sm:p-8"
           >
-            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-              <img
-                src={logoUrl || DEFAULT_LOGO_URL}
-                alt={appName || 'Invoxy VPN'}
-                className="h-full w-full object-contain"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = DEFAULT_LOGO_URL;
-                }}
-              />
-            </span>
-            {appName && <span>{appName}</span>}
-          </Link>
-
-          {!showForgotPassword && !registeredEmail && !consent.pending && (
-            <div
-              role="tablist"
-              aria-label="Auth mode"
-              className="mt-6 relative flex rounded-2xl bg-white/[0.04] p-1 border border-white/10"
+            <m.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={authMode === 'login'}
-                onClick={() => {
-                  setError('');
-                  setAuthMode('login');
-                }}
-                className={`relative flex-1 py-2 text-center text-xs font-semibold transition-colors duration-200 ${
-                  authMode === 'login' ? 'text-ink' : 'text-muted hover:text-ink/80'
-                }`}
+              <Link
+                to="/"
+                aria-label={appName || 'Logo'}
+                className="inline-flex items-center gap-3 text-lg font-bold text-ink transition-opacity hover:opacity-80"
               >
-                {authMode === 'login' && (
-                  <m.div
-                    layoutId="auth-tab-pill"
-                    className="absolute inset-0 rounded-xl bg-white/[0.08] border border-white/15 shadow-sm"
-                    transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                  <img
+                    src={logoUrl || DEFAULT_LOGO_URL}
+                    alt={appName || 'Invoxy VPN'}
+                    className="h-full w-full object-contain"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = DEFAULT_LOGO_URL;
+                    }}
                   />
-                )}
-                <span className="relative z-10">{t('auth.login')}</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={authMode === 'register'}
-                onClick={() => {
-                  setError('');
-                  setAuthMode('register');
-                }}
-                className={`relative flex-1 py-2 text-center text-xs font-semibold transition-colors duration-200 ${
-                  authMode === 'register' ? 'text-ink' : 'text-muted hover:text-ink/80'
-                }`}
-              >
-                {authMode === 'register' && (
-                  <m.div
-                    layoutId="auth-tab-pill"
-                    className="absolute inset-0 rounded-xl bg-white/[0.08] border border-white/15 shadow-sm"
-                    transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
-                  />
-                )}
-                <span className="relative z-10 flex items-center justify-center gap-1.5">
-                  <span>{t('auth.register', 'Register')}</span>
-                  {referralCode && (
-                    <span className="flex h-1.5 w-1.5 rounded-full bg-mint shadow-[0_0_6px_rgba(6,214,160,0.8)]" />
-                  )}
                 </span>
-              </button>
-            </div>
-          )}
+                {appName && <span>{appName}</span>}
+              </Link>
+            </m.div>
 
-          <AnimatePresence initial={false}>
-            {authMode === 'register' && (urlReferralCode || referralCode) && isEmailAuthEnabled && (
-              <m.div
-                key="referralBanner"
-                initial={{ opacity: 0, height: 0, y: -6 }}
-                animate={{ opacity: 1, height: 'auto', y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -6 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="overflow-hidden"
+            {activeView === 'form' && (
+              <div
+                role="tablist"
+                aria-label="Auth mode"
+                className="mt-6 relative flex rounded-2xl bg-white/[0.04] p-1 border border-white/10"
               >
-                <div className="mt-4 relative overflow-hidden rounded-2xl border border-mint/35 bg-gradient-to-br from-mint/15 via-white/[0.04] to-transparent p-3.5 shadow-[0_4px_24px_rgba(6,214,160,0.12)]">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-mint/20 text-mint border border-mint/30 shadow-sm">
-                      <PiGift className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-bold text-mint tracking-wide">
-                          {t('auth.referralInvite')}
-                        </span>
-                        <span className="inline-flex items-center rounded-md bg-mint/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-mint border border-mint/30">
-                          {referralCode || urlReferralCode}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-muted leading-relaxed">
-                        {t(
-                          'auth.referralBonusDescription',
-                          'Вам начислен приветственный доступ и бонусы на аккаунт при завершении регистрации.',
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </m.div>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authMode === 'login'}
+                  onClick={() => {
+                    setError('');
+                    setAuthMode('login');
+                  }}
+                  className={`relative flex-1 py-2 text-center text-xs font-semibold transition-colors duration-200 ${
+                    authMode === 'login' ? 'text-ink' : 'text-muted hover:text-ink/80'
+                  }`}
+                >
+                  {authMode === 'login' && (
+                    <m.div
+                      layoutId="auth-tab-pill"
+                      className="absolute inset-0 rounded-xl bg-white/[0.08] border border-white/15 shadow-sm"
+                      transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
+                    />
+                  )}
+                  <span className="relative z-10">{t('auth.login')}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authMode === 'register'}
+                  onClick={() => {
+                    setError('');
+                    setAuthMode('register');
+                  }}
+                  className={`relative flex-1 py-2 text-center text-xs font-semibold transition-colors duration-200 ${
+                    authMode === 'register' ? 'text-ink' : 'text-muted hover:text-ink/80'
+                  }`}
+                >
+                  {authMode === 'register' && (
+                    <m.div
+                      layoutId="auth-tab-pill"
+                      className="absolute inset-0 rounded-xl bg-white/[0.08] border border-white/15 shadow-sm"
+                      transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-1.5">
+                    <span>{t('auth.register', 'Register')}</span>
+                    {referralCode && (
+                      <span className="flex h-1.5 w-1.5 rounded-full bg-mint shadow-[0_0_6px_rgba(6,214,160,0.8)]" />
+                    )}
+                  </span>
+                </button>
+              </div>
             )}
-          </AnimatePresence>
 
-          <div className="mt-6">
-            <h1 className="text-[32px] sm:text-[34px] font-medium tracking-[-.045em] text-ink">
-              {authTitle}
-            </h1>
-            <p className="mt-1.5 text-sm text-muted">{authSubtitle}</p>
-          </div>
-
-          {consent.pending ? (
-            <LegalConsentGate gate={consent} framed={false} className="mt-7" />
-          ) : registeredEmail ? (
-            <div className="ix-auth-check-email mt-7">
-              <CheckEmailCard
-                email={registeredEmail}
-                onBackToLogin={() => {
-                  setRegisteredEmail(null);
-                  setAuthMode('login');
-                }}
-                onChangeEmail={() => {
-                  // Адрес остаётся в поле: чаще всего его не меняют, а правят опечатку.
-                  setEmail(registeredEmail);
-                  setRegisteredEmail(null);
-                  setAuthMode('register');
-                }}
-              />
-            </div>
-          ) : (
-            <>
-              <AnimatePresence initial={false}>
-                {error && (
+            <AnimatePresence initial={false} mode="wait">
+              {authMode === 'register' &&
+                (urlReferralCode || referralCode) &&
+                isEmailAuthEnabled &&
+                activeView === 'form' && (
                   <m.div
-                    key="auth-error-alert"
-                    initial={{ opacity: 0, height: 0, y: -4 }}
+                    key="referralBanner"
+                    initial={{ opacity: 0, height: 0, y: -6 }}
                     animate={{ opacity: 1, height: 'auto', y: 0 }}
-                    exit={{ opacity: 0, height: 0, y: -4 }}
-                    transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                    exit={{ opacity: 0, height: 0, y: -6 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     className="overflow-hidden"
                   >
-                    <div
-                      role="alert"
-                      className="mt-6 rounded-2xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-400"
-                    >
-                      {error}
+                    <div className="mt-4 relative overflow-hidden rounded-2xl border border-mint/35 bg-gradient-to-br from-mint/15 via-white/[0.04] to-transparent p-3.5 shadow-[0_4px_24px_rgba(6,214,160,0.12)]">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-mint/20 text-mint border border-mint/30 shadow-sm">
+                          <PiGift className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-bold text-mint tracking-wide">
+                              {t('auth.referralInvite')}
+                            </span>
+                            <span className="inline-flex items-center rounded-md bg-mint/20 px-2 py-0.5 text-[11px] font-mono font-semibold text-mint border border-mint/30">
+                              {referralCode || urlReferralCode}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-muted leading-relaxed">
+                            {t(
+                              'auth.referralBonusDescription',
+                              'Вам начислен приветственный доступ и бонусы на аккаунт при завершении регистрации.',
+                            )}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </m.div>
                 )}
-              </AnimatePresence>
+            </AnimatePresence>
 
-              {isEmailAuthEnabled &&
-                (showForgotPassword ? (
-                  forgotPasswordSent ? (
+            <div className="mt-6">
+              <AnimatePresence initial={false} mode="wait">
+                <m.div
+                  key={`${activeView}-${authMode}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <h1 className="text-[32px] sm:text-[34px] font-medium tracking-[-.045em] text-ink">
+                    {authTitle}
+                  </h1>
+                  <p className="mt-1.5 text-sm text-muted">{authSubtitle}</p>
+                </m.div>
+              </AnimatePresence>
+            </div>
+
+            <AnimatePresence initial={false} mode="wait" custom={viewDirection}>
+              {activeView === 'consent' && (
+                <m.div
+                  key="view-consent"
+                  custom={viewDirection}
+                  variants={viewVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <LegalConsentGate gate={consent} framed={false} className="mt-7" />
+                </m.div>
+              )}
+
+              {activeView === 'check-email' && registeredEmail && (
+                <m.div
+                  key="view-check-email"
+                  custom={viewDirection}
+                  variants={viewVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                  className="ix-auth-check-email mt-7"
+                >
+                  <CheckEmailCard
+                    email={registeredEmail}
+                    onBackToLogin={() => {
+                      setRegisteredEmail(null);
+                      setAuthMode('login');
+                    }}
+                    onChangeEmail={() => {
+                      // Адрес остаётся в поле: чаще всего его не меняют, а правят опечатку.
+                      setEmail(registeredEmail);
+                      setRegisteredEmail(null);
+                      setAuthMode('register');
+                    }}
+                  />
+                </m.div>
+              )}
+
+              {activeView === 'forgot' && (
+                <m.div
+                  key="view-forgot"
+                  custom={viewDirection}
+                  variants={viewVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {forgotPasswordSent ? (
                     <div className="mt-7 space-y-4 text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-mint/10">
+                      <m.div
+                        initial={{ scale: 0.6, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: 'spring', bounce: 0.4, duration: 0.55 }}
+                        className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-mint/10 border border-mint/25"
+                      >
                         <EmailIcon className="h-6 w-6 text-mint" />
-                      </div>
+                      </m.div>
                       <p className="text-sm font-medium text-ink">
                         {t('auth.checkEmail', 'Check your email')}
                       </p>
@@ -758,26 +838,26 @@ export default function Login() {
                         onChange={setForgotPasswordEmail}
                         autoFocus
                       />
-                      {forgotPasswordError && (
-                        <p role="alert" className="text-sm text-error-400">
-                          {forgotPasswordError}
-                        </p>
-                      )}
-                      <button
-                        type="submit"
-                        disabled={forgotPasswordLoading}
-                        className="mt-2 flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {forgotPasswordLoading ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" />
-                            {t('common.loading')}
-                          </span>
-                        ) : (
-                          t('auth.sendResetLink', 'Send reset link')
+                      <AnimatePresence initial={false}>
+                        {forgotPasswordError && (
+                          <m.div
+                            key="forgot-error"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                            className="overflow-hidden"
+                          >
+                            <AuthAlert>{forgotPasswordError}</AuthAlert>
+                          </m.div>
                         )}
-                        <ArrowRightIcon className="h-[17px] w-[17px]" />
-                      </button>
+                      </AnimatePresence>
+                      <AuthSubmitButton
+                        loading={forgotPasswordLoading}
+                        loadingText={t('common.loading')}
+                      >
+                        {t('auth.sendResetLink', 'Send reset link')}
+                      </AuthSubmitButton>
                       <button
                         type="button"
                         onClick={closeForgotPasswordModal}
@@ -786,339 +866,261 @@ export default function Login() {
                         {t('common.back', 'Back')}
                       </button>
                     </form>
-                  )
-                ) : (
-                  <>
-                    <form
-                      aria-label={authTitle}
-                      className="mt-6 space-y-3"
-                      onSubmit={handleEmailSubmit}
-                    >
-                      <AnimatePresence initial={false}>
-                        {authMode === 'register' && (
-                          <m.div
-                            key="field-firstName"
-                            initial={{ opacity: 0, height: 0, y: -6 }}
-                            animate={{ opacity: 1, height: 'auto', y: 0 }}
-                            exit={{ opacity: 0, height: 0, y: -6 }}
-                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                            className="overflow-hidden"
-                          >
-                            <AuthInput
-                              icon={<UserIcon className="h-[17px] w-[17px]" />}
-                              id="firstName"
-                              label={t('auth.firstName', 'First Name')}
-                              name="firstName"
-                              autoComplete="given-name"
-                              placeholder={t('auth.firstNamePlaceholder', 'Your name (optional)')}
-                              value={firstName}
-                              onChange={setFirstName}
-                            />
-                          </m.div>
-                        )}
-                      </AnimatePresence>
-
-                      <AuthInput
-                        icon={<EmailIcon className="h-[17px] w-[17px]" />}
-                        id="email"
-                        label={t('auth.email')}
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={setEmail}
-                        required
-                      />
-
-                      <AuthInput
-                        icon={<LockIcon className="h-[17px] w-[17px]" />}
-                        id="password"
-                        label={t('auth.password')}
-                        name="password"
-                        type="password"
-                        autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={setPassword}
-                        required
-                      />
-
-                      <AnimatePresence initial={false}>
-                        {authMode === 'register' && password.length > 0 && (
-                          <m.div
-                            key="field-password-strength"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden pt-1"
-                          >
-                            <div className="space-y-1.5 px-1">
-                              <div className="flex gap-1.5 h-1">
-                                {[1, 2, 3, 4].map((step) => (
-                                  <div
-                                    key={step}
-                                    className={`h-full flex-1 rounded-full transition-colors duration-300 ${
-                                      passwordStrength >= step
-                                        ? step === 1
-                                          ? 'bg-error-500'
-                                          : step === 2
-                                            ? 'bg-amber-500'
-                                            : step === 3
-                                              ? 'bg-yellow-400'
-                                              : 'bg-mint shadow-[0_0_8px_rgba(6,214,160,0.6)]'
-                                        : 'bg-white/10'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              {password.length < 8 ? (
-                                <p className="text-xs text-error-400">
-                                  {t(
-                                    'auth.passwordTooShort',
-                                    'Password must be at least 8 characters',
-                                  )}
-                                </p>
-                              ) : (
-                                <p className="text-[11px] text-muted flex items-center justify-between">
-                                  <span>
-                                    {passwordStrength <= 2
-                                      ? t('auth.passwordModerate', 'Средний пароль')
-                                      : t('auth.passwordStrong', 'Надёжный пароль')}
-                                  </span>
-                                  <span className="font-mono text-mint/80">
-                                    {password.length} символов
-                                  </span>
-                                </p>
-                              )}
-                            </div>
-                          </m.div>
-                        )}
-                      </AnimatePresence>
-
-                      <AnimatePresence initial={false}>
-                        {authMode === 'register' && (
-                          <m.div
-                            key="field-confirmPassword"
-                            initial={{ opacity: 0, height: 0, y: -6 }}
-                            animate={{ opacity: 1, height: 'auto', y: 0 }}
-                            exit={{ opacity: 0, height: 0, y: -6 }}
-                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                            className="overflow-hidden"
-                          >
-                            <AuthInput
-                              icon={<LockIcon className="h-[17px] w-[17px]" />}
-                              id="confirmPassword"
-                              label={t('auth.confirmPassword', 'Confirm Password')}
-                              name="confirmPassword"
-                              type="password"
-                              autoComplete="new-password"
-                              placeholder="••••••••"
-                              value={confirmPassword}
-                              onChange={setConfirmPassword}
-                              required
-                            />
-                          </m.div>
-                        )}
-                      </AnimatePresence>
-
-                      <AnimatePresence initial={false}>
-                        {authMode === 'register' && (
-                          <m.div
-                            key="field-consent"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                            className="overflow-hidden"
-                          >
-                            <LegalConsent
-                              documents={consent.documents}
-                              accepted={consent.accepted}
-                              onChange={consent.toggle}
-                              disabled={isLoading}
-                              className="pt-1"
-                            />
-                          </m.div>
-                        )}
-                      </AnimatePresence>
-
-                      <button
-                        type="submit"
-                        disabled={isLoading || (authMode === 'register' && !consent.allAccepted)}
-                        className="mt-2 flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isLoading ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black" />
-                            {t('common.loading')}
-                          </span>
-                        ) : authMode === 'login' ? (
-                          t('auth.login')
-                        ) : (
-                          t('auth.register', 'Register')
-                        )}
-                        <ArrowRightIcon className="h-[17px] w-[17px]" />
-                      </button>
-                    </form>
-
-                    {authMode === 'login' && (
-                      <button
-                        type="button"
-                        onClick={() => setShowForgotPassword(true)}
-                        className="mt-4 w-full text-center text-sm text-muted transition-colors hover:text-ink"
-                      >
-                        {t('auth.forgotPassword', 'Forgot password?')}
-                      </button>
-                    )}
-
-                    <p className="mt-7 text-center text-sm text-muted">
-                      {authMode === 'register'
-                        ? t('auth.hasAccount', 'Already have an account?')
-                        : t('auth.noAccount', "Don't have an account?")}{' '}
-                      <Link
-                        className="font-semibold text-mint"
-                        to={authMode === 'register' ? '/login' : '/register'}
-                        onClick={() => setAuthMode(authMode === 'register' ? 'login' : 'register')}
-                      >
-                        {authMode === 'register' ? t('auth.login') : t('auth.register', 'Register')}
-                      </Link>
-                    </p>
-                  </>
-                ))}
-
-              <div className="mt-8 border-t border-white/10 pt-6">
-                <div className="space-y-3">
-                  {isTelegramWebApp && (isAuthInitializing || isLoading) ? (
-                    <div className="py-6 text-center">
-                      <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-                      <p className="text-sm text-muted">{t('auth.authenticating')}</p>
-                    </div>
-                  ) : isTelegramWebApp && error ? (
-                    <div className="space-y-3 text-center">
-                      <button
-                        onClick={handleRetryTelegramAuth}
-                        className="btn-primary mx-auto flex items-center gap-2 px-5 py-2.5"
-                      >
-                        <RefreshIcon className="h-4 w-4" />
-                        {t('auth.tryAgain')}
-                      </button>
-                      <p className="text-xs text-muted">
-                        {t(
-                          'auth.telegramReopenHint',
-                          'If the problem persists, close and reopen the app',
-                        )}
-                      </p>
-                    </div>
-                  ) : (
-                    <TelegramLoginButton referralCode={referralCode || undefined} />
                   )}
-                </div>
+                </m.div>
+              )}
 
-                {oauthProviders.length > 0 && (
-                  <>
-                    <div className="my-5 flex items-center gap-3">
-                      <div className="h-px flex-1 bg-white/10" />
-                      <span className="text-xs text-muted">{t('auth.or', 'or')}</span>
-                      <div className="h-px flex-1 bg-white/10" />
-                    </div>
-                    <div className="flex items-stretch gap-2">
-                      {oauthProviders.map((provider) => (
-                        <button
-                          key={provider.name}
-                          type="button"
-                          onClick={() => handleOAuthLogin(provider.name)}
-                          disabled={oauthLoading !== null}
-                          className="glass-control flex flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl py-2.5 transition-colors hover:border-white/20 disabled:opacity-50"
-                          title={provider.display_name}
+              {activeView === 'form' && (
+                <m.div
+                  key="view-form"
+                  custom={viewDirection}
+                  variants={viewVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <AnimatePresence initial={false}>
+                    {error && (
+                      <m.div
+                        key="auth-error-alert"
+                        initial={{ opacity: 0, height: 0, y: -4 }}
+                        animate={{ opacity: 1, height: 'auto', y: 0 }}
+                        exit={{ opacity: 0, height: 0, y: -4 }}
+                        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-6">
+                          <AuthAlert>{error}</AuthAlert>
+                        </div>
+                      </m.div>
+                    )}
+                  </AnimatePresence>
+
+                  {isEmailAuthEnabled && (
+                    <>
+                      <form
+                        aria-label={authTitle}
+                        className="mt-6 space-y-3"
+                        onSubmit={handleEmailSubmit}
+                      >
+                        {collapsible(
+                          <AuthInput
+                            icon={<UserIcon className="h-[17px] w-[17px]" />}
+                            id="firstName"
+                            label={t('auth.firstName', 'First Name')}
+                            name="firstName"
+                            autoComplete="given-name"
+                            placeholder={t('auth.firstNamePlaceholder', 'Your name (optional)')}
+                            value={firstName}
+                            onChange={setFirstName}
+                          />,
+                          'field-firstName',
+                          authMode === 'register',
+                        )}
+
+                        <m.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.35, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
                         >
-                          {oauthLoading === provider.name ? (
-                            <span className="h-5 w-5 animate-spin rounded-full border-2 border-dark-400 border-t-white" />
-                          ) : (
-                            <OAuthProviderIcon provider={provider.name} className="h-5 w-5" />
-                          )}
-                          <span className="text-[10px] leading-none text-muted">
-                            {provider.display_name}
-                          </span>
+                          <AuthInput
+                            icon={<EmailIcon className="h-[17px] w-[17px]" />}
+                            id="email"
+                            label={t('auth.email')}
+                            name="email"
+                            type="email"
+                            autoComplete="email"
+                            placeholder="you@example.com"
+                            value={email}
+                            onChange={setEmail}
+                            required
+                          />
+                        </m.div>
+
+                        <m.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.35, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                          <AuthInput
+                            icon={<LockIcon className="h-[17px] w-[17px]" />}
+                            id="password"
+                            label={t('auth.password')}
+                            name="password"
+                            type="password"
+                            autoComplete={
+                              authMode === 'login' ? 'current-password' : 'new-password'
+                            }
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={setPassword}
+                            required
+                          />
+                        </m.div>
+
+                        {collapsible(
+                          <div className="pt-1">
+                            <PasswordStrengthMeter password={password} />
+                          </div>,
+                          'field-password-strength',
+                          authMode === 'register' && password.length > 0,
+                        )}
+
+                        {collapsible(
+                          <AuthInput
+                            icon={<LockIcon className="h-[17px] w-[17px]" />}
+                            id="confirmPassword"
+                            label={t('auth.confirmPassword', 'Confirm Password')}
+                            name="confirmPassword"
+                            type="password"
+                            autoComplete="new-password"
+                            placeholder="••••••••"
+                            value={confirmPassword}
+                            onChange={setConfirmPassword}
+                            right={
+                              confirmPassword.length > 0 ? (
+                                <m.span
+                                  initial={{ scale: 0.4, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  transition={{ type: 'spring', bounce: 0.5, duration: 0.4 }}
+                                  className={`flex shrink-0 items-center ${
+                                    passwordsMatch ? 'text-mint' : 'text-error-400'
+                                  }`}
+                                  aria-hidden="true"
+                                >
+                                  {passwordsMatch ? (
+                                    <PiCheck className="h-5 w-5" />
+                                  ) : (
+                                    <PiX className="h-5 w-5" />
+                                  )}
+                                </m.span>
+                              ) : undefined
+                            }
+                            required
+                          />,
+                          'field-confirmPassword',
+                          authMode === 'register',
+                        )}
+
+                        {collapsible(
+                          <LegalConsent
+                            documents={consent.documents}
+                            accepted={consent.accepted}
+                            onChange={consent.toggle}
+                            disabled={isLoading}
+                            className="pt-1"
+                          />,
+                          'field-consent',
+                          authMode === 'register',
+                        )}
+
+                        <AuthSubmitButton
+                          loading={isLoading}
+                          loadingText={t('common.loading')}
+                          disabled={authMode === 'register' && !consent.allAccepted}
+                        >
+                          {authMode === 'login' ? t('auth.login') : t('auth.register', 'Register')}
+                        </AuthSubmitButton>
+                      </form>
+
+                      {authMode === 'login' && (
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPassword(true)}
+                          className="mt-4 w-full text-center text-sm text-muted transition-colors hover:text-ink"
+                        >
+                          {t('auth.forgotPassword', 'Forgot password?')}
                         </button>
-                      ))}
+                      )}
+
+                      <p className="mt-7 text-center text-sm text-muted">
+                        {authMode === 'register'
+                          ? t('auth.hasAccount', 'Already have an account?')
+                          : t('auth.noAccount', "Don't have an account?")}{' '}
+                        <Link
+                          className="font-semibold text-mint transition-opacity hover:opacity-80"
+                          to={authMode === 'register' ? '/login' : '/register'}
+                          onClick={() =>
+                            setAuthMode(authMode === 'register' ? 'login' : 'register')
+                          }
+                        >
+                          {authMode === 'register'
+                            ? t('auth.login')
+                            : t('auth.register', 'Register')}
+                        </Link>
+                      </p>
+                    </>
+                  )}
+
+                  <div className="mt-8 border-t border-white/10 pt-6">
+                    <div className="space-y-3">
+                      {isTelegramWebApp && (isAuthInitializing || isLoading) ? (
+                        <div className="py-6 text-center">
+                          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-mint/40 border-t-mint" />
+                          <p className="text-sm text-muted">{t('auth.authenticating')}</p>
+                        </div>
+                      ) : isTelegramWebApp && error ? (
+                        <div className="space-y-3 text-center">
+                          <button
+                            onClick={handleRetryTelegramAuth}
+                            className="mx-auto flex items-center gap-2 rounded-full bg-mint px-5 py-2.5 text-sm font-bold text-bg transition-transform active:scale-[.98]"
+                          >
+                            <RefreshIcon className="h-4 w-4" />
+                            {t('auth.tryAgain')}
+                          </button>
+                          <p className="text-xs text-muted">
+                            {t(
+                              'auth.telegramReopenHint',
+                              'If the problem persists, close and reopen the app',
+                            )}
+                          </p>
+                        </div>
+                      ) : (
+                        <TelegramLoginButton referralCode={referralCode || undefined} />
+                      )}
                     </div>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </m.div>
-        {footerEnabled && <LegalFooter className="pt-1" />}
-      </div>
-    </main>
-  );
-}
 
-function AuthInput({
-  icon,
-  id,
-  label,
-  name,
-  type = 'text',
-  autoComplete,
-  placeholder,
-  value,
-  onChange,
-  autoFocus = false,
-  required = false,
-}: {
-  icon: ReactNode;
-  id: string;
-  label: string;
-  name: string;
-  type?: string;
-  autoComplete: string;
-  placeholder?: string;
-  value: string;
-  onChange: (value: string) => void;
-  autoFocus?: boolean;
-  required?: boolean;
-}) {
-  const [showPassword, setShowPassword] = useState(false);
-  const isPasswordField = type === 'password';
-  const effectiveType = isPasswordField ? (showPassword ? 'text' : 'password') : type;
-
-  return (
-    <label
-      htmlFor={id}
-      className="glass-control flex h-14 items-center gap-3 rounded-2xl px-4 transition-all duration-200 focus-within:border-mint/55 focus-within:shadow-[0_0_16px_rgba(6,214,160,0.12)]"
-    >
-      <span className="text-mint shrink-0">{icon}</span>
-      <span className="sr-only">{label}</span>
-      <input
-        id={id}
-        name={name}
-        type={effectiveType}
-        autoComplete={autoComplete}
-        autoFocus={autoFocus}
-        required={required}
-        placeholder={placeholder ?? label}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
-      />
-      {isPasswordField && (
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={(e) => {
-            e.preventDefault();
-            setShowPassword((prev) => !prev);
-          }}
-          className="text-muted/60 hover:text-ink transition-colors p-1 focus:outline-none shrink-0"
-          title={showPassword ? 'Hide password' : 'Show password'}
-          aria-label={showPassword ? 'Hide password' : 'Show password'}
-        >
-          {showPassword ? <PiEyeSlash className="h-5 w-5" /> : <PiEye className="h-5 w-5" />}
-        </button>
-      )}
-    </label>
+                    {oauthProviders.length > 0 && (
+                      <>
+                        <div className="my-5 flex items-center gap-3">
+                          <div className="h-px flex-1 bg-white/10" />
+                          <span className="text-xs text-muted">{t('auth.or', 'or')}</span>
+                          <div className="h-px flex-1 bg-white/10" />
+                        </div>
+                        <div className="flex items-stretch gap-2">
+                          {oauthProviders.map((provider) => (
+                            <m.button
+                              key={provider.name}
+                              type="button"
+                              onClick={() => handleOAuthLogin(provider.name)}
+                              disabled={oauthLoading !== null}
+                              whileHover={oauthLoading === null ? { y: -2 } : undefined}
+                              whileTap={oauthLoading === null ? { scale: 0.97 } : undefined}
+                              className="glass-control flex flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl py-2.5 transition-colors hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/40 disabled:opacity-50"
+                              title={provider.display_name}
+                            >
+                              {oauthLoading === provider.name ? (
+                                <span className="h-5 w-5 animate-spin rounded-full border-2 border-dark-400 border-t-white" />
+                              ) : (
+                                <OAuthProviderIcon provider={provider.name} className="h-5 w-5" />
+                              )}
+                              <span className="text-[10px] leading-none text-muted">
+                                {provider.display_name}
+                              </span>
+                            </m.button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </m.div>
+              )}
+            </AnimatePresence>
+          </m.div>
+          {footerEnabled && <LegalFooter className="pt-1" />}
+        </div>
+      </main>
+    </LazyMotion>
   );
 }

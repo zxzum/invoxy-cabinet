@@ -22,12 +22,12 @@ export default function LegalFooter({ className = '' }: LegalFooterProps) {
 
   return (
     <footer
-      className={`flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-center text-[11px] leading-relaxed text-dark-500 ${className}`}
+      className={`flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-center text-[11px] leading-relaxed text-muted ${className}`}
     >
       {LINKS.map((link, index) => (
         <Fragment key={link.href}>
           {index > 0 && (
-            <span className="text-dark-700" aria-hidden="true">
+            <span className="text-muted/50" aria-hidden="true">
               ·
             </span>
           )}
@@ -35,7 +35,7 @@ export default function LegalFooter({ className = '' }: LegalFooterProps) {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="transition-colors hover:text-accent-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50"
+            className="transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/40"
           >
             {t(link.labelKey, link.fallback)}
           </a>

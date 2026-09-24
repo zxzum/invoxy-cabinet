@@ -48,7 +48,7 @@ export default function LegalConsent({
           <label
             key={document}
             htmlFor={inputId}
-            className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-dark-400"
+            className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-muted"
           >
             <input
               id={inputId}
@@ -56,7 +56,7 @@ export default function LegalConsent({
               checked={Boolean(accepted[document])}
               disabled={disabled}
               onChange={(e) => onChange(document, e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-dark-600 bg-dark-800 text-accent-500 focus:ring-accent-500"
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/15 bg-white/5 text-mint focus:ring-mint/50"
             />
             <span>
               {t('auth.legalConsentPrefix', 'Я ознакомлен(а) с документом')}{' '}
@@ -65,13 +65,13 @@ export default function LegalConsent({
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent-400 underline underline-offset-2 transition-colors hover:text-accent-300"
+                  className="text-mint underline underline-offset-2 transition-opacity hover:opacity-80"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {title}
                 </a>
               ) : (
-                <span className="text-dark-200">{title}</span>
+                <span className="text-ink">{title}</span>
               )}
             </span>
           </label>
