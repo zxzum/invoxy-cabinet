@@ -34,7 +34,7 @@ export function Tariffs() {
     { months: 1, label: '1 месяц' },
     { months: 3, label: '3 месяца' },
     { months: 6, label: '6 месяцев' },
-    { months: 12, label: '12 месяцев', badge: 'до −15%' },
+    { months: 12, label: '12 месяцев', badge: 'до −30%' },
   ];
 
   return (
