@@ -39,6 +39,7 @@ import {
   LogoutIcon,
   StarIcon,
   WalletIcon,
+  ShieldIcon,
 } from '@/components/icons';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -53,6 +54,7 @@ export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const logout = useAuthStore((state) => state.logout);
+  const isAdmin = useAuthStore((state) => state.isAdmin);
   const queryClient = useQueryClient();
   const { currencySymbol, formatAmount } = useCurrency();
 
@@ -709,6 +711,37 @@ export default function Profile() {
                 </div>
               </button>
             </Card>
+
+            {isAdmin && (
+              <Card
+                asChild
+                className="glass-surface border-warning-500/30 bg-warning-500/5"
+                interactive
+              >
+                <button
+                  type="button"
+                  className="w-full text-left"
+                  onClick={() => navigate('/admin')}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning-500/10 text-warning-400">
+                        <ShieldIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-warning-400">
+                          {t('admin.nav.title', 'Панель администратора')}
+                        </h2>
+                        <p className="text-sm text-dark-400">
+                          {t('admin.nav.subtitle', 'Пользователи, тарифы и управление')}
+                        </p>
+                      </div>
+                    </div>
+                    <ArrowRightIcon className="h-5 w-5 text-warning-400" />
+                  </div>
+                </button>
+              </Card>
+            )}
 
             <Card className="glass-surface p-5 sm:p-6">
               <h2 className="mb-4 text-lg font-semibold text-dark-100">{t('nav.support')}</h2>

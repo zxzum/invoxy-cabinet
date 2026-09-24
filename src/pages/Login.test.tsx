@@ -256,7 +256,7 @@ describe('Login integration shell', () => {
     });
     const telegram = installTelegramLoginStub();
 
-    renderLogin('/register');
+    renderLogin('/register?ref=invite-42');
 
     expect(await screen.findByRole('link', { name: 'Luna VPN' })).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Luna VPN' }).getAttribute('src')).toBe(

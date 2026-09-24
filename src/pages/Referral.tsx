@@ -944,33 +944,42 @@ export default function Referral() {
       </motion.div>
 
       {/* Earnings History */}
-      {earnings?.items && earnings.items.length > 0 && (
-        <div className="glass-surface bento-card">
-          <h2 className="mb-4 text-lg font-semibold text-dark-100">
-            {t('referral.earningsHistory')}
-          </h2>
-          <div className="space-y-3">
-            {earnings.items.map((earning) => (
-              <div key={earning.id} className="card-inset flex items-center justify-between p-3">
-                <div>
-                  <div className="text-dark-100">
-                    {earning.referral_first_name ||
-                      earning.referral_username ||
-                      t('referral.anonymousReferral')}
+      {(() => {
+        const visibleEarnings =
+          earnings?.items?.filter(
+            (e) =>
+              e.reason !== 'referral_registration_pending' &&
+              (e.amount_kopeks > 0 || (e.days_granted ?? 0) > 0),
+          ) || [];
+        if (visibleEarnings.length === 0) return null;
+        return (
+          <div className="glass-surface bento-card">
+            <h2 className="mb-4 text-lg font-semibold text-dark-100">
+              {t('referral.earningsHistory')}
+            </h2>
+            <div className="space-y-3">
+              {visibleEarnings.map((earning) => (
+                <div key={earning.id} className="card-inset flex items-center justify-between p-3">
+                  <div>
+                    <div className="text-dark-100">
+                      {earning.referral_first_name ||
+                        earning.referral_username ||
+                        t('referral.anonymousReferral')}
+                    </div>
+                    <div className="mt-0.5 text-xs text-dark-500">
+                      {t(`referral.reasons.${earning.reason}`, earning.reason)}
+                      {(earning.level ?? 1) > 1 &&
+                        ` • ${t('referral.levelBadge', { count: earning.level ?? 1 })}`}{' '}
+                      • {new Date(earning.created_at).toLocaleDateString(i18n.language)}
+                    </div>
                   </div>
-                  <div className="mt-0.5 text-xs text-dark-500">
-                    {t(`referral.reasons.${earning.reason}`, earning.reason)}
-                    {(earning.level ?? 1) > 1 &&
-                      ` • ${t('referral.levelBadge', { count: earning.level ?? 1 })}`}{' '}
-                    • {new Date(earning.created_at).toLocaleDateString(i18n.language)}
-                  </div>
+                  <div className="font-semibold text-success-400">{formatEarning(earning)}</div>
                 </div>
-                <div className="font-semibold text-success-400">{formatEarning(earning)}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ==================== Partner Application Section ==================== */}
 

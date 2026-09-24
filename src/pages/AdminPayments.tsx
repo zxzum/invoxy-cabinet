@@ -44,6 +44,44 @@ function StatusBadge({ status }: StatusBadgeProps) {
   );
 }
 
+function PlatformBadge({ platform }: { platform?: string | null }) {
+  if (!platform) return null;
+  const p = platform.toLowerCase();
+  if (p === 'mini-app' || p === 'miniapp' || p === 'tma') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-400">
+        <span>📱</span> Mini App
+      </span>
+    );
+  }
+  if (p === 'web' || p === 'cabinet' || p === 'landing' || p === 'site') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-indigo-500/30 bg-indigo-500/20 px-2.5 py-0.5 text-xs font-medium text-indigo-400">
+        <span>🌐</span> Сайт
+      </span>
+    );
+  }
+  if (p === 'app' || p === 'mobile' || p === 'ios' || p === 'android') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
+        <span>📲</span> Приложение
+      </span>
+    );
+  }
+  if (p === 'bot' || p === 'telegram_bot' || p === 'telegram') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/20 px-2.5 py-0.5 text-xs font-medium text-blue-400">
+        <span>🤖</span> Бот
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-dark-700/50 px-2.5 py-0.5 text-xs font-medium text-dark-300">
+      {platform}
+    </span>
+  );
+}
+
 export default function AdminPayments() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -418,6 +456,7 @@ export default function AdminPayments() {
                       {/* Status badge + method */}
                       <div className="mb-2 flex flex-wrap items-center gap-2">
                         <StatusBadge status={payment.status_text} />
+                        <PlatformBadge platform={payment.source_platform} />
                         <span className="font-semibold text-dark-100">
                           {payment.method_display}
                         </span>

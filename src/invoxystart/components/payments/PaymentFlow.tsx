@@ -20,6 +20,7 @@ import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { ApiError, balanceApi, subscriptionApi, type PaymentMethod } from '@/invoxystart/api';
 import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
+import { useSuccessNotification } from '@/store/successNotification';
 
 export interface PaymentRequest {
   amount: number;
@@ -53,6 +54,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
   const [request, setRequest] = useState<PaymentRequest | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [payingMethod, setPayingMethod] = useState<string | null>(null);
 
   function openPayment(nextRequest: PaymentRequest) {
     setRequest(nextRequest);
@@ -63,6 +65,9 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
     clearResponseCache();
     void refreshUser();
     void queryClient.invalidateQueries({ queryKey: ['balance'] });
+    void queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    void queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+    void queryClient.invalidateQueries({ queryKey: ['devices'] });
     void queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] });
     void queryClient.invalidateQueries({ queryKey: ['invoxy-subscription-details'] });
     void queryClient.invalidateQueries({ queryKey: ['invoxy-subscription-status'] });
@@ -71,8 +76,12 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
   async function pay(method: string, payment = request ?? undefined, paymentOption?: string) {
     if (!payment || busy) return;
     setBusy(true);
+    setPayingMethod(method);
     try {
       if (method === 'balance') {
+        let purchasedTariffName = '';
+        let expiresAt: string | undefined;
+
         if (payment.addonType === 'devices') {
           await subscriptionApi.purchaseDevices(payment.addonValue ?? 1, payment.subscriptionId);
         } else if (payment.addonType === 'traffic' || payment.addonType === 'lte') {
@@ -86,22 +95,38 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
         } else if (payment.addonType === 'main_reset') {
           await subscriptionApi.resetTraffic(payment.subscriptionId, 'regular');
         } else if (payment.tariffId && payment.periodDays) {
-          await subscriptionApi.purchaseTariff(
+          const res = await subscriptionApi.purchaseTariff(
             payment.tariffId,
             payment.periodDays,
             payment.trafficGb,
             payment.subscriptionId,
             payment.devices,
           );
+          purchasedTariffName = (res as any)?.tariff_name || '';
+          expiresAt = (res as any)?.subscription?.end_date;
         } else if (payment.periodDays) {
-          await subscriptionApi.renewSubscription(payment.periodDays, payment.subscriptionId);
+          const res = await subscriptionApi.renewSubscription(
+            payment.periodDays,
+            payment.subscriptionId,
+          );
+          purchasedTariffName = payment.purpose || '';
+          expiresAt = res.new_end_date;
         } else {
           throw new Error('Недостаточно данных для оплаты с баланса');
         }
         refreshPurchasedData();
-        showToast('Оплачено с баланса');
+
+        // Celebration success notification modal on dashboard
+        useSuccessNotification.getState().show({
+          type: payment.subscriptionId ? 'subscription_renewed' : 'subscription_purchased',
+          tariffName: purchasedTariffName || payment.purpose || 'Подписка',
+          expiresAt,
+          amountKopeks: Math.round(payment.amount * 100),
+        });
+
         payment.onComplete?.();
         setOpen(false);
+        navigate('/dashboard');
         return;
       }
 
@@ -121,9 +146,14 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
 
       if (!result) {
         refreshPurchasedData();
-        showToast('Оплачено с баланса');
+        useSuccessNotification.getState().show({
+          type: payment.subscriptionId ? 'subscription_renewed' : 'subscription_purchased',
+          tariffName: payment.purpose || 'Подписка',
+          amountKopeks: Math.round(payment.amount * 100),
+        });
         payment.onComplete?.();
         setOpen(false);
+        navigate('/dashboard');
         return;
       }
 
@@ -142,10 +172,23 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       if (error instanceof ApiError && error.status === 409) {
         showToast('У вас уже есть активный счёт. Оплатите или отмените его.');
       } else {
-        showToast('Не удалось создать платёж');
+        const errorDetail =
+          error instanceof ApiError && error.data && typeof error.data === 'object'
+            ? (error.data as { detail?: string | { message?: string } }).detail
+            : null;
+        const msg =
+          typeof errorDetail === 'string'
+            ? errorDetail
+            : typeof errorDetail === 'object' && errorDetail?.message
+              ? errorDetail.message
+              : error instanceof Error
+                ? error.message
+                : 'Не удалось создать платёж';
+        showToast(msg);
       }
     } finally {
       setBusy(false);
+      setPayingMethod(null);
     }
   }
 
@@ -159,6 +202,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       {children}
       <PaymentDialog
         busy={busy}
+        payingMethod={payingMethod}
         open={open}
         request={request}
         onClose={() => setOpen(false)}
@@ -239,6 +283,7 @@ function PaymentDialog({
   open,
   request,
   busy,
+  payingMethod,
   onClose,
   onPay,
   onTopUp,
@@ -246,6 +291,7 @@ function PaymentDialog({
   open: boolean;
   request: PaymentRequest | null;
   busy: boolean;
+  payingMethod?: string | null;
   onClose: () => void;
   onPay: PayHandler;
   onTopUp: () => void;
@@ -268,7 +314,13 @@ function PaymentDialog({
           </strong>
         </div>
         {request && (
-          <PaymentMethods busy={busy} request={request} onPay={onPay} onTopUp={onTopUp} />
+          <PaymentMethods
+            busy={busy}
+            payingMethod={payingMethod}
+            request={request}
+            onPay={onPay}
+            onTopUp={onTopUp}
+          />
         )}
       </div>
     </AdaptiveDialog>
@@ -278,11 +330,13 @@ function PaymentDialog({
 export function PaymentMethods({
   request,
   busy = false,
+  payingMethod = null,
   onPay,
   onTopUp,
 }: {
   request: PaymentRequest;
   busy?: boolean;
+  payingMethod?: string | null;
   onPay: PayHandler;
   onTopUp: () => void;
 }) {
@@ -313,7 +367,13 @@ export function PaymentMethods({
     <div className="payment-methods-stagger mt-4 grid min-w-0 gap-2">
       {showBalance && (
         <div
-          className={`payment-method-item rounded-2xl border p-4 ${canUseBalance ? 'border-mint/60 bg-mint/[.12] shadow-[0_0_28px_rgba(165,232,196,.08)]' : 'border-amber-200/20 bg-amber-200/[.05]'}`}
+          className={`payment-method-item rounded-2xl border p-4 transition-all duration-300 ${
+            canUseBalance
+              ? payingMethod === 'balance'
+                ? 'border-mint bg-mint/[.18] shadow-[0_0_32px_rgba(165,232,196,.2)] ring-2 ring-mint/40'
+                : 'border-mint/60 bg-mint/[.12] shadow-[0_0_28px_rgba(165,232,196,.08)]'
+              : 'border-amber-200/20 bg-amber-200/[.05]'
+          }`}
         >
           <button
             type="button"
@@ -322,16 +382,34 @@ export function PaymentMethods({
             className="flex w-full items-center gap-3 text-left disabled:cursor-default"
           >
             <span
-              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full ${canUseBalance ? 'bg-mint text-bg' : 'glass-control text-muted'}`}
+              className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-transform ${
+                canUseBalance ? 'bg-mint text-bg' : 'glass-control text-muted'
+              }`}
             >
-              <Wallet size={18} />
+              {payingMethod === 'balance' ? (
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-bg border-t-transparent" />
+              ) : (
+                <Wallet size={18} />
+              )}
             </span>
             <span className="min-w-0 flex-1">
-              <strong className="text-sm">С баланса</strong>
+              <strong className="text-sm">
+                {payingMethod === 'balance' ? 'Оформление подписки…' : 'С баланса'}
+              </strong>
               <span
-                className={`mt-1 block text-xs ${canUseBalance ? 'text-mint' : 'text-amber-100/70'}`}
+                className={`mt-1 block text-xs ${
+                  payingMethod === 'balance'
+                    ? 'text-mint font-medium animate-pulse'
+                    : canUseBalance
+                      ? 'text-mint'
+                      : 'text-amber-100/70'
+                }`}
               >
-                {canUseBalance ? 'Средств достаточно' : 'Нужно пополнить баланс'}
+                {payingMethod === 'balance'
+                  ? 'Выдача подписки и настройка…'
+                  : canUseBalance
+                    ? 'Средств достаточно'
+                    : 'Нужно пополнить баланс'}
               </span>
             </span>
             <strong className="shrink-0 text-sm">

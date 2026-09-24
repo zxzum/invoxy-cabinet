@@ -3,18 +3,29 @@ const REFERRAL_TTL_KEY = 'referral_code_ttl';
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const CODE_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
 
+const INVALID_CODES = new Set(['null', 'undefined', 'false', 'true', 'none']);
+
+export function isValidReferralCode(code: string | null | undefined): code is string {
+  if (!code) return false;
+  const trimmed = code.trim();
+  if (!trimmed || INVALID_CODES.has(trimmed.toLowerCase())) return false;
+  return CODE_PATTERN.test(trimmed);
+}
+
 /**
  * Get valid referral code from localStorage, clearing expired entries.
  */
 function getValidCode(): string | null {
   try {
     const code = localStorage.getItem(REFERRAL_KEY);
-    if (!code) return null;
+    if (!isValidReferralCode(code)) {
+      clearCode();
+      return null;
+    }
 
     const ttl = localStorage.getItem(REFERRAL_TTL_KEY);
     if (!ttl || Number.isNaN(Number(ttl)) || Date.now() > Number(ttl)) {
-      localStorage.removeItem(REFERRAL_KEY);
-      localStorage.removeItem(REFERRAL_TTL_KEY);
+      clearCode();
       return null;
     }
 
@@ -39,7 +50,7 @@ export function captureReferralFromUrl(): void {
   try {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('ref') || params.get('start');
-    if (!code || !CODE_PATTERN.test(code)) return;
+    if (!isValidReferralCode(code)) return;
 
     localStorage.setItem(REFERRAL_KEY, code);
     localStorage.setItem(REFERRAL_TTL_KEY, String(Date.now() + TTL_MS));

@@ -13,6 +13,7 @@ export interface User {
   language: string;
   created_at: string;
   auth_type: 'telegram' | 'email' | 'google' | 'yandex' | 'discord' | 'vk'; // Тип аутентификации
+  is_admin?: boolean;
 }
 
 // Фото профиля Telegram для шапки: подписанная ссылка на прокси медиа бота или null.
@@ -835,6 +836,8 @@ export interface PendingPayment {
   purpose_code?: 'topup' | 'tariff';
   is_active?: boolean;
   can_cancel?: boolean;
+  source_platform?: string | null;
+  decline_reason?: string | null;
 }
 
 export interface ManualCheckResponse {

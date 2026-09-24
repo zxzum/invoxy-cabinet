@@ -165,8 +165,13 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   const userName = displayName(user);
-  const balanceRubles = balanceData?.balance_rubles ?? (balanceData?.balance_kopeks ?? 0) / 100;
-  const balanceLabel = formatWithCurrency(balanceRubles);
+  const balanceRubles =
+    balanceData?.balance_rubles ??
+    (balanceData?.balance_kopeks != null
+      ? balanceData.balance_kopeks / 100
+      : (user?.balance_rubles ?? (user?.balance_kopeks != null ? user.balance_kopeks / 100 : 0)));
+  const hasKnownBalance = balanceData != null || user != null;
+  const balanceLabel = hasKnownBalance ? formatWithCurrency(balanceRubles) : '—';
   const greeting = userName
     ? t('dashboard.welcome', { name: userName })
     : t('dashboard.welcomeNoName', 'Welcome!');

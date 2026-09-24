@@ -292,12 +292,16 @@ export default function AdminTariffCreate() {
       setWhitelistResetMaxPerMonth(data.whitelist_reset_max_per_month || 0);
       setMainTrafficResetEnabled(data.main_traffic_reset_enabled ?? true);
       setMainTrafficResetPriceRubles(
-        data.main_traffic_reset_price_kopeks
+        data.main_traffic_reset_price_kopeks != null
           ? Math.round(data.main_traffic_reset_price_kopeks / 100)
           : '',
       );
-      setMainTrafficResetMinUsedGb(data.main_traffic_reset_min_used_gb ?? 100);
-      setMainTrafficResetMaxPerMonth(data.main_traffic_reset_max_per_month || 0);
+      setMainTrafficResetMinUsedGb(
+        data.main_traffic_reset_min_used_gb != null ? data.main_traffic_reset_min_used_gb : 100,
+      );
+      setMainTrafficResetMaxPerMonth(
+        data.main_traffic_reset_max_per_month != null ? data.main_traffic_reset_max_per_month : 0,
+      );
       setTrafficResetMode(data.traffic_reset_mode || null);
       setShowInGift(data.show_in_gift ?? true);
       setIsTariffHighlighted(data.is_highlighted ?? false);
@@ -360,11 +364,11 @@ export default function AdminTariffCreate() {
       whitelist_reset_max_per_month: toNumber(whitelistResetMaxPerMonth),
       main_traffic_reset_enabled: mainTrafficResetEnabled,
       main_traffic_reset_price_kopeks:
-        mainTrafficResetPriceRubles !== '' && Number(mainTrafficResetPriceRubles) > 0
+        mainTrafficResetPriceRubles !== '' && Number(mainTrafficResetPriceRubles) >= 0
           ? Number(mainTrafficResetPriceRubles) * 100
           : null,
       main_traffic_reset_min_used_gb: toNumber(mainTrafficResetMinUsedGb, 100),
-      main_traffic_reset_max_per_month: toNumber(mainTrafficResetMaxPerMonth),
+      main_traffic_reset_max_per_month: toNumber(mainTrafficResetMaxPerMonth, 0),
       whitelist_traffic_topup_packages: {},
       is_daily: isDaily,
       daily_price_kopeks: isDaily ? toNumber(dailyPriceKopeks) : 0,

@@ -178,7 +178,6 @@ export default function Dashboard() {
 
   const {
     data: devicesData,
-    isLoading: devicesLoading,
     isError: devicesError,
     refetch: refetchDevices,
   } = useQuery({
@@ -231,7 +230,6 @@ export default function Dashboard() {
 
   const {
     data: renewalOptions,
-    isLoading: renewalLoading,
     isError: renewalError,
     refetch: refetchRenewalOptions,
   } = useQuery({
@@ -243,7 +241,6 @@ export default function Dashboard() {
 
   const {
     data: regularTrafficPackages,
-    isLoading: regularTrafficPackagesLoading,
     isError: regularTrafficPackagesError,
     refetch: refetchRegularTrafficPackages,
   } = useQuery({
@@ -257,7 +254,6 @@ export default function Dashboard() {
 
   const {
     data: lteTrafficPackages,
-    isLoading: lteTrafficPackagesLoading,
     isError: lteTrafficPackagesError,
     refetch: refetchLteTrafficPackages,
   } = useQuery({
@@ -269,7 +265,6 @@ export default function Dashboard() {
 
   const {
     data: connectionLink,
-    isLoading: connectionLinkLoading,
     isError: connectionLinkError,
     refetch: refetchConnectionLink,
   } = useQuery({
@@ -284,7 +279,6 @@ export default function Dashboard() {
   // «Подключить в HAPP» не показываем даже при наличии deeplink в ответе.
   const {
     data: happDownloads,
-    isLoading: happDownloadsLoading,
     isError: happDownloadsError,
     refetch: refetchHappDownloads,
   } = useQuery({
@@ -297,7 +291,6 @@ export default function Dashboard() {
 
   const {
     data: purchaseOptions,
-    isLoading: purchaseOptionsLoading,
     isError: purchaseOptionsError,
     refetch: refetchPurchaseOptions,
   } = useQuery({
@@ -807,16 +800,7 @@ export default function Dashboard() {
           }
         : null;
 
-  const activeDashboardLoading = Boolean(
-    activeSubscription &&
-      (devicesLoading ||
-        renewalLoading ||
-        regularTrafficPackagesLoading ||
-        (hasLteTraffic && lteTrafficPackagesLoading) ||
-        connectionLinkLoading ||
-        happDownloadsLoading ||
-        purchaseOptionsLoading),
-  );
+  const activeDashboardLoading = Boolean(!activeSubscription && dashboardSubscriptionLoading);
   // Stagger-вход секций дашборда: фиксированные индексы (задержка = база + индекс*шаг),
   // взаимоисключающие ветки получают одинаковый индекс. Exit не задаём — уход страницы
   // уже анимирован AnimatePresence в AppShell, второй exit дал бы мигание.

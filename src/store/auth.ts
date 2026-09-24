@@ -151,7 +151,10 @@ export const useAuthStore = create<AuthState>()(
       refreshUser: async () => {
         try {
           const user = await authApi.getMe();
-          set({ user });
+          set({
+            user,
+            ...(user.is_admin !== undefined ? { isAdmin: user.is_admin } : {}),
+          });
         } catch {}
       },
 
@@ -220,8 +223,11 @@ export const useAuthStore = create<AuthState>()(
               const newToken = await tokenRefreshManager.refreshAccessToken();
               if (newToken) {
                 const user = await authApi.getMe();
-                await get().checkAdminStatus();
+                if (user.is_admin !== undefined) {
+                  set({ isAdmin: user.is_admin });
+                }
                 applySession(newToken, refreshToken, user);
+                void get().checkAdminStatus();
               } else if (tokenRefreshManager.lastFailureWasTransport) {
                 // Backend unreachable, not a rejected token — keep the session
                 // (don't wipe tokens) so the ServiceUnavailableScreen can resume
@@ -235,15 +241,21 @@ export const useAuthStore = create<AuthState>()(
 
             try {
               const user = await authApi.getMe();
-              await get().checkAdminStatus();
+              if (user.is_admin !== undefined) {
+                set({ isAdmin: user.is_admin });
+              }
               applySession(accessToken, refreshToken, user);
+              void get().checkAdminStatus();
             } catch {
               const newToken = await tokenRefreshManager.refreshAccessToken();
               if (newToken) {
                 try {
                   const user = await authApi.getMe();
-                  await get().checkAdminStatus();
+                  if (user.is_admin !== undefined) {
+                    set({ isAdmin: user.is_admin });
+                  }
                   applySession(newToken, refreshToken, user);
+                  void get().checkAdminStatus();
                 } catch {
                   clearSession();
                 }

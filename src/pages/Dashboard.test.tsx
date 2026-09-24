@@ -610,7 +610,7 @@ describe('Dashboard target states', () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
-    const longRenewal = screen.getByRole('button', { name: /90 ₽/ });
+    const longRenewal = await screen.findByRole('button', { name: /90 ₽/ });
     fireEvent.click(longRenewal);
     expect(longRenewal.getAttribute('aria-pressed')).toBe('true');
 
@@ -657,7 +657,7 @@ describe('Dashboard target states', () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Добавить трафик' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Добавить трафик' }));
     fireEvent.click(await screen.findByRole('button', { name: /100/ }));
     expect(
       screen.getByRole('button', { name: 'subscription.additionalOptions.buyTrafficGb' }),

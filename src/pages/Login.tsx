@@ -560,7 +560,7 @@ export default function Login() {
             {appName && <span>{appName}</span>}
           </Link>
 
-          {authMode === 'register' && referralCode && isEmailAuthEnabled && (
+          {authMode === 'register' && urlReferralCode && isEmailAuthEnabled && (
             <div className="mt-4 rounded-2xl border border-accent-500/30 bg-accent-500/10 p-2.5">
               <div className="flex items-center justify-center gap-2 text-accent-400">
                 <UsersIcon className="h-4 w-4 flex-shrink-0" />
