@@ -53,14 +53,9 @@ export function Header() {
             width={32}
             height={32}
           />
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-display-landing text-xl font-bold tracking-tight text-ink">
-              Invoxy<span className="text-mint">VPN</span>
-            </span>
-            <span className="hidden sm:inline-block text-[10px] uppercase font-mono-landing tracking-wider text-muted px-1.5 py-0.5 rounded bg-surface border border-line">
-              Reality
-            </span>
-          </div>
+          <span className="font-display-landing text-xl font-bold tracking-tight text-ink">
+            Invoxy<span className="text-mint">VPN</span>
+          </span>
         </Link>
 
         {/* Desktop Navigation */}

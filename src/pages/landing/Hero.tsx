@@ -1,4 +1,3 @@
-import { m } from 'framer-motion';
 import { Link } from 'react-router';
 import { NetworkBoard } from './NetworkBoard';
 import type { NetworkNode } from '@/data/networkSnapshot';
@@ -49,12 +48,7 @@ export function Hero({ selectedNodeId, onSelectNode }: HeroProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
           {/* Left Column: Offer, Copy, CTAs */}
-          <m.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center"
-          >
+          <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center">
             {/* Eyebrow */}
             <div className="inline-flex items-center gap-2 rounded-full border border-mint/25 bg-mint/10 px-3.5 py-1.5 text-xs font-medium text-mint w-fit">
               <span className="relative flex h-2 w-2">
@@ -129,17 +123,12 @@ export function Hero({ selectedNodeId, onSelectNode }: HeroProps) {
               <span className="text-mint">⚡</span>
               <span>В Telegram быстрее: без почты, пароля и ввода данных.</span>
             </p>
-          </m.div>
+          </div>
 
           {/* Right Column: NetworkBoard interactive console */}
-          <m.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-6 xl:col-span-5"
-          >
+          <div className="lg:col-span-6 xl:col-span-5">
             <NetworkBoard selectedNodeId={selectedNodeId} onSelectNode={onSelectNode} />
-          </m.div>
+          </div>
         </div>
       </div>
     </section>
