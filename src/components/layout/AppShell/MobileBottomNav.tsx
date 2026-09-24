@@ -4,9 +4,8 @@ import { motion } from 'framer-motion';
 
 import { cn } from '@/lib/utils';
 import { usePlatform } from '@/platform';
-import { useAuthStore } from '@/store/auth';
 import { HomeIcon, SubscriptionIcon, UserIcon } from './icons';
-import { ShieldIcon, UsersIcon } from '@/components/icons';
+import { UsersIcon } from '@/components/icons';
 
 interface MobileBottomNavProps {
   isKeyboardOpen: boolean;
@@ -31,7 +30,6 @@ export function MobileBottomNav({
   const { t } = useTranslation();
   const location = useLocation();
   const { haptic } = usePlatform();
-  const isAdmin = useAuthStore((state) => state.isAdmin);
 
   const items = [
     {
@@ -58,16 +56,6 @@ export function MobileBottomNav({
       icon: UserIcon,
       activeWidth: 'w-[122px]',
     },
-    ...(isAdmin
-      ? [
-          {
-            path: '/admin',
-            label: t('admin.nav.title', 'Админка'),
-            icon: ShieldIcon,
-            activeWidth: 'w-[118px]',
-          },
-        ]
-      : []),
   ];
 
   const safeBottom = Math.max(safeAreaInset?.bottom ?? 0, contentSafeAreaInset?.bottom ?? 0);

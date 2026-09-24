@@ -41,7 +41,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { openPayment } = usePayment();
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, isAdmin } = useAuth();
   const { openLink, openTelegramLink } = usePlatform();
   const [emailLinkSent, setEmailLinkSent] = useState(false);
   const [emailResending, setEmailResending] = useState(false);
@@ -193,6 +193,33 @@ export default function ProfilePage() {
   return (
     <div className="flex w-full min-w-0 flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <PageHeader title="Профиль" subtitle="Баланс, данные и поддержка" notifications />
+
+      {isAdmin && (
+        <button
+          type="button"
+          onClick={() => navigate('/admin')}
+          className="glass-panel motion-card flex w-full items-center justify-between rounded-[24px] border border-amber-400/30 bg-amber-400/5 p-4 text-left transition hover:border-amber-400/50 hover:bg-amber-400/10 active:scale-[0.99] sm:p-5"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[15px] font-bold text-ink">Панель администратора</span>
+                <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                  Admin
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-muted">
+                Управление пользователями, тарифами, серверами и платежами
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-amber-400/70" />
+        </button>
+      )}
+
       <div className="grid w-full min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-2">
         <div className="flex w-full min-w-0 flex-col gap-5">
           <section className="glass-panel motion-card relative overflow-hidden rounded-[32px] p-5 sm:p-6 lg:p-8">

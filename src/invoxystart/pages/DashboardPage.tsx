@@ -201,17 +201,19 @@ export function DashboardPage() {
     setConnectPlatform(platform as PlatformKey | undefined);
     setConnectModalOpen(true);
   };
+  const hasLoadedDetails = Boolean(detailsData);
   const managedDevices = devices.map((device) => ({
     id: device.hwid,
     name: device.local_name || device.device_model || 'Устройство',
     status: `${device.platform || 'Неизвестная платформа'}${device.created_at ? ` · ${formatDate(device.created_at)}` : ''}`,
     platform: device.platform,
   }));
-  const effectiveDevicesCount =
-    managedDevices.length ||
-    (current?.device_limit && current.device_limit > 0
-      ? ((current as { active_devices_count?: number })?.active_devices_count ?? 0)
-      : 0);
+  const effectiveDevicesCount = hasLoadedDetails
+    ? managedDevices.length ||
+      (current?.device_limit && current.device_limit > 0
+        ? ((current as { active_devices_count?: number })?.active_devices_count ?? 0)
+        : 0)
+    : undefined;
   const renewalTerms = renewalOptions.map((option) => ({
     id: String(option.period_days),
     label: `${option.period_days} дней`,
@@ -328,7 +330,7 @@ export function DashboardPage() {
               </div>
             )}
 
-            {!isExpired && effectiveDevicesCount === 0 && (
+            {!isExpired && hasLoadedDetails && effectiveDevicesCount === 0 && (
               <ZeroDevicesHeroBanner accessLink={accessLink} onConnect={handleOpenConnect} />
             )}
 
@@ -399,6 +401,7 @@ export function DashboardPage() {
 
                     <Reveal delay={0.1} className="order-4 min-w-0 lg:order-none">
                       <DevicesCard
+                        isLoading={!hasLoadedDetails}
                         devices={managedDevices}
                         deviceLimit={subscription?.device_limit ?? selected?.device_limit}
                         isExpired={isExpired}
@@ -416,6 +419,7 @@ export function DashboardPage() {
                   <>
                     <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
                       <DevicesCard
+                        isLoading={!hasLoadedDetails}
                         devices={managedDevices}
                         deviceLimit={subscription?.device_limit ?? selected?.device_limit}
                         isExpired={isExpired}
