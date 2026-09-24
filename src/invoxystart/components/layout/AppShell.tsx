@@ -132,7 +132,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                 className="route-stage is-entering min-h-full w-full min-w-0"
               >
                 {children}

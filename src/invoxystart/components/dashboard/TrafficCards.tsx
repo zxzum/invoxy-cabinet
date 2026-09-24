@@ -33,7 +33,9 @@ function TrafficCard({ item }: { item: TrafficItem }) {
       </div>
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2/60 lg:h-[clamp(8px,0.5vw,10px)]">
         <div
-          className={`h-full rounded-full ${item.disabled ? 'bg-white/5' : 'bg-mint'}`}
+          className={`h-full rounded-full transition-[width] duration-700 ease-out ${
+            item.disabled ? 'bg-white/5' : 'bg-mint'
+          }`}
           style={{ width: `${item.disabled ? 0 : item.percent}%` }}
         />
       </div>

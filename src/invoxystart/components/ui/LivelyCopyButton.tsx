@@ -87,7 +87,7 @@ export function LivelyCopyButton({
           ))}
         </AnimatePresence>
 
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           {copied ? (
             <m.span
               key="check"
@@ -154,7 +154,7 @@ export function LivelyCopyButton({
         ))}
       </AnimatePresence>
 
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="popLayout" initial={false}>
         {copied ? (
           <m.span
             key="copied"

@@ -360,7 +360,7 @@ export function AddonsCard({
           {availableCards.find((item) => item.id === selected)?.title}
         </h2>
 
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           {step === 'payment' ? (
             <m.div
               key="payment"

@@ -120,7 +120,9 @@ export function SubscriptionCard({
 
       <div className="relative z-10 hidden h-2 w-full overflow-hidden rounded-full bg-surface-2 lg:block lg:h-[clamp(8px,0.5vw,10px)]">
         <div
-          className={`h-full rounded-full ${isExpired ? 'bg-rose-500/50' : 'bg-mint'}`}
+          className={`h-full rounded-full transition-[width] duration-700 ease-out ${
+            isExpired ? 'bg-rose-500/50' : 'bg-mint'
+          }`}
           style={{ width: `${isExpired ? 100 : Math.min(100, Math.max(0, progress))}%` }}
         />
       </div>

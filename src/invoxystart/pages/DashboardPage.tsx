@@ -235,14 +235,16 @@ export function DashboardPage() {
         onWalletClick={() => navigate('/profile#top-up')}
       />
 
-      <AnimatePresence mode="wait">
+      {/* popLayout: контент монтируется сразу, скелетон уходит поверх — без
+          паузы «пусто между состояниями» и без зависания на задушенном rAF. */}
+      <AnimatePresence mode="popLayout">
         {loading ? (
           <m.div
             key="loading"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="grid w-full gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(310px,.85fr)] lg:gap-[1.1vw]"
             aria-label="Загрузка кабинета"
             aria-busy="true"

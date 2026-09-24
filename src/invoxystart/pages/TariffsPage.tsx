@@ -744,13 +744,13 @@ function TariffConfigurator({
       </div>
       <div className="mt-5 rounded-2xl border border-mint/15 bg-mint/[.06] p-4 text-center overflow-hidden">
         <span className="block text-lg font-medium text-muted">Итого</span>
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           <m.div
             key={`${months}-${devices}-${total}`}
-            initial={{ opacity: 0, y: 3 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
             {saving > 0 && (
               <span className="mt-1 block text-sm text-muted line-through">

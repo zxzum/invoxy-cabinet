@@ -97,7 +97,7 @@ export function HistoryModal({
         </button>
       </div>
       <div className="mt-4 min-h-[220px]">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           <m.div
             key={`${filter}-${page}-${newest}`}
             initial={{ opacity: 0, y: 6 }}

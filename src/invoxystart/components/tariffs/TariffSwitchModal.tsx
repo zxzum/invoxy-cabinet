@@ -176,7 +176,7 @@ export function TariffSwitchModal({
       titleId="tariff-switch-dialog-title"
       maxWidth="max-w-lg"
     >
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="popLayout" initial={false}>
         {/* SUCCESS STATE */}
         {switchResult ? (
           <m.div
