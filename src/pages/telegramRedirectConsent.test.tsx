@@ -39,7 +39,13 @@ vi.mock('../store/auth', () => ({
 vi.mock('../hooks/useTelegramSDK', () => ({
   isInTelegramWebApp: () => true,
   getTelegramInitData: () => 'init-data',
+  useTelegramSDK: () => ({
+    safeAreaInset: { top: 0, bottom: 0 },
+    contentSafeAreaInset: { top: 0, bottom: 0 },
+  }),
 }));
+
+vi.mock('../components/LanguageSwitcher', () => ({ default: () => null }));
 
 vi.mock('../api/branding', () => ({
   LOCAL_LOGO_URL: '/invoxy-logo-square.png',

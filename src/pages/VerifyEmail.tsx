@@ -7,7 +7,12 @@ import { useShallow } from 'zustand/shallow';
 import { consumeCampaignSlug, getPendingCampaignSlug } from '../utils/campaign';
 import { tokenStorage } from '../utils/token';
 import { getApiErrorMessage } from '../utils/api-error';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { AuthStatusScreen } from '@/components/auth/AuthStatusScreen';
+import brandLogo from '@/assets/logo.png';
+
+const VERIFY_REDIRECT_MS = 1500;
 
 export default function VerifyEmail() {
   const { t } = useTranslation();
@@ -53,7 +58,10 @@ export default function VerifyEmail() {
         checkAdminStatus();
         setStatus('success');
         // Redirect to dashboard after short delay
-        redirectTimer = setTimeout(() => navigate('/dashboard', { replace: true }), 1500);
+        redirectTimer = setTimeout(
+          () => navigate('/dashboard', { replace: true }),
+          VERIFY_REDIRECT_MS,
+        );
       } catch (err: unknown) {
         setStatus('error');
         setError(getApiErrorMessage(err, t('emailVerification.failed')));
@@ -66,55 +74,37 @@ export default function VerifyEmail() {
   }, [searchParams, t, navigate, setTokens, setUser, checkAdminStatus]);
 
   return (
-    <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8 sm:py-12">
-      {/* Language switcher in corner */}
-      <div className="fixed right-4 top-4 z-50">
-        <LanguageSwitcher />
-      </div>
-
-      <div className="glass-surface-elevated w-full max-w-md p-6 text-center sm:p-8">
+    <AuthShell>
+      <AuthCard>
         {status === 'loading' && (
-          <div>
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-accent-500 border-t-transparent"></div>
-            <h2 className="text-lg font-semibold text-dark-50 sm:text-xl">
-              {t('emailVerification.verifying')}
-            </h2>
-            <p className="mt-2 text-sm text-dark-400 sm:text-base">
-              {t('emailVerification.pleaseWait')}
-            </p>
-          </div>
+          <AuthStatusScreen
+            state="loading"
+            logo={brandLogo}
+            title={t('emailVerification.verifying')}
+            subtitle={t('emailVerification.pleaseWait')}
+          />
         )}
 
         {status === 'success' && (
-          <div>
-            <div className="mb-4 text-5xl text-success-500 sm:text-6xl">✓</div>
-            <h2 className="text-lg font-semibold text-dark-50 sm:text-xl">
-              {t('emailVerification.success')}
-            </h2>
-            <p className="mt-2 text-sm text-dark-400 sm:text-base">
-              {t('emailVerification.redirecting', 'Redirecting to dashboard...')}
-            </p>
-            <div className="mt-4">
-              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-accent-500 border-t-transparent"></div>
-            </div>
-          </div>
+          <AuthStatusScreen
+            state="success"
+            title={t('emailVerification.success')}
+            subtitle={t('emailVerification.redirecting', 'Redirecting to dashboard...')}
+            redirectSeconds={VERIFY_REDIRECT_MS / 1000}
+          />
         )}
 
         {status === 'error' && (
-          <div>
-            <div className="mb-4 text-5xl text-error-500 sm:text-6xl">✗</div>
-            <h2 className="text-lg font-semibold text-dark-50 sm:text-xl">
-              {t('emailVerification.failed')}
-            </h2>
-            <p className="mt-2 text-sm text-dark-400 sm:text-base">{error}</p>
-            <div className="mt-6">
-              <Link to="/login" className="btn-secondary">
-                {t('emailVerification.goToLogin')}
-              </Link>
-            </div>
-          </div>
+          <AuthStatusScreen state="error" title={t('emailVerification.failed')} subtitle={error}>
+            <Link
+              to="/login"
+              className="flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98]"
+            >
+              {t('emailVerification.goToLogin')}
+            </Link>
+          </AuthStatusScreen>
         )}
-      </div>
-    </div>
+      </AuthCard>
+    </AuthShell>
   );
 }

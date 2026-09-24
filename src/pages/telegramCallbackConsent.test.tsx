@@ -38,6 +38,17 @@ vi.mock('../store/auth', () => ({
     selector({ loginWithTelegramWidget, isAuthenticated: false }),
 }));
 
+// Оболочка страницы (AuthShell) считает safe-area и рисует переключатель языка.
+vi.mock('../hooks/useTelegramSDK', () => ({
+  isInTelegramWebApp: () => false,
+  getTelegramInitData: () => null,
+  useTelegramSDK: () => ({
+    safeAreaInset: { top: 0, bottom: 0 },
+    contentSafeAreaInset: { top: 0, bottom: 0 },
+  }),
+}));
+vi.mock('../components/LanguageSwitcher', () => ({ default: () => null }));
+
 async function renderCallback() {
   const { default: TelegramCallback } = await import('./TelegramCallback');
   return render(

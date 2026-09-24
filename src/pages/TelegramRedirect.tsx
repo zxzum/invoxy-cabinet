@@ -2,20 +2,29 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
+import { m } from 'framer-motion';
 import { useAuthStore } from '../store/auth';
 import { useShallow } from 'zustand/shallow';
 import { brandingApi, LOCAL_LOGO_URL } from '../api/branding';
 import { isInTelegramWebApp, getTelegramInitData } from '../hooks/useTelegramSDK';
 import { tokenStorage } from '../utils/token';
 import { getSafeRedirectPath } from '../utils/safeRedirect';
-import { CheckIcon, XIcon, ExclamationIcon } from '@/components/icons';
+import { ExclamationIcon } from '@/components/icons';
 import { safeLocal, safeSession } from '../utils/safeStorage';
 import { useLegalConsentGate } from '../hooks/useLegalConsentGate';
 import LegalConsentGate from '../components/LegalConsentGate';
 import { getApiErrorMessage } from '../utils/api-error';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { AuthStatusScreen } from '@/components/auth/AuthStatusScreen';
 
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_COUNT_KEY = 'telegram_redirect_retry_count';
+
+const MINT_BUTTON =
+  'flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50';
+const GHOST_BUTTON =
+  'glass-control flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold text-ink transition-colors hover:border-white/20';
 
 export default function TelegramRedirect() {
   const { t } = useTranslation();
@@ -151,14 +160,15 @@ export default function TelegramRedirect() {
   }, [status]);
 
   return (
-    <div className="min-h-viewport flex items-center justify-center p-4">
-      {/* Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent-500/10 via-transparent to-transparent" />
-
-      <div className="relative w-full max-w-sm text-center">
+    <AuthShell withLanguageSwitcher={status === 'consent'}>
+      <AuthCard>
         {/* Logo */}
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-accent-400 to-accent-600 shadow-lg shadow-accent-500/30">
+        <m.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-auto mb-5 flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl border border-white/15 bg-white/[0.08] shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+        >
           <img
             src={branding?.has_custom_logo && logoUrl ? logoUrl : LOCAL_LOGO_URL}
             alt={appName}
@@ -167,76 +177,73 @@ export default function TelegramRedirect() {
               (e.currentTarget as HTMLImageElement).src = LOCAL_LOGO_URL;
             }}
           />
-        </div>
+        </m.div>
 
-        <h1 className="mb-2 text-2xl font-bold text-dark-50">{appName}</h1>
+        <h1 className="mb-6 text-center text-xl font-bold tracking-tight text-ink">{appName}</h1>
 
         {/* Loading State */}
         {status === 'loading' && (
-          <div className="mt-8">
-            <div className="border-3 mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-accent-500 border-t-transparent" />
-            <p className="text-dark-400">{t('auth.authenticating')}</p>
-            <p className="mt-2 text-sm text-dark-500">{t('common.loading')}</p>
-          </div>
+          <AuthStatusScreen
+            state="loading"
+            title={t('auth.authenticating')}
+            subtitle={t('common.loading')}
+          />
         )}
 
         {/* Success State */}
         {status === 'success' && (
-          <div className="mt-8">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success-500/20">
-              <CheckIcon className="h-8 w-8 text-success-400" />
-            </div>
-            <p className="text-dark-200">{t('auth.loginSuccess')}</p>
-            <p className="mt-2 text-sm text-dark-500">{t('telegramRedirect.redirecting')}</p>
-          </div>
+          <AuthStatusScreen
+            state="success"
+            title={t('auth.loginSuccess')}
+            subtitle={t('telegramRedirect.redirecting')}
+            redirectSeconds={0.8}
+          />
         )}
 
         {/* Error State */}
         {status === 'error' && (
-          <div className="mt-8">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-error-500/20">
-              <XIcon className="h-8 w-8 text-error-400" />
-            </div>
-            <p className="mb-2 text-dark-200">{t('auth.loginFailed')}</p>
-            <p className="mb-6 text-sm text-error-400">{errorMessage}</p>
+          <AuthStatusScreen state="error" title={t('auth.loginFailed')} subtitle={errorMessage}>
             <div className="flex flex-col gap-3">
-              <button onClick={handleRetry} className="btn-primary w-full">
+              <button type="button" onClick={handleRetry} className={MINT_BUTTON}>
                 {t('auth.tryAgain')}
               </button>
-              <button onClick={() => navigate('/login')} className="btn-secondary w-full">
+              <button type="button" onClick={() => navigate('/login')} className={GHOST_BUTTON}>
                 {t('telegramRedirect.loginAlternative')}
               </button>
             </div>
-          </div>
+          </AuthStatusScreen>
         )}
 
         {/* Consent State: аккаунт новый, бэк ждёт галочки «ознакомлен» */}
-        {status === 'consent' && (
-          <div className="mt-8 text-left">
-            <LegalConsentGate gate={consent} />
-          </div>
-        )}
+        {status === 'consent' && <LegalConsentGate gate={consent} framed={false} />}
 
         {/* Not in Telegram State */}
         {status === 'not-telegram' && (
-          <div className="mt-8">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning-500/20">
-              <ExclamationIcon className="h-8 w-8 text-warning-400" />
+          <m.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col items-center text-center"
+          >
+            <div className="mb-4 flex h-[74px] w-[74px] items-center justify-center rounded-full bg-amber-400/10 ring-1 ring-amber-400/30">
+              <ExclamationIcon className="h-9 w-9 text-amber-300" />
             </div>
-            <p className="mb-2 text-dark-200">{t('telegramRedirect.openInTelegram')}</p>
-            <p className="mb-6 text-sm text-dark-400">{t('telegramRedirect.openInTelegramDesc')}</p>
-            <p className="text-sm text-dark-500">{t('telegramRedirect.redirectToLogin')}</p>
-          </div>
+            <p className="text-lg font-semibold text-ink">{t('telegramRedirect.openInTelegram')}</p>
+            <p className="mt-1.5 max-w-[320px] text-sm leading-relaxed text-muted">
+              {t('telegramRedirect.openInTelegramDesc')}
+            </p>
+            <p className="mt-4 text-xs text-muted">{t('telegramRedirect.redirectToLogin')}</p>
+          </m.div>
         )}
 
         {/* Telegram branding */}
-        <div className="mt-12 flex items-center justify-center gap-2 text-dark-600">
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+        <div className="mt-8 flex items-center justify-center gap-2 border-t border-white/10 pt-5 text-muted/60">
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
           </svg>
           <span className="text-xs">Telegram Mini App</span>
         </div>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthShell>
   );
 }

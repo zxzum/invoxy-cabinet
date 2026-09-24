@@ -99,10 +99,24 @@ vi.mock('react-i18next', () => ({
           : key,
   }),
 }));
-vi.mock('framer-motion', () => ({
-  motion: { div: ({ children }: { children: ReactNode }) => <div>{children}</div> },
-  AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
-}));
+vi.mock('framer-motion', () => {
+  // Один стаб на оба API: страницы авторизации рендерятся через m.*, остальное — motion.*.
+  const stub = {
+    div: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+    span: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+    button: ({ children }: { children?: ReactNode }) => <button type="submit">{children}</button>,
+    svg: ({ children }: { children?: ReactNode }) => <svg>{children}</svg>,
+    circle: () => null,
+    path: () => null,
+  };
+  return {
+    motion: stub,
+    m: stub,
+    AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
+    LazyMotion: ({ children }: { children: ReactNode }) => <>{children}</>,
+    domMax: {},
+  };
+});
 
 function LocationProbe() {
   const location = useLocation();

@@ -1,10 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, m } from 'framer-motion';
+import { PiCheck, PiX } from 'react-icons/pi';
 import { authApi } from '../api/auth';
 import { getApiErrorMessage } from '../utils/api-error';
-import LanguageSwitcher from '../components/LanguageSwitcher';
-import { CheckIcon } from '@/components/icons';
+import { LockIcon } from '@/components/icons';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { AuthInput } from '@/components/auth/AuthInput';
+import { AuthAlert } from '@/components/auth/AuthAlert';
+import { AuthSubmitButton } from '@/components/auth/AuthSubmitButton';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
+import { AuthStatusScreen } from '@/components/auth/AuthStatusScreen';
+import brandLogo from '@/assets/logo.png';
+
+const RESET_REDIRECT_MS = 2000;
 
 export default function ResetPassword() {
   const { t } = useTranslation();
@@ -25,6 +36,8 @@ export default function ResetPassword() {
       if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
     };
   }, []);
+
+  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -50,7 +63,10 @@ export default function ResetPassword() {
     try {
       await authApi.resetPassword(token, password);
       setStatus('success');
-      redirectTimerRef.current = setTimeout(() => navigate('/login', { replace: true }), 2000);
+      redirectTimerRef.current = setTimeout(
+        () => navigate('/login', { replace: true }),
+        RESET_REDIRECT_MS,
+      );
     } catch (err: unknown) {
       setStatus('error');
       setError(getApiErrorMessage(err, t('common.error')));
@@ -59,131 +75,152 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8 sm:py-12">
-        <div className="fixed right-4 top-4 z-50">
-          <LanguageSwitcher />
-        </div>
-        <div className="relative w-full max-w-md text-center">
-          <div className="glass-surface-elevated p-5 sm:p-6">
-            <div className="mb-4 text-5xl text-error-400">!</div>
-            <h2 className="mb-2 text-xl font-semibold text-dark-50">
-              {t('resetPassword.invalidToken', 'Invalid reset link')}
-            </h2>
-            <p className="mb-6 text-dark-400">
-              {t(
-                'resetPassword.tokenExpiredOrInvalid',
-                'This password reset link is invalid or has expired.',
-              )}
-            </p>
-            <Link to="/login" className="btn-primary inline-block w-full">
+      <AuthShell>
+        <AuthCard>
+          <AuthStatusScreen
+            state="error"
+            logo={brandLogo}
+            title={t('resetPassword.invalidToken', 'Invalid reset link')}
+            subtitle={t(
+              'resetPassword.tokenExpiredOrInvalid',
+              'This password reset link is invalid or has expired.',
+            )}
+          >
+            <Link
+              to="/login"
+              className="flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98]"
+            >
               {t('auth.backToLogin', 'Back to login')}
             </Link>
-          </div>
-        </div>
-      </div>
+          </AuthStatusScreen>
+        </AuthCard>
+      </AuthShell>
+    );
+  }
+
+  if (status === 'success') {
+    return (
+      <AuthShell>
+        <AuthCard>
+          <AuthStatusScreen
+            state="success"
+            title={t('resetPassword.success', 'Password changed!')}
+            subtitle={t('resetPassword.redirectingToLogin', 'Redirecting to login...')}
+            redirectSeconds={RESET_REDIRECT_MS / 1000}
+          />
+        </AuthCard>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8 sm:py-12">
-      <div className="fixed right-4 top-4 z-50">
-        <LanguageSwitcher />
-      </div>
-
-      <div className="relative w-full max-w-md">
-        <div className="glass-surface-elevated p-5 sm:p-6">
-          {status === 'success' ? (
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-success-500/20">
-                <CheckIcon className="h-8 w-8 text-success-400" />
-              </div>
-              <h2 className="mb-2 text-xl font-bold text-dark-50">
-                {t('resetPassword.success', 'Password changed!')}
-              </h2>
-              <p className="mb-4 text-dark-400">
-                {t('resetPassword.redirectingToLogin', 'Redirecting to login...')}
-              </p>
-              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-            </div>
-          ) : (
-            <>
-              <h2 className="mb-2 text-center text-xl font-bold text-dark-50">
-                {t('resetPassword.title', 'Set new password')}
-              </h2>
-              <p className="mb-6 text-center text-dark-400">
-                {t('resetPassword.enterNewPassword', 'Enter your new password below.')}
-              </p>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="password" className="label">
-                    {t('auth.password', 'Password')}
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="input"
-                    autoComplete="new-password"
-                    disabled={status === 'loading'}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="confirmPassword" className="label">
-                    {t('auth.confirmPassword', 'Confirm Password')}
-                  </label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="input"
-                    autoComplete="new-password"
-                    disabled={status === 'loading'}
-                  />
-                </div>
-
-                {error && (
-                  <div
-                    role="alert"
-                    className="rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-400"
-                  >
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={status === 'loading'}
-                  className="btn-primary w-full"
-                >
-                  {status === 'loading' ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      {t('common.loading')}
-                    </span>
-                  ) : (
-                    t('resetPassword.setPassword', 'Set new password')
-                  )}
-                </button>
-              </form>
-
-              <div className="mt-4 text-center">
-                <Link
-                  to="/login"
-                  className="text-sm text-dark-400 transition-colors hover:text-dark-200"
-                >
-                  {t('auth.backToLogin', 'Back to login')}
-                </Link>
-              </div>
-            </>
-          )}
+    <AuthShell>
+      <AuthCard>
+        <div className="mb-6 flex items-center gap-3">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+            <img src={brandLogo} alt="" className="h-full w-full object-contain" />
+          </span>
+          <span className="text-lg font-bold text-ink">
+            {import.meta.env.VITE_APP_NAME && import.meta.env.VITE_APP_NAME !== 'Cabinet'
+              ? import.meta.env.VITE_APP_NAME
+              : 'Invoxy VPN'}
+          </span>
         </div>
-      </div>
-    </div>
+
+        <h1 className="text-[28px] font-medium tracking-[-.04em] text-ink sm:text-[30px]">
+          {t('resetPassword.title', 'Set new password')}
+        </h1>
+        <p className="mt-1.5 text-sm text-muted">
+          {t('resetPassword.enterNewPassword', 'Enter your new password below.')}
+        </p>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+          <AuthInput
+            icon={<LockIcon className="h-[17px] w-[17px]" />}
+            id="password"
+            label={t('auth.password', 'Password')}
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            value={password}
+            onChange={setPassword}
+            disabled={status === 'loading'}
+            required
+          />
+
+          <AnimatePresence initial={false}>
+            {password.length > 0 && (
+              <m.div
+                key="reset-strength"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="pt-1">
+                  <PasswordStrengthMeter password={password} />
+                </div>
+              </m.div>
+            )}
+          </AnimatePresence>
+
+          <AuthInput
+            icon={<LockIcon className="h-[17px] w-[17px]" />}
+            id="confirmPassword"
+            label={t('auth.confirmPassword', 'Confirm Password')}
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            disabled={status === 'loading'}
+            right={
+              confirmPassword.length > 0 ? (
+                <m.span
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', bounce: 0.5, duration: 0.4 }}
+                  className={`flex shrink-0 items-center ${
+                    passwordsMatch ? 'text-mint' : 'text-error-400'
+                  }`}
+                  aria-hidden="true"
+                >
+                  {passwordsMatch ? <PiCheck className="h-5 w-5" /> : <PiX className="h-5 w-5" />}
+                </m.span>
+              ) : undefined
+            }
+            required
+          />
+
+          <AnimatePresence initial={false}>
+            {error && (
+              <m.div
+                key={error}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
+              >
+                <AuthAlert>{error}</AuthAlert>
+              </m.div>
+            )}
+          </AnimatePresence>
+
+          <AuthSubmitButton loading={status === 'loading'} loadingText={t('common.loading')}>
+            {t('resetPassword.setPassword', 'Set new password')}
+          </AuthSubmitButton>
+        </form>
+
+        <div className="mt-5 text-center">
+          <Link to="/login" className="text-sm text-muted transition-colors hover:text-ink">
+            {t('auth.backToLogin', 'Back to login')}
+          </Link>
+        </div>
+      </AuthCard>
+    </AuthShell>
   );
 }

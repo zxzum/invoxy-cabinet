@@ -5,6 +5,10 @@ import { useAuthStore } from '../store/auth';
 import { useLegalConsentGate } from '../hooks/useLegalConsentGate';
 import LegalConsentGate from '../components/LegalConsentGate';
 import { getApiErrorMessage } from '../utils/api-error';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { AuthStatusScreen } from '@/components/auth/AuthStatusScreen';
+import brandLogo from '@/assets/logo.png';
 
 export default function TelegramCallback() {
   const { t } = useTranslation();
@@ -76,36 +80,42 @@ export default function TelegramCallback() {
 
   if (consent.pending) {
     return (
-      <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8">
-        <div className="glass-surface-elevated w-full max-w-md p-6 sm:p-8">
-          <LegalConsentGate gate={consent} />
-        </div>
-      </div>
+      <AuthShell>
+        <AuthCard>
+          <LegalConsentGate gate={consent} framed={false} />
+        </AuthCard>
+      </AuthShell>
     );
   }
 
   if (error) {
     return (
-      <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8">
-        <div className="glass-surface-elevated w-full max-w-md p-6 text-center sm:p-8">
-          <div className="mb-4 text-5xl text-error-500">✗</div>
-          <h2 className="mb-2 text-lg font-semibold text-dark-50">{t('auth.loginFailed')}</h2>
-          <p className="mb-6 text-sm text-dark-400">{error}</p>
-          <button onClick={() => navigate('/login')} className="btn-primary">
-            {t('auth.tryAgain')}
-          </button>
-        </div>
-      </div>
+      <AuthShell>
+        <AuthCard>
+          <AuthStatusScreen state="error" title={t('auth.loginFailed')} subtitle={error}>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98]"
+            >
+              {t('auth.tryAgain')}
+            </button>
+          </AuthStatusScreen>
+        </AuthCard>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="auth-page min-h-viewport flex items-center justify-center px-4 py-8">
-      <div className="glass-surface-elevated p-6 text-center sm:p-8">
-        <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-accent-500 border-t-transparent"></div>
-        <h2 className="text-lg font-semibold text-dark-50">{t('auth.authenticating')}</h2>
-        <p className="mt-2 text-sm text-dark-400">{t('common.loading')}</p>
-      </div>
-    </div>
+    <AuthShell withLanguageSwitcher={false}>
+      <AuthCard>
+        <AuthStatusScreen
+          state="loading"
+          logo={brandLogo}
+          title={t('auth.authenticating')}
+          subtitle={t('common.loading')}
+        />
+      </AuthCard>
+    </AuthShell>
   );
 }

@@ -3,7 +3,10 @@ import { useSearchParams, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '../api/auth';
 import { useAuthStore } from '../store/auth';
-import { XIcon } from '@/components/icons';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { AuthStatusScreen } from '@/components/auth/AuthStatusScreen';
+import brandLogo from '@/assets/logo.png';
 
 export default function AutoLogin() {
   const { t } = useTranslation();
@@ -47,29 +50,24 @@ export default function AutoLogin() {
   }, [token, navigate, setTokens, setUser, checkAdminStatus]);
 
   return (
-    <div className="auth-page flex min-h-dvh items-center justify-center px-4">
-      <div className="glass-surface-elevated w-full max-w-sm p-8 text-center">
-        {error ? (
-          <div className="space-y-4" role="alert">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-error-500/10">
-              <XIcon className="h-8 w-8 text-error-400" />
-            </div>
-            <p className="text-sm text-dark-300">{t('landing.autoLoginFailed')}</p>
+    <AuthShell>
+      <AuthCard>
+        <AuthStatusScreen
+          state={error ? 'error' : 'loading'}
+          logo={brandLogo}
+          title={error ? t('landing.autoLoginFailed') : t('landing.autoLoginProcessing')}
+        >
+          {error && (
             <button
               type="button"
               onClick={() => navigate('/login', { replace: true })}
-              className="rounded-xl bg-accent-500 px-6 py-2.5 text-sm font-medium text-on-accent transition-colors hover:bg-accent-400"
+              className="flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98]"
             >
               {t('auth.login', 'Login')}
             </button>
-          </div>
-        ) : (
-          <div className="space-y-4" role="status" aria-live="polite">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-dark-600 border-t-accent-500" />
-            <p className="text-sm text-dark-300">{t('landing.autoLoginProcessing')}</p>
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        </AuthStatusScreen>
+      </AuthCard>
+    </AuthShell>
   );
 }

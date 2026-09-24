@@ -11,7 +11,10 @@ import {
   getErrorDetail,
 } from '../utils/oauth';
 import type { ServerCompleteResponse } from '../types';
-import { CheckIcon, ExclamationIcon } from '@/components/icons';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { AuthStatusScreen } from '@/components/auth/AuthStatusScreen';
+import brandLogo from '@/assets/logo.png';
 
 type CallbackMode = 'login' | 'link-browser' | 'link-server';
 
@@ -133,36 +136,31 @@ export default function OAuthCallback() {
   // Server-complete result: show success with "Return to Telegram" link
   // (merge redirect is handled by the useEffect above)
   if (
-    serverLinkResult &&
-    serverLinkResult.success &&
+    serverLinkResult?.success &&
     !(serverLinkResult.merge_required && serverLinkResult.merge_token)
   ) {
     const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '';
     const telegramLink = botUsername ? `https://t.me/${botUsername}` : '';
 
     return (
-      <div className="min-h-viewport flex items-center justify-center px-4 py-8">
-        <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
-        <div className="relative w-full max-w-md text-center">
-          <div className="card">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-success-500/20">
-              <CheckIcon className="h-8 w-8 text-success-400" />
-            </div>
-            <h2 className="mb-2 text-lg font-semibold text-dark-50">
-              {t('profile.accounts.linkSuccess')}
-            </h2>
-            <p className="mb-6 text-sm text-dark-400">{t('profile.accounts.returnToTelegram')}</p>
+      <AuthShell>
+        <AuthCard>
+          <AuthStatusScreen
+            state="success"
+            title={t('profile.accounts.linkSuccess')}
+            subtitle={t('profile.accounts.returnToTelegram')}
+          >
             {telegramLink && (
               <a
                 href={telegramLink}
-                className="btn-primary inline-block w-full rounded-lg bg-accent-500 px-6 py-3 text-center font-medium text-dark-950 no-underline transition-colors hover:bg-accent-400"
+                className="flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg no-underline transition-transform active:scale-[.98]"
               >
                 {t('profile.accounts.openTelegram')}
               </a>
             )}
-          </div>
-        </div>
-      </div>
+          </AuthStatusScreen>
+        </AuthCard>
+      </AuthShell>
     );
   }
 
@@ -172,55 +170,50 @@ export default function OAuthCallback() {
     const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '';
     const telegramLink = botUsername ? `https://t.me/${botUsername}` : '';
 
-    const errorAction =
-      isServerMode && telegramLink ? (
-        <a
-          href={telegramLink}
-          className="btn-primary inline-block w-full rounded-lg bg-accent-500 px-6 py-3 text-center font-medium text-dark-950 no-underline transition-colors hover:bg-accent-400"
-        >
-          {t('profile.accounts.openTelegram')}
-        </a>
-      ) : isLinkBrowserMode ? (
-        <button
-          onClick={() => navigate('/profile/accounts', { replace: true })}
-          className="btn-primary w-full"
-        >
-          {t('profile.accounts.backToAccounts', 'Back to accounts')}
-        </button>
-      ) : (
-        <button
-          onClick={() => navigate('/login', { replace: true })}
-          className="btn-primary w-full"
-        >
-          {t('auth.backToLogin', 'Back to login')}
-        </button>
-      );
-
     return (
-      <div className="min-h-viewport flex items-center justify-center px-4 py-8">
-        <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
-        <div className="relative w-full max-w-md text-center">
-          <div className="card">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-error-500/20">
-              <ExclamationIcon className="h-8 w-8 text-error-400" />
-            </div>
-            <h2 className="mb-2 text-lg font-semibold text-dark-50">{t('auth.loginFailed')}</h2>
-            <p className="mb-6 text-sm text-dark-400">{error}</p>
-            {errorAction}
-          </div>
-        </div>
-      </div>
+      <AuthShell>
+        <AuthCard>
+          <AuthStatusScreen state="error" title={t('auth.loginFailed')} subtitle={error}>
+            {isServerMode && telegramLink ? (
+              <a
+                href={telegramLink}
+                className="flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg no-underline transition-transform active:scale-[.98]"
+              >
+                {t('profile.accounts.openTelegram')}
+              </a>
+            ) : isLinkBrowserMode ? (
+              <button
+                type="button"
+                onClick={() => navigate('/profile/accounts', { replace: true })}
+                className="flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98]"
+              >
+                {t('profile.accounts.backToAccounts', 'Back to accounts')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate('/login', { replace: true })}
+                className="flex h-[52px] w-full items-center justify-center rounded-full bg-mint text-sm font-bold text-bg transition-transform active:scale-[.98]"
+              >
+                {t('auth.backToLogin', 'Back to login')}
+              </button>
+            )}
+          </AuthStatusScreen>
+        </AuthCard>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-viewport flex items-center justify-center">
-      <div className="fixed inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950" />
-      <div className="relative text-center">
-        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
-        <h2 className="text-lg font-semibold text-dark-50">{t('auth.authenticating')}</h2>
-        <p className="mt-2 text-sm text-dark-400">{t('common.loading')}</p>
-      </div>
-    </div>
+    <AuthShell withLanguageSwitcher={false}>
+      <AuthCard>
+        <AuthStatusScreen
+          state="loading"
+          logo={brandLogo}
+          title={t('auth.authenticating')}
+          subtitle={t('common.loading')}
+        />
+      </AuthCard>
+    </AuthShell>
   );
 }
