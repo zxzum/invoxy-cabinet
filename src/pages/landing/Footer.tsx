@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import brandLogo from '@/assets/logo.png';
 
 const BOT_USERNAME = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'invoxy_bot').replace(/^@/, '');
 const TELEGRAM_BOT_URL = `https://t.me/${BOT_USERNAME}`;
@@ -15,7 +16,7 @@ export function Footer() {
           <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
             <Link to="/" className="flex items-center gap-2.5 group">
               <img
-                src="/images/brand-mark.png?v=3d"
+                src={brandLogo}
                 alt="Invoxy"
                 className="h-6 w-6 object-contain"
                 width={24}

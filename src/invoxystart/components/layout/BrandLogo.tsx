@@ -1,3 +1,5 @@
+import brandLogo from '@/assets/logo.png';
+
 export function BrandLogo({
   className = '',
   iconClassName = 'h-10 w-10 rounded-xl',
@@ -10,11 +12,11 @@ export function BrandLogo({
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
       <img
-        src="/images/brand-mark.png?v=3d"
+        src={brandLogo}
         alt=""
         className={iconClassName}
         onError={(e) => {
-          (e.currentTarget as HTMLImageElement).src = '/images/brand-mark.png';
+          (e.currentTarget as HTMLImageElement).src = '/images/brand-mark.png?v=20260924_shield';
         }}
       />
       <span className={textClassName}>

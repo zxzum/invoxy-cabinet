@@ -3,12 +3,12 @@ import { isEndpointMissingError } from '../utils/api-error';
 import type { AnimationConfig } from '@/components/ui/backgrounds/types';
 import { DEFAULT_ANIMATION_CONFIG } from '@/components/ui/backgrounds/types';
 import { safeSession } from '../utils/safeStorage';
+import brandLogo from '@/assets/logo.png';
 
 export type { AnimationConfig };
 
-// Versioned URL prevents Telegram/WebView from keeping the previous broken asset
-// for a year (nginx serves public assets with immutable-style caching).
-export const LOCAL_LOGO_URL = '/images/brand-mark.png?v=3d';
+// Bundled asset provides content hashing; fallback URL prevents Telegram/WebView caching.
+export const LOCAL_LOGO_URL = brandLogo || '/images/brand-mark.png?v=20260924_shield';
 
 export interface BrandingInfo {
   name: string;

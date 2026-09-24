@@ -25,7 +25,7 @@ import { getTelegramInitData } from './utils/telegramInitData';
 import { useAuthStore } from './store/auth';
 import { AppWithNavigator } from './AppWithNavigator';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { initLogoPreload } from './api/branding';
+import { initLogoPreload, LOCAL_LOGO_URL } from './api/branding';
 import { checkBackendOnStartup } from './api/health';
 import { applyTelegramLanguage, i18nReady } from './i18n';
 import { themeColorsQueryOptions } from './api/themeColors';
@@ -135,7 +135,7 @@ void useAuthStore.getState().initialize();
 void checkBackendOnStartup();
 
 const PRELOAD_ASSETS = [
-  '/images/brand-mark.png?v=3d',
+  LOCAL_LOGO_URL,
   '/images/promo-group-bg.webp',
   '/images/subscription-bg-desktop.webp',
   '/images/subscription-orb.webp',

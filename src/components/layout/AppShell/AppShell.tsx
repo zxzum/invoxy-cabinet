@@ -205,7 +205,7 @@ export function AppShell({ children }: AppShellProps) {
         <div className="flex items-center gap-3 px-2 py-1">
           <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-accent-500/10">
             <img
-              src={isModernCustomerRoute ? '/images/brand-mark.png' : logoUrl || LOCAL_LOGO_URL}
+              src={isModernCustomerRoute ? LOCAL_LOGO_URL : logoUrl || LOCAL_LOGO_URL}
               alt={isModernCustomerRoute ? 'InvoxyVPN' : appName || 'Invoxy VPN'}
               className="h-full w-full object-contain"
               onError={(e) => {

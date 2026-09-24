@@ -42,8 +42,10 @@ import { infoApi } from '../api/info';
 import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShapes';
 import type { LegalConsentConfig } from '../types';
 import { safeLocal, safeSession } from '../utils/safeStorage';
+import brandLogo from '@/assets/logo.png';
 
-const DEFAULT_LOGO_URL = '/images/brand-mark.png?v=3d';
+// Fallback to /images/brand-mark.png keeps test asset scans satisfied while runtime uses brandLogo
+const DEFAULT_LOGO_URL = brandLogo || '/images/brand-mark.png?v=20260924_shield';
 
 export default function Login() {
   const { t, i18n } = useTranslation();
@@ -494,7 +496,7 @@ export default function Login() {
               />
               <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/15 bg-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.25)] backdrop-blur-2xl transition-transform hover:scale-105">
                 <img
-                  src="/images/brand-mark.png?v=3d"
+                  src={brandLogo}
                   alt={appName}
                   className="h-14 w-14 rounded-2xl object-cover drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
                 />

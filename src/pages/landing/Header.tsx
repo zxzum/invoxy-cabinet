@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { useAuthStore } from '@/store/auth';
+import brandLogo from '@/assets/logo.png';
 
 const BOT_USERNAME = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'invoxy_bot').replace(/^@/, '');
 const TELEGRAM_BOT_URL = `https://t.me/${BOT_USERNAME}`;
@@ -47,7 +48,7 @@ export function Header() {
         {/* Brand */}
         <Link to="/" className="flex items-center gap-3 group focus:outline-none">
           <img
-            src="/images/brand-mark.png?v=3d"
+            src={brandLogo}
             alt="Invoxy"
             className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
             width={32}
