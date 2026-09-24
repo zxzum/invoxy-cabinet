@@ -57,7 +57,7 @@ export function AuthInput({
             e.preventDefault();
             setShowPassword((prev) => !prev);
           }}
-          className="shrink-0 p-1 text-muted/60 transition-colors hover:text-ink focus:outline-none"
+          className="shrink-0 p-1 text-muted/60 transition-colors hover:text-mint focus:outline-none"
           title={showPassword ? 'Hide password' : 'Show password'}
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >

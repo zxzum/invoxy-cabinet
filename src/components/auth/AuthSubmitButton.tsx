@@ -26,7 +26,7 @@ export function AuthSubmitButton({
       whileTap={disabled || loading ? undefined : { scale: 0.98 }}
       className="group mt-2 flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg transition-[opacity,box-shadow,transform] duration-200 hover:shadow-[0_8px_28px_rgba(6,214,160,0.35)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none"
     >
-      <AnimatePresence initial={false} mode="wait" aria-live="polite">
+      <AnimatePresence initial={false} mode="popLayout" aria-live="polite">
         <m.span
           key={loading ? 'loading' : 'idle'}
           initial={{ opacity: 0, y: 6 }}

@@ -49,11 +49,21 @@ const DEFAULT_LOGO_URL = brandLogo || '/images/brand-mark.png?v=20260924_shield'
 type AuthView = 'form' | 'consent' | 'forgot' | 'check-email';
 const VIEW_ORDER: Record<AuthView, number> = { form: 0, consent: 1, forgot: 1, 'check-email': 2 };
 
+const SMOOTH_EASE = [0.16, 1, 0.3, 1] as const;
+
 const viewVariants = {
-  enter: (dir: number) => ({ opacity: 0, x: dir >= 0 ? 44 : -44 }),
+  enter: (dir: number) => ({ opacity: 0, x: dir >= 0 ? 40 : -40 }),
   center: { opacity: 1, x: 0 },
-  exit: (dir: number) => ({ opacity: 0, x: dir >= 0 ? -44 : 44 }),
+  exit: (dir: number) => ({ opacity: 0, x: dir >= 0 ? -40 : 40 }),
 };
+
+/**
+ * Смена экранов карточки — popLayout, не wait: новый экран монтируется сразу,
+ * старый вылетает поверх абсолютом. wait делал паузу «старое исчезло, нового
+ * нет» (дёргано), а в вебвью с задушенным rAF (occluded Telegram Desktop)
+ * exit никогда не завершался — и форма вообще не переключалась.
+ */
+const VIEW_TRANSITION = { duration: 0.34, ease: SMOOTH_EASE };
 
 /** Поля регистрации появляются/уходят без скачка высоты карточки. */
 function collapsible(field: ReactNode, key: string, visible: boolean) {
@@ -640,7 +650,7 @@ export default function Login() {
                     setAuthMode('login');
                   }}
                   className={`relative flex-1 py-2 text-center text-xs font-semibold transition-colors duration-200 ${
-                    authMode === 'login' ? 'text-ink' : 'text-muted hover:text-ink/80'
+                    authMode === 'login' ? 'text-ink' : 'text-muted hover:text-mint'
                   }`}
                 >
                   {authMode === 'login' && (
@@ -661,7 +671,7 @@ export default function Login() {
                     setAuthMode('register');
                   }}
                   className={`relative flex-1 py-2 text-center text-xs font-semibold transition-colors duration-200 ${
-                    authMode === 'register' ? 'text-ink' : 'text-muted hover:text-ink/80'
+                    authMode === 'register' ? 'text-ink' : 'text-muted hover:text-mint'
                   }`}
                 >
                   {authMode === 'register' && (
@@ -681,7 +691,7 @@ export default function Login() {
               </div>
             )}
 
-            <AnimatePresence initial={false} mode="wait">
+            <AnimatePresence initial={false}>
               {authMode === 'register' &&
                 (urlReferralCode || referralCode) &&
                 isEmailAuthEnabled &&
@@ -721,14 +731,16 @@ export default function Login() {
                 )}
             </AnimatePresence>
 
-            <div className="mt-6">
-              <AnimatePresence initial={false} mode="wait">
+            <div className="relative mt-6">
+              {/* popLayout: заголовок и подпись сменяются внахлёст, без паузы
+                  «старое исчезло — нового ещё нет», которая читалась как рывок. */}
+              <AnimatePresence initial={false} mode="popLayout">
                 <m.div
                   key={`${activeView}-${authMode}`}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.3, ease: SMOOTH_EASE }}
                 >
                   <h1 className="text-[32px] sm:text-[34px] font-medium tracking-[-.045em] text-ink">
                     {authTitle}
@@ -738,7 +750,7 @@ export default function Login() {
               </AnimatePresence>
             </div>
 
-            <AnimatePresence initial={false} mode="wait" custom={viewDirection}>
+            <AnimatePresence initial={false} mode="popLayout" custom={viewDirection}>
               {activeView === 'consent' && (
                 <m.div
                   key="view-consent"
@@ -747,7 +759,7 @@ export default function Login() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                  transition={VIEW_TRANSITION}
                 >
                   <LegalConsentGate gate={consent} framed={false} className="mt-7" />
                 </m.div>
@@ -761,7 +773,7 @@ export default function Login() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                  transition={VIEW_TRANSITION}
                   className="ix-auth-check-email mt-7"
                 >
                   <CheckEmailCard
@@ -788,7 +800,7 @@ export default function Login() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                  transition={VIEW_TRANSITION}
                 >
                   {forgotPasswordSent ? (
                     <div className="mt-7 space-y-4 text-center">
@@ -803,6 +815,10 @@ export default function Login() {
                       <p className="text-sm font-medium text-ink">
                         {t('auth.checkEmail', 'Check your email')}
                       </p>
+                      <p className="inline-flex max-w-full items-center gap-2 truncate rounded-xl border border-mint/25 bg-mint/10 px-3.5 py-2 font-mono text-[13px] font-semibold text-mint">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-mint shadow-[0_0_6px_rgba(6,214,160,0.8)]" />
+                        <span className="truncate">{forgotPasswordEmail.trim()}</span>
+                      </p>
                       <p className="text-xs text-muted">
                         {t(
                           'auth.passwordResetSent',
@@ -815,7 +831,7 @@ export default function Login() {
                       <button
                         type="button"
                         onClick={closeForgotPasswordModal}
-                        className="w-full text-center text-sm text-muted transition-colors hover:text-ink"
+                        className="w-full text-center text-sm text-muted transition-colors hover:text-mint"
                       >
                         {t('common.back', 'Back')}
                       </button>
@@ -861,7 +877,7 @@ export default function Login() {
                       <button
                         type="button"
                         onClick={closeForgotPasswordModal}
-                        className="mt-1 w-full text-center text-sm text-muted transition-colors hover:text-ink"
+                        className="mt-1 w-full text-center text-sm text-muted transition-colors hover:text-mint"
                       >
                         {t('common.back', 'Back')}
                       </button>
@@ -878,7 +894,7 @@ export default function Login() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                  transition={VIEW_TRANSITION}
                 >
                   <AnimatePresence initial={false}>
                     {error && (
@@ -1028,7 +1044,7 @@ export default function Login() {
                         <button
                           type="button"
                           onClick={() => setShowForgotPassword(true)}
-                          className="mt-4 w-full text-center text-sm text-muted transition-colors hover:text-ink"
+                          className="mt-4 w-full text-center text-sm text-muted transition-colors hover:text-mint"
                         >
                           {t('auth.forgotPassword', 'Forgot password?')}
                         </button>
