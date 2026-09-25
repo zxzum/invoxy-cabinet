@@ -385,6 +385,8 @@ export interface UpdateSubscriptionRequest {
   traffic_purchase_id?: number;
   whitelist_traffic_used_gb?: number;
   whitelist_traffic_delta_gb?: number;
+  reason?: string;
+  silent?: boolean;
 }
 
 export interface UpdateSubscriptionResponse {
@@ -546,10 +548,16 @@ export const adminUsersApi = {
     userId: number,
     subId: number,
     force = false,
+    silent = false,
+    reason?: string,
   ): Promise<{ status: string }> => {
+    const params: Record<string, string | boolean> = {};
+    if (force) params.force = true;
+    if (silent) params.silent = true;
+    if (reason) params.reason = reason;
     const response = await apiClient.delete(
       `/cabinet/admin/users/${userId}/subscriptions/${subId}`,
-      { params: force ? { force: true } : undefined },
+      { params: Object.keys(params).length > 0 ? params : undefined },
     );
     return response.data;
   },

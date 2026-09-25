@@ -114,4 +114,40 @@ describe('adminUsersApi.updateSubscription', () => {
       subscription_id: 10,
     });
   });
+
+  it('sends action with reason and silent flags', async () => {
+    const { adminUsersApi } = await import('./adminUsers');
+    await adminUsersApi.updateSubscription(42, {
+      action: 'extend',
+      days: 30,
+      reason: 'Compensation for downtime',
+      silent: true,
+    });
+
+    expect(post).toHaveBeenCalledTimes(1);
+    const [url, body] = post.mock.calls[0];
+    expect(url).toBe('/cabinet/admin/users/42/subscription');
+    expect(body).toEqual({
+      action: 'extend',
+      days: 30,
+      reason: 'Compensation for downtime',
+      silent: true,
+    });
+  });
+});
+
+describe('adminUsersApi.deleteSubscription', () => {
+  it('passes force, silent, and reason query parameters', async () => {
+    const { default: apiClient } = await import('./client');
+    const deleteSpy = vi
+      .spyOn(apiClient, 'delete')
+      .mockResolvedValueOnce({ data: { status: 'deleted' } });
+    const { adminUsersApi } = await import('./adminUsers');
+
+    await adminUsersApi.deleteSubscription(42, 10, true, true, 'Test delete reason');
+
+    expect(deleteSpy).toHaveBeenCalledWith('/cabinet/admin/users/42/subscriptions/10', {
+      params: { force: true, silent: true, reason: 'Test delete reason' },
+    });
+  });
 });

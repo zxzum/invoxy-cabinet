@@ -91,6 +91,10 @@ export interface SubscriptionTabProps {
   onSubEndDateChange?: (date: string) => void;
   selectedTariffId: number | null;
   onSelectedTariffIdChange: (id: number | null) => void;
+  subReason: string;
+  subSilent: boolean;
+  onSubReasonChange: (s: string) => void;
+  onSubSilentChange: (b: boolean) => void;
 
   // Traffic add form
   selectedTrafficGb: string;
@@ -179,6 +183,10 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
     onSubEndDateChange,
     selectedTariffId,
     onSelectedTariffIdChange,
+    subReason,
+    subSilent,
+    onSubReasonChange,
+    onSubSilentChange,
     selectedTrafficGb,
     onSelectedTrafficGbChange,
     panelInfo,
@@ -356,6 +364,36 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                     />
                   </div>
                 </div>
+                <div>
+                  <label className="text-xs text-dark-400 mb-1 block">
+                    {t('admin.users.detail.subscription.reason', 'Причина / Примечание')}
+                  </label>
+                  <input
+                    type="text"
+                    value={subReason}
+                    onChange={(e) => onSubReasonChange(e.target.value)}
+                    placeholder={t(
+                      'admin.users.detail.subscription.reasonPlaceholder',
+                      'Необязательно, отображается клиенту',
+                    )}
+                    className="input w-full"
+                    maxLength={500}
+                  />
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-dark-300">
+                  <input
+                    type="checkbox"
+                    checked={subSilent}
+                    onChange={(e) => onSubSilentChange(e.target.checked)}
+                    className="checkbox"
+                  />
+                  <span>
+                    {t(
+                      'admin.users.detail.subscription.silent',
+                      'Не отправлять уведомление клиенту',
+                    )}
+                  </span>
+                </label>
                 <button
                   onClick={() => onUpdateSubscription('create')}
                   disabled={actionLoading}
@@ -709,6 +747,33 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                     ? t('admin.users.detail.actions.areYouSure')
                     : t('admin.users.detail.subscription.deleteButton')}
                 </button>
+              </div>
+              <div className="mt-3 space-y-2 border-t border-white/5 pt-3">
+                <input
+                  type="text"
+                  value={subReason}
+                  onChange={(e) => onSubReasonChange(e.target.value)}
+                  placeholder={t(
+                    'admin.users.detail.subscription.deleteReasonPlaceholder',
+                    'Причина удаления (необязательно)',
+                  )}
+                  className="input w-full text-xs"
+                  maxLength={500}
+                />
+                <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-dark-300">
+                  <input
+                    type="checkbox"
+                    checked={subSilent}
+                    onChange={(e) => onSubSilentChange(e.target.checked)}
+                    className="checkbox"
+                  />
+                  <span>
+                    {t(
+                      'admin.users.detail.subscription.silent',
+                      'Не отправлять уведомление клиенту',
+                    )}
+                  </span>
+                </label>
               </div>
             </div>
           )}
@@ -1329,6 +1394,37 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                   </select>
                 )}
 
+                <div>
+                  <label className="text-xs text-dark-400 mb-1 block">
+                    {t('admin.users.detail.subscription.reason', 'Причина / Примечание')}
+                  </label>
+                  <input
+                    type="text"
+                    value={subReason}
+                    onChange={(e) => onSubReasonChange(e.target.value)}
+                    placeholder={t(
+                      'admin.users.detail.subscription.reasonPlaceholder',
+                      'Необязательно, отображается клиенту',
+                    )}
+                    className="input w-full"
+                    maxLength={500}
+                  />
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-dark-300">
+                  <input
+                    type="checkbox"
+                    checked={subSilent}
+                    onChange={(e) => onSubSilentChange(e.target.checked)}
+                    className="checkbox"
+                  />
+                  <span>
+                    {t(
+                      'admin.users.detail.subscription.silent',
+                      'Не отправлять уведомление клиенту',
+                    )}
+                  </span>
+                </label>
+
                 <button
                   onClick={() => onUpdateSubscription()}
                   disabled={actionLoading}
@@ -1410,6 +1506,33 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 />
               </div>
             </div>
+            <div>
+              <label className="text-xs text-dark-400 mb-1 block">
+                {t('admin.users.detail.subscription.reason', 'Причина / Примечание')}
+              </label>
+              <input
+                type="text"
+                value={subReason}
+                onChange={(e) => onSubReasonChange(e.target.value)}
+                placeholder={t(
+                  'admin.users.detail.subscription.reasonPlaceholder',
+                  'Необязательно, отображается клиенту',
+                )}
+                className="input w-full"
+                maxLength={500}
+              />
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-dark-300">
+              <input
+                type="checkbox"
+                checked={subSilent}
+                onChange={(e) => onSubSilentChange(e.target.checked)}
+                className="checkbox"
+              />
+              <span>
+                {t('admin.users.detail.subscription.silent', 'Не отправлять уведомление клиенту')}
+              </span>
+            </label>
             <button
               onClick={() => onUpdateSubscription('create')}
               disabled={actionLoading}

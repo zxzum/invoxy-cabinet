@@ -87,6 +87,22 @@ export default function Support() {
     setSearchParams(nextSearchParams);
   }, [queryTicketId, searchParams, setSearchParams]);
 
+  const clearCreateActionQuery = useCallback(() => {
+    if (!searchParams.has('action')) return;
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete('action');
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'new' || action === 'create') {
+      setShowCreateForm(true);
+      setSelectedTicket(null);
+      setFormError(null);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const urls = blobUrlsRef;
     return () => {
@@ -226,6 +242,7 @@ export default function Support() {
     },
     onSuccess: (ticket) => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      clearCreateActionQuery();
       setShowCreateForm(false);
       setFormError(null);
       setNewTitle('');
@@ -648,6 +665,7 @@ export default function Support() {
                     variant="secondary"
                     className="button-lift h-12 rounded-full border-white/10 bg-transparent px-5 text-dark-300 hover:border-accent-400/35 hover:bg-accent-500/10"
                     onClick={() => {
+                      clearCreateActionQuery();
                       setShowCreateForm(false);
                       setFormError(null);
                       clearCreateAttachments();

@@ -97,6 +97,8 @@ export default function AdminUserDetail() {
   const [activeSubscriptionId, setActiveSubscriptionId] = useState<number | null>(null);
   const hasAutoSelectedSub = useRef(false);
   const [subscriptionDetailView, setSubscriptionDetailView] = useState(false);
+  const [subReason, setSubReason] = useState<string>('');
+  const [subSilent, setSubSilent] = useState<boolean>(false);
 
   const handleSubDaysChange = (val: number | '') => {
     setSubDays(val);
@@ -417,6 +419,8 @@ export default function AdminUserDetail() {
               ...(selectedTariffId ? { tariff_id: selectedTariffId } : {}),
             }
           : {}),
+        ...(subReason.trim() ? { reason: subReason.trim() } : {}),
+        ...(subSilent ? { silent: true } : {}),
       };
       await adminUsersApi.updateSubscription(userId, data);
       await loadUser();
@@ -879,7 +883,13 @@ export default function AdminUserDetail() {
       // Активную платную подписку сервер по умолчанию бережёт — админ уже
       // подтвердил намерение кнопкой, поэтому просим удалить именно её.
       const force = Boolean(selectedSub.is_active) && !selectedSub.is_trial;
-      await adminUsersApi.deleteSubscription(userId, selectedSub.id, force);
+      await adminUsersApi.deleteSubscription(
+        userId,
+        selectedSub.id,
+        force,
+        subSilent,
+        subReason.trim() || undefined,
+      );
       notify.success(t('admin.users.detail.subscription.deleted'), t('common.success'));
       setSubscriptionDetailView(false);
       await loadUser();
@@ -1287,6 +1297,10 @@ export default function AdminUserDetail() {
             onSubEndDateChange={handleSubEndDateChange}
             selectedTariffId={selectedTariffId}
             onSelectedTariffIdChange={setSelectedTariffId}
+            subReason={subReason}
+            subSilent={subSilent}
+            onSubReasonChange={setSubReason}
+            onSubSilentChange={setSubSilent}
             selectedTrafficGb={selectedTrafficGb}
             onSelectedTrafficGbChange={setSelectedTrafficGb}
             panelInfo={panelInfo}
