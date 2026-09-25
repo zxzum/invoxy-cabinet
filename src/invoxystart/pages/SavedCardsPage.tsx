@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { AnimatePresence, m } from 'framer-motion';
 import { CreditCard, X } from '@/invoxystart/components/ui/RuneIcon';
 import { balanceApi } from '@/invoxystart/api';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
@@ -74,28 +75,40 @@ export default function SavedCardsPage() {
       ) : (
         <AccountPanel title="Ваши карты" description="Удалить карту можно в любой момент">
           <div className="mt-4 divide-y divide-white/8">
-            {cards.map((card) => (
-              <div key={card.id} className="flex items-center gap-3 py-4">
-                <span className="glass-control grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-mint">
-                  <CreditCard size={19} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {card.title ||
-                      `${card.card_type || card.method_type || 'Карта'}${card.card_last4 ? ` · •••• ${card.card_last4}` : ''}`}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">Добавлена {formatDate(card.created_at)}</p>
-                </div>
-                <button
-                  type="button"
-                  disabled={deleting === card.id}
-                  onClick={() => void removeCard(card.id)}
-                  className="button-lift flex items-center gap-1.5 rounded-full border border-red-300/20 px-3 py-2 text-xs text-red-200 disabled:opacity-50"
+            <AnimatePresence initial={false}>
+              {cards.map((card, index) => (
+                <m.div
+                  key={card.id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0, transition: { duration: 0.22 } }}
+                  transition={{ duration: 0.3, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-center gap-3 overflow-hidden py-4"
                 >
-                  <X size={14} /> {deleting === card.id ? 'Удаление…' : 'Удалить'}
-                </button>
-              </div>
-            ))}
+                  <span className="glass-control grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-mint">
+                    <CreditCard size={19} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {card.title ||
+                        `${card.card_type || card.method_type || 'Карта'}${card.card_last4 ? ` · •••• ${card.card_last4}` : ''}`}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      Добавлена {formatDate(card.created_at)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={deleting === card.id}
+                    onClick={() => void removeCard(card.id)}
+                    className="button-lift flex items-center gap-1.5 rounded-full border border-red-300/20 px-3 py-2 text-xs text-red-200 active:scale-[.96] disabled:opacity-50"
+                  >
+                    <X size={14} /> {deleting === card.id ? 'Удаление…' : 'Удалить'}
+                  </button>
+                </m.div>
+              ))}
+            </AnimatePresence>
           </div>
         </AccountPanel>
       )}

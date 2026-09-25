@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { AnimatePresence, m } from 'framer-motion';
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import {
   ArrowRight,
@@ -123,9 +124,24 @@ export default function NewsPage({ load = loadNews }: { load?: NewsLoader }) {
       )}
       {status === 'ready' && items.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((item) => (
-            <NewsCard key={item.id} item={item} />
-          ))}
+          <AnimatePresence initial={false}>
+            {items.map((item, index) => (
+              <m.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{
+                  duration: 0.35,
+                  delay: Math.min(index, 8) * 0.05,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+              >
+                <NewsCard item={item} />
+              </m.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

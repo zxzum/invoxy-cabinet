@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useParams } from 'react-router';
+import { AnimatePresence, LazyMotion, domMax, m } from 'framer-motion';
 import { BrandLogo } from '@/invoxystart/components/layout/BrandLogo';
 import {
   Check,
@@ -175,7 +176,12 @@ export default function QuickPurchasePage({
   return (
     <PublicFrame>
       <div className="grid gap-5 lg:grid-cols-[.8fr_1.2fr] lg:items-start">
-        <section className="glass-panel overflow-hidden rounded-[34px] p-6 lg:sticky lg:top-6 lg:p-8">
+        <m.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-panel overflow-hidden rounded-[34px] p-6 lg:sticky lg:top-6 lg:p-8"
+        >
           <p className="text-[10px] font-bold tracking-[.18em] text-mint">БЫСТРОЕ ПОДКЛЮЧЕНИЕ</p>
           <h1 className="mt-4 text-4xl font-medium tracking-[-.06em] lg:text-5xl">
             {landing.title}
@@ -184,8 +190,14 @@ export default function QuickPurchasePage({
             <p className="mt-4 text-sm leading-relaxed text-muted">{landing.subtitle}</p>
           )}
           <div className="mt-7 grid gap-3">
-            {landing.features.map((feature) => (
-              <div key={feature.title} className="flex gap-3 rounded-2xl bg-white/[.04] p-3.5">
+            {landing.features.map((feature, index) => (
+              <m.div
+                key={feature.title}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.35, delay: 0.1 + index * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                className="flex gap-3 rounded-2xl bg-white/[.04] p-3.5"
+              >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-mint/10 text-mint">
                   <Check size={16} />
                 </span>
@@ -193,24 +205,31 @@ export default function QuickPurchasePage({
                   <p className="text-sm font-medium">{feature.title}</p>
                   <p className="mt-1 text-xs leading-relaxed text-muted">{feature.description}</p>
                 </div>
-              </div>
+              </m.div>
             ))}
           </div>
           <div className="mt-7 flex items-center gap-2 text-xs text-muted">
             <ShieldCheck size={15} className="text-mint" /> Безопасная оплата через платёжного
             провайдера
           </div>
-        </section>
-        <form onSubmit={submit} className="glass-panel rounded-[34px] p-5 lg:p-8">
+        </m.section>
+        <m.form
+          onSubmit={submit}
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-panel rounded-[34px] p-5 lg:p-8"
+        >
           <div>
             <p className="text-[10px] font-bold tracking-[.16em] text-mint">1 · ТАРИФ</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {landing.tariffs.map((item) => (
-                <button
+                <m.button
                   type="button"
                   key={item.id}
                   onClick={() => selectTariff(item.id)}
-                  className={`text-left rounded-2xl p-4 transition-colors ${tariffId === item.id ? 'bg-mint/12 ring-1 ring-mint/45' : 'glass-control hover:border-mint/30'}`}
+                  whileTap={{ scale: 0.97 }}
+                  className={`text-left rounded-2xl p-4 transition-[background-color,box-shadow] duration-200 ${tariffId === item.id ? 'bg-mint/12 ring-1 ring-mint/45' : 'glass-control hover:border-mint/30'}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-medium">{item.name}</span>
@@ -222,7 +241,7 @@ export default function QuickPurchasePage({
                   <p className="mt-3 text-xs text-muted">
                     До {item.device_limit} устройств · {item.traffic_limit_gb} ГБ
                   </p>
-                </button>
+                </m.button>
               ))}
             </div>
           </div>
@@ -231,15 +250,16 @@ export default function QuickPurchasePage({
               <p className="text-[10px] font-bold tracking-[.16em] text-mint">2 · СРОК</p>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {tariff.periods.map((item) => (
-                  <button
+                  <m.button
                     type="button"
                     key={item.days}
                     onClick={() => setPeriodDays(item.days)}
-                    className={`rounded-2xl p-3 text-center text-xs ${periodDays === item.days ? 'bg-mint font-bold text-bg' : 'glass-control text-muted'}`}
+                    whileTap={{ scale: 0.95 }}
+                    className={`rounded-2xl p-3 text-center text-xs transition-colors duration-200 ${periodDays === item.days ? 'bg-mint font-bold text-bg' : 'glass-control text-muted'}`}
                   >
                     <span className="block">{item.label}</span>
                     <strong className="mt-1 block text-sm">{item.price_label}</strong>
-                  </button>
+                  </m.button>
                 ))}
               </div>
             </div>
@@ -286,45 +306,73 @@ export default function QuickPurchasePage({
                 />
                 <Sparkles size={17} className="text-mint" /> Купить в подарок
               </label>
-              {isGift && (
-                <div className="mt-3 grid gap-3">
-                  <input
-                    required
-                    value={recipient}
-                    onChange={(event) => setRecipient(event.target.value)}
-                    placeholder="Контакт получателя"
-                    className="glass-control h-12 rounded-2xl px-4 text-sm outline-none"
-                  />
-                  <textarea
-                    value={giftMessage}
-                    onChange={(event) => setGiftMessage(event.target.value)}
-                    placeholder="Сообщение (необязательно)"
-                    rows={3}
-                    className="glass-control resize-none rounded-2xl px-4 py-3 text-sm outline-none"
-                  />
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {isGift && (
+                  <m.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 grid gap-3">
+                      <input
+                        required
+                        value={recipient}
+                        onChange={(event) => setRecipient(event.target.value)}
+                        placeholder="Контакт получателя"
+                        className="glass-control h-12 rounded-2xl px-4 text-sm outline-none"
+                      />
+                      <textarea
+                        value={giftMessage}
+                        onChange={(event) => setGiftMessage(event.target.value)}
+                        placeholder="Сообщение (необязательно)"
+                        rows={3}
+                        className="glass-control resize-none rounded-2xl px-4 py-3 text-sm outline-none"
+                      />
+                    </div>
+                  </m.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
-          {error && (
-            <p role="alert" className="mt-4 rounded-2xl bg-red-300/10 p-4 text-sm text-red-200">
-              {error}
-            </p>
-          )}
-          {submitState === 'success' && (
-            <div className="mt-4 rounded-2xl bg-mint/10 p-4 text-sm text-mint">
-              Заказ создан. {paymentUrl ? 'Переходим к оплате…' : 'Проверьте почту или Telegram.'}
-            </div>
-          )}
-          <button
+          <AnimatePresence initial={false} mode="popLayout">
+            {error && (
+              <m.p
+                key="purchase-error"
+                role="alert"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0, x: [0, -8, 8, -4, 4, 0] }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.36, ease: 'easeOut' }}
+                className="mt-4 rounded-2xl bg-red-300/10 p-4 text-sm text-red-200"
+              >
+                {error}
+              </m.p>
+            )}
+            {submitState === 'success' && (
+              <m.div
+                key="purchase-success"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-4 rounded-2xl bg-mint/10 p-4 text-sm text-mint"
+              >
+                Заказ создан. {paymentUrl ? 'Переходим к оплате…' : 'Проверьте почту или Telegram.'}
+              </m.div>
+            )}
+          </AnimatePresence>
+          <m.button
             type="submit"
             disabled={!canSubmit || submitState === 'submitting'}
+            whileTap={canSubmit && submitState !== 'submitting' ? { scale: 0.98 } : undefined}
             className="button-lift mt-6 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg disabled:cursor-not-allowed disabled:opacity-45"
           >
             {submitState === 'submitting' ? 'Создаём заказ…' : 'Перейти к оплате'}
             <ChevronRight size={16} />
-          </button>
-        </form>
+          </m.button>
+        </m.form>
       </div>
       {landing.footer_text && (
         <p className="mt-5 text-center text-xs text-muted">{landing.footer_text}</p>
@@ -335,19 +383,22 @@ export default function QuickPurchasePage({
 
 function PublicFrame({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-bg px-4 py-6 text-ink sm:px-8 sm:py-10">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex items-center justify-between">
-          <Link to="/" aria-label="На главную">
-            <BrandLogo iconClassName="h-9 w-9 rounded-xl" textClassName="text-base font-bold" />
-          </Link>
-          <Link to="/login" className="text-xs font-semibold text-muted hover:text-ink">
-            Войти в кабинет
-          </Link>
+    // Публичная страница живёт вне InvoxyStartShell: свой LazyMotion для m.*.
+    <LazyMotion features={domMax} strict>
+      <main className="min-h-screen bg-bg px-4 py-6 text-ink sm:px-8 sm:py-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-6 flex items-center justify-between">
+            <Link to="/" aria-label="На главную">
+              <BrandLogo iconClassName="h-9 w-9 rounded-xl" textClassName="text-base font-bold" />
+            </Link>
+            <Link to="/login" className="text-xs font-semibold text-muted hover:text-ink">
+              Войти в кабинет
+            </Link>
+          </div>
+          {children}
         </div>
-        {children}
-      </div>
-    </main>
+      </main>
+    </LazyMotion>
   );
 }
 

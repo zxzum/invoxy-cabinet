@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { AnimatePresence, m } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { CalendarDays, Link2, Smartphone, X } from '@/invoxystart/components/ui/RuneIcon';
 import { subscriptionApi } from '@/invoxystart/api';
@@ -246,7 +247,7 @@ export default function SubscriptionManagePage() {
         <button
           type="button"
           onClick={() => navigate(hasMultiple ? '/subscriptions' : '/dashboard')}
-          className="text-xs font-bold text-mint"
+          className="text-xs font-bold text-mint transition-transform hover:-translate-x-0.5"
         >
           ← {hasMultiple ? 'Все подписки' : 'Главная'}
         </button>
@@ -299,7 +300,10 @@ export default function SubscriptionManagePage() {
             </div>
             {detail.traffic_limit_gb ? (
               <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full rounded-full bg-mint" style={{ width: `${traffic}%` }} />
+                <div
+                  className="h-full rounded-full bg-mint transition-[width] duration-700 ease-out"
+                  style={{ width: `${traffic}%` }}
+                />
               </div>
             ) : null}
           </AccountPanel>
@@ -377,18 +381,26 @@ export default function SubscriptionManagePage() {
                   ? 'Нажмите, чтобы скрыть QR-код'
                   : 'Нажмите, чтобы показать QR-код на другом устройстве'}
               </span>
-              {qrOpen && (
-                <span className="mt-4 grid place-items-center">
-                  <QRCodeSVG
-                    value={accessLink}
-                    size={208}
-                    bgColor="#f3f1ec"
-                    fgColor="#0b0c0e"
-                    includeMargin
-                    aria-label="QR-код ссылки подписки"
-                  />
-                </span>
-              )}
+              <AnimatePresence initial={false}>
+                {qrOpen && (
+                  <m.span
+                    initial={{ opacity: 0, height: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                    exit={{ opacity: 0, height: 0, scale: 0.96 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    className="mt-4 grid place-items-center overflow-hidden"
+                  >
+                    <QRCodeSVG
+                      value={accessLink}
+                      size={208}
+                      bgColor="#f3f1ec"
+                      fgColor="#0b0c0e"
+                      includeMargin
+                      aria-label="QR-код ссылки подписки"
+                    />
+                  </m.span>
+                )}
+              </AnimatePresence>
             </button>
             {connection?.instructions?.steps?.length ? (
               <ol className="mt-5 list-decimal space-y-2 pl-5 text-sm text-muted">
@@ -460,7 +472,7 @@ export default function SubscriptionManagePage() {
             <button
               type="button"
               onClick={() => showToast('Удаление подписки доступно через поддержку')}
-              className="mt-4 flex w-full items-center justify-between rounded-2xl border border-red-300/20 bg-red-300/5 px-4 py-3 text-left text-sm text-red-200"
+              className="mt-4 flex w-full items-center justify-between rounded-2xl border border-red-300/20 bg-red-300/5 px-4 py-3 text-left text-sm text-red-200 transition-colors hover:border-red-300/40 hover:bg-red-300/10 active:scale-[.99]"
             >
               <span className="flex items-center gap-2">
                 <X size={16} /> Удалить подписку

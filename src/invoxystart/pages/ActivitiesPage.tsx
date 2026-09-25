@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router';
+import { m } from 'framer-motion';
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { Check, CheckCircle2, CirclePlus, Sparkles, X } from '@/invoxystart/components/ui/RuneIcon';
 import { postJson, requestJson } from './_contentApi';
@@ -208,7 +209,7 @@ function ActivityTab({
   return (
     <a
       href={href}
-      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold ${active ? 'bg-mint text-bg' : 'glass-control text-muted hover:text-ink'}`}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold transition-all active:scale-[.96] ${active ? 'bg-mint text-bg' : 'glass-control text-muted hover:text-mint'}`}
     >
       {icon}
       {label}
@@ -289,7 +290,13 @@ function PollsView({ polls }: { polls: PollInfo[] }) {
             <p className="mt-8 text-center text-sm text-muted">Загрузка вопроса…</p>
           )}
           {question && (
-            <div className="mt-6">
+            <m.div
+              key={question.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-6"
+            >
               <div className="flex justify-between text-xs text-muted">
                 <span>
                   Вопрос {progress.current + 1} из {progress.total}
@@ -300,7 +307,7 @@ function PollsView({ polls }: { polls: PollInfo[] }) {
               </div>
               <div className="mt-2 h-1.5 rounded-full bg-white/8">
                 <div
-                  className="h-full rounded-full bg-mint"
+                  className="h-full rounded-full bg-mint transition-[width] duration-500 ease-out"
                   style={{
                     width: `${((progress.current + 1) / Math.max(progress.total, 1)) * 100}%`,
                   }}
@@ -314,13 +321,13 @@ function PollsView({ polls }: { polls: PollInfo[] }) {
                     key={option.id}
                     disabled={busy}
                     onClick={() => answer(option.id)}
-                    className="glass-control rounded-2xl px-4 py-4 text-left text-sm transition-colors hover:border-mint/40 disabled:opacity-50"
+                    className="glass-control rounded-2xl px-4 py-4 text-left text-sm transition-all hover:border-mint/40 active:scale-[.98] disabled:opacity-50"
                   >
                     {option.text}
                   </button>
                 ))}
               </div>
-            </div>
+            </m.div>
           )}
           {message && (
             <p className="mt-5 rounded-2xl bg-mint/10 p-4 text-sm text-mint">{message}</p>
@@ -457,7 +464,7 @@ function ContestsView({
                       key={index}
                       disabled={busy}
                       onClick={() => answer(`${index}_${String(data.secret ?? '')}`)}
-                      className="grid aspect-square place-items-center rounded-2xl bg-white/6 text-xl transition-colors hover:bg-mint/15 disabled:opacity-50"
+                      className="grid aspect-square place-items-center rounded-2xl bg-white/6 text-xl transition-all hover:bg-mint/15 active:scale-95 disabled:opacity-50"
                     >
                       {game.game_type === 'locks' ? '🔒' : '◈'}
                     </button>
@@ -472,7 +479,7 @@ function ContestsView({
                       key={flag}
                       disabled={busy}
                       onClick={() => answer(flag)}
-                      className="rounded-2xl bg-white/6 p-4 text-2xl hover:bg-mint/15"
+                      className="rounded-2xl bg-white/6 p-4 text-2xl transition-all hover:bg-mint/15 active:scale-95"
                     >
                       {flag}
                     </button>
@@ -484,7 +491,7 @@ function ContestsView({
                   type="button"
                   disabled={busy}
                   onClick={() => answer('blitz')}
-                  className="h-12 w-full rounded-full bg-mint text-sm font-bold text-bg"
+                  className="button-lift h-12 w-full rounded-full bg-mint text-sm font-bold text-bg active:scale-[.98]"
                 >
                   {String(data.button_text ?? 'Я здесь')}
                 </button>
@@ -510,7 +517,7 @@ function ContestsView({
                   <button
                     type="submit"
                     disabled={busy}
-                    className="h-12 w-full rounded-full bg-ink text-sm font-bold text-bg"
+                    className="button-lift h-12 w-full rounded-full bg-ink text-sm font-bold text-bg active:scale-[.98]"
                   >
                     Отправить
                   </button>

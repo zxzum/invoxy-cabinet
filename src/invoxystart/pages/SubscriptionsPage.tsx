@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { AnimatePresence, m } from 'framer-motion';
 import {
   CalendarDays,
   CheckCircle2,
@@ -86,16 +87,22 @@ export default function SubscriptionsPage() {
         />
       ) : (
         <div className="grid gap-5 xl:grid-cols-2">
-          {items.map((item) => {
+          {items.map((item, index) => {
             const traffic =
               item.traffic_limit_gb && item.traffic_limit_gb > 0
                 ? Math.min(100, ((item.traffic_used_gb ?? 0) / item.traffic_limit_gb) * 100)
                 : 0;
             return (
-              <button
+              <m.button
                 type="button"
                 key={item.id}
+                layout
                 onClick={() => navigate(`/subscriptions/${item.id}`)}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.4, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                whileTap={{ scale: 0.985 }}
                 className="glass-panel motion-card group rounded-[30px] p-5 text-left lg:p-7"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -145,7 +152,10 @@ export default function SubscriptionsPage() {
                 </div>
                 {item.traffic_limit_gb ? (
                   <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-mint" style={{ width: `${traffic}%` }} />
+                    <div
+                      className="h-full rounded-full bg-mint transition-[width] duration-700 ease-out"
+                      style={{ width: `${traffic}%` }}
+                    />
                   </div>
                 ) : null}
                 <div className="mt-5 flex items-center justify-end gap-1 text-xs font-bold text-mint">
@@ -155,19 +165,27 @@ export default function SubscriptionsPage() {
                     className="transition-transform group-hover:translate-x-1"
                   />
                 </div>
-              </button>
+              </m.button>
             );
           })}
-          {multiTariffEnabled && (
-            <AccountPanel className="flex min-h-44 items-center justify-center border-dashed">
-              <Link
-                to="/tariffs?mode=add"
-                className="flex min-h-16 items-center gap-2 rounded-full px-6 text-sm font-bold text-mint"
+          <AnimatePresence>
+            {multiTariffEnabled && (
+              <m.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: items.length * 0.06, ease: [0.16, 1, 0.3, 1] }}
               >
-                <Plus size={18} /> Подключить ещё тариф
-              </Link>
-            </AccountPanel>
-          )}
+                <AccountPanel className="flex min-h-44 items-center justify-center border-dashed">
+                  <Link
+                    to="/tariffs?mode=add"
+                    className="flex min-h-16 items-center gap-2 rounded-full px-6 text-sm font-bold text-mint transition-colors hover:bg-mint/10"
+                  >
+                    <Plus size={18} /> Подключить ещё тариф
+                  </Link>
+                </AccountPanel>
+              </m.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </AccountPage>
