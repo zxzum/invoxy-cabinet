@@ -87,10 +87,41 @@ export default function AdminUserDetail() {
   // Subscription form
   const [subAction, setSubAction] = useState<string>('extend');
   const [subDays, setSubDays] = useState<number | ''>(30);
+  const [subEndDate, setSubEndDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  });
   const [selectedTariffId, setSelectedTariffId] = useState<number | null>(null);
   const [activeSubscriptionId, setActiveSubscriptionId] = useState<number | null>(null);
   const hasAutoSelectedSub = useRef(false);
   const [subscriptionDetailView, setSubscriptionDetailView] = useState(false);
+
+  const handleSubDaysChange = (val: number | '') => {
+    setSubDays(val);
+    if (typeof val === 'number' && val > 0) {
+      const d = new Date();
+      d.setDate(d.getDate() + val);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      setSubEndDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+    }
+  };
+
+  const handleSubEndDateChange = (dateStr: string) => {
+    setSubEndDate(dateStr);
+    if (dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (y && m && d) {
+        const target = new Date(y, m - 1, d);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        target.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        setSubDays(Math.max(1, diffDays));
+      }
+    }
+  };
 
   // Promo group
   const [promoGroups, setPromoGroups] = useState<PromoGroup[]>([]);
@@ -365,6 +396,10 @@ export default function AdminUserDetail() {
       notify.error(t('admin.users.detail.subscription.invalidDays'));
       return;
     }
+    if (action === 'set_end_date' && !subEndDate) {
+      notify.error(t('admin.users.detail.subscription.selectEndDate', 'Выберите дату окончания'));
+      return;
+    }
     setActionLoading(true);
     try {
       const data: UpdateSubscriptionRequest = {
@@ -373,10 +408,12 @@ export default function AdminUserDetail() {
           ? { subscription_id: activeSubscriptionId }
           : {}),
         ...(action === 'extend' || action === 'shorten' ? { days: toNumber(subDays, 30) } : {}),
+        ...(action === 'set_end_date' && subEndDate ? { end_date: `${subEndDate}T23:59:59Z` } : {}),
         ...(action === 'change_tariff' && selectedTariffId ? { tariff_id: selectedTariffId } : {}),
         ...(action === 'create'
           ? {
               days: toNumber(subDays, 30),
+              ...(subEndDate ? { end_date: `${subEndDate}T23:59:59Z` } : {}),
               ...(selectedTariffId ? { tariff_id: selectedTariffId } : {}),
             }
           : {}),
@@ -1244,8 +1281,10 @@ export default function AdminUserDetail() {
             currentTariff={currentTariff}
             subAction={subAction}
             subDays={subDays}
+            subEndDate={subEndDate}
             onSubActionChange={setSubAction}
-            onSubDaysChange={setSubDays}
+            onSubDaysChange={handleSubDaysChange}
+            onSubEndDateChange={handleSubEndDateChange}
             selectedTariffId={selectedTariffId}
             onSelectedTariffIdChange={setSelectedTariffId}
             selectedTrafficGb={selectedTrafficGb}

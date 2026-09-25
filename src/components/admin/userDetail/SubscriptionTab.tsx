@@ -16,6 +16,7 @@ import { DEVICE_ALIAS_MAX_LENGTH } from '../../../constants/devices';
 import { createNumberInputHandler } from '../../../utils/inputHelpers';
 import { getFlagEmoji } from '../../../utils/subscriptionHelpers';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { DateField } from '@/components/DateField';
 import TrafficProgressBar from '../../dashboard/TrafficProgressBar';
 import type {
   UserAvailableTariff,
@@ -84,8 +85,10 @@ export interface SubscriptionTabProps {
   // Action form (extend/shorten/create/etc.)
   subAction: string;
   subDays: number | '';
+  subEndDate?: string;
   onSubActionChange: (s: string) => void;
   onSubDaysChange: (d: number | '') => void;
+  onSubEndDateChange?: (date: string) => void;
   selectedTariffId: number | null;
   onSelectedTariffIdChange: (id: number | null) => void;
 
@@ -170,8 +173,10 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
     currentTariff,
     subAction,
     subDays,
+    subEndDate,
     onSubActionChange,
     onSubDaysChange,
+    onSubEndDateChange,
     selectedTariffId,
     onSelectedTariffIdChange,
     selectedTrafficGb,
@@ -228,6 +233,7 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
   } = props;
   // Suppress activeSubscriptionId-unused; the parent uses it for query keys.
   void activeSubscriptionId;
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   const [selectedWhitelistTrafficGb, setSelectedWhitelistTrafficGb] = useState<string>('');
   const [manualWhitelistGb, setManualWhitelistGb] = useState<number | ''>('');
@@ -322,15 +328,34 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                       </option>
                     ))}
                 </select>
-                <input
-                  type="number"
-                  value={subDays}
-                  onChange={createNumberInputHandler(onSubDaysChange, 1)}
-                  placeholder={t('admin.users.detail.subscription.days')}
-                  className="input"
-                  min={1}
-                  max={3650}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-dark-400 mb-1 block">
+                      {t('admin.users.detail.subscription.days')}
+                    </label>
+                    <input
+                      type="number"
+                      value={subDays}
+                      onChange={createNumberInputHandler(onSubDaysChange, 1)}
+                      placeholder={t('admin.users.detail.subscription.days')}
+                      className="input w-full"
+                      min={1}
+                      max={3650}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-dark-400 mb-1 block">
+                      {t('admin.users.detail.subscription.endDate')}
+                    </label>
+                    <DateField
+                      value={subEndDate || ''}
+                      onChange={(date) => onSubEndDateChange?.(date)}
+                      placeholder={t('admin.users.detail.subscription.selectEndDate')}
+                      min={todayIso}
+                      className="input flex w-full items-center justify-start gap-2 text-left"
+                    />
+                  </div>
+                </div>
                 <button
                   onClick={() => onUpdateSubscription('create')}
                   disabled={actionLoading}
@@ -1228,6 +1253,9 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 >
                   <option value="extend">{t('admin.users.detail.subscription.extend')}</option>
                   <option value="shorten">{t('admin.users.detail.subscription.shorten')}</option>
+                  <option value="set_end_date">
+                    {t('admin.users.detail.subscription.setEndDate', 'Установить дату окончания')}
+                  </option>
                   {userSubscriptions.length <= 1 && (
                     <option value="change_tariff">
                       {t('admin.users.detail.subscription.changeTariff')}
@@ -1238,15 +1266,48 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 </select>
 
                 {(subAction === 'extend' || subAction === 'shorten') && (
-                  <input
-                    type="number"
-                    value={subDays}
-                    onChange={createNumberInputHandler(onSubDaysChange, 1)}
-                    placeholder={t('admin.users.detail.subscription.days')}
-                    className="input"
-                    min={1}
-                    max={3650}
-                  />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-dark-400 mb-1 block">
+                        {t('admin.users.detail.subscription.days')}
+                      </label>
+                      <input
+                        type="number"
+                        value={subDays}
+                        onChange={createNumberInputHandler(onSubDaysChange, 1)}
+                        placeholder={t('admin.users.detail.subscription.days')}
+                        className="input w-full"
+                        min={1}
+                        max={3650}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-dark-400 mb-1 block">
+                        {t('admin.users.detail.subscription.endDate')}
+                      </label>
+                      <DateField
+                        value={subEndDate || ''}
+                        onChange={(date) => onSubEndDateChange?.(date)}
+                        placeholder={t('admin.users.detail.subscription.selectEndDate')}
+                        min={todayIso}
+                        className="input flex w-full items-center justify-start gap-2 text-left"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {subAction === 'set_end_date' && (
+                  <div>
+                    <label className="text-xs text-dark-400 mb-1 block">
+                      {t('admin.users.detail.subscription.endDate')}
+                    </label>
+                    <DateField
+                      value={subEndDate || ''}
+                      onChange={(date) => onSubEndDateChange?.(date)}
+                      placeholder={t('admin.users.detail.subscription.selectEndDate')}
+                      className="input flex w-full items-center justify-start gap-2 text-left"
+                    />
+                  </div>
                 )}
 
                 {subAction === 'change_tariff' && (
@@ -1321,15 +1382,34 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                   </option>
                 ))}
             </select>
-            <input
-              type="number"
-              value={subDays}
-              onChange={createNumberInputHandler(onSubDaysChange, 1)}
-              placeholder={t('admin.users.detail.subscription.days')}
-              className="input"
-              min={1}
-              max={3650}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-dark-400 mb-1 block">
+                  {t('admin.users.detail.subscription.days')}
+                </label>
+                <input
+                  type="number"
+                  value={subDays}
+                  onChange={createNumberInputHandler(onSubDaysChange, 1)}
+                  placeholder={t('admin.users.detail.subscription.days')}
+                  className="input w-full"
+                  min={1}
+                  max={3650}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-dark-400 mb-1 block">
+                  {t('admin.users.detail.subscription.endDate')}
+                </label>
+                <DateField
+                  value={subEndDate || ''}
+                  onChange={(date) => onSubEndDateChange?.(date)}
+                  placeholder={t('admin.users.detail.subscription.selectEndDate')}
+                  min={todayIso}
+                  className="input flex w-full items-center justify-start gap-2 text-left"
+                />
+              </div>
+            </div>
             <button
               onClick={() => onUpdateSubscription('create')}
               disabled={actionLoading}
