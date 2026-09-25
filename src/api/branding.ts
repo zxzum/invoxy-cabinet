@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { resolveApiBaseUrl } from '../config/apiUrl';
 import { isEndpointMissingError } from '../utils/api-error';
 import type { AnimationConfig } from '@/components/ui/backgrounds/types';
 import { DEFAULT_ANIMATION_CONFIG } from '@/components/ui/backgrounds/types';
@@ -156,7 +157,9 @@ export const preloadLogo = async (branding: BrandingInfo): Promise<void> => {
 
 async function loadLogoBlob(logoPath: string): Promise<void> {
   try {
-    const logoUrl = `${import.meta.env.VITE_API_URL || ''}${logoPath}`;
+    const baseUrl = resolveApiBaseUrl(import.meta.env.VITE_API_URL).replace(/\/$/, '');
+    const path = logoPath.startsWith('/') ? logoPath : `/${logoPath}`;
+    const logoUrl = `${baseUrl}${path}`;
     const response = await fetchLogo(logoUrl);
     if (!response.ok) return;
 
