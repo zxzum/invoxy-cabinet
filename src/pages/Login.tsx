@@ -37,7 +37,7 @@ import LegalConsent from '../components/LegalConsent';
 import LegalConsentGate from '../components/LegalConsentGate';
 import { useLegalConsentGate } from '../hooks/useLegalConsentGate';
 import { infoApi } from '../api/info';
-import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShapes';
+import { AuthBackground } from '@/components/auth/AuthBackground';
 import type { LegalConsentConfig } from '../types';
 import { safeLocal, safeSession } from '../utils/safeStorage';
 import brandLogo from '@/assets/logo.png';
@@ -545,7 +545,7 @@ export default function Login() {
                 : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
           }}
         >
-          <BackgroundShapes />
+          <AuthBackground />
 
           <m.div
             initial={{ opacity: 0, scale: 0.92, y: 12 }}
@@ -605,7 +605,7 @@ export default function Login() {
               : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <BackgroundShapes />
+        <AuthBackground />
 
         <div
           className="fixed right-3 z-50"

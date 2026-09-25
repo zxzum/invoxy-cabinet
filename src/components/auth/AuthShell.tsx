@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { LazyMotion, domMax } from 'framer-motion';
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
-import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShapes';
+import { AuthBackground } from '@/components/auth/AuthBackground';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface AuthShellProps {
@@ -43,7 +43,7 @@ export function AuthShell({
               : 'calc(1rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <BackgroundShapes />
+        <AuthBackground />
 
         {withLanguageSwitcher && (
           <div

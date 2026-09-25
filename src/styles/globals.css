@@ -2741,15 +2741,73 @@ html.light .bento-card-hover:hover {
 
   .auth-page {
     min-height: 100dvh;
-    background-color: #0b0c0e;
-    background-image:
-      linear-gradient(180deg, rgba(4, 8, 10, 0.18), rgba(4, 8, 10, 0.5)),
-      url("/images/auth-background.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
+    background-color: #070a0d;
     color: #f3f1ec;
     font-family: inherit;
+    position: relative;
+  }
+
+  /* GPU-accelerated harmonic floating for auth ambient green layers */
+  @keyframes auth-float-crown {
+    0% {
+      transform: translate3d(-50%, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(-50%, -18px, 0) scale(1.04);
+    }
+    100% {
+      transform: translate3d(-50%, 14px, 0) scale(0.97);
+    }
+  }
+
+  @keyframes auth-float-secondary {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(-22px, 18px, 0) scale(1.05);
+    }
+    100% {
+      transform: translate3d(16px, -14px, 0) scale(0.96);
+    }
+  }
+
+  @keyframes auth-float-tertiary {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(18px, -20px, 0) scale(1.06);
+    }
+    100% {
+      transform: translate3d(-14px, 12px, 0) scale(0.97);
+    }
+  }
+
+  .auth-ambient-crown {
+    animation: auth-float-crown 14s ease-in-out infinite alternate;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .auth-ambient-secondary {
+    animation: auth-float-secondary 18s ease-in-out infinite alternate;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .auth-ambient-tertiary {
+    animation: auth-float-tertiary 22s ease-in-out infinite alternate;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .auth-ambient-crown,
+    .auth-ambient-secondary,
+    .auth-ambient-tertiary {
+      animation: none !important;
+    }
   }
 
   .glass-panel {
@@ -2839,12 +2897,6 @@ html.light .bento-card-hover:hover {
 
   .auth-page .glass-control {
     background: rgba(34, 37, 42, 0.82);
-  }
-}
-
-@media (max-width: 640px) {
-  .auth-page {
-    background-position: 64% center;
   }
 }
 

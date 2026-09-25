@@ -11,7 +11,7 @@ describe('Invoxy visual migration', () => {
     expect(css).toMatch(/\.glass-surface,[\s\S]*\.card-inset\s*\{[\s\S]*backdrop-filter/);
     expect(css).toContain('.auth-page');
     expect(css).toContain('.landing-page');
-    expect(css).toContain('url("/images/auth-background.png")');
+    expect(css).toContain('.auth-ambient-crown');
     expect(css).toMatch(/\.light\s+\.glass-surface/);
     expect(css).toMatch(/\.light\s+\.glass-surface-elevated/);
   });

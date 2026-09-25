@@ -36,7 +36,6 @@ const MIGRATED_ASSETS = [
 ] as const;
 
 const WIRED_RUNTIME_ASSETS = [
-  'auth-background.png',
   'brand-mark.png',
   'landing-hero.png',
   'landing-shield.png',
