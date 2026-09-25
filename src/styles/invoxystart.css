@@ -89,6 +89,42 @@ html.scroll-lock-active .ix-sidebar-island {
   will-change: transform, opacity;
 }
 
+/* Хореография содержимого: прямые дети панели въезжают каскадом вслед за
+   самой панелью. fill: backwards — после анимации inline-стили framer-motion
+   снова управляют элементом (важно для popLayout-смены шагов). */
+.adaptive-dialog-panel > :nth-child(1) {
+  animation-delay: 40ms;
+}
+.adaptive-dialog-panel > :nth-child(2) {
+  animation-delay: 80ms;
+}
+.adaptive-dialog-panel > :nth-child(3) {
+  animation-delay: 120ms;
+}
+.adaptive-dialog-panel > :nth-child(4) {
+  animation-delay: 160ms;
+}
+.adaptive-dialog-panel > :nth-child(5) {
+  animation-delay: 200ms;
+}
+.adaptive-dialog-panel > :nth-child(6) {
+  animation-delay: 240ms;
+}
+.adaptive-dialog-panel > :nth-child(7) {
+  animation-delay: 280ms;
+}
+.adaptive-dialog-panel > :nth-child(n + 8) {
+  animation-delay: 320ms;
+}
+.adaptive-dialog-panel > * {
+  animation: invoxy-dialog-child-in 420ms var(--motion-ease) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .adaptive-dialog-panel > * {
+    animation: none;
+  }
+}
+
 .adaptive-dialog-panel.is-dragging {
   transition: none;
   will-change: transform;
@@ -195,6 +231,14 @@ html.scroll-lock-active .ix-sidebar-island {
     transform: translateY(-2px);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
   }
+
+  /* Пресс-фидбек всех lifted-кнопок: мгновенный отклик на нажатие без
+     правки каждой кнопки в разметке. */
+  .invoxystart-shell .button-lift:active {
+    transform: translateY(0) scale(0.97);
+    transition-duration: 80ms;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
 }
 
 .invoxystart-shell .route-stage.is-entering .scroll-reveal .motion-card {
@@ -222,7 +266,17 @@ html.scroll-lock-active .ix-sidebar-island {
 @keyframes invoxy-card-enter {
   from {
     opacity: 0;
-    transform: translate3d(0, 14px, 0);
+    transform: translate3d(0, 14px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes invoxy-dialog-child-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
   }
   to {
     opacity: 1;

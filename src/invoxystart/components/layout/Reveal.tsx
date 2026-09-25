@@ -39,7 +39,9 @@ export function Reveal({
       ref={ref}
       initial={{ opacity: 0, y: 14 }}
       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
-      transition={{ duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
+      // Пружина с лёгким перелётом: карточка «доживает» в конечную точку,
+      // а не просто приезжает по easing-кривой.
+      transition={{ type: 'spring', stiffness: 210, damping: 24, delay }}
       className={`scroll-reveal ${className || ''}`}
     >
       {children}

@@ -14,6 +14,7 @@ import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { referralApi } from '@/invoxystart/api';
 import { formatDate, formatMoney } from '@/invoxystart/components/account/AccountPrimitives';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
+import { CountUp } from '@/invoxystart/components/ui/CountUp';
 import { copyToClipboard } from '@/utils/clipboard';
 
 export default function ReferralsPage() {
@@ -115,7 +116,8 @@ export default function ReferralsPage() {
             <div className="mt-2.5 flex gap-2 lg:mt-7 lg:gap-3">
               <div className="glass-control h-[58px] w-[88px] rounded-2xl p-2 lg:h-auto lg:w-auto lg:px-4 lg:py-3">
                 <strong className="block text-[17px] leading-none text-mint lg:text-xl">
-                  +{terms?.commission_percent ?? info?.commission_percent ?? 0}%
+                  +
+                  <CountUp value={terms?.commission_percent ?? info?.commission_percent ?? 0} />%
                 </strong>
                 <p className="mt-1 text-[9px] leading-[1.1] text-muted lg:text-[10px]">
                   от пополнений
@@ -123,7 +125,7 @@ export default function ReferralsPage() {
               </div>
               <div className="glass-control h-[58px] w-[88px] rounded-2xl p-2 lg:h-auto lg:w-auto lg:px-4 lg:py-3">
                 <strong className="block text-[17px] leading-none text-mint lg:text-xl">
-                  +{terms?.inviter_bonus_rubles ?? 50} ₽
+                  +<CountUp value={terms?.inviter_bonus_rubles ?? 50} /> ₽
                 </strong>
                 <p className="mt-1 text-[9px] leading-[1.1] text-muted lg:text-[10px]">
                   обоим за старт
@@ -176,7 +178,7 @@ export default function ReferralsPage() {
           </div>
           <div className="mt-3">
             <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
-              {info?.total_referrals ?? invited.length ?? 0}
+              <CountUp value={info?.total_referrals ?? invited.length ?? 0} />
             </div>
             <p className="mt-1 text-[11px] leading-tight text-mint sm:text-xs">
               {info?.active_referrals ?? invited.filter((i) => i.has_paid).length} активных
@@ -193,7 +195,10 @@ export default function ReferralsPage() {
           </div>
           <div className="mt-3">
             <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
-              {formatMoney(info?.total_earnings_kopeks, info?.total_earnings_rubles ?? 0)}
+              <CountUp
+                value={info?.total_earnings_rubles ?? (info?.total_earnings_kopeks ?? 0) / 100}
+                format={(n) => `${n.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽`}
+              />
             </div>
             <p className="mt-1 text-[11px] leading-tight text-muted sm:text-xs">
               Пожизненно со всех оплат
@@ -210,7 +215,7 @@ export default function ReferralsPage() {
           </div>
           <div className="mt-3">
             <div className="text-xl font-bold tracking-tight text-mint sm:text-2xl">
-              {terms?.commission_percent ?? info?.commission_percent ?? 25}%
+              <CountUp value={terms?.commission_percent ?? info?.commission_percent ?? 25} />%
             </div>
             <p className="mt-1 text-[11px] leading-tight text-muted sm:text-xs">
               Вечный процент от оплат
@@ -227,7 +232,7 @@ export default function ReferralsPage() {
           </div>
           <div className="mt-3">
             <div className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
-              +{terms?.inviter_bonus_rubles ?? 50} ₽
+              +<CountUp value={terms?.inviter_bonus_rubles ?? 50} /> ₽
             </div>
             <p className="mt-1 text-[11px] leading-tight text-muted sm:text-xs">
               Обоим при первом старте
