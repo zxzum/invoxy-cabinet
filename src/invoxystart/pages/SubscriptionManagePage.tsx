@@ -472,7 +472,7 @@ export default function SubscriptionManagePage() {
             <button
               type="button"
               onClick={() => showToast('Удаление подписки доступно через поддержку')}
-              className="mt-4 flex w-full items-center justify-between rounded-2xl border border-red-300/20 bg-red-300/5 px-4 py-3 text-left text-sm text-red-200 transition-colors hover:border-red-300/40 hover:bg-red-300/10 active:scale-[.99]"
+              className="mt-4 flex w-full items-center justify-between rounded-2xl border border-red-300/20 bg-red-300/5 px-4 py-3 text-left text-sm text-red-200 transition-[color,background-color,border-color,transform] hover:border-red-300/40 hover:bg-red-300/10 active:scale-[.99]"
             >
               <span className="flex items-center gap-2">
                 <X size={16} /> Удалить подписку

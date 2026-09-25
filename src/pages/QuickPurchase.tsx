@@ -249,8 +249,9 @@ function ContactForm({
         <p className="mt-1.5 text-xs text-dark-400">{t('landing.contactHint')}</p>
       </div>
 
-      {/* Gift fields */}
-      <AnimatePresence mode="wait">
+      {/* Gift fields — синхронный режим: при быстром переключении чекбокса
+          новое поле появляется сразу, не дожидаясь замершей exit-анимации. */}
+      <AnimatePresence>
         {isGift && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}

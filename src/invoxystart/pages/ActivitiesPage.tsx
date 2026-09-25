@@ -209,7 +209,7 @@ function ActivityTab({
   return (
     <a
       href={href}
-      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold transition-all active:scale-[.96] ${active ? 'bg-mint text-bg' : 'glass-control text-muted hover:text-mint'}`}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold transition-[background-color,color,border-color,transform] active:scale-[.96] ${active ? 'bg-mint text-bg' : 'glass-control text-muted hover:text-mint'}`}
     >
       {icon}
       {label}
@@ -321,7 +321,7 @@ function PollsView({ polls }: { polls: PollInfo[] }) {
                     key={option.id}
                     disabled={busy}
                     onClick={() => answer(option.id)}
-                    className="glass-control rounded-2xl px-4 py-4 text-left text-sm transition-all hover:border-mint/40 active:scale-[.98] disabled:opacity-50"
+                    className="glass-control rounded-2xl px-4 py-4 text-left text-sm transition-[border-color,transform] hover:border-mint/40 active:scale-[.98] disabled:opacity-50"
                   >
                     {option.text}
                   </button>
@@ -464,7 +464,7 @@ function ContestsView({
                       key={index}
                       disabled={busy}
                       onClick={() => answer(`${index}_${String(data.secret ?? '')}`)}
-                      className="grid aspect-square place-items-center rounded-2xl bg-white/6 text-xl transition-all hover:bg-mint/15 active:scale-95 disabled:opacity-50"
+                      className="grid aspect-square place-items-center rounded-2xl bg-white/6 text-xl transition-[background-color,transform] hover:bg-mint/15 active:scale-95 disabled:opacity-50"
                     >
                       {game.game_type === 'locks' ? '🔒' : '◈'}
                     </button>
@@ -479,7 +479,7 @@ function ContestsView({
                       key={flag}
                       disabled={busy}
                       onClick={() => answer(flag)}
-                      className="rounded-2xl bg-white/6 p-4 text-2xl transition-all hover:bg-mint/15 active:scale-95"
+                      className="rounded-2xl bg-white/6 p-4 text-2xl transition-[background-color,transform] hover:bg-mint/15 active:scale-95"
                     >
                       {flag}
                     </button>

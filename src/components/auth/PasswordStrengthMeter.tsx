@@ -57,7 +57,7 @@ export function PasswordStrengthMeter({ password, minLength = 8 }: PasswordStren
           </p>
         ) : (
           <>
-            <AnimatePresence initial={false} mode="wait">
+            <AnimatePresence initial={false} mode="popLayout">
               <m.span
                 key={score <= 2 ? 'moderate' : 'strong'}
                 initial={{ opacity: 0, y: 4 }}

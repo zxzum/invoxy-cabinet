@@ -128,7 +128,7 @@ export default function Login() {
     () => !isRegistrationRoute && isInTelegramWebApp() && Boolean(getTelegramInitData()),
   );
   const telegramAuthAttemptedRef = useRef(false);
-  const prevViewRef = useRef<AuthView>('form');
+  const prevViewRef = useRef<AuthView | null>(null);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
@@ -140,6 +140,14 @@ export default function Login() {
   useEffect(() => {
     captureReferralFromUrl();
   }, []);
+
+  // Check if email auth is enabled
+  const { data: emailAuthConfig } = useQuery<EmailAuthEnabled>({
+    queryKey: ['email-auth-enabled'],
+    queryFn: brandingApi.getEmailAuthEnabled,
+    staleTime: 60000,
+  });
+  const isEmailAuthEnabled = emailAuthConfig?.enabled ?? true;
 
   // Гейт согласия с офертой/политикой для НОВОГО пользователя. Конфиг публичный:
   // нужен до авторизации, чтобы нарисовать чекбоксы ещё на экране входа.
@@ -153,6 +161,27 @@ export default function Login() {
   // бэк ответил 428: пользователь новый и без согласия аккаунт не создастся.
   // Гейт помнит, какой именно вход повторить после простановки галочек.
   const consent = useLegalConsentGate(legalConsent);
+
+  // Активный экран карточки вычисляется до раннего return preloader-ветки:
+  // эффект направления обязан выполняться при любом рендере (правила хуков).
+  const activeView: AuthView = consent.pending
+    ? 'consent'
+    : registeredEmail
+      ? 'check-email'
+      : showForgotPassword && isEmailAuthEnabled
+        ? 'forgot'
+        : 'form';
+
+  // Направление анимации смены экранов: предыдущий вью запоминается после
+  // коммита — запись рефа во время рендера небезопасна в StrictMode.
+  const viewDirection =
+    prevViewRef.current === null || VIEW_ORDER[activeView] >= VIEW_ORDER[prevViewRef.current]
+      ? 1
+      : -1;
+
+  useEffect(() => {
+    prevViewRef.current = activeView;
+  }, [activeView]);
 
   // Telegram safe area insets
   const { safeAreaInset, contentSafeAreaInset } = useTelegramSDK();
@@ -192,13 +221,7 @@ export default function Login() {
     initialDataUpdatedAt: 0,
   });
 
-  // Check if email auth is enabled
-  const { data: emailAuthConfig } = useQuery<EmailAuthEnabled>({
-    queryKey: ['email-auth-enabled'],
-    queryFn: brandingApi.getEmailAuthEnabled,
-    staleTime: 60000,
-  });
-  const isEmailAuthEnabled = emailAuthConfig?.enabled ?? true;
+  // Check if email auth is enabled — query поднят выше, к вычислению activeView.
 
   const { data: footerEnabled } = useQuery({
     queryKey: ['footer-enabled'],
@@ -566,16 +589,6 @@ export default function Login() {
       </LazyMotion>
     );
   }
-
-  const activeView: AuthView = consent.pending
-    ? 'consent'
-    : registeredEmail
-      ? 'check-email'
-      : showForgotPassword && isEmailAuthEnabled
-        ? 'forgot'
-        : 'form';
-  const viewDirection = VIEW_ORDER[activeView] >= VIEW_ORDER[prevViewRef.current] ? 1 : -1;
-  prevViewRef.current = activeView;
 
   const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
 

@@ -31,7 +31,9 @@ export function AuthStatusScreen({
 }: AuthStatusScreenProps) {
   return (
     <div className="flex flex-col items-center text-center">
-      <AnimatePresence initial={false} mode="wait">
+      {/* popLayout, не wait: смена статуса не должна ждать завершения exit —
+          в вебвью с задушенным rAF wait замораживает экран на старом состоянии. */}
+      <AnimatePresence initial={false} mode="popLayout">
         {state === 'loading' && (
           <m.div
             key="status-loading"

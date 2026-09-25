@@ -336,30 +336,42 @@ export default function QuickPurchasePage({
               </AnimatePresence>
             </div>
           )}
-          <AnimatePresence initial={false} mode="popLayout">
+          {/* Баннеры раскрываются по высоте в синхронном режиме: новый баннер
+              монтируется сразу (не ждёт exit), кнопка не прыгает резким скачком. */}
+          <AnimatePresence initial={false}>
             {error && (
-              <m.p
+              <m.div
                 key="purchase-error"
-                role="alert"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0, x: [0, -8, 8, -4, 4, 0] }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.36, ease: 'easeOut' }}
-                className="mt-4 rounded-2xl bg-red-300/10 p-4 text-sm text-red-200"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
               >
-                {error}
-              </m.p>
+                <m.p
+                  role="alert"
+                  initial={{ x: [0, -8, 8, -4, 4, 0] }}
+                  animate={{ x: 0 }}
+                  transition={{ duration: 0.36, ease: 'easeOut' }}
+                  className="mt-4 rounded-2xl bg-red-300/10 p-4 text-sm text-red-200"
+                >
+                  {error}
+                </m.p>
+              </m.div>
             )}
             {submitState === 'success' && (
               <m.div
                 key="purchase-success"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-4 rounded-2xl bg-mint/10 p-4 text-sm text-mint"
+                className="overflow-hidden"
               >
-                Заказ создан. {paymentUrl ? 'Переходим к оплате…' : 'Проверьте почту или Telegram.'}
+                <div className="mt-4 rounded-2xl bg-mint/10 p-4 text-sm text-mint">
+                  Заказ создан.{' '}
+                  {paymentUrl ? 'Переходим к оплате…' : 'Проверьте почту или Telegram.'}
+                </div>
               </m.div>
             )}
           </AnimatePresence>

@@ -75,7 +75,9 @@ export default function SavedCardsPage() {
       ) : (
         <AccountPanel title="Ваши карты" description="Удалить карту можно в любой момент">
           <div className="mt-4 divide-y divide-white/8">
-            <AnimatePresence initial={false}>
+            {/* Без initial={false}: строки появляются анимированно и после
+                загрузки данных, не только при последующих вставках. */}
+            <AnimatePresence>
               {cards.map((card, index) => (
                 <m.div
                   key={card.id}

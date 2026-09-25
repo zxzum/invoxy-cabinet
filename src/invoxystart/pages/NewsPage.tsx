@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { AnimatePresence, m } from 'framer-motion';
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
@@ -56,6 +56,9 @@ export default function NewsPage({ load = loadNews }: { load?: NewsLoader }) {
   const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  // Стаггер нужен только на первом появлении сетки: при фильтрации поиска
+  // задержки на входе делают перерисовку вялой, поэтому дальше — без задержек.
+  const hasShownGridRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,6 +82,12 @@ export default function NewsPage({ load = loadNews }: { load?: NewsLoader }) {
       (item) => !query || `${item.title} ${item.excerpt ?? ''}`.toLocaleLowerCase().includes(query),
     );
   }, [response, search]);
+
+  useEffect(() => {
+    if (status === 'ready' && items.length > 0) {
+      hasShownGridRef.current = true;
+    }
+  }, [status, items.length]);
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
@@ -124,7 +133,7 @@ export default function NewsPage({ load = loadNews }: { load?: NewsLoader }) {
       )}
       {status === 'ready' && items.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <AnimatePresence initial={false}>
+          <AnimatePresence>
             {items.map((item, index) => (
               <m.div
                 key={item.id}
@@ -134,7 +143,7 @@ export default function NewsPage({ load = loadNews }: { load?: NewsLoader }) {
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{
                   duration: 0.35,
-                  delay: Math.min(index, 8) * 0.05,
+                  delay: hasShownGridRef.current ? 0 : Math.min(index, 8) * 0.05,
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >

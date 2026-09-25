@@ -61,7 +61,7 @@ export function AuthInput({
           title={showPassword ? 'Hide password' : 'Show password'}
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >
-          <AnimatePresence initial={false} mode="wait">
+          <AnimatePresence initial={false} mode="popLayout">
             <m.span
               key={showPassword ? 'eye' : 'eye-slash'}
               initial={{ opacity: 0, rotate: -30, scale: 0.6 }}

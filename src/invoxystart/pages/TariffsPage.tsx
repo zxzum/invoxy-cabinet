@@ -541,7 +541,9 @@ function TariffConfiguratorDialog({
       titleId="tariff-dialog-title"
       maxWidth="max-w-2xl"
     >
-      <AnimatePresence mode="wait" initial={false}>
+      {/* popLayout: шаг оплаты монтируется сразу, не дожидаясь exit предыдущего
+          шага (в задушенном вебвью wait оставляет диалог на старом шаге). */}
+      <AnimatePresence mode="popLayout" initial={false}>
         {tariffStep === 'payment' ? (
           <m.div
             key="payment"

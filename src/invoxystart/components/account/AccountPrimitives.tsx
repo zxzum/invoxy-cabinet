@@ -145,7 +145,7 @@ export function Toggle({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 rounded-full p-1 transition-[background-color,box-shadow] duration-200 disabled:opacity-50 active:scale-95 ${
+      className={`relative h-7 w-12 rounded-full p-1 transition-[background-color,box-shadow,transform] duration-200 disabled:opacity-50 active:scale-95 ${
         checked ? 'bg-mint shadow-[0_0_12px_rgba(165,232,196,0.25)]' : 'bg-white/15'
       }`}
     >

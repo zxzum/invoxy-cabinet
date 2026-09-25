@@ -628,8 +628,10 @@ function BuyTabContent({
         />
       </div>
 
-      {/* Payment method cards (gateway mode only) */}
-      <AnimatePresence mode="wait">
+      {/* Payment method cards (gateway mode only) — синхронный режим, чтобы
+          раскрывающийся блок не ждал замершей exit-анимации при быстрых
+          переключениях способа оплаты. */}
+      <AnimatePresence>
         {paymentMode === 'gateway' && config.payment_methods.length > 0 && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
@@ -1358,8 +1360,9 @@ export default function GiftSubscription() {
           </div>
         </motion.div>
 
-        {/* Tab content */}
-        <AnimatePresence mode="wait">
+        {/* Tab content — popLayout: новая вкладка монтируется сразу, старая
+            уходит поверх; wait при задушенном rAF не показывает новую вкладку. */}
+        <AnimatePresence mode="popLayout">
           <motion.div
             key={activeTab}
             variants={tabContentVariants}
