@@ -1,6 +1,14 @@
 import type { ReactNode } from 'react';
+import { m } from 'framer-motion';
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { copyToClipboard } from '@/utils/clipboard';
+
+/** Мягкое появление блоков страниц аккаунта при подгрузке данных и смене состояний. */
+const stateEntrance = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] as const },
+};
 
 export function AccountPage({
   title,
@@ -44,12 +52,31 @@ export function AccountPanel({
 }
 
 export function LoadingState() {
-  return <div className="glass-panel h-40 animate-pulse rounded-[30px]" aria-label="Загрузка" />;
+  return (
+    <div
+      className="glass-panel flex flex-col gap-4 rounded-[30px] p-5 lg:p-7"
+      aria-label="Загрузка"
+      aria-busy="true"
+    >
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 shrink-0 animate-pulse rounded-2xl bg-line/60" />
+        <div className="flex flex-1 flex-col gap-2">
+          <div className="h-4 w-40 animate-pulse rounded bg-line/60" />
+          <div className="h-2.5 w-24 animate-pulse rounded bg-line/40" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="h-16 animate-pulse rounded-2xl bg-line/40" />
+        <div className="h-16 animate-pulse rounded-2xl bg-line/40" />
+      </div>
+      <div className="h-2 w-full animate-pulse rounded-full bg-line/40" />
+    </div>
+  );
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="glass-panel rounded-[30px] p-8 text-center">
+    <m.div {...stateEntrance} className="glass-panel rounded-[30px] p-8 text-center">
       <p role="alert" className="text-sm text-red-200">
         {message}
       </p>
@@ -57,12 +84,12 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
         <button
           type="button"
           onClick={onRetry}
-          className="button-lift mt-5 rounded-full bg-mint px-5 py-3 text-xs font-bold text-bg"
+          className="button-lift mt-5 rounded-full bg-mint px-5 py-3 text-xs font-bold text-bg active:scale-[.97]"
         >
           Повторить
         </button>
       )}
-    </div>
+    </m.div>
   );
 }
 
@@ -76,11 +103,11 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="glass-panel rounded-[30px] p-8 text-center">
+    <m.div {...stateEntrance} className="glass-panel rounded-[30px] p-8 text-center">
       <h2 className="text-lg font-medium">{title}</h2>
       <p className="mt-2 text-sm text-muted">{description}</p>
       {action && <div className="mt-5 flex justify-center">{action}</div>}
-    </div>
+    </m.div>
   );
 }
 
@@ -118,10 +145,12 @@ export function Toggle({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 rounded-full p-1 transition-colors disabled:opacity-50 ${checked ? 'bg-mint' : 'bg-white/15'}`}
+      className={`relative h-7 w-12 rounded-full p-1 transition-[background-color,box-shadow] duration-200 disabled:opacity-50 active:scale-95 ${
+        checked ? 'bg-mint shadow-[0_0_12px_rgba(165,232,196,0.25)]' : 'bg-white/15'
+      }`}
     >
       <span
-        className={`block h-5 w-5 rounded-full bg-bg transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}
+        className={`block h-5 w-5 rounded-full bg-bg shadow-sm transition-transform duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${checked ? 'translate-x-5' : 'translate-x-0'}`}
       />
     </button>
   );

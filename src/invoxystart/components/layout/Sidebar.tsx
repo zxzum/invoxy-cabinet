@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router';
+import { m } from 'framer-motion';
 import {
   House,
   Layers,
@@ -48,7 +49,13 @@ export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () =
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <div className="absolute inset-0 rounded-xl bg-ink lg:rounded-[clamp(12px,0.8vw,16px)]" />
+                  // Единая пилюля на все пункты: при смене раздела плавно
+                  // «переползает» на активную строку (layoutId требует domMax).
+                  <m.div
+                    layoutId="sidebar-nav-pill"
+                    transition={{ type: 'spring', bounce: 0.18, duration: 0.45 }}
+                    className="absolute inset-0 rounded-xl bg-ink lg:rounded-[clamp(12px,0.8vw,16px)]"
+                  />
                 )}
                 <item.icon
                   size={18}
