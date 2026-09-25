@@ -3,7 +3,7 @@ import brandLogo from '@/assets/logo.png';
 
 const BOT_USERNAME = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'invoxy_bot').replace(/^@/, '');
 const TELEGRAM_BOT_URL = `https://t.me/${BOT_USERNAME}`;
-const TELEGRAM_SUPPORT_URL = 'https://t.me/invoxyvpn';
+const TELEGRAM_SUPPORT_URL = 'https://t.me/fpobetby';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();

@@ -157,7 +157,7 @@ export default function ProfilePage() {
   }, [location.hash]);
 
   function openSupport() {
-    const target = supportTarget ?? { kind: 'telegram' as const, url: 'https://t.me/invoxyvpn' };
+    const target = supportTarget ?? { kind: 'telegram' as const, url: 'https://t.me/fpobetby' };
     if (target.kind === 'telegram') openTelegramLink(target.url);
     else openLink(target.url);
   }
