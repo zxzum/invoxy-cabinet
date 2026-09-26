@@ -24,6 +24,8 @@ import NewsSection from '../components/news/NewsSection';
 import SubscriptionCardExpired from '../components/dashboard/SubscriptionCardExpired';
 import StatsGrid from '../components/dashboard/StatsGrid';
 import { giftApi } from '../api/gift';
+import { migrationApi, type MigrationExecuteResult } from '../api/migrationApi';
+import { LazeikaMigrationModal } from '../components/migration/LazeikaMigrationModal';
 import PendingGiftCard from '../components/dashboard/PendingGiftCard';
 import { DeviceLimitSheet } from '../components/subscription/DeviceLimitSheet';
 import { DeviceTopupSheet } from '../components/subscription/sheets/DeviceTopupSheet';
@@ -83,6 +85,42 @@ export default function Dashboard() {
     queryFn: balanceApi.getBalance,
     staleTime: API.BALANCE_STALE_TIME_MS,
   });
+
+  // Check Lazeika migration eligibility (temporary seamless onboarding)
+  const { data: migrationData } = useQuery({
+    queryKey: ['migration-check'],
+    queryFn: migrationApi.check,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    enabled: !!user,
+  });
+
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (migrationData?.eligible && migrationData?.candidate && user?.id) {
+      const dismissed = sessionStorage.getItem(`invoxy_migration_dismissed_${user.id}`);
+      if (!dismissed) {
+        setIsMigrationModalOpen(true);
+      }
+    }
+  }, [migrationData, user?.id]);
+
+  const handleCloseMigrationModal = () => {
+    setIsMigrationModalOpen(false);
+    if (user?.id) {
+      sessionStorage.setItem(`invoxy_migration_dismissed_${user.id}`, 'true');
+    }
+  };
+
+  const handleMigrationSuccess = (result: MigrationExecuteResult) => {
+    queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+    queryClient.invalidateQueries({ queryKey: ['balance'] });
+    queryClient.invalidateQueries({ queryKey: ['migration-check'] });
+    refreshUser();
+    notify.success(result.message || t('lazeikaMigration.success.title'));
+  };
 
   // Multi-tariff: check if user has multiple subscriptions
   const {
@@ -1347,6 +1385,15 @@ export default function Dashboard() {
           onSelectedTrafficPackageChange={setSelectedTrafficPackage}
           purchaseOptions={purchaseOptions}
           isDark={isDark}
+        />
+      )}
+
+      {migrationData?.candidate && (
+        <LazeikaMigrationModal
+          isOpen={isMigrationModalOpen}
+          candidate={migrationData.candidate}
+          onClose={handleCloseMigrationModal}
+          onMigrated={handleMigrationSuccess}
         />
       )}
     </div>

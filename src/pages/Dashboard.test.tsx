@@ -52,6 +52,8 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   notifyError: vi.fn(),
   refreshUser: vi.fn(),
+  checkMigration: vi.fn(),
+  executeMigration: vi.fn(),
 }));
 
 vi.mock('../api/subscription', () => ({
@@ -79,6 +81,12 @@ vi.mock('../api/referral', () => ({ referralApi: { getReferralInfo: mocks.getRef
 vi.mock('../api/wheel', () => ({ wheelApi: { getConfig: mocks.getConfig } }));
 vi.mock('../api/gift', () => ({ giftApi: { getPendingGifts: mocks.getPendingGifts } }));
 vi.mock('../api/promo', () => ({ promoApi: { getGroupDiscounts: mocks.getGroupDiscounts } }));
+vi.mock('../api/migrationApi', () => ({
+  migrationApi: {
+    check: mocks.checkMigration,
+    execute: mocks.executeMigration,
+  },
+}));
 vi.mock('../utils/openAppScheme', () => ({ openAppScheme: mocks.openAppScheme }));
 vi.mock('@/platform', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/platform')>();
@@ -340,6 +348,7 @@ function setupResolvedQueries() {
   });
   mocks.deleteDevice.mockResolvedValue({ success: true });
   mocks.activateTrial.mockResolvedValue({});
+  mocks.checkMigration.mockResolvedValue({ eligible: false });
 }
 
 afterEach(() => {
