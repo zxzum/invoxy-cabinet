@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { useNotify } from '../../../platform/hooks/useNotify';
+import { SubscriptionOverwriteModal } from './SubscriptionOverwriteModal';
 import {
   BackIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   EditIcon,
-  MinusIcon,
-  PlusIcon,
   RefreshIcon,
   XIcon,
 } from '@/components/icons';
@@ -91,6 +91,8 @@ export interface SubscriptionTabProps {
   onSubEndDateChange?: (date: string) => void;
   selectedTariffId: number | null;
   onSelectedTariffIdChange: (id: number | null) => void;
+  subDeviceLimit?: number | '';
+  onSubDeviceLimitChange?: (val: number | '') => void;
   subReason: string;
   subSilent: boolean;
   onSubReasonChange: (s: string) => void;
@@ -136,7 +138,10 @@ export interface SubscriptionTabProps {
   actionLoading: boolean;
   confirmingAction: string | null;
   onInlineConfirm: (key: string, fn: () => Promise<void>) => void;
-  onUpdateSubscription: (overrideAction?: string) => Promise<void>;
+  onUpdateSubscription: (
+    overrideAction?: string,
+    options?: { overwrite?: boolean; deviceLimit?: number },
+  ) => Promise<void>;
   onSetDeviceLimit: (newLimit: number) => Promise<void>;
   onSetTrafficLimit?: (newLimitGb: number) => Promise<void>;
   onSetWhitelistTrafficLimit?: (newLimitGb: number) => Promise<void>;
@@ -183,6 +188,8 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
     onSubEndDateChange,
     selectedTariffId,
     onSelectedTariffIdChange,
+    subDeviceLimit,
+    onSubDeviceLimitChange,
     subReason,
     subSilent,
     onSubReasonChange,
@@ -253,6 +260,36 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
   const [customTrafficLimitVal, setCustomTrafficLimitVal] = useState<number | ''>('');
   const [customWhitelistLimitVal, setCustomWhitelistLimitVal] = useState<number | ''>('');
 
+  const notify = useNotify();
+  const [showOverwriteModal, setShowOverwriteModal] = useState(false);
+  const [isCustomDeviceInput, setIsCustomDeviceInput] = useState(false);
+  const [customDeviceValue, setCustomDeviceValue] = useState<number | ''>('');
+
+  const deviceChoices = useMemo(() => {
+    const baseNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 50, 100];
+    const set = new Set(baseNumbers);
+    if (selectedSub?.device_limit) {
+      set.add(selectedSub.device_limit);
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }, [selectedSub?.device_limit]);
+
+  const hasActiveSubscription = userSubscriptions.some((s) => s.is_active || s.status === 'trial');
+
+  const handleCreateSubscriptionClick = () => {
+    if (!selectedTariffId) {
+      notify.error(t('admin.users.detail.subscription.selectTariff', 'Выберите тариф'));
+      return;
+    }
+    if (hasActiveSubscription) {
+      setShowOverwriteModal(true);
+    } else {
+      void onUpdateSubscription('create', {
+        deviceLimit: subDeviceLimit !== '' ? Number(subDeviceLimit) : undefined,
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Multi-subscription: Level 1 — subscription list */}
@@ -308,7 +345,12 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
           {hasPermission('users:subscription') && (
             <div className="rounded-xl bg-dark-800/50 p-4">
               <div className="mb-3 text-sm font-medium text-dark-200">
-                {t('admin.users.detail.subscription.createNew', 'Создать подписку')}
+                {hasActiveSubscription
+                  ? t(
+                      'admin.users.detail.subscription.issueOrOverwrite',
+                      'Выдать / Перезаписать подписку',
+                    )
+                  : t('admin.users.detail.subscription.createNew', 'Создать подписку')}
               </div>
               <div className="space-y-3">
                 <select
@@ -319,24 +361,21 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                   className="input"
                 >
                   <option value="">{t('admin.users.detail.subscription.selectTariff')}</option>
-                  {tariffs
-                    .filter((tariffItem) => {
-                      const purchasedIds = new Set(
-                        userSubscriptions
-                          .filter(
-                            (s) => s.is_active || s.status === 'trial' || s.status === 'limited',
-                          )
-                          .map((s) => s.tariff_id),
-                      );
-                      return !purchasedIds.has(tariffItem.id);
-                    })
-                    .map((tariffItem) => (
+                  {tariffs.map((tariffItem) => {
+                    const isActive = userSubscriptions.some(
+                      (s) =>
+                        (s.is_active || s.status === 'trial' || s.status === 'limited') &&
+                        s.tariff_id === tariffItem.id,
+                    );
+                    return (
                       <option key={tariffItem.id} value={tariffItem.id}>
                         {tariffItem.name}
+                        {isActive ? ` (${t('admin.users.status.active', 'активен')})` : ''}
                       </option>
-                    ))}
+                    );
+                  })}
                 </select>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <label className="text-xs text-dark-400 mb-1 block">
                       {t('admin.users.detail.subscription.days')}
@@ -361,6 +400,23 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                       placeholder={t('admin.users.detail.subscription.selectEndDate')}
                       min={todayIso}
                       className="input flex w-full items-center justify-start gap-2 text-left"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-dark-400 mb-1 block">
+                      {t('admin.users.detail.subscription.devices', 'Устройств')}
+                    </label>
+                    <input
+                      type="number"
+                      value={subDeviceLimit ?? ''}
+                      onChange={createNumberInputHandler((v) => onSubDeviceLimitChange?.(v), 1)}
+                      placeholder={t(
+                        'admin.users.detail.subscription.deviceLimitPlaceholder',
+                        'По умолчанию',
+                      )}
+                      className="input w-full"
+                      min={1}
+                      max={100}
                     />
                   </div>
                 </div>
@@ -394,14 +450,27 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                     )}
                   </span>
                 </label>
+                {hasActiveSubscription && (
+                  <div className="rounded-lg border border-warning-500/30 bg-warning-500/10 p-2.5 text-xs text-warning-300">
+                    {t(
+                      'admin.users.detail.subscription.hasActiveNotice',
+                      'У пользователя уже есть активная подписка. При выдаче новой текущая подписка будет перезаписана после подтверждения.',
+                    )}
+                  </div>
+                )}
                 <button
-                  onClick={() => onUpdateSubscription('create')}
-                  disabled={actionLoading}
+                  onClick={handleCreateSubscriptionClick}
+                  disabled={actionLoading || !selectedTariffId}
                   className="btn-primary w-full"
                 >
                   {actionLoading
                     ? t('admin.users.detail.subscription.creating')
-                    : t('admin.users.detail.subscription.create')}
+                    : hasActiveSubscription
+                      ? t(
+                          'admin.users.detail.subscription.issueOrOverwrite',
+                          'Выдать / Перезаписать подписку',
+                        )
+                      : t('admin.users.detail.subscription.create')}
                 </button>
               </div>
             </div>
@@ -523,29 +592,90 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 <div className="text-xs text-dark-500">
                   {t('admin.users.detail.subscription.devices')}
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onSetDeviceLimit(selectedSub.device_limit - 1)}
-                    disabled={actionLoading || selectedSub.device_limit <= 1}
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-dark-700 text-dark-300 transition-colors hover:bg-dark-600 disabled:opacity-30"
-                  >
-                    <MinusIcon className="h-3 w-3" />
-                  </button>
-                  <span className="min-w-[2ch] text-center text-dark-100">
-                    {selectedSub.device_limit}
-                  </span>
-                  <button
-                    onClick={() => onSetDeviceLimit(selectedSub.device_limit + 1)}
-                    disabled={
-                      actionLoading ||
-                      (currentTariff?.max_device_limit != null &&
-                        selectedSub.device_limit >= currentTariff.max_device_limit)
-                    }
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-dark-700 text-dark-300 transition-colors hover:bg-dark-600 disabled:opacity-30"
-                  >
-                    <PlusIcon className="h-3 w-3" />
-                  </button>
-                </div>
+                {isCustomDeviceInput ? (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <input
+                      type="number"
+                      min={1}
+                      max={currentTariff?.max_device_limit ?? 999}
+                      value={customDeviceValue}
+                      onChange={(e) => {
+                        const val =
+                          e.target.value === ''
+                            ? ''
+                            : Math.max(1, parseInt(e.target.value, 10) || 1);
+                        setCustomDeviceValue(val);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && customDeviceValue !== '') {
+                          void onSetDeviceLimit(Number(customDeviceValue));
+                          setIsCustomDeviceInput(false);
+                        } else if (e.key === 'Escape') {
+                          setIsCustomDeviceInput(false);
+                        }
+                      }}
+                      className="input !h-8 w-20 px-2 text-xs text-dark-100"
+                      placeholder="1"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => {
+                        if (customDeviceValue !== '') {
+                          void onSetDeviceLimit(Number(customDeviceValue));
+                          setIsCustomDeviceInput(false);
+                        }
+                      }}
+                      disabled={actionLoading || customDeviceValue === ''}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-500/20 text-accent-400 hover:bg-accent-500/30 transition-colors disabled:opacity-40"
+                      title={t('common.actions.apply', 'Применить')}
+                    >
+                      <CheckIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setIsCustomDeviceInput(false)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-dark-700 text-dark-400 hover:bg-dark-600 hover:text-dark-200 transition-colors"
+                      title={t('common.actions.cancel', 'Отмена')}
+                    >
+                      <XIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <select
+                      value={
+                        deviceChoices.includes(selectedSub.device_limit)
+                          ? selectedSub.device_limit
+                          : 'custom'
+                      }
+                      disabled={actionLoading}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'custom') {
+                          setCustomDeviceValue(selectedSub.device_limit);
+                          setIsCustomDeviceInput(true);
+                        } else {
+                          const num = Number(val);
+                          if (num !== selectedSub.device_limit) {
+                            void onSetDeviceLimit(num);
+                          }
+                        }
+                      }}
+                      className="input !h-8 min-w-[70px] px-2 py-0 text-xs text-dark-100 bg-dark-700/80 border-dark-600 focus:border-accent-500"
+                    >
+                      {deviceChoices.map((num) => (
+                        <option key={num} value={num}>
+                          {num}
+                        </option>
+                      ))}
+                      <option value="custom">
+                        {t('admin.users.detail.subscription.customDeviceCount', 'Свое...')}
+                      </option>
+                    </select>
+                    {actionLoading && confirmingAction === 'deviceLimit' && (
+                      <div className="h-3 w-3 animate-spin rounded-full border border-accent-500 border-t-transparent" />
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1449,7 +1579,12 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
             </div>
           )}
           <div className="mb-3 text-sm font-medium text-dark-200">
-            {t('admin.users.detail.subscription.createNew', 'Создать подписку')}
+            {hasActiveSubscription
+              ? t(
+                  'admin.users.detail.subscription.issueOrOverwrite',
+                  'Выдать / Перезаписать подписку',
+                )
+              : t('admin.users.detail.subscription.createNew', 'Создать подписку')}
           </div>
           <div className="space-y-3">
             <select
@@ -1460,25 +1595,21 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
               className="input"
             >
               <option value="">{t('admin.users.detail.subscription.selectTariff')}</option>
-              {tariffs
-                .filter((tariffItem) => {
-                  if (userSubscriptions.length > 0) {
-                    const purchasedIds = new Set(
-                      userSubscriptions
-                        .filter((s) => s.is_active || s.status === 'trial')
-                        .map((s) => s.tariff_id),
-                    );
-                    return !purchasedIds.has(tariffItem.id);
-                  }
-                  return true;
-                })
-                .map((tariffItem) => (
+              {tariffs.map((tariffItem) => {
+                const isActive = userSubscriptions.some(
+                  (s) =>
+                    (s.is_active || s.status === 'trial' || s.status === 'limited') &&
+                    s.tariff_id === tariffItem.id,
+                );
+                return (
                   <option key={tariffItem.id} value={tariffItem.id}>
                     {tariffItem.name}
+                    {isActive ? ` (${t('admin.users.status.active', 'активен')})` : ''}
                   </option>
-                ))}
+                );
+              })}
             </select>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div>
                 <label className="text-xs text-dark-400 mb-1 block">
                   {t('admin.users.detail.subscription.days')}
@@ -1503,6 +1634,23 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                   placeholder={t('admin.users.detail.subscription.selectEndDate')}
                   min={todayIso}
                   className="input flex w-full items-center justify-start gap-2 text-left"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-dark-400 mb-1 block">
+                  {t('admin.users.detail.subscription.devices', 'Устройств')}
+                </label>
+                <input
+                  type="number"
+                  value={subDeviceLimit ?? ''}
+                  onChange={createNumberInputHandler((v) => onSubDeviceLimitChange?.(v), 1)}
+                  placeholder={t(
+                    'admin.users.detail.subscription.deviceLimitPlaceholder',
+                    'По умолчанию',
+                  )}
+                  className="input w-full"
+                  min={1}
+                  max={100}
                 />
               </div>
             </div>
@@ -1533,14 +1681,27 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
                 {t('admin.users.detail.subscription.silent', 'Не отправлять уведомление клиенту')}
               </span>
             </label>
+            {hasActiveSubscription && (
+              <div className="rounded-lg border border-warning-500/30 bg-warning-500/10 p-2.5 text-xs text-warning-300">
+                {t(
+                  'admin.users.detail.subscription.hasActiveNotice',
+                  'У пользователя уже есть активная подписка. При выдаче новой текущая подписка будет перезаписана после подтверждения.',
+                )}
+              </div>
+            )}
             <button
-              onClick={() => onUpdateSubscription('create')}
-              disabled={actionLoading}
+              onClick={handleCreateSubscriptionClick}
+              disabled={actionLoading || !selectedTariffId}
               className="btn-primary w-full"
             >
               {actionLoading
                 ? t('admin.users.detail.subscription.creating')
-                : t('admin.users.detail.subscription.create')}
+                : hasActiveSubscription
+                  ? t(
+                      'admin.users.detail.subscription.issueOrOverwrite',
+                      'Выдать / Перезаписать подписку',
+                    )
+                  : t('admin.users.detail.subscription.create')}
             </button>
           </div>
         </div>
@@ -2059,6 +2220,35 @@ export function SubscriptionTab(props: SubscriptionTabProps) {
           </div>
         </>
       )}
+
+      <SubscriptionOverwriteModal
+        isOpen={showOverwriteModal}
+        onClose={() => setShowOverwriteModal(false)}
+        onConfirm={async () => {
+          await onUpdateSubscription('create', {
+            overwrite: true,
+            deviceLimit:
+              subDeviceLimit !== '' && subDeviceLimit != null ? Number(subDeviceLimit) : undefined,
+          });
+        }}
+        loading={actionLoading}
+        currentSubscription={
+          selectedSub || userSubscriptions.find((s) => s.is_active || s.status === 'trial') || null
+        }
+        newTariffName={tariffs.find((t) => t.id === selectedTariffId)?.name || ''}
+        newDays={
+          typeof subDays === 'number'
+            ? subDays
+            : tariffs.find((t) => t.id === selectedTariffId)?.period_prices?.[0]?.days || 30
+        }
+        newEndDate={subEndDate || undefined}
+        newDeviceLimit={
+          subDeviceLimit !== '' && subDeviceLimit != null
+            ? Number(subDeviceLimit)
+            : tariffs.find((t) => t.id === selectedTariffId)?.device_limit || 1
+        }
+        formatDate={(d) => formatDate(d ?? null)}
+      />
     </div>
   );
 }

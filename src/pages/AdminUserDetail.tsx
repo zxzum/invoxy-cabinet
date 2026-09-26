@@ -99,6 +99,17 @@ export default function AdminUserDetail() {
   const [subscriptionDetailView, setSubscriptionDetailView] = useState(false);
   const [subReason, setSubReason] = useState<string>('');
   const [subSilent, setSubSilent] = useState<boolean>(false);
+  const [subDeviceLimit, setSubDeviceLimit] = useState<number | ''>('');
+
+  const handleSelectedTariffIdChange = (id: number | null) => {
+    setSelectedTariffId(id);
+    if (id) {
+      const tariff = tariffs.find((t) => t.id === id);
+      if (tariff && tariff.device_limit) {
+        setSubDeviceLimit(tariff.device_limit);
+      }
+    }
+  };
 
   const handleSubDaysChange = (val: number | '') => {
     setSubDays(val);
@@ -391,7 +402,10 @@ export default function AdminUserDetail() {
 
   // (handleUpdateBalance moved into BalanceTab.tsx)
 
-  const handleUpdateSubscription = async (overrideAction?: string) => {
+  const handleUpdateSubscription = async (
+    overrideAction?: string,
+    options?: { overwrite?: boolean; deviceLimit?: number },
+  ) => {
     if (!userId) return;
     const action = overrideAction || subAction;
     if ((action === 'extend' || action === 'shorten') && toNumber(subDays, 0) <= 0) {
@@ -404,6 +418,13 @@ export default function AdminUserDetail() {
     }
     setActionLoading(true);
     try {
+      const devLimit =
+        options?.deviceLimit !== undefined
+          ? options.deviceLimit
+          : subDeviceLimit !== ''
+            ? toNumber(subDeviceLimit, 1)
+            : undefined;
+
       const data: UpdateSubscriptionRequest = {
         action: action as UpdateSubscriptionRequest['action'],
         ...(activeSubscriptionId && action !== 'create'
@@ -417,6 +438,8 @@ export default function AdminUserDetail() {
               days: toNumber(subDays, 30),
               ...(subEndDate ? { end_date: `${subEndDate}T23:59:59Z` } : {}),
               ...(selectedTariffId ? { tariff_id: selectedTariffId } : {}),
+              ...(devLimit ? { device_limit: devLimit } : {}),
+              ...(options?.overwrite ? { overwrite: true } : {}),
             }
           : {}),
         ...(subReason.trim() ? { reason: subReason.trim() } : {}),
@@ -426,6 +449,8 @@ export default function AdminUserDetail() {
       await loadUser();
     } catch (error) {
       console.error('Failed to update subscription:', error);
+      notify.error(getApiErrorMessage(error, t('common.error', 'Ошибка')));
+      throw error;
     } finally {
       setActionLoading(false);
     }
@@ -1296,7 +1321,9 @@ export default function AdminUserDetail() {
             onSubDaysChange={handleSubDaysChange}
             onSubEndDateChange={handleSubEndDateChange}
             selectedTariffId={selectedTariffId}
-            onSelectedTariffIdChange={setSelectedTariffId}
+            onSelectedTariffIdChange={handleSelectedTariffIdChange}
+            subDeviceLimit={subDeviceLimit}
+            onSubDeviceLimitChange={setSubDeviceLimit}
             subReason={subReason}
             subSilent={subSilent}
             onSubReasonChange={setSubReason}

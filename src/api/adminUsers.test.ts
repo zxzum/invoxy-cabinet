@@ -134,6 +134,30 @@ describe('adminUsersApi.updateSubscription', () => {
       silent: true,
     });
   });
+
+  it('sends create action with overwrite and device_limit', async () => {
+    const { adminUsersApi } = await import('./adminUsers');
+    await adminUsersApi.updateSubscription(42, {
+      action: 'create',
+      tariff_id: 3,
+      days: 60,
+      device_limit: 5,
+      overwrite: true,
+      reason: 'Overwrite subscription',
+    });
+
+    expect(post).toHaveBeenCalledTimes(1);
+    const [url, body] = post.mock.calls[0];
+    expect(url).toBe('/cabinet/admin/users/42/subscription');
+    expect(body).toEqual({
+      action: 'create',
+      tariff_id: 3,
+      days: 60,
+      device_limit: 5,
+      overwrite: true,
+      reason: 'Overwrite subscription',
+    });
+  });
 });
 
 describe('adminUsersApi.deleteSubscription', () => {

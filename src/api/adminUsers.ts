@@ -387,6 +387,7 @@ export interface UpdateSubscriptionRequest {
   whitelist_traffic_delta_gb?: number;
   reason?: string;
   silent?: boolean;
+  overwrite?: boolean;
 }
 
 export interface UpdateSubscriptionResponse {
