@@ -121,7 +121,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
       >
         <Sidebar onTopUp={() => navigate('/profile#top-up')} onHelp={() => navigate('/support')} />
 
-        <main className="mx-auto flex min-w-0 w-full max-w-[560px] flex-1 flex-col pb-20 lg:pb-[1.1vw] lg:mx-0 lg:max-w-none lg:pt-[1.1vw]">
+        <main className="mx-auto flex min-w-0 w-full max-w-[560px] flex-1 flex-col pb-[calc(108px+env(safe-area-inset-bottom,0px))] lg:pb-[1.1vw] lg:mx-0 lg:max-w-none lg:pt-[1.1vw]">
           {reducedMotion ? (
             children
           ) : (

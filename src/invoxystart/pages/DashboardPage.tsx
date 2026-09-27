@@ -33,6 +33,7 @@ import { useTranslation } from 'react-i18next';
 import { migrationApi, type MigrationExecuteResult } from '@/api/migrationApi';
 import { LazeikaMigrationModal } from '@/components/migration/LazeikaMigrationModal';
 import { safeSession } from '@/utils/safeStorage';
+import { PiSparkleFill, PiArrowRightBold } from 'react-icons/pi';
 
 type AccountState = 'new' | 'trial' | 'active';
 
@@ -276,6 +277,50 @@ export function DashboardPage() {
         userName={user?.first_name || user?.username}
         onWalletClick={() => navigate('/profile#top-up')}
       />
+
+      {/* Lazeika Migration Persistent Banner */}
+      {migrationData?.eligible && migrationData?.candidate && (
+        <Reveal>
+          <div className="relative overflow-hidden rounded-[28px] border border-accent-500/40 bg-gradient-to-r from-accent-600/20 via-purple-600/15 to-accent-500/10 p-5 shadow-lg shadow-accent-500/10 backdrop-blur-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-500/20 text-accent-400 ring-1 ring-accent-500/30">
+                  <PiSparkleFill className="h-6 w-6 text-accent-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Доступен перенос из Лазейка ВПН</span>
+                    <span className="rounded-md bg-accent-500/20 px-2 py-0.5 text-[11px] font-semibold text-accent-300">
+                      +5 дней в подарок
+                    </span>
+                  </h3>
+                  <p className="text-xs text-muted mt-0.5">
+                    Тариф:{' '}
+                    <b className="text-white">{migrationData.candidate.lazeika_tariff_name}</b> ·
+                    Осталось: <b className="text-white">{migrationData.candidate.total_days} дн.</b>
+                    {Boolean(
+                      migrationData.candidate.balance_rub &&
+                        migrationData.candidate.balance_rub > 0,
+                    ) && (
+                      <span className="text-emerald-400 ml-1.5 font-semibold">
+                        · Баланс: +{migrationData.candidate.balance_rub} ₽
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMigrationModalOpen(true)}
+                className="shrink-0 cursor-pointer rounded-xl bg-gradient-to-r from-accent-500 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-accent-500/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                <span>Перенести подписку</span>
+                <PiArrowRightBold className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </Reveal>
+      )}
 
       {/* popLayout: контент монтируется сразу, скелетон уходит поверх — без
           паузы «пусто между состояниями» и без зависания на задушенном rAF. */}

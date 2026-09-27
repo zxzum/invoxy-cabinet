@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   PiGift,
   PiShieldCheck,
@@ -142,10 +143,10 @@ export function LazeikaMigrationModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -157,7 +158,7 @@ export function LazeikaMigrationModal({
       />
 
       {/* Modal Dialog */}
-      <motion.div
+      <m.div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
@@ -166,7 +167,7 @@ export function LazeikaMigrationModal({
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.92, opacity: 0, y: 16 }}
         transition={{ type: 'spring', duration: 0.4, bounce: 0.15 }}
-        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-dark-700/80 bg-dark-900/95 p-6 shadow-2xl backdrop-blur-xl"
+        className="relative w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-2xl border border-dark-700/80 bg-dark-900/95 p-6 shadow-2xl backdrop-blur-xl"
       >
         {/* Close Button (disabled during migration) */}
         {status !== 'migrating' && (
@@ -183,7 +184,7 @@ export function LazeikaMigrationModal({
         <AnimatePresence mode="wait">
           {/* STEP 1: INITIAL PROMPT */}
           {status === 'prompt' && (
-            <motion.div
+            <m.div
               key="prompt"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -191,8 +192,8 @@ export function LazeikaMigrationModal({
               className="space-y-5"
             >
               <div className="flex items-center gap-3.5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-500/20 to-brand-400/10 text-brand-400 ring-1 ring-brand-500/30">
-                  <PiSparkleFill className="h-6 w-6 text-brand-400 animate-pulse" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-accent-500/20 to-accent-400/10 text-accent-400 ring-1 ring-accent-500/30">
+                  <PiSparkleFill className="h-6 w-6 text-accent-400 animate-pulse" />
                 </div>
                 <div>
                   <h2
@@ -206,13 +207,13 @@ export function LazeikaMigrationModal({
               </div>
 
               {/* Bonus Highlight Card */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-brand-600/20 via-purple-600/15 to-brand-500/10 p-3.5 border border-brand-500/30">
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-600/20 via-purple-600/15 to-accent-500/10 p-3.5 border border-accent-500/30">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white shadow-md">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-500 text-on-accent shadow-md">
                     <PiGift className="h-5 w-5" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs font-semibold text-brand-300">
+                    <div className="text-xs font-semibold text-accent-300">
                       {t('lazeikaMigration.bonus')}
                     </div>
                     <div className="text-sm font-bold text-white">
@@ -248,7 +249,7 @@ export function LazeikaMigrationModal({
                   <span className="text-dark-400">{t('lazeikaMigration.tariff')}</span>
                   <span className="font-semibold text-white">
                     {candidate.lazeika_tariff_name} ➔{' '}
-                    <span className="text-brand-400">{candidate.target_tariff_name}</span>
+                    <span className="text-accent-400">{candidate.target_tariff_name}</span>
                   </span>
                 </div>
 
@@ -284,7 +285,7 @@ export function LazeikaMigrationModal({
                   <span className="font-semibold text-white">
                     {candidate.traffic_limit_gb} ГБ
                     {candidate.whitelist_traffic_limit_gb > 0 && (
-                      <span className="text-xs text-brand-300 ml-1">
+                      <span className="text-xs text-accent-300 ml-1">
                         (+{candidate.whitelist_traffic_limit_gb} ГБ LTE)
                       </span>
                     )}
@@ -310,26 +311,26 @@ export function LazeikaMigrationModal({
                 <button
                   type="button"
                   onClick={handleStartMigration}
-                  className="w-full sm:w-2/3 rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-2/3 rounded-xl bg-gradient-to-r from-accent-600 via-accent-500 to-indigo-600 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                   <PiGift className="h-4 w-4" />
                   <span>{t('lazeikaMigration.migrateBtn')}</span>
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* STEP 2: PROGRESS ANIMATION */}
           {status === 'migrating' && (
-            <motion.div
+            <m.div
               key="migrating"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               className="py-6 space-y-6 text-center"
             >
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/20 text-brand-400 ring-1 ring-brand-500/30">
-                <PiArrowsClockwise className="h-8 w-8 animate-spin text-brand-400" />
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/20 text-accent-400 ring-1 ring-accent-500/30">
+                <PiArrowsClockwise className="h-8 w-8 animate-spin text-accent-400" />
               </div>
 
               <div className="space-y-1.5">
@@ -342,8 +343,8 @@ export function LazeikaMigrationModal({
               {/* Progress Bar */}
               <div className="space-y-2">
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-dark-800 ring-1 ring-dark-700/50">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-brand-500 to-indigo-500"
+                  <m.div
+                    className="h-full rounded-full bg-gradient-to-r from-accent-500 to-indigo-500"
                     style={{ width: `${progressPercent}%` }}
                     transition={{ ease: 'easeInOut', duration: 0.3 }}
                   />
@@ -363,7 +364,7 @@ export function LazeikaMigrationModal({
                       activeStep > 1
                         ? 'bg-emerald-400'
                         : activeStep === 1
-                          ? 'bg-brand-400 animate-ping'
+                          ? 'bg-accent-400 animate-ping'
                           : 'bg-dark-600'
                     }`}
                   />
@@ -379,7 +380,7 @@ export function LazeikaMigrationModal({
                       activeStep > 2
                         ? 'bg-emerald-400'
                         : activeStep === 2
-                          ? 'bg-brand-400 animate-ping'
+                          ? 'bg-accent-400 animate-ping'
                           : 'bg-dark-600'
                     }`}
                   />
@@ -395,7 +396,7 @@ export function LazeikaMigrationModal({
                       activeStep > 3
                         ? 'bg-emerald-400'
                         : activeStep === 3
-                          ? 'bg-brand-400 animate-ping'
+                          ? 'bg-accent-400 animate-ping'
                           : 'bg-dark-600'
                     }`}
                   />
@@ -414,12 +415,12 @@ export function LazeikaMigrationModal({
                   <span>{t('lazeikaMigration.progress.step4')}</span>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* STEP 3: SUCCESS */}
           {status === 'success' && result && (
-            <motion.div
+            <m.div
               key="success"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -474,7 +475,7 @@ export function LazeikaMigrationModal({
                   <span className="font-semibold text-white">
                     {result.traffic_limit_gb} ГБ
                     {result.whitelist_traffic_limit_gb > 0 && (
-                      <span className="text-xs text-brand-300 ml-1">
+                      <span className="text-xs text-accent-300 ml-1">
                         (+{result.whitelist_traffic_limit_gb} ГБ LTE)
                       </span>
                     )}
@@ -489,12 +490,12 @@ export function LazeikaMigrationModal({
               >
                 {t('lazeikaMigration.success.okBtn')}
               </button>
-            </motion.div>
+            </m.div>
           )}
 
           {/* STEP 4: ERROR */}
           {status === 'error' && (
-            <motion.div
+            <m.div
               key="error"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -526,15 +527,16 @@ export function LazeikaMigrationModal({
                 <button
                   type="button"
                   onClick={handleStartMigration}
-                  className="w-1/2 rounded-xl bg-brand-500 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 transition-colors"
+                  className="w-1/2 rounded-xl bg-accent-500 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-600 transition-colors"
                 >
                   {t('lazeikaMigration.error.retry')}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
-      </motion.div>
-    </div>
+      </m.div>
+    </div>,
+    document.body,
   );
 }
