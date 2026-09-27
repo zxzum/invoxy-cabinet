@@ -26,6 +26,7 @@ import StatsGrid from '../components/dashboard/StatsGrid';
 import { giftApi } from '../api/gift';
 import { migrationApi, type MigrationExecuteResult } from '../api/migrationApi';
 import { LazeikaMigrationModal } from '../components/migration/LazeikaMigrationModal';
+import { PiSparkleFill, PiGift } from 'react-icons/pi';
 import PendingGiftCard from '../components/dashboard/PendingGiftCard';
 import { DeviceLimitSheet } from '../components/subscription/DeviceLimitSheet';
 import { DeviceTopupSheet } from '../components/subscription/sheets/DeviceTopupSheet';
@@ -880,6 +881,49 @@ export default function Dashboard() {
           </Link>
         </div>
       </motion.div>
+
+      {/* Lazeika Migration Banner (if candidate is found) */}
+      {migrationData?.eligible && migrationData?.candidate && (
+        <motion.div
+          {...section(0)}
+          className="relative overflow-hidden rounded-2xl border border-brand-500/40 bg-gradient-to-r from-brand-600/20 via-purple-600/15 to-brand-500/10 p-4 shadow-lg shadow-brand-500/10 backdrop-blur-xl"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-500/20 text-brand-400 ring-1 ring-brand-500/30">
+                <PiSparkleFill className="h-6 w-6 text-brand-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Доступен перенос из Лазейка ВПН</span>
+                  <span className="rounded-md bg-brand-500/20 px-2 py-0.5 text-[11px] font-semibold text-brand-300">
+                    +5 дней в подарок
+                  </span>
+                </h3>
+                <p className="text-xs text-dark-300 mt-0.5">
+                  Тариф: <b className="text-white">{migrationData.candidate.lazeika_tariff_name}</b>{' '}
+                  · Осталось: <b className="text-white">{migrationData.candidate.total_days} дн.</b>
+                  {Boolean(
+                    migrationData.candidate.balance_rub && migrationData.candidate.balance_rub > 0,
+                  ) && (
+                    <span className="text-emerald-400 ml-1.5 font-semibold">
+                      · Баланс: +{migrationData.candidate.balance_rub} ₽
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMigrationModalOpen(true)}
+              className="shrink-0 rounded-xl bg-gradient-to-r from-brand-500 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-brand-500/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <PiGift className="h-4 w-4" />
+              <span>Перенести подписку</span>
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {subscriptionsError && (
         <motion.div {...section(1)} className="glass-surface space-y-3 p-4" role="alert">

@@ -12,6 +12,7 @@ import {
   PiDeviceMobile,
   PiCalendarBlank,
   PiSparkleFill,
+  PiWallet,
 } from 'react-icons/pi';
 import {
   migrationApi,
@@ -220,6 +221,26 @@ export function LazeikaMigrationModal({
                   </div>
                 </div>
               </div>
+
+              {/* Balance Highlight Card (if balance > 0) */}
+              {Boolean(candidate.balance_rub && candidate.balance_rub > 0) && (
+                <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600/20 via-teal-600/15 to-emerald-500/10 p-3.5 border border-emerald-500/30">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white shadow-md">
+                      <PiWallet className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-semibold text-emerald-300">
+                        {t('lazeikaMigration.balanceTransfer', 'Перенос баланса')}
+                      </div>
+                      <div className="text-sm font-bold text-white">
+                        +{(candidate.balance_rub ?? 0).toLocaleString('ru-RU')} ₽{' '}
+                        {t('lazeikaMigration.toYourAccount', 'на ваш счёт')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Tariff / Parameter Comparison */}
               <div className="rounded-xl border border-dark-700/60 bg-dark-800/60 p-4 space-y-3">
@@ -431,6 +452,17 @@ export function LazeikaMigrationModal({
                     {result.end_date_str} ({result.total_days} дн.)
                   </span>
                 </div>
+
+                {Boolean(result.balance_transferred_rub && result.balance_transferred_rub > 0) && (
+                  <div className="flex items-center justify-between border-b border-dark-700/40 pb-2">
+                    <span className="text-dark-400">
+                      {t('lazeikaMigration.success.transferredBalance', 'Зачисленный баланс')}
+                    </span>
+                    <span className="font-semibold text-emerald-400">
+                      +{(result.balance_transferred_rub ?? 0).toLocaleString('ru-RU')} ₽
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between border-b border-dark-700/40 pb-2">
                   <span className="text-dark-400">{t('lazeikaMigration.success.newDevices')}</span>

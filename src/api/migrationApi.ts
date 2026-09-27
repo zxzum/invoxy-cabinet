@@ -10,6 +10,7 @@ export interface MigrationCandidate {
   traffic_limit_gb: number;
   whitelist_traffic_limit_gb: number;
   expires_at: string;
+  balance_rub?: number;
 }
 
 export interface MigrationCheckResponse {
@@ -27,6 +28,8 @@ export interface MigrationExecuteResult {
   traffic_limit_gb: number;
   whitelist_traffic_limit_gb: number;
   subscription_url: string;
+  balance_transferred_rub?: number;
+  balance_kopeks?: number;
   message: string;
 }
 
