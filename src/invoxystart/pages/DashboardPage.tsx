@@ -29,16 +29,58 @@ import {
 } from '@/invoxystart/components/connection/ConnectDeviceModal';
 import { subscriptionApi, type TrialInfo } from '@/invoxystart/api';
 import { useAuth } from '@/invoxystart/auth';
+import { useTranslation } from 'react-i18next';
+import { migrationApi, type MigrationExecuteResult } from '@/api/migrationApi';
+import { LazeikaMigrationModal } from '@/components/migration/LazeikaMigrationModal';
+import { safeSession } from '@/utils/safeStorage';
 
 type AccountState = 'new' | 'trial' | 'active';
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { openPayment } = usePayment();
   const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
   const [now, setNow] = useState(Date.now());
+
+  // Check Lazeika migration eligibility (temporary seamless onboarding)
+  const { data: migrationData } = useQuery({
+    queryKey: ['migration-check'],
+    queryFn: migrationApi.check,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    enabled: !!user,
+  });
+
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (migrationData?.eligible && migrationData?.candidate && user?.id) {
+      const dismissed = safeSession.getItem(`invoxy_migration_dismissed_${user.id}`);
+      if (!dismissed) {
+        setIsMigrationModalOpen(true);
+      }
+    }
+  }, [migrationData, user?.id]);
+
+  const handleCloseMigrationModal = () => {
+    setIsMigrationModalOpen(false);
+    if (user?.id) {
+      safeSession.setItem(`invoxy_migration_dismissed_${user.id}`, 'true');
+    }
+  };
+
+  const handleMigrationSuccess = (result: MigrationExecuteResult) => {
+    queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] });
+    queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+    queryClient.invalidateQueries({ queryKey: ['balance'] });
+    queryClient.invalidateQueries({ queryKey: ['migration-check'] });
+    refreshUser();
+    showToast(result.message || t('lazeikaMigration.success.title'));
+  };
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -362,11 +404,19 @@ export function DashboardPage() {
                   />
                 </Reveal>
 
-                <div className="deferred-section order-2 lg:order-none">
+                <div
+                  className={`deferred-section lg:order-none ${isExpired ? 'order-2' : 'order-4'}`}
+                >
                   <TrafficCards subscription={current} />
                 </div>
 
-                {/* Active subscription: DevicesCard above Renewal/Offer card.
+                {/* Mobile single column: for an active subscription the connect
+                    actions (access key + Happ/InCy) come right after the
+                    subscription card, above traffic/devices/renewal, so they are
+                    reachable without deep scrolling. Expired subscriptions keep
+                    renewal at the top instead. Desktop order is DOM order
+                    (lg:order-none).
+                    Active subscription: DevicesCard above Renewal/Offer card.
                     Expired subscription: Renewal/Offer card above DevicesCard (accent on renewal). */}
                 {isExpired ? (
                   <>
@@ -419,7 +469,7 @@ export function DashboardPage() {
                   </>
                 ) : (
                   <>
-                    <Reveal delay={0.06} className="order-3 min-w-0 lg:order-none">
+                    <Reveal delay={0.06} className="order-5 min-w-0 lg:order-none">
                       <DevicesCard
                         isLoading={!hasLoadedDetails}
                         devices={managedDevices}
@@ -436,7 +486,7 @@ export function DashboardPage() {
                     </Reveal>
 
                     {isTrial ? (
-                      <Reveal delay={0.1} className="order-4 min-w-0 lg:order-none">
+                      <Reveal delay={0.1} className="order-6 min-w-0 lg:order-none">
                         <StandardOfferCard
                           onPay={(amount, purpose, tariffId, periodDays) =>
                             openPayment({ amount, purpose, tariffId, periodDays })
@@ -444,7 +494,7 @@ export function DashboardPage() {
                         />
                       </Reveal>
                     ) : (
-                      <Reveal delay={0.1} className="order-4 min-w-0 lg:order-none">
+                      <Reveal delay={0.1} className="order-6 min-w-0 lg:order-none">
                         <RenewalCard
                           title={subscription?.tariff_name || selected?.tariff_name || 'Подписка'}
                           subtitle={
@@ -470,11 +520,17 @@ export function DashboardPage() {
               </div>
 
               <div className="contents lg:col-start-2 lg:flex lg:flex-col lg:gap-[1.1vw]">
-                <Reveal delay={0.15} className="order-5 min-w-0 lg:order-none">
+                <Reveal
+                  delay={0.15}
+                  className={`min-w-0 lg:order-none ${isExpired ? 'order-5' : 'order-2'}`}
+                >
                   <AccessKeyCard accessLink={accessLink} />
                 </Reveal>
 
-                <Reveal delay={0.2} className="order-6 min-w-0 lg:order-none">
+                <Reveal
+                  delay={0.2}
+                  className={`min-w-0 lg:order-none ${isExpired ? 'order-6' : 'order-3'}`}
+                >
                   <QuickConnect connection={connection} />
                 </Reveal>
 
@@ -500,6 +556,15 @@ export function DashboardPage() {
         incyLink={incyLink}
         initialPlatform={connectPlatform}
       />
+
+      {migrationData?.candidate && (
+        <LazeikaMigrationModal
+          isOpen={isMigrationModalOpen}
+          candidate={migrationData.candidate}
+          onClose={handleCloseMigrationModal}
+          onMigrated={handleMigrationSuccess}
+        />
+      )}
     </div>
   );
 }

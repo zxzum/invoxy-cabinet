@@ -13,6 +13,27 @@ import {
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { ticketsApi, type Ticket as ApiTicket, type TicketDetail } from '@/invoxystart/api';
 
+// Типы, которые backend принимает как «photo» (Telegram send_photo); всё
+// остальное — включая HEIC с iPhone — уходит как «document» и не отклоняется.
+const PHOTO_UPLOAD_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+const ATTACHMENT_ACCEPT = 'image/*,video/*,.pdf,.txt,.zip,.rar,.7z,.doc,.docx,.xls,.xlsx,.csv,.log';
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+function resolveUploadMediaType(file: File): 'photo' | 'video' | 'document' {
+  if (PHOTO_UPLOAD_TYPES.has(file.type)) return 'photo';
+  if (file.type.startsWith('video/')) return 'video';
+  return 'document';
+}
+
+function attachmentIssue(file: File | null): string | null {
+  if (!file) return null;
+  if (file.size === 0) return 'Файл пустой';
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    return 'Файл больше 10 МБ — уменьшите размер или прикрепите другой файл';
+  }
+  return null;
+}
+
 export default function SupportPage() {
   const [searchParams] = useSearchParams();
   const requestedTicket = searchParams.get('ticket');
@@ -25,6 +46,7 @@ export default function SupportPage() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [replyAttachment, setReplyAttachment] = useState<File | null>(null);
   const [reply, setReply] = useState('');
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -32,6 +54,9 @@ export default function SupportPage() {
   const [detailError, setDetailError] = useState('');
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState<'create' | 'reply' | null>(null);
+  const [highlightForm, setHighlightForm] = useState(false);
+  const [formFocusNonce, setFormFocusNonce] = useState(0);
+  const formSectionRef = useRef<HTMLElement | null>(null);
 
   const loadTickets = useCallback(async () => {
     setLoading(true);
@@ -107,25 +132,46 @@ export default function SupportPage() {
     };
   }, [refreshVisibleTickets]);
 
+  // На телефоне форма лежит ниже списка обращений: после «Новый тикет»
+  // прокручиваем к ней и подсвечиваем свечением — как у «Пополнить баланс».
+  useEffect(() => {
+    if (formFocusNonce === 0) return;
+    setHighlightForm(true);
+    const scrollTimer = window.setTimeout(() => {
+      formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    const clearTimer = window.setTimeout(() => setHighlightForm(false), 4500);
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [formFocusNonce]);
+
   function startComposing() {
     setComposing(true);
     setSelectedId(null);
     setSelected(null);
     setFormError('');
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      setFormFocusNonce((nonce) => nonce + 1);
+    }
   }
 
   async function createTicket(event: FormEvent) {
     event.preventDefault();
     const title = subject.trim();
     const text = message.trim();
-    if (title.length < 3 || (!text && !attachment)) {
-      setFormError('Укажите тему и опишите проблему или прикрепите изображение.');
+    const attachIssue = attachmentIssue(attachment);
+    if (title.length < 3 || (!text && !attachment) || attachIssue) {
+      setFormError(attachIssue ?? 'Укажите тему и опишите проблему или прикрепите фото/файл.');
       return;
     }
     setBusy('create');
     setFormError('');
     try {
-      const uploaded = attachment ? await ticketsApi.uploadMedia(attachment, 'photo') : null;
+      const uploaded = attachment
+        ? await ticketsApi.uploadMedia(attachment, resolveUploadMediaType(attachment))
+        : null;
       const created = await ticketsApi.createTicket(
         title,
         text,
@@ -150,13 +196,25 @@ export default function SupportPage() {
 
   async function sendReply(event: FormEvent) {
     event.preventDefault();
-    if (!selected || !reply.trim() || selected.status === 'closed' || selected.is_reply_blocked)
-      return;
+    if (!selected || selected.status === 'closed' || selected.is_reply_blocked) return;
     const text = reply.trim();
+    const attachIssue = attachmentIssue(replyAttachment);
+    if ((!text && !replyAttachment) || attachIssue) {
+      if (attachIssue) setDetailError(attachIssue);
+      return;
+    }
     setBusy('reply');
     setDetailError('');
     try {
-      const added = await ticketsApi.addMessage(selected.id, text);
+      let media: { media_type: string; media_file_id: string } | undefined;
+      if (replyAttachment) {
+        const uploaded = await ticketsApi.uploadMedia(
+          replyAttachment,
+          resolveUploadMediaType(replyAttachment),
+        );
+        media = { media_type: uploaded.media_type, media_file_id: uploaded.file_id };
+      }
+      const added = await ticketsApi.addMessage(selected.id, text, media);
       const nextStatus = selected.status === 'answered' ? 'pending' : selected.status;
       const nextDetail: TicketDetail = {
         ...selected,
@@ -169,8 +227,13 @@ export default function SupportPage() {
         current.map((ticket) => (ticket.id === selected.id ? toListItem(nextDetail) : ticket)),
       );
       setReply('');
+      setReplyAttachment(null);
     } catch {
-      setDetailError('Не удалось отправить сообщение');
+      setDetailError(
+        replyAttachment
+          ? 'Не удалось отправить сообщение с вложением. Попробуйте ещё раз.'
+          : 'Не удалось отправить сообщение',
+      );
     } finally {
       setBusy(null);
     }
@@ -272,7 +335,10 @@ export default function SupportPage() {
           )}
         </section>
 
-        <section className="glass-panel motion-card min-h-[420px] min-w-0 rounded-[28px] p-5 lg:p-7">
+        <section
+          ref={formSectionRef}
+          className={`glass-panel motion-card min-h-[420px] min-w-0 scroll-mt-6 rounded-[28px] p-5 transition-all duration-500 lg:p-7 ${highlightForm ? 'form-focus-highlight' : ''}`}
+        >
           {composing ? (
             <form
               className="form-step-enter"
@@ -319,12 +385,16 @@ export default function SupportPage() {
                 />
               </label>
               <label className="button-lift mt-4 flex cursor-pointer items-center gap-2 text-sm text-muted hover:text-ink">
-                <Image size={18} /> {attachment ? attachment.name : 'Прикрепить изображение'}
+                <Image size={18} /> {attachment ? attachment.name : 'Прикрепить фото или файл'}
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={ATTACHMENT_ACCEPT}
                   className="sr-only"
-                  onChange={(event) => setAttachment(event.target.files?.[0] || null)}
+                  onChange={(event) => {
+                    setAttachment(event.target.files?.[0] || null);
+                    setFormError('');
+                    event.target.value = '';
+                  }}
                 />
               </label>
               {formError && (
@@ -418,24 +488,58 @@ export default function SupportPage() {
                   <CheckCircle2 size={17} className="text-mint" /> Ответы временно недоступны
                 </p>
               ) : (
-                <form onSubmit={(event) => void sendReply(event)} className="flex gap-2">
-                  <label className="min-w-0 flex-1">
-                    <span className="sr-only">Ответ</span>
-                    <input
-                      value={reply}
-                      onChange={(event) => setReply(event.target.value)}
-                      placeholder="Напишите ответ…"
-                      className="glass-control h-12 w-full rounded-2xl px-4 text-sm outline-none focus:border-mint/50"
-                    />
-                  </label>
-                  <button
-                    type="submit"
-                    aria-label="Отправить ответ"
-                    disabled={busy === 'reply' || !reply.trim()}
-                    className="button-lift grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-mint text-bg disabled:opacity-40"
-                  >
-                    <Send size={17} />
-                  </button>
+                <form onSubmit={(event) => void sendReply(event)} className="flex flex-col gap-2">
+                  {replyAttachment && (
+                    <div className="flex items-center justify-between gap-2 rounded-2xl border border-mint/25 bg-mint/[.07] px-3 py-2 text-xs text-ink">
+                      <span className="min-w-0 truncate">
+                        <Paperclip size={13} className="mr-1.5 inline shrink-0 text-mint" />
+                        {replyAttachment.name}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Убрать вложение"
+                        onClick={() => setReplyAttachment(null)}
+                        className="button-lift grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full glass-control text-muted"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <label
+                      title="Прикрепить фото или файл"
+                      className="button-lift grid h-12 w-12 shrink-0 cursor-pointer place-items-center rounded-2xl glass-control text-mint"
+                    >
+                      <Paperclip size={17} />
+                      <input
+                        type="file"
+                        accept={ATTACHMENT_ACCEPT}
+                        className="sr-only"
+                        onChange={(event) => {
+                          setReplyAttachment(event.target.files?.[0] || null);
+                          setDetailError('');
+                          event.target.value = '';
+                        }}
+                      />
+                    </label>
+                    <label className="min-w-0 flex-1">
+                      <span className="sr-only">Ответ</span>
+                      <input
+                        value={reply}
+                        onChange={(event) => setReply(event.target.value)}
+                        placeholder="Напишите ответ…"
+                        className="glass-control h-12 w-full rounded-2xl px-4 text-sm outline-none focus:border-mint/50"
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      aria-label="Отправить ответ"
+                      disabled={busy === 'reply' || (!reply.trim() && !replyAttachment)}
+                      className="button-lift grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-mint text-bg disabled:opacity-40"
+                    >
+                      <Send size={17} />
+                    </button>
+                  </div>
                 </form>
               )}
             </div>

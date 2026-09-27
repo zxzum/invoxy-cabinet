@@ -390,12 +390,14 @@ html.scroll-lock-active .ix-sidebar-island {
   }
 }
 
-.topup-highlight {
+.topup-highlight,
+.form-focus-highlight {
   position: relative;
   border-color: rgba(165, 232, 196, 0.8) !important;
 }
 
-.topup-highlight::after {
+.topup-highlight::after,
+.form-focus-highlight::after {
   content: "";
   position: absolute;
   inset: 0;

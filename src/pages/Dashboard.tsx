@@ -45,7 +45,7 @@ import {
 import { API } from '../config/constants';
 import { ChevronRightIcon, WalletIcon } from '@/components/icons';
 import { staggerEntrance } from '@/components/motion';
-import { safeLocal } from '../utils/safeStorage';
+import { safeLocal, safeSession } from '../utils/safeStorage';
 import { getApiErrorMessage } from '../utils/api-error';
 import { useCurrency } from '../hooks/useCurrency';
 import { useTheme } from '../hooks/useTheme';
@@ -99,7 +99,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (migrationData?.eligible && migrationData?.candidate && user?.id) {
-      const dismissed = sessionStorage.getItem(`invoxy_migration_dismissed_${user.id}`);
+      const dismissed = safeSession.getItem(`invoxy_migration_dismissed_${user.id}`);
       if (!dismissed) {
         setIsMigrationModalOpen(true);
       }
@@ -109,7 +109,7 @@ export default function Dashboard() {
   const handleCloseMigrationModal = () => {
     setIsMigrationModalOpen(false);
     if (user?.id) {
-      sessionStorage.setItem(`invoxy_migration_dismissed_${user.id}`, 'true');
+      safeSession.setItem(`invoxy_migration_dismissed_${user.id}`, 'true');
     }
   };
 

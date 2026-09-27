@@ -74,7 +74,7 @@ export function QuickConnect({
                 onClick={() => {
                   if (href) openDeepLink(href);
                 }}
-                className={`glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98] ${href ? '' : 'cursor-not-allowed opacity-50'}`}
+                className={`glass-control flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-[13px] font-bold text-mint transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98] lg:h-10 lg:text-xs lg:font-semibold lg:text-ink ${href ? '' : 'cursor-not-allowed opacity-50'}`}
               >
                 <span className="flex h-5 shrink-0 items-center">
                   <img src={opt.icon} alt="" className="h-4 w-auto max-w-12 object-contain" />
