@@ -232,6 +232,10 @@ export const subscriptionApi = {
     is_unlimited: boolean;
     lifetime_used_bytes?: number;
     lifetime_used_gb?: number;
+    whitelist_traffic_limit_gb?: number;
+    whitelist_traffic_used_bytes?: number;
+    whitelist_traffic_used_gb?: number;
+    whitelist_traffic_used_percent?: number;
   }> => {
     const response = await apiClient.post(
       '/cabinet/subscription/refresh-traffic',

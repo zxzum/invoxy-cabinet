@@ -122,6 +122,10 @@ export const subscriptionApi = {
       traffic_limit_gb: number;
       traffic_used_percent: number;
       is_unlimited: boolean;
+      whitelist_traffic_limit_gb?: number;
+      whitelist_traffic_used_bytes?: number;
+      whitelist_traffic_used_gb?: number;
+      whitelist_traffic_used_percent?: number;
     }>('/cabinet/subscription/refresh-traffic', {}, query(subscriptionId)),
 
   purchaseDevices: (devices: number, subscriptionId?: number) =>

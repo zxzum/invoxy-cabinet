@@ -204,6 +204,18 @@ export function DashboardPage() {
           ...baseCurrent,
           traffic_used_gb: trafficUsage.traffic_used_gb,
           traffic_used_percent: trafficUsage.traffic_used_percent,
+          ...(trafficUsage.whitelist_traffic_limit_gb !== undefined && {
+            whitelist_traffic_limit_gb: trafficUsage.whitelist_traffic_limit_gb,
+          }),
+          ...(trafficUsage.whitelist_traffic_used_bytes !== undefined && {
+            whitelist_traffic_used_bytes: trafficUsage.whitelist_traffic_used_bytes,
+          }),
+          ...(trafficUsage.whitelist_traffic_used_gb !== undefined && {
+            whitelist_traffic_used_gb: trafficUsage.whitelist_traffic_used_gb,
+          }),
+          ...(trafficUsage.whitelist_traffic_used_percent !== undefined && {
+            whitelist_traffic_used_percent: trafficUsage.whitelist_traffic_used_percent,
+          }),
         }
       : baseCurrent;
   const endTime = current?.end_date ? Date.parse(current.end_date) : Number.NaN;
