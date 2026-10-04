@@ -51,28 +51,6 @@ const getTelegramInitData = (): string | null => {
   return tokenStorage.getTelegramInitData();
 };
 
-export const getClientPlatform = (): 'mini-app' | 'app' | 'web' => {
-  if (typeof window === 'undefined') return 'web';
-  const rawTg = readTelegramInitData();
-  if (
-    rawTg ||
-    (window as unknown as Record<string, unknown>).TelegramWebviewProxy ||
-    (window as unknown as Record<string, { WebApp?: { initData?: string } }>).Telegram?.WebApp
-      ?.initData
-  ) {
-    return 'mini-app';
-  }
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
-  if (
-    ua.includes('InvoxyVPN') ||
-    ua.includes('InvoxyApp') ||
-    (window as unknown as Record<string, unknown>).flutter_inappwebview
-  ) {
-    return 'app';
-  }
-  return 'web';
-};
-
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: API.TIMEOUT_MS,
@@ -151,10 +129,6 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
   const method = config.method?.toUpperCase();
   if (method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method) && config.headers) {
     config.headers[CSRF_HEADER_NAME] = ensureCsrfToken();
-  }
-
-  if (config.headers) {
-    config.headers['X-Client-Platform'] = getClientPlatform();
   }
 
   return config;

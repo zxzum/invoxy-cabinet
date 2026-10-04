@@ -80,6 +80,13 @@ import Landing from './invoxystart/pages/LandingPage';
 // Legacy connection page remains available from the customer dashboard.
 
 // Secondary user pages - lazy load
+const InvoxyAppPage = lazyWithRetry(() => import('./invoxystart/pages/AppPage'));
+const InvoxyAppLoginPage = lazyWithRetry(() =>
+  import('./invoxystart/pages/AppPage').then((m) => ({ default: m.AppLoginPage })),
+);
+const InvoxyAppReturnPage = lazyWithRetry(() =>
+  import('./invoxystart/pages/AppPage').then((m) => ({ default: m.AppReturnPage })),
+);
 const GiftSubscription = lazyWithRetry(() => import('./pages/GiftSubscription'));
 const GiftResult = lazyWithRetry(() => import('./pages/GiftResult'));
 const ConnectionQR = lazyWithRetry(() => import('./pages/ConnectionQR'));
@@ -101,7 +108,7 @@ const AdminTickets = lazyWithRetry(() => import('./pages/AdminTickets'));
 const AdminTicketSettings = lazyWithRetry(() => import('./pages/AdminTicketSettings'));
 const AdminSettings = lazyWithRetry(() => import('./pages/AdminSettings'));
 const AdminGraceAccess = lazyWithRetry(() => import('./pages/AdminGraceAccess'));
-const AdminApps = lazyWithRetry(() => import('./pages/AdminApps'));
+const AdminInvoxyApp = lazyWithRetry(() => import('./pages/AdminInvoxyApp'));
 const AdminWheel = lazyWithRetry(() => import('./pages/AdminWheel'));
 const AdminTariffs = lazyWithRetry(() => import('./pages/AdminTariffs'));
 const AdminTariffCreate = lazyWithRetry(() => import('./pages/AdminTariffCreate'));
@@ -398,6 +405,32 @@ function App() {
         <Route path="/offer" element={<PublicLegal doc="offer" />} />
         <Route path="/privacy" element={<PublicLegal doc="privacy" />} />
         <Route path="/recurrent-payments" element={<PublicLegal doc="recurrent" />} />
+        <Route
+          path="/app"
+          element={
+            <LazyPage>
+              <InvoxyAppPage />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/app/return"
+          element={
+            <LazyPage>
+              <InvoxyAppReturnPage />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/app/login"
+          element={
+            <ProtectedRoute withLayout={false}>
+              <LazyPage>
+                <InvoxyAppLoginPage />
+              </LazyPage>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/r/:code" element={<ReferralRedirectRoute />} />
         <Route path="/invite/:code" element={<ReferralRedirectRoute />} />
         <Route
@@ -824,9 +857,9 @@ function App() {
         <Route
           path="/admin/apps"
           element={
-            <PermissionRoute permission="apps:read">
+            <PermissionRoute permission="stats:read">
               <LazyPage>
-                <AdminApps />
+                <AdminInvoxyApp />
               </LazyPage>
             </PermissionRoute>
           }

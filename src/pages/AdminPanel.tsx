@@ -327,7 +327,7 @@ const sections: AdminSection[] = [
         // То же право, что у страницы настроек и у эндпоинтов раздела.
         permission: 'settings:read',
       },
-      { name: 'admin.nav.apps', icon: 'app', to: '/admin/apps', permission: 'apps:read' },
+      { name: 'admin.nav.invoxyApp', icon: 'app', to: '/admin/apps', permission: 'stats:read' },
       {
         name: 'admin.nav.servers',
         icon: 'server',

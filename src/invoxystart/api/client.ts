@@ -11,7 +11,7 @@ const UNAUTH_PATHS = [
   '/cabinet/auth/oauth/',
   '/cabinet/auth/deeplink/',
   '/cabinet/auth/login/auto',
-  '/cabinet/auth/app-link/exchange',
+  '/cabinet/app/config',
   '/cabinet/landing/',
 ];
 

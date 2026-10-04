@@ -17,7 +17,7 @@ type DevicesCardProps = {
   deviceLimit?: number | null;
   onRemove?: (device: ManagedDevice) => void | Promise<void>;
   title?: string;
-  onConnect?: (platform?: string) => void;
+  onConnect?: () => void;
   isExpired?: boolean;
   isLoading?: boolean;
 };
@@ -183,34 +183,11 @@ export function DevicesCard({
           <p className="mt-1 max-w-[320px] text-xs text-muted leading-relaxed">
             {isExpired
               ? 'Продлите подписку или выберите подходящий тариф, чтобы подключить устройства.'
-              : 'VPN настроен и готов к работе. Нажмите кнопку для быстрого подключения или выберите систему:'}
+              : 'VPN настроен и готов к работе. Установите приложение Invoxy VPN и войдите без ввода ключа.'}
           </p>
 
           {!isExpired && (
             <>
-              <div className="mt-3.5 flex flex-wrap items-center justify-center gap-1.5">
-                {[
-                  { key: 'ios', label: 'iOS', icon: Smartphone },
-                  { key: 'android', label: 'Android', icon: Smartphone },
-                  { key: 'windows', label: 'Windows', icon: Laptop },
-                  { key: 'macos', label: 'macOS', icon: Laptop },
-                  { key: 'tv', label: 'TV', icon: Laptop },
-                ].map((p) => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    onClick={() => onConnect?.(p.key)}
-                    className="group flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-ink/80 transition-all hover:border-mint/40 hover:bg-mint/10 hover:text-mint active:scale-95"
-                  >
-                    <p.icon
-                      size={13}
-                      className="text-muted/70 transition-colors group-hover:text-mint"
-                    />
-                    <span>{p.label}</span>
-                  </button>
-                ))}
-              </div>
-
               {onConnect && (
                 <button
                   type="button"
@@ -218,7 +195,7 @@ export function DevicesCard({
                   className="mt-4 flex h-11 w-full max-w-[260px] cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-5 font-bold text-xs text-bg shadow-[0_4px_16px_rgba(6,214,160,0.25)] transition-all hover:bg-mint/90 hover:shadow-[0_6px_22px_rgba(6,214,160,0.4)] active:scale-[0.98]"
                 >
                   <Zap size={15} />
-                  <span>Подключить в 1 клик</span>
+                  <span>Подключить устройство</span>
                 </button>
               )}
             </>
