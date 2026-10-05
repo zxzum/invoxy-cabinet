@@ -28,14 +28,13 @@ export function usePaymentStatus({
   redirectStatus?: string | null;
 }) {
   const [timedOut, setTimedOut] = useState(false);
-  const [attempt, setAttempt] = useState(0);
   const active = enabled && Boolean(method);
 
   useEffect(() => {
     if (!active || timedOut) return;
     const timer = window.setTimeout(() => setTimedOut(true), PAYMENT_MAX_POLL_MS);
     return () => window.clearTimeout(timer);
-  }, [active, timedOut, attempt]);
+  }, [active, timedOut]);
 
   const query = useQuery({
     queryKey: ['payment-status', method, paymentId ?? 'latest'],
@@ -53,8 +52,8 @@ export function usePaymentStatus({
 
   const { refetch } = query;
   const retry = useCallback(() => {
+    // Сброс timedOut перезапускает 10-минутный таймер (эффект выше).
     setTimedOut(false);
-    setAttempt((value) => value + 1);
     void refetch();
   }, [refetch]);
 
