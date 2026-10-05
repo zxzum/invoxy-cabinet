@@ -1,5 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { useEffect, useLayoutEffect, useMemo, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Sidebar } from '@/invoxystart/components/layout/Sidebar';
 import { MobileNav, isMobileNavHidden } from '@/invoxystart/components/layout/MobileNav';
@@ -18,9 +17,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 function ShellLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const reducedMotion = useReducedMotion();
-  const stageRef = useRef<HTMLDivElement>(null);
-  const routeKey = `${location.pathname}${location.search}`;
 
   const { isTelegramWebApp, isFullscreen, platform, safeAreaInset, contentSafeAreaInset } =
     useTelegramSDK();
@@ -72,15 +68,6 @@ function ShellLayout({ children }: { children: ReactNode }) {
     return `max(${computedPx}px, calc(env(safe-area-inset-top, 0px) + ${isIos ? 58 : 50}px), calc(var(--tg-content-safe-area-inset-top, 0px) + 16px))`;
   }, [isTg, isTgMobile, isTgFullscreen, contentSafeAreaInset?.top, safeAreaInset?.top, platform]);
 
-  useLayoutEffect(() => {
-    if (reducedMotion || !routeKey) return;
-    stageRef.current
-      ?.querySelectorAll<HTMLElement>('.motion-reveal, .motion-card')
-      .forEach((element, index) => {
-        element.style.setProperty('--motion-delay', `${30 + Math.min(index, 8) * 35}ms`);
-      });
-  }, [routeKey, reducedMotion]);
-
   // Disable automatic browser scroll restoration so pages don't preserve old scroll positions
   useEffect(() => {
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
@@ -125,23 +112,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
         <Sidebar onTopUp={() => navigate('/profile#top-up')} onHelp={() => navigate('/support')} />
 
         <main className="mx-auto flex min-w-0 w-full max-w-[560px] flex-1 flex-col pb-[calc(var(--mobile-nav-h)+16px)] lg:pb-[1.1vw] lg:mx-0 lg:max-w-none lg:pt-[1.1vw]">
-          {reducedMotion ? (
-            children
-          ) : (
-            <AnimatePresence mode="wait" initial={false}>
-              <m.div
-                ref={stageRef}
-                key={routeKey}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className="route-stage is-entering min-h-full w-full min-w-0"
-              >
-                {children}
-              </m.div>
-            </AnimatePresence>
-          )}
+          <div className="min-h-full w-full min-w-0">{children}</div>
         </main>
       </div>
 

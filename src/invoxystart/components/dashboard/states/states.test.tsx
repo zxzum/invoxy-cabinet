@@ -90,7 +90,7 @@ describe('RenewalCard', () => {
     expect(screen.getByText('invoxy.renewal.tariffLine')).toBeTruthy();
     expect(screen.getByText(/invoxy\.renewal\.extraLine.*"count":97/)).toBeTruthy();
     expect(screen.getByText(/invoxy\.renewal\.extraWarning/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /invoxy\.renewal\.restoreLimit/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /invoxy\.renewal\.limitReview/ })).toBeTruthy();
   });
 });
 

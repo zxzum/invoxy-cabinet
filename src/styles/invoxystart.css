@@ -51,36 +51,6 @@ html.scroll-lock-active .ix-sidebar-island {
   transform: translate3d(0, var(--scroll-lock-y, 0px), 0);
 }
 
-.invoxystart-shell .route-stage.is-entering {
-  position: relative;
-  will-change: transform, opacity;
-}
-
-.invoxystart-shell :is(.motion-reveal, .motion-card) {
-  animation: invoxy-card-enter 360ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  animation-delay: var(--motion-delay, 0ms);
-  will-change: transform, opacity;
-}
-
-.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(1) {
-  --motion-delay: 25ms;
-}
-.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(2) {
-  --motion-delay: 60ms;
-}
-.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(3) {
-  --motion-delay: 95ms;
-}
-.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(4) {
-  --motion-delay: 130ms;
-}
-.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(5) {
-  --motion-delay: 165ms;
-}
-.invoxystart-shell :is(.motion-reveal, .motion-card):nth-child(6) {
-  --motion-delay: 200ms;
-}
-
 .adaptive-dialog-backdrop {
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -261,10 +231,6 @@ html.scroll-lock-active .ix-sidebar-island {
   }
 }
 
-.invoxystart-shell .route-stage.is-entering .scroll-reveal .motion-card {
-  animation: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .invoxystart-shell .motion-card:hover,
   .invoxystart-shell .button-lift:hover {
@@ -273,26 +239,6 @@ html.scroll-lock-active .ix-sidebar-island {
   }
 }
 
-@keyframes invoxy-route-enter {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 8px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-@keyframes invoxy-card-enter {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 14px, 0) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
 @keyframes invoxy-dialog-child-in {
   from {
     opacity: 0;

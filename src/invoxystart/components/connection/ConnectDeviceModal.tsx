@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
@@ -6,7 +6,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Link2,
-  ShieldCheck,
   Smartphone,
   Laptop,
 } from '@/invoxystart/components/ui/RuneIcon';
@@ -54,16 +53,20 @@ export function ConnectDeviceModal({
   incyLink,
   initialPlatform,
 }: ConnectDeviceModalProps) {
-  const initialOS = useMemo(() => initialPlatform || detectUserOS(), [initialPlatform]);
-  const [selectedOS, setSelectedOS] = useState<PlatformKey>(initialOS);
+  const [selectedOS, setSelectedOS] = useState<PlatformKey>(
+    () => initialPlatform || detectUserOS(),
+  );
   const [qrOpen, setQrOpen] = useState(false);
   const [showInvoxyApp, setShowInvoxyApp] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
 
   useEffect(() => {
-    if (initialPlatform) {
-      setSelectedOS(initialPlatform);
-    }
-  }, [initialPlatform]);
+    if (!open) return;
+    setSelectedOS(initialPlatform || detectUserOS());
+    setQrOpen(false);
+    setShowInvoxyApp(false);
+    setManualOpen(false);
+  }, [open, initialPlatform]);
 
   const supportedInvoxyPlatform: InvoxyPlatform | null =
     selectedOS === 'android' || selectedOS === 'windows' || selectedOS === 'macos'
@@ -190,246 +193,259 @@ export function ConnectDeviceModal({
       ? findInvoxyAsset(latestInvoxyRelease.assets, supportedInvoxyPlatform)
       : undefined;
 
+  const primaryApp = currentApps[0];
+  const alternatives = currentApps.slice(1);
+
   return (
     <AdaptiveDialog
       open={open}
       onClose={onClose}
       titleId="connect-device-title"
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-xl"
     >
       <div className="flex flex-col gap-5 p-1 sm:p-2">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-mint">
-            <ShieldCheck size={16} /> Настройка подключения
-          </div>
-          <h2 id="connect-device-title" className="mt-1 text-2xl font-bold tracking-tight text-ink">
+          <h2 id="connect-device-title" className="text-2xl font-bold tracking-tight text-ink">
             Подключить устройство
           </h2>
-          <p className="mt-1 text-sm text-muted">
-            Скачайте и установите HAPP или INCY, нажмите «Подключить» и включите VPN в приложении.
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            Выберите систему устройства. Затем установите приложение и добавьте в него подписку.
           </p>
         </div>
 
-        {/* Платформы */}
-        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-          {platforms.map((p) => {
-            const active = selectedOS === p.key;
-            return (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => setSelectedOS(p.key)}
-                className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
-                  active
-                    ? 'bg-mint text-bg shadow-[0_0_15px_rgba(6,214,160,0.35)]'
-                    : 'glass-control text-muted hover:text-ink hover:bg-white/10'
-                }`}
-              >
-                <p.icon size={15} />
-                <span>{p.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <ol className="grid gap-2.5 lg:grid-cols-3">
-          <li className="glass-panel flex items-start gap-3 rounded-2xl p-3.5">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-mint/25 bg-mint/10 text-xs font-bold text-mint">
-              1
-            </span>
-            <div>
-              <p className="text-xs font-semibold text-ink">Установите приложение</p>
-              <p className="mt-1 text-xs leading-5 text-muted">Выберите HAPP или INCY ниже.</p>
-            </div>
-          </li>
-          <li className="glass-panel flex items-start gap-3 rounded-2xl p-3.5">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-mint/25 bg-mint/10 text-xs font-bold text-mint">
-              2
-            </span>
-            <div>
-              <p className="text-xs font-semibold text-ink">Импортируйте подписку</p>
-              <p className="mt-1 text-xs leading-5 text-muted">
-                Нажмите «Подключить» в карточке приложения.
-              </p>
-            </div>
-          </li>
-          <li className="glass-panel flex items-start gap-3 rounded-2xl p-3.5">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-mint/25 bg-mint/10 text-xs font-bold text-mint">
-              3
-            </span>
-            <div>
-              <p className="text-xs font-semibold text-ink">Включите VPN</p>
-              <p className="mt-1 text-xs leading-5 text-muted">
-                Активируйте переключатель в приложении.
-              </p>
-            </div>
-          </li>
-        </ol>
-
-        {/* Приложения для выбранной ОС */}
-        <div className="flex flex-col gap-3">
-          {currentApps.map((app) => (
-            <div
-              key={app.name}
-              className="glass-panel relative flex flex-col gap-3.5 rounded-2xl p-4 transition-all hover:border-mint/20"
+        <div
+          className="no-scrollbar flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label="Система устройства"
+        >
+          {platforms.map((platform) => (
+            <button
+              key={platform.key}
+              type="button"
+              aria-pressed={selectedOS === platform.key}
+              onClick={() => {
+                setSelectedOS(platform.key);
+                setShowInvoxyApp(false);
+                setManualOpen(false);
+                setQrOpen(false);
+              }}
+              className={
+                selectedOS === platform.key
+                  ? 'flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-mint px-3 text-sm font-semibold text-bg'
+                  : 'glass-control flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 text-sm font-semibold text-muted'
+              }
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/5 p-1.5">
-                    <img src={app.icon} alt={app.name} className="h-7 w-7 object-contain" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-ink">{app.name}</h3>
-                      {app.badge && (
-                        <span className="rounded-md bg-mint/15 px-2 py-0.5 text-[10px] font-bold text-mint">
-                          {app.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted">{app.description}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-2">
-                <a
-                  href={app.downloadUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.08] active:scale-[0.98] ${
-                    !app.oneClickLink ? 'sm:col-span-2' : ''
-                  }`}
-                >
-                  <ArrowRight size={14} />
-                  {app.downloadLabel}
-                </a>
-                {app.oneClickLink && (
-                  <button
-                    type="button"
-                    onClick={() => openDeepLink(app.oneClickLink)}
-                    className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-mint px-3 text-center text-xs font-bold text-bg shadow-[0_0_12px_rgba(6,214,160,0.3)] transition-all hover:bg-mint/90 active:scale-[0.98]"
-                  >
-                    <ArrowUpRight size={14} />
-                    {app.oneClickLabel || 'Подключить в 1 клик'}
-                  </button>
-                )}
-              </div>
-            </div>
+              <platform.icon size={16} />
+              {platform.label}
+            </button>
           ))}
         </div>
 
-        <details
-          className="border-t border-white/8 pt-3"
-          onToggle={(event) => setShowInvoxyApp(event.currentTarget.open)}
-        >
-          <summary className="cursor-pointer text-xs text-muted underline decoration-white/20 underline-offset-4 transition-colors hover:text-ink">
-            Дополнительно: приложение Invoxy VPN
-          </summary>
-          {showInvoxyApp && (
-            <div className="mt-3 rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-              <p className="text-xs text-muted">
-                HAPP и INCY — рекомендуемые клиенты. Invoxy VPN доступно для Android, Windows и
-                macOS.
-              </p>
-              <div aria-live="polite" className="mt-3">
-                {!supportedInvoxyPlatform ? (
+        {primaryApp && (
+          <div className="space-y-5">
+            <section className="border-t border-white/10 pt-5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-mint/15 text-sm font-bold text-mint">
+                  1
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-ink">Установите приложение</h3>
                   <p className="text-xs text-muted">
-                    {selectedOS === 'ios'
-                      ? 'Для iOS приложения Invoxy VPN нет — установите HAPP или INCY выше.'
-                      : 'Для этой платформы Invoxy VPN недоступно — выберите приложение выше.'}
+                    Рекомендуем {primaryApp.name} для этого устройства
                   </p>
-                ) : invoxyReleaseStatus === 'loading' || invoxyReleaseStatus === 'idle' ? (
-                  <p className="text-xs text-muted">Получаем актуальную версию…</p>
-                ) : invoxyReleaseStatus === 'error' ? (
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                    <span>Не удалось получить ссылку на загрузку.</span>
-                    <button
-                      type="button"
-                      onClick={retryInvoxyRelease}
-                      className="cursor-pointer font-semibold text-mint hover:underline"
-                    >
-                      Повторить
-                    </button>
-                  </div>
-                ) : invoxyAsset ? (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <a
-                      href={invoxyAsset.downloadUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="glass-control inline-flex h-9 items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.08]"
-                    >
-                      <ArrowRight size={14} /> Скачать Invoxy VPN
-                    </a>
-                    <span className="text-[11px] text-muted">
-                      {latestInvoxyRelease?.version && `Версия ${latestInvoxyRelease.version} · `}
-                      {invoxyAsset.name}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted">Файл для этого устройства сейчас недоступен.</p>
-                )}
+                </div>
               </div>
-            </div>
-          )}
-        </details>
+              <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/[.04] p-3">
+                <img src={primaryApp.icon} alt="" className="h-10 w-10 rounded-xl object-contain" />
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-ink">{primaryApp.name}</h4>
+                  <p className="text-xs leading-relaxed text-muted">{primaryApp.description}</p>
+                </div>
+              </div>
+              <a
+                href={primaryApp.downloadUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="glass-control mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold text-ink"
+              >
+                <ArrowRight size={16} /> {primaryApp.downloadLabel}
+              </a>
+            </section>
 
-        {/* Ссылка доступа и ручная настройка */}
-        <div className="glass-panel flex flex-col gap-3 rounded-2xl p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted">
-              Ключ доступа
-            </span>
+            <section className="border-t border-white/10 pt-5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-mint/15 text-sm font-bold text-mint">
+                  2
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-ink">Добавьте подписку</h3>
+                  <p className="text-xs text-muted">После установки нажмите кнопку ниже</p>
+                </div>
+              </div>
+              {primaryApp.oneClickLink ? (
+                <button
+                  type="button"
+                  onClick={() => openDeepLink(primaryApp.oneClickLink!)}
+                  className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-4 text-sm font-bold text-bg"
+                >
+                  <ArrowUpRight size={16} />{' '}
+                  {primaryApp.oneClickLabel || 'Открыть подписку в приложении'}
+                </button>
+              ) : (
+                <div className="mt-3">
+                  <p className="mb-2 text-xs leading-relaxed text-muted">
+                    Скопируйте ключ и добавьте его в приложение.
+                  </p>
+                  <LivelyCopyButton
+                    text={accessLink || ''}
+                    label="Скопировать ключ"
+                    disabled={!accessLink}
+                  />
+                </div>
+              )}
+              {!accessLink && (
+                <p className="mt-2 text-xs text-amber-200">
+                  Ссылка доступа ещё не готова. Попробуйте снова через несколько секунд.
+                </p>
+              )}
+            </section>
+
+            <section className="border-t border-white/10 pt-5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-mint/15 text-sm font-bold text-mint">
+                  3
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-ink">Включите VPN</h3>
+                  <p className="text-xs leading-relaxed text-muted">
+                    Откройте приложение и включите переключатель подключения.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {(alternatives.length > 0 || supportedInvoxyPlatform) && (
+          <section className="border-t border-white/10 pt-4">
             <button
               type="button"
-              onClick={() => setQrOpen((prev) => !prev)}
-              className="flex items-center gap-1.5 text-xs font-bold text-mint hover:underline cursor-pointer"
+              aria-expanded={showInvoxyApp}
+              onClick={() => setShowInvoxyApp((value) => !value)}
+              className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-mint"
             >
-              <Link2 size={13} /> {qrOpen ? 'Скрыть QR-код' : 'Показать QR-код'}
+              Другие приложения
             </button>
-          </div>
+            {showInvoxyApp && (
+              <div className="mt-2 space-y-3">
+                {alternatives.map((app) => (
+                  <div key={app.name} className="rounded-2xl bg-white/[.04] p-4">
+                    <h3 className="font-bold text-ink">{app.name}</h3>
+                    <p className="mt-1 text-xs text-muted">{app.description}</p>
+                    <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                      <a
+                        href={app.downloadUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-mint"
+                      >
+                        {app.downloadLabel}
+                      </a>
+                      {app.oneClickLink && (
+                        <button
+                          type="button"
+                          onClick={() => openDeepLink(app.oneClickLink!)}
+                          className="cursor-pointer font-semibold text-mint"
+                        >
+                          {app.oneClickLabel || 'Подключить'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {supportedInvoxyPlatform && (
+                  <div className="rounded-2xl bg-white/[.04] p-4 text-sm">
+                    <h3 className="font-bold text-ink">Invoxy VPN</h3>
+                    {invoxyReleaseStatus === 'loading' || invoxyReleaseStatus === 'idle' ? (
+                      <p className="mt-1 text-muted">Получаем актуальную версию…</p>
+                    ) : invoxyReleaseStatus === 'error' ? (
+                      <button
+                        type="button"
+                        onClick={retryInvoxyRelease}
+                        className="mt-2 cursor-pointer text-mint"
+                      >
+                        Не удалось загрузить ссылку · Повторить
+                      </button>
+                    ) : invoxyAsset ? (
+                      <a
+                        href={invoxyAsset.downloadUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 inline-block font-semibold text-mint"
+                      >
+                        Скачать Invoxy VPN
+                      </a>
+                    ) : (
+                      <p className="mt-1 text-muted">
+                        Файл для этого устройства сейчас недоступен.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
-          <div className="flex items-center gap-2">
-            <div className="glass-control flex h-11 min-w-0 flex-1 items-center truncate rounded-xl px-3 font-mono text-xs text-muted">
-              {accessLink || 'Ссылка формируется...'}
-            </div>
-            <div className="shrink-0 w-36">
+        <section className="border-t border-white/10 pt-4">
+          <button
+            type="button"
+            aria-expanded={manualOpen}
+            onClick={() => setManualOpen((value) => !value)}
+            className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-mint"
+          >
+            Подключить вручную
+          </button>
+          {manualOpen && (
+            <div className="mt-2 space-y-3">
+              <p className="text-xs leading-relaxed text-muted">
+                Используйте ключ, если автоматическое добавление не открыло приложение. Для другого
+                устройства можно показать QR-код.
+              </p>
+              <p className="break-all rounded-xl bg-white/[.04] p-3 font-mono text-xs text-ink">
+                {accessLink || 'Ссылка доступа пока недоступна'}
+              </p>
               <LivelyCopyButton
                 text={accessLink || ''}
-                label="Копировать"
-                copiedLabel="Скопировано!"
+                label="Скопировать ключ"
                 disabled={!accessLink}
               />
-            </div>
-          </div>
-
-          {qrOpen && accessLink && (
-            <div className="mt-2 flex flex-col items-center justify-center rounded-xl bg-white/5 p-4 animate-fade-in">
-              <QRCodeSVG
-                value={accessLink}
-                size={180}
-                bgColor="#f3f1ec"
-                fgColor="#0b0c0e"
-                includeMargin
-                className="rounded-lg shadow-md"
-              />
-              <p className="mt-2 text-center text-xs text-muted">
-                Отсканируйте камерой в приложении на другом устройстве
-              </p>
+              <button
+                type="button"
+                disabled={!accessLink}
+                onClick={() => setQrOpen((value) => !value)}
+                className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-mint disabled:opacity-50"
+              >
+                <Link2 size={16} /> {qrOpen ? 'Скрыть QR-код' : 'Показать QR-код'}
+              </button>
+              {qrOpen && accessLink && (
+                <div className="flex flex-col items-center gap-2 rounded-xl bg-white/[.04] p-4">
+                  <QRCodeSVG
+                    value={accessLink}
+                    size={180}
+                    bgColor="#f3f1ec"
+                    fgColor="#0b0c0e"
+                    includeMargin
+                    className="rounded-lg"
+                  />
+                  <p className="text-center text-xs text-muted">
+                    Отсканируйте QR-код в приложении на другом устройстве
+                  </p>
+                </div>
+              )}
             </div>
           )}
-        </div>
-
-        {/* 3 простых шага */}
-        <div className="rounded-2xl bg-white/[0.03] p-3 text-xs text-muted">
-          <div className="font-semibold text-ink mb-1.5">3 простых шага:</div>
-          <ol className="list-decimal space-y-1 pl-4">
-            <li>Установите приложение из списка выше.</li>
-            <li>Нажмите «Подключить в 1 клик» или скопируйте ключ и вставьте в приложение.</li>
-            <li>Включите защиту в приложении и наслаждайтесь интернетом без ограничений!</li>
-          </ol>
-        </div>
+        </section>
       </div>
     </AdaptiveDialog>
   );

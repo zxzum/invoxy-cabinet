@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { m } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Smartphone, Laptop, Check, X, Zap } from '@/invoxystart/components/ui/RuneIcon';
 
@@ -21,8 +20,9 @@ type DevicesCardProps = {
   onConnect?: (platform?: string) => void;
   isExpired?: boolean;
   isLoading?: boolean;
-  /** Сколько устройств показывать до «Показать все»; без значения — все. */
-  collapsedCount?: number;
+  /** Dashboard preview; the full list lives on the subscription page. */
+  previewCount?: number;
+  onManage?: () => void;
 };
 
 export function DevicesCard({
@@ -33,16 +33,23 @@ export function DevicesCard({
   onConnect,
   isExpired = false,
   isLoading = false,
-  collapsedCount,
+  previewCount,
+  onManage,
 }: DevicesCardProps) {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
   const [localDevices, setLocalDevices] = useState(initialDevices);
+  const [search, setSearch] = useState('');
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const devices = controlledDevices ?? localDevices;
-  const visibleDevices = collapsedCount && !expanded ? devices.slice(0, collapsedCount) : devices;
-  const hiddenCount = devices.length - visibleDevices.length;
+  const visibleDevices = previewCount
+    ? devices.slice(0, previewCount)
+    : devices.filter((device) =>
+        `${device.name} ${device.platform || ''}`
+          .toLocaleLowerCase()
+          .includes(search.trim().toLocaleLowerCase()),
+      );
+  const hiddenCount = previewCount ? devices.length - visibleDevices.length : 0;
 
   useEffect(() => {
     if (!pendingRemoval) return;
@@ -59,6 +66,17 @@ export function DevicesCard({
           {isLoading ? 'Загрузка…' : `${devices.length} из ${deviceLimit ?? '—'}`}
         </span>
       </div>
+
+      {!previewCount && devices.length >= 10 && (
+        <input
+          type="search"
+          aria-label={t('invoxy.dashboard.devicesSearch')}
+          placeholder={t('invoxy.dashboard.devicesSearch')}
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="glass-control mb-3 min-h-11 w-full rounded-xl px-3 text-sm text-ink placeholder:text-muted"
+        />
+      )}
 
       {isLoading ? (
         <div className="flex flex-col divide-y divide-line/40">
@@ -78,12 +96,7 @@ export function DevicesCard({
           </div>
         </div>
       ) : (
-        // Мягкая смена скелетона на список: без резкой cut-подмены при загрузке данных.
-        <m.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div>
           {visibleDevices.map((device, i) => {
             const isPendingRemoval = pendingRemoval === device.id;
 
@@ -116,55 +129,61 @@ export function DevicesCard({
                       {device.timestamp}
                     </span>
                   ) : null}
-                  <button
-                    type="button"
-                    aria-label={`Отключить ${device.name}${isPendingRemoval ? ' — нажмите ещё раз для подтверждения' : ''}`}
-                    title={
-                      isPendingRemoval ? 'Нажмите ещё раз, чтобы отключить' : 'Отключить устройство'
-                    }
-                    disabled={removing === device.id}
-                    onClick={() => {
-                      if (isPendingRemoval) {
-                        setPendingRemoval(null);
-                        setRemoving(device.id);
-                        const removal = onRemove
-                          ? onRemove(device)
-                          : setLocalDevices((prev) => prev.filter((d) => d.id !== device.id));
-                        void Promise.resolve(removal).finally(() => setRemoving(null));
-                        return;
+                  {onRemove && (
+                    <button
+                      type="button"
+                      aria-label={`Отключить ${device.name}${isPendingRemoval ? ' — нажмите ещё раз для подтверждения' : ''}`}
+                      title={
+                        isPendingRemoval
+                          ? 'Нажмите ещё раз, чтобы отключить'
+                          : 'Отключить устройство'
                       }
+                      disabled={removing === device.id}
+                      onClick={() => {
+                        if (isPendingRemoval) {
+                          setPendingRemoval(null);
+                          setRemoving(device.id);
+                          const removal = onRemove
+                            ? onRemove(device)
+                            : setLocalDevices((prev) => prev.filter((d) => d.id !== device.id));
+                          void Promise.resolve(removal).finally(() => setRemoving(null));
+                          return;
+                        }
 
-                      setPendingRemoval(device.id);
-                    }}
-                    className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border text-red-200 transition active:scale-90 ${
-                      isPendingRemoval
-                        ? 'border-red-300/75 bg-red-300/35 text-red-50'
-                        : 'border-red-300/25 bg-red-300/8 hover:border-red-300/50 hover:bg-red-300/15'
-                    }`}
-                  >
-                    {isPendingRemoval ? (
-                      <Check size={20} strokeWidth={2.2} />
-                    ) : (
-                      <X size={20} strokeWidth={2.2} />
-                    )}
-                  </button>
+                        setPendingRemoval(device.id);
+                      }}
+                      className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border text-red-200 transition active:scale-90 ${
+                        isPendingRemoval
+                          ? 'border-red-300/75 bg-red-300/35 text-red-50'
+                          : 'border-red-300/25 bg-red-300/8 hover:border-red-300/50 hover:bg-red-300/15'
+                      }`}
+                    >
+                      {isPendingRemoval ? (
+                        <Check size={20} strokeWidth={2.2} />
+                      ) : (
+                        <X size={20} strokeWidth={2.2} />
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
-          {(hiddenCount > 0 || (expanded && collapsedCount && devices.length > collapsedCount)) && (
+          {hiddenCount > 0 && onManage && (
             <button
               type="button"
-              aria-expanded={expanded}
-              onClick={() => setExpanded((value) => !value)}
-              className="mt-2 flex h-11 w-full cursor-pointer items-center justify-center rounded-2xl text-xs font-bold text-mint transition-colors hover:bg-white/[.04]"
+              onClick={onManage}
+              className="mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center rounded-2xl text-sm font-semibold text-mint transition-colors hover:bg-white/[.04]"
             >
-              {expanded
-                ? t('invoxy.dashboard.devicesCollapse')
-                : t('invoxy.dashboard.devicesShowAll', { count: devices.length })}
+              {t('invoxy.dashboard.devicesManageAll', { count: devices.length })}
             </button>
           )}
-        </m.div>
+          {devices.length > 0 && visibleDevices.length === 0 && (
+            <p className="py-5 text-center text-sm text-muted">
+              {t('invoxy.dashboard.devicesNoMatches')}
+            </p>
+          )}
+        </div>
       )}
 
       {!isLoading && devices.length === 0 && (

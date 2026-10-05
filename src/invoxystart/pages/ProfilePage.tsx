@@ -192,8 +192,7 @@ export default function ProfilePage() {
   };
   const tiers = [baseTier, ...apiTiers];
   const currentTier = tiers.find((tier) => tier.is_current) ?? baseTier;
-  const currentDiscount =
-    currentTier?.period_discounts?.['30'] ?? currentTier?.traffic_discount_percent ?? 0;
+  const currentDiscount = currentTier?.period_discounts?.['30'] ?? 0;
   return (
     <div className="flex w-full min-w-0 flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <PageHeader title={t('nav.profile')} subtitle={t('invoxy.profile.subtitle')} notifications />
@@ -316,17 +315,32 @@ export default function ProfilePage() {
         <div className="flex w-full min-w-0 flex-col gap-5">
           <Link
             to="/tariffs#loyalty"
-            className="glass-panel flex min-h-12 items-center gap-3 rounded-[22px] px-4 py-3 text-sm transition-colors hover:border-mint/30"
+            className="glass-panel motion-card group flex flex-col gap-3 rounded-[26px] border-mint/20 bg-[radial-gradient(circle_at_90%_10%,rgba(165,232,196,.12),transparent_48%)] p-5 transition-colors hover:border-mint/40"
           >
-            <span className="flex-1">
-              {loyaltyStatus === 'ready'
-                ? t('invoxy.profile.loyaltyLine', {
-                    name: currentTier?.name || 'Base',
-                    discount: currentDiscount,
-                  })
-                : t('invoxy.profile.loyaltyFallback')}
+            <span className="flex items-center gap-2 text-xs font-semibold text-mint">
+              <Sparkles size={16} /> {t('invoxy.profile.loyaltyProgram')}
             </span>
-            <ChevronRight size={16} className="text-mint" />
+            <span className="flex items-end justify-between gap-3">
+              <strong className="min-w-0 text-xl font-bold tracking-tight text-ink">
+                {loyaltyStatus === 'ready' ? currentTier.name : t('invoxy.profile.loyaltyFallback')}
+              </strong>
+              {loyaltyStatus === 'ready' && currentDiscount > 0 && (
+                <strong className="shrink-0 text-4xl font-semibold leading-none tracking-tight text-mint">
+                  {currentDiscount}%
+                </strong>
+              )}
+            </span>
+            <span className="text-sm leading-relaxed text-muted">
+              {loyaltyStatus === 'ready'
+                ? currentDiscount > 0
+                  ? t('invoxy.profile.loyaltyBenefit')
+                  : t('invoxy.profile.loyaltyBaseBenefit')
+                : t('invoxy.profile.loyaltyLoading')}
+            </span>
+            <span className="flex min-h-11 items-center gap-1 text-sm font-semibold text-mint">
+              {t('invoxy.profile.loyaltyDetails')}
+              <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+            </span>
           </Link>
 
           <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">

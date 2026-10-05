@@ -72,10 +72,6 @@ type RenewalOption = {
   is_highlighted?: boolean;
 };
 
-function asResult<T>(result: PromiseSettledResult<T>) {
-  return result.status === 'fulfilled' ? result.value : undefined;
-}
-
 export default function SubscriptionManagePage() {
   const { subscriptionId } = useParams<{ subscriptionId: string }>();
   const id = Number(subscriptionId);
@@ -84,6 +80,8 @@ export default function SubscriptionManagePage() {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [connection, setConnection] = useState<Connection | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(true);
+  const [connectionLoading, setConnectionLoading] = useState(true);
   const [renewalOptions, setRenewalOptions] = useState<RenewalOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -94,50 +92,93 @@ export default function SubscriptionManagePage() {
   const [deviceModalOpen, setDeviceModalOpen] = useState(false);
   const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
   const lastStatusRefreshAtRef = useRef(0);
+  const loadedDetailIdRef = useRef<number | null>(null);
+  const loadSequenceRef = useRef(0);
   const renewalBreakdown = useRenewalBreakdown(detail?.tariff_id ?? null, id);
   const load = useCallback(async () => {
+    const sequence = ++loadSequenceRef.current;
     if (!Number.isInteger(id) || id < 1) {
       setError('Некорректный идентификатор подписки');
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (loadedDetailIdRef.current !== id) {
+      setLoading(true);
+      setConnection(null);
+      setDevices([]);
+      setRenewalOptions([]);
+      setDevicesLoading(true);
+      setConnectionLoading(true);
+    }
     setError('');
-    const result = await Promise.allSettled([
-      subscriptionApi.getSubscriptionById(id),
-      subscriptionApi.getConnectionLink(id),
-      subscriptionApi.getDevices(id),
-      subscriptionApi.getRenewalOptions(id),
-      subscriptionApi.getSubscriptions(),
-    ]);
-    const nextDetail = asResult(result[0]) as Detail | undefined;
-    if (!nextDetail) {
+    const isCurrent = () => sequence === loadSequenceRef.current;
+    const detailRequest = subscriptionApi.getSubscriptionById(id);
+    const extras = [
+      subscriptionApi
+        .getConnectionLink(id)
+        .then((value) => {
+          if (isCurrent()) setConnection(value);
+        })
+        .catch(() => {
+          if (isCurrent()) setConnection(null);
+        })
+        .finally(() => {
+          if (isCurrent()) setConnectionLoading(false);
+        }),
+      subscriptionApi
+        .getDevices(id)
+        .then((value) => {
+          if (isCurrent()) setDevices(value.devices);
+        })
+        .catch(() => {
+          if (isCurrent()) setDevices([]);
+        })
+        .finally(() => {
+          if (isCurrent()) setDevicesLoading(false);
+        }),
+      subscriptionApi
+        .getRenewalOptions(id)
+        .then((value) => {
+          if (isCurrent()) setRenewalOptions(value);
+        })
+        .catch(() => {
+          if (isCurrent()) setRenewalOptions([]);
+        }),
+      subscriptionApi
+        .getSubscriptions()
+        .then((value) => {
+          if (isCurrent()) {
+            setHasMultiple(Boolean(value.multi_tariff_enabled && value.subscriptions.length > 1));
+          }
+        })
+        .catch(() => {}),
+    ];
+    let nextDetail: Detail;
+    try {
+      nextDetail = await detailRequest;
+    } catch {
+      if (!isCurrent()) return;
       setError('Не удалось загрузить подписку');
       setLoading(false);
       return;
     }
+    if (!isCurrent()) return;
+    loadedDetailIdRef.current = id;
     setDetail(nextDetail);
     setAutopay(Boolean(nextDetail.autopay_enabled));
-    setConnection((asResult(result[1]) as Connection | undefined) ?? null);
-    const deviceResult = asResult(result[2]) as { devices?: Device[] } | undefined;
-    setDevices(Array.isArray(deviceResult?.devices) ? deviceResult.devices : []);
-    setRenewalOptions((asResult(result[3]) as RenewalOption[] | undefined) ?? []);
-    const subscriptions = asResult(result[4]) as
-      | { subscriptions?: unknown[]; multi_tariff_enabled?: boolean }
-      | undefined;
-    setHasMultiple(
-      Boolean(
-        subscriptions?.multi_tariff_enabled && (subscriptions.subscriptions?.length ?? 0) > 1,
-      ),
-    );
     setLoading(false);
+    await Promise.all(extras);
   }, [id]);
 
   useEffect(() => {
     void load();
+    return () => {
+      loadSequenceRef.current += 1;
+    };
   }, [load]);
 
   useEffect(() => {
+    let active = true;
     const refreshStatus = () => {
       if (document.visibilityState === 'hidden' || !Number.isInteger(id) || id < 1) return;
       const now = Date.now();
@@ -146,6 +187,7 @@ export default function SubscriptionManagePage() {
       void subscriptionApi
         .getSubscriptionById(id)
         .then((latest) => {
+          if (!active) return;
           setDetail(latest);
           setAutopay(Boolean(latest.autopay_enabled));
         })
@@ -154,6 +196,7 @@ export default function SubscriptionManagePage() {
     document.addEventListener('visibilitychange', refreshStatus);
     window.addEventListener('focus', refreshStatus);
     return () => {
+      active = false;
       document.removeEventListener('visibilitychange', refreshStatus);
       window.removeEventListener('focus', refreshStatus);
     };
@@ -278,7 +321,9 @@ export default function SubscriptionManagePage() {
               />
               <DataRow
                 label="Устройства"
-                value={`${devices.length} / ${detail.device_limit ?? '—'}`}
+                value={
+                  devicesLoading ? 'Загрузка…' : `${devices.length} / ${detail.device_limit ?? '—'}`
+                }
               />
               <DataRow
                 label="Трафик"
@@ -317,7 +362,7 @@ export default function SubscriptionManagePage() {
           >
             <div className="mt-5 flex items-center gap-2">
               <div className="glass-control flex h-12 min-w-0 flex-1 items-center truncate rounded-2xl px-4 font-mono text-xs leading-none text-muted">
-                {accessLink || 'Ссылка пока недоступна'}
+                {connectionLoading ? 'Ссылка загружается…' : accessLink || 'Ссылка пока недоступна'}
               </div>
               <LivelyCopyButton
                 text={accessLink}
@@ -415,10 +460,11 @@ export default function SubscriptionManagePage() {
           </AccountPanel>
 
           <DevicesCard
+            isLoading={devicesLoading}
             devices={devices.map((device) => ({
               id: device.hwid,
               name: device.local_name || device.device_model || 'Устройство',
-              status: `${device.platform || 'Неизвестная платформа'} · ${device.hwid}`,
+              status: device.platform || 'Неизвестная платформа',
               platform: device.platform,
               timestamp: formatDate(device.created_at),
             }))}
