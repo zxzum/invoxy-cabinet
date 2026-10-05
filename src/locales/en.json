@@ -6835,5 +6835,17 @@
       "retry": "Try again",
       "close": "Close"
     }
+  },
+  "invoxy": {
+    "nav": {
+      "renewBadge": "Renew",
+      "news": "News",
+      "admin": "Admin",
+      "openSupport": "Open support",
+      "helpTitle": "Need help?",
+      "helpSubtitle": "We're here 24/7",
+      "balance": "Balance",
+      "topUp": "Top up"
+    }
   }
 }

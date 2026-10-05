@@ -54,7 +54,8 @@
     "menu": "منو",
     "gift": "هدیه",
     "connection": "اتصال",
-    "navigation": "ناوبری"
+    "navigation": "ناوبری",
+    "tariffs": "تعرفه‌ها"
   },
   "notifications": {
     "ticketNotifications": "اعلان‌های تیکت",
@@ -6124,5 +6125,17 @@
     "offer": "پیشنهاد عمومی",
     "privacy": "سیاست حفظ حریم خصوصی",
     "recurrent": "پرداخت‌های مکرر"
+  },
+  "invoxy": {
+    "nav": {
+      "renewBadge": "تمدید",
+      "news": "اخبار",
+      "admin": "مدیریت",
+      "openSupport": "باز کردن پشتیبانی",
+      "helpTitle": "کمک لازم دارید؟",
+      "helpSubtitle": "۲۴/۷ در کنار شما هستیم",
+      "balance": "موجودی",
+      "topUp": "شارژ"
+    }
   }
 }

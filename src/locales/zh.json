@@ -54,7 +54,8 @@
     "menu": "菜单",
     "gift": "赠送",
     "connection": "连接",
-    "navigation": "导航"
+    "navigation": "导航",
+    "tariffs": "方案"
   },
   "notifications": {
     "ticketNotifications": "工单通知",
@@ -6096,5 +6097,17 @@
     "offer": "公开要约",
     "privacy": "隐私政策",
     "recurrent": "定期付款"
+  },
+  "invoxy": {
+    "nav": {
+      "renewBadge": "续订",
+      "news": "新闻",
+      "admin": "管理",
+      "openSupport": "打开支持",
+      "helpTitle": "需要帮助？",
+      "helpSubtitle": "全天候为您服务",
+      "balance": "余额",
+      "topUp": "充值"
+    }
   }
 }

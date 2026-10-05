@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'rea
 import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router';
 import { Sidebar } from '@/invoxystart/components/layout/Sidebar';
-import { MobileNav } from '@/invoxystart/components/layout/MobileNav';
+import { MobileNav, isMobileNavHidden } from '@/invoxystart/components/layout/MobileNav';
 import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShapes';
 import { PaymentProvider } from '@/invoxystart/components/payments/PaymentFlow';
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
@@ -112,7 +112,10 @@ function ShellLayout({ children }: { children: ReactNode }) {
   }, [location.pathname, location.hash]);
 
   return (
-    <div className="invoxystart-shell relative isolate min-h-screen w-full overflow-x-clip text-ink">
+    <div
+      className="invoxystart-shell relative isolate min-h-screen w-full overflow-x-clip text-ink"
+      data-mobile-nav={isMobileNavHidden(location.pathname) ? 'off' : 'on'}
+    >
       <BackgroundShapes />
 
       <div
@@ -121,7 +124,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
       >
         <Sidebar onTopUp={() => navigate('/profile#top-up')} onHelp={() => navigate('/support')} />
 
-        <main className="mx-auto flex min-w-0 w-full max-w-[560px] flex-1 flex-col pb-[calc(108px+env(safe-area-inset-bottom,0px))] lg:pb-[1.1vw] lg:mx-0 lg:max-w-none lg:pt-[1.1vw]">
+        <main className="mx-auto flex min-w-0 w-full max-w-[560px] flex-1 flex-col pb-[calc(var(--mobile-nav-h)+16px)] lg:pb-[1.1vw] lg:mx-0 lg:max-w-none lg:pt-[1.1vw]">
           {reducedMotion ? (
             children
           ) : (

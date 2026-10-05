@@ -9,6 +9,17 @@
   color: #f3f1ec;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Высота нижнего дока вместе с отступом от края: от неё считаются нижний
+     отступ контента и bottom у sticky-панелей, чтобы док их не перекрывал. */
+  --mobile-nav-h: calc(80px + max(12px, env(safe-area-inset-bottom)));
+}
+.invoxystart-shell[data-mobile-nav="off"] {
+  --mobile-nav-h: 0px;
+}
+@media (min-width: 1024px) {
+  .invoxystart-shell {
+    --mobile-nav-h: 0px;
+  }
 }
 
 /* Tailwind's default spacing scale has no 13 step; InvoxyStart uses h-13 for
@@ -186,6 +197,15 @@ html.scroll-lock-active .ix-sidebar-island {
 }
 .invoxystart-shell .mobile-nav-safe {
   bottom: max(12px, env(safe-area-inset-bottom));
+}
+.invoxystart-shell .mobile-nav-scrim {
+  height: calc(var(--mobile-nav-h) + 20px);
+  background: linear-gradient(
+    to top,
+    #0b0c0e 0%,
+    rgba(11, 12, 14, 0.85) 45%,
+    rgba(11, 12, 14, 0) 100%
+  );
 }
 
 @media (max-width: 1023px) {
