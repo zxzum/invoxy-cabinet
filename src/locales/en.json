@@ -6846,6 +6846,111 @@
       "helpSubtitle": "We're here 24/7",
       "balance": "Balance",
       "topUp": "Top up"
+    },
+    "dashboard": {
+      "devicesCollapse": "Collapse",
+      "devicesShowAll": "Show all ({{count}})",
+      "more": "More: referrals, partners, news",
+      "newsTitle": "InvoxyVPN news",
+      "newsSubtitle": "Service updates and useful guides",
+      "timeLeft": "{{days}}d {{hours}}h",
+      "deviceFallback": "Device",
+      "platformUnknown": "Unknown platform",
+      "periodDays_one": "{{count}} day",
+      "periodDays_other": "{{count}} days",
+      "loading": "Loading dashboard",
+      "subscription": "Subscription",
+      "allSubscriptions": "All subscriptions →"
+    },
+    "renewal": {
+      "title": "Renewal · {{name}}",
+      "subscription": "subscription",
+      "chooseTerm": "Choose a term",
+      "allTariffs": "All plans",
+      "tariffLine": "Plan",
+      "extraLine_one": "{{count}} extra device × {{price}}/mo",
+      "extraLine_other": "{{count}} extra devices × {{price}}/mo",
+      "discountLine": "Discount",
+      "pay": "Pay · {{price}}",
+      "noTerms": "No renewal terms available",
+      "purpose": "Subscription renewal · {{term}}",
+      "params": "{{traffic}} GB · {{lte}} GB LTE · up to {{devices}} devices",
+      "extraWarning_one": "You have {{count}} device above the plan limit — +{{cost}}/mo on renewal.",
+      "extraWarning_other": "You have {{count}} devices above the plan limit — +{{cost}}/mo on renewal.",
+      "restoreLimit": "Restore plan limit ({{count}})",
+      "restoreLimitConfirm": "Tap again: limit becomes {{count}}",
+      "limitRestored": "Device limit: {{count}}",
+      "limitRestoreFailed": "Could not change the device limit"
+    },
+    "connect": {
+      "happ": "Connect in HAPP",
+      "incy": "Connect in INCY",
+      "title": "Connection",
+      "subtitle": "Add another device in one tap",
+      "firstTitle": "One step left — connect a device",
+      "firstSubtitle": "Open the app in one tap or pick a guide for your device.",
+      "allDevices": "Guides for all devices",
+      "accessKey": "Access key",
+      "keyUnavailable": "Link not available yet",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
+    "start": {
+      "eyebrow": "WELCOME",
+      "trialEyebrow": "STARTER GIFT",
+      "title": "Pick a plan and connect",
+      "subtitle": "Pay in a minute, connect in one tap on any device.",
+      "trialTitle": "Try the VPN for free",
+      "trialSubtitle": "No payment or card needed. Connect a device right after activation.",
+      "factDays_one": "{{count}} day",
+      "factDays_other": "{{count}} days",
+      "factTraffic": "{{count}} GB of traffic",
+      "factDevices_one": "{{count}} device",
+      "factDevices_other": "{{count}} devices",
+      "factNoLogs": "No logs",
+      "factAllDevices": "All devices",
+      "factSupport": "24/7 support",
+      "tryFree_one": "Try free for {{count}} day",
+      "tryFree_other": "Try free for {{count}} days",
+      "activating": "Activating…",
+      "chooseTariff": "Choose a plan",
+      "orChooseTariff": "or choose a plan now",
+      "trialActivated": "Free trial activated",
+      "trialFailed": "Could not activate the trial"
+    },
+    "ended": {
+      "eyebrow": {
+        "trial_expired": "Trial ended",
+        "paid_expired": "Subscription expired",
+        "disabled": "Subscription disabled"
+      },
+      "title": {
+        "trial_expired": "Liked it? Continue on a plan",
+        "paid_expired": "Your access has ended",
+        "disabled": "Access is suspended"
+      },
+      "subtitle": {
+        "trial_expired": "Pick a plan — your connected devices will keep working.",
+        "paid_expired": "Renew to use the VPN again.",
+        "disabled": "Contact support or get a new plan."
+      },
+      "paidSubtitle": "Plan “{{name}}” ended on {{date}}. Renew to keep your key and devices.",
+      "renew": "Renew · {{price}} for {{term}}",
+      "chooseTariff": "Choose a plan",
+      "contactSupport": "Contact support",
+      "otherTariffs": "Another plan or term",
+      "compareTariffs": "Compare plans"
+    },
+    "trial": {
+      "upgradeTitle": "Upgrade to a paid plan",
+      "upgradeSubtitle_one": "Your trial ends in {{count}} day. Get a plan now to stay connected.",
+      "upgradeSubtitle_other": "Your trial ends in {{count}} days. Get a plan now to stay connected.",
+      "upgradeCta": "Choose a plan"
+    },
+    "migration": {
+      "bannerTitle": "Move from Lazeika VPN · +5 days",
+      "bannerSubtitle": "{{tariff}} · {{days}} days left",
+      "hideBanner": "Hide"
     }
   }
 }

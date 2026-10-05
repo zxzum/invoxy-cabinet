@@ -7430,6 +7430,118 @@
       "helpSubtitle": "Мы на связи 24/7",
       "balance": "Баланс",
       "topUp": "Пополнить"
+    },
+    "dashboard": {
+      "devicesCollapse": "Свернуть",
+      "devicesShowAll": "Показать все ({{count}})",
+      "more": "Ещё: рефералы, партнёрка, новости",
+      "newsTitle": "Новости InvoxyVPN",
+      "newsSubtitle": "Обновления сервиса и полезные материалы",
+      "timeLeft": "{{days}} дн. {{hours}} ч.",
+      "deviceFallback": "Устройство",
+      "platformUnknown": "Неизвестная платформа",
+      "periodDays_one": "{{count}} день",
+      "periodDays_few": "{{count}} дня",
+      "periodDays_many": "{{count}} дней",
+      "loading": "Загрузка кабинета",
+      "subscription": "Подписка",
+      "allSubscriptions": "Все подписки →"
+    },
+    "renewal": {
+      "title": "Продление · {{name}}",
+      "subscription": "подписка",
+      "chooseTerm": "Выберите срок",
+      "allTariffs": "Все тарифы",
+      "tariffLine": "Тариф",
+      "extraLine_one": "{{count}} доп. устройство × {{price}}/мес",
+      "extraLine_few": "{{count}} доп. устройства × {{price}}/мес",
+      "extraLine_many": "{{count}} доп. устройств × {{price}}/мес",
+      "discountLine": "Скидка",
+      "pay": "Оплатить · {{price}}",
+      "noTerms": "Сроки продления недоступны",
+      "purpose": "Продление подписки · {{term}}",
+      "params": "{{traffic}} ГБ · {{lte}} ГБ LTE · до {{devices}} устройств",
+      "extraWarning_one": "У вас {{count}} устройство сверх тарифа — это +{{cost}}/мес к продлению.",
+      "extraWarning_few": "У вас {{count}} устройства сверх тарифа — это +{{cost}}/мес к продлению.",
+      "extraWarning_many": "У вас {{count}} устройств сверх тарифа — это +{{cost}}/мес к продлению.",
+      "restoreLimit": "Вернуть лимит тарифа ({{count}})",
+      "restoreLimitConfirm": "Нажмите ещё раз: лимит станет {{count}}",
+      "limitRestored": "Лимит устройств: {{count}}",
+      "limitRestoreFailed": "Не удалось изменить лимит устройств"
+    },
+    "connect": {
+      "happ": "Подключить в HAPP",
+      "incy": "Подключить в INCY",
+      "title": "Подключение",
+      "subtitle": "Добавьте ещё устройство в один клик",
+      "firstTitle": "Остался один шаг — подключите устройство",
+      "firstSubtitle": "Откройте приложение в один клик или выберите инструкцию для своего устройства.",
+      "allDevices": "Инструкции для всех устройств",
+      "accessKey": "Ключ доступа",
+      "keyUnavailable": "Ссылка пока недоступна",
+      "copy": "Копировать",
+      "copied": "Скопировано"
+    },
+    "start": {
+      "eyebrow": "ДОБРО ПОЖАЛОВАТЬ",
+      "trialEyebrow": "ПОДАРОК ДЛЯ СТАРТА",
+      "title": "Выберите тариф и подключитесь",
+      "subtitle": "Оплата за минуту, подключение в один клик на любом устройстве.",
+      "trialTitle": "Попробуйте VPN бесплатно",
+      "trialSubtitle": "Без оплаты и привязки карты. Подключите устройство сразу после активации.",
+      "factDays_one": "{{count}} день",
+      "factDays_few": "{{count}} дня",
+      "factDays_many": "{{count}} дней",
+      "factTraffic": "{{count}} ГБ трафика",
+      "factDevices_one": "{{count}} устройство",
+      "factDevices_few": "{{count}} устройства",
+      "factDevices_many": "{{count}} устройств",
+      "factNoLogs": "Без логов",
+      "factAllDevices": "Все устройства",
+      "factSupport": "Поддержка 24/7",
+      "tryFree_one": "Попробовать бесплатно {{count}} день",
+      "tryFree_few": "Попробовать бесплатно {{count}} дня",
+      "tryFree_many": "Попробовать бесплатно {{count}} дней",
+      "activating": "Активируем…",
+      "chooseTariff": "Выбрать тариф",
+      "orChooseTariff": "или сразу выбрать тариф",
+      "trialActivated": "Пробный период активирован",
+      "trialFailed": "Не удалось активировать пробный период"
+    },
+    "ended": {
+      "eyebrow": {
+        "trial_expired": "Пробный период завершён",
+        "paid_expired": "Подписка истекла",
+        "disabled": "Подписка отключена"
+      },
+      "title": {
+        "trial_expired": "Понравилось? Продолжите на тарифе",
+        "paid_expired": "Доступ закончился",
+        "disabled": "Доступ приостановлен"
+      },
+      "subtitle": {
+        "trial_expired": "Выберите тариф — подключённые устройства продолжат работать.",
+        "paid_expired": "Продлите подписку, чтобы снова пользоваться VPN.",
+        "disabled": "Напишите в поддержку или оформите новый тариф."
+      },
+      "paidSubtitle": "Тариф «{{name}}» закончился {{date}}. Продлите — ключ и устройства сохранятся.",
+      "renew": "Продлить · {{price}} за {{term}}",
+      "chooseTariff": "Выбрать тариф",
+      "contactSupport": "Написать в поддержку",
+      "otherTariffs": "Другой тариф или срок",
+      "compareTariffs": "Сравнить тарифы"
+    },
+    "trial": {
+      "upgradeTitle": "Перейдите на платный тариф",
+      "upgradeSubtitle_one": "Пробный период закончится через {{count}} день. Оформите тариф заранее — подключение не прервётся.",
+      "upgradeSubtitle_few": "Пробный период закончится через {{count}} дня. Оформите тариф заранее — подключение не прервётся.",
+      "upgradeSubtitle_many": "Пробный период закончится через {{count}} дней. Оформите тариф заранее — подключение не прервётся.",
+      "upgradeCta": "Выбрать тариф"
+    },
+    "migration": {
+      "bannerTitle": "Перенос из Лазейка ВПН · +5 дней",
+      "bannerSubtitle": "{{tariff}} · осталось {{days}} дн.",
+      "hideBanner": "Скрыть"
     }
   }
 }

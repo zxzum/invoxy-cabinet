@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { m } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Smartphone, Laptop, Check, X, Zap } from '@/invoxystart/components/ui/RuneIcon';
 
 export interface ManagedDevice {
@@ -20,6 +21,8 @@ type DevicesCardProps = {
   onConnect?: (platform?: string) => void;
   isExpired?: boolean;
   isLoading?: boolean;
+  /** Сколько устройств показывать до «Показать все»; без значения — все. */
+  collapsedCount?: number;
 };
 
 export function DevicesCard({
@@ -30,11 +33,16 @@ export function DevicesCard({
   onConnect,
   isExpired = false,
   isLoading = false,
+  collapsedCount,
 }: DevicesCardProps) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
   const [localDevices, setLocalDevices] = useState(initialDevices);
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const devices = controlledDevices ?? localDevices;
+  const visibleDevices = collapsedCount && !expanded ? devices.slice(0, collapsedCount) : devices;
+  const hiddenCount = devices.length - visibleDevices.length;
 
   useEffect(() => {
     if (!pendingRemoval) return;
@@ -76,14 +84,14 @@ export function DevicesCard({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
         >
-          {devices.map((device, i) => {
+          {visibleDevices.map((device, i) => {
             const isPendingRemoval = pendingRemoval === device.id;
 
             return (
               <div
                 key={device.id}
                 className={`flex items-center gap-3 overflow-hidden ${
-                  i < devices.length - 1 ? 'border-b border-line/60' : ''
+                  i < visibleDevices.length - 1 ? 'border-b border-line/60' : ''
                 }`}
               >
                 <div className="flex h-[68px] w-full items-center gap-3 lg:h-[clamp(54px,3.6vw,72px)] lg:gap-[clamp(12px,0.8vw,16px)]">
@@ -144,6 +152,18 @@ export function DevicesCard({
               </div>
             );
           })}
+          {(hiddenCount > 0 || (expanded && collapsedCount && devices.length > collapsedCount)) && (
+            <button
+              type="button"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((value) => !value)}
+              className="mt-2 flex h-11 w-full cursor-pointer items-center justify-center rounded-2xl text-xs font-bold text-mint transition-colors hover:bg-white/[.04]"
+            >
+              {expanded
+                ? t('invoxy.dashboard.devicesCollapse')
+                : t('invoxy.dashboard.devicesShowAll', { count: devices.length })}
+            </button>
+          )}
         </m.div>
       )}
 

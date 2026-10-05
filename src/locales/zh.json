@@ -6108,6 +6108,104 @@
       "helpSubtitle": "全天候为您服务",
       "balance": "余额",
       "topUp": "充值"
+    },
+    "dashboard": {
+      "devicesCollapse": "收起",
+      "devicesShowAll": "显示全部（{{count}}）",
+      "more": "更多：推荐、合作、新闻",
+      "newsTitle": "InvoxyVPN 新闻",
+      "newsSubtitle": "服务更新与实用资料",
+      "timeLeft": "{{days}}天{{hours}}小时",
+      "deviceFallback": "设备",
+      "platformUnknown": "未知平台",
+      "periodDays_other": "{{count}} 天",
+      "loading": "正在加载",
+      "subscription": "订阅",
+      "allSubscriptions": "全部订阅 →"
+    },
+    "renewal": {
+      "title": "续订 · {{name}}",
+      "subscription": "订阅",
+      "chooseTerm": "选择期限",
+      "allTariffs": "全部方案",
+      "tariffLine": "方案",
+      "extraLine_other": "{{count}} 台额外设备 × {{price}}/月",
+      "discountLine": "折扣",
+      "pay": "支付 · {{price}}",
+      "noTerms": "暂无可续订期限",
+      "purpose": "订阅续订 · {{term}}",
+      "params": "{{traffic}} GB · {{lte}} GB LTE · 最多 {{devices}} 台设备",
+      "extraWarning_other": "您有 {{count}} 台设备超出方案限额，续订每月加收 {{cost}}。",
+      "restoreLimit": "恢复方案限额（{{count}}）",
+      "restoreLimitConfirm": "再次点击：限额将变为 {{count}}",
+      "limitRestored": "设备限额：{{count}}",
+      "limitRestoreFailed": "无法更改设备限额"
+    },
+    "connect": {
+      "happ": "在 HAPP 中连接",
+      "incy": "在 INCY 中连接",
+      "title": "连接",
+      "subtitle": "一键添加更多设备",
+      "firstTitle": "只差一步——连接设备",
+      "firstSubtitle": "一键打开应用，或选择适合您设备的指南。",
+      "allDevices": "所有设备的指南",
+      "accessKey": "访问密钥",
+      "keyUnavailable": "链接暂不可用",
+      "copy": "复制",
+      "copied": "已复制"
+    },
+    "start": {
+      "eyebrow": "欢迎",
+      "trialEyebrow": "新手礼物",
+      "title": "选择方案并连接",
+      "subtitle": "一分钟付款，任何设备一键连接。",
+      "trialTitle": "免费试用 VPN",
+      "trialSubtitle": "无需付款或绑卡。激活后即可连接设备。",
+      "factDays_other": "{{count}} 天",
+      "factTraffic": "{{count}} GB 流量",
+      "factDevices_other": "{{count}} 台设备",
+      "factNoLogs": "无日志",
+      "factAllDevices": "全设备",
+      "factSupport": "全天候支持",
+      "tryFree_other": "免费试用 {{count}} 天",
+      "activating": "正在激活…",
+      "chooseTariff": "选择方案",
+      "orChooseTariff": "或直接选择方案",
+      "trialActivated": "试用已激活",
+      "trialFailed": "无法激活试用"
+    },
+    "ended": {
+      "eyebrow": {
+        "trial_expired": "试用已结束",
+        "paid_expired": "订阅已过期",
+        "disabled": "订阅已停用"
+      },
+      "title": {
+        "trial_expired": "喜欢吗？选择方案继续使用",
+        "paid_expired": "访问已结束",
+        "disabled": "访问已暂停"
+      },
+      "subtitle": {
+        "trial_expired": "选择方案——已连接的设备将继续工作。",
+        "paid_expired": "续订以继续使用 VPN。",
+        "disabled": "请联系支持或购买新方案。"
+      },
+      "paidSubtitle": "方案“{{name}}”已于 {{date}} 结束。续订可保留密钥和设备。",
+      "renew": "续订 · {{term}} {{price}}",
+      "chooseTariff": "选择方案",
+      "contactSupport": "联系支持",
+      "otherTariffs": "其他方案或期限",
+      "compareTariffs": "比较方案"
+    },
+    "trial": {
+      "upgradeTitle": "升级到付费方案",
+      "upgradeSubtitle_other": "试用将在 {{count}} 天后结束。提前购买方案，连接不中断。",
+      "upgradeCta": "选择方案"
+    },
+    "migration": {
+      "bannerTitle": "从 Lazeika VPN 迁移 · +5 天",
+      "bannerSubtitle": "{{tariff}} · 剩余 {{days}} 天",
+      "hideBanner": "隐藏"
     }
   }
 }

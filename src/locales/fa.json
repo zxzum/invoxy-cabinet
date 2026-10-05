@@ -6136,6 +6136,111 @@
       "helpSubtitle": "۲۴/۷ در کنار شما هستیم",
       "balance": "موجودی",
       "topUp": "شارژ"
+    },
+    "dashboard": {
+      "devicesCollapse": "بستن",
+      "devicesShowAll": "نمایش همه ({{count}})",
+      "more": "بیشتر: معرفی، همکاری، اخبار",
+      "newsTitle": "اخبار InvoxyVPN",
+      "newsSubtitle": "به‌روزرسانی‌ها و مطالب مفید",
+      "timeLeft": "{{days}} روز {{hours}} ساعت",
+      "deviceFallback": "دستگاه",
+      "platformUnknown": "پلتفرم نامشخص",
+      "periodDays_one": "{{count}} روز",
+      "periodDays_other": "{{count}} روز",
+      "loading": "در حال بارگذاری",
+      "subscription": "اشتراک",
+      "allSubscriptions": "همه اشتراک‌ها ←"
+    },
+    "renewal": {
+      "title": "تمدید · {{name}}",
+      "subscription": "اشتراک",
+      "chooseTerm": "مدت را انتخاب کنید",
+      "allTariffs": "همه تعرفه‌ها",
+      "tariffLine": "تعرفه",
+      "extraLine_one": "{{count}} دستگاه اضافه × {{price}}/ماه",
+      "extraLine_other": "{{count}} دستگاه اضافه × {{price}}/ماه",
+      "discountLine": "تخفیف",
+      "pay": "پرداخت · {{price}}",
+      "noTerms": "مدت تمدید در دسترس نیست",
+      "purpose": "تمدید اشتراک · {{term}}",
+      "params": "{{traffic}} گیگ · {{lte}} گیگ LTE · تا {{devices}} دستگاه",
+      "extraWarning_one": "{{count}} دستگاه بیش از سقف تعرفه دارید — +{{cost}} در ماه هنگام تمدید.",
+      "extraWarning_other": "{{count}} دستگاه بیش از سقف تعرفه دارید — +{{cost}} در ماه هنگام تمدید.",
+      "restoreLimit": "بازگشت به سقف تعرفه ({{count}})",
+      "restoreLimitConfirm": "دوباره بزنید: سقف {{count}} می‌شود",
+      "limitRestored": "سقف دستگاه: {{count}}",
+      "limitRestoreFailed": "تغییر سقف دستگاه ممکن نشد"
+    },
+    "connect": {
+      "happ": "اتصال در HAPP",
+      "incy": "اتصال در INCY",
+      "title": "اتصال",
+      "subtitle": "با یک لمس دستگاه دیگری اضافه کنید",
+      "firstTitle": "یک قدم مانده — دستگاه را وصل کنید",
+      "firstSubtitle": "برنامه را با یک لمس باز کنید یا راهنمای دستگاه خود را انتخاب کنید.",
+      "allDevices": "راهنمای همه دستگاه‌ها",
+      "accessKey": "کلید دسترسی",
+      "keyUnavailable": "لینک هنوز در دسترس نیست",
+      "copy": "کپی",
+      "copied": "کپی شد"
+    },
+    "start": {
+      "eyebrow": "خوش آمدید",
+      "trialEyebrow": "هدیه شروع",
+      "title": "تعرفه را انتخاب و وصل شوید",
+      "subtitle": "پرداخت در یک دقیقه، اتصال با یک لمس روی هر دستگاه.",
+      "trialTitle": "VPN را رایگان امتحان کنید",
+      "trialSubtitle": "بدون پرداخت و کارت. بلافاصله پس از فعال‌سازی وصل شوید.",
+      "factDays_one": "{{count}} روز",
+      "factDays_other": "{{count}} روز",
+      "factTraffic": "{{count}} گیگ ترافیک",
+      "factDevices_one": "{{count}} دستگاه",
+      "factDevices_other": "{{count}} دستگاه",
+      "factNoLogs": "بدون لاگ",
+      "factAllDevices": "همه دستگاه‌ها",
+      "factSupport": "پشتیبانی ۲۴/۷",
+      "tryFree_one": "{{count}} روز رایگان امتحان کنید",
+      "tryFree_other": "{{count}} روز رایگان امتحان کنید",
+      "activating": "در حال فعال‌سازی…",
+      "chooseTariff": "انتخاب تعرفه",
+      "orChooseTariff": "یا همین حالا تعرفه انتخاب کنید",
+      "trialActivated": "دوره آزمایشی فعال شد",
+      "trialFailed": "فعال‌سازی دوره آزمایشی ممکن نشد"
+    },
+    "ended": {
+      "eyebrow": {
+        "trial_expired": "دوره آزمایشی تمام شد",
+        "paid_expired": "اشتراک منقضی شد",
+        "disabled": "اشتراک غیرفعال است"
+      },
+      "title": {
+        "trial_expired": "خوشتان آمد؟ با یک تعرفه ادامه دهید",
+        "paid_expired": "دسترسی شما تمام شد",
+        "disabled": "دسترسی متوقف شده است"
+      },
+      "subtitle": {
+        "trial_expired": "تعرفه انتخاب کنید — دستگاه‌های متصل به کار ادامه می‌دهند.",
+        "paid_expired": "برای استفاده دوباره از VPN تمدید کنید.",
+        "disabled": "با پشتیبانی تماس بگیرید یا تعرفه جدید بگیرید."
+      },
+      "paidSubtitle": "تعرفه «{{name}}» در {{date}} تمام شد. با تمدید، کلید و دستگاه‌ها حفظ می‌شوند.",
+      "renew": "تمدید · {{price}} برای {{term}}",
+      "chooseTariff": "انتخاب تعرفه",
+      "contactSupport": "تماس با پشتیبانی",
+      "otherTariffs": "تعرفه یا مدت دیگر",
+      "compareTariffs": "مقایسه تعرفه‌ها"
+    },
+    "trial": {
+      "upgradeTitle": "به تعرفه پولی ارتقا دهید",
+      "upgradeSubtitle_one": "دوره آزمایشی تا {{count}} روز دیگر تمام می‌شود. از قبل تعرفه بگیرید.",
+      "upgradeSubtitle_other": "دوره آزمایشی تا {{count}} روز دیگر تمام می‌شود. از قبل تعرفه بگیرید.",
+      "upgradeCta": "انتخاب تعرفه"
+    },
+    "migration": {
+      "bannerTitle": "انتقال از Lazeika VPN · +۵ روز",
+      "bannerSubtitle": "{{tariff}} · {{days}} روز باقی‌مانده",
+      "hideBanner": "پنهان کردن"
     }
   }
 }
