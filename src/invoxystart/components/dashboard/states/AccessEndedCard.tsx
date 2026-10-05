@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from '@/invoxystart/components/ui/RuneIcon';
 import type { AccountState } from '@/invoxystart/lib/accountState';
+import { tariffsUrl } from '@/invoxystart/lib/usePurchaseIntent';
 
 const formatPrice = (price: number) => `${price.toLocaleString('ru-RU')} ₽`;
 
@@ -13,12 +14,14 @@ const formatPrice = (price: number) => `${price.toLocaleString('ru-RU')} ₽`;
 export function AccessEndedCard({
   state,
   tariffName,
+  tariffId,
   endDate,
   renewal,
   onRenew,
 }: {
   state: Extract<AccountState, 'trial_expired' | 'paid_expired' | 'disabled'>;
   tariffName?: string | null;
+  tariffId?: number | null;
   endDate?: string;
   /** Цена и срок продления по умолчанию, если продление доступно. */
   renewal?: { price: number; label: string } | null;
@@ -55,7 +58,9 @@ export function AccessEndedCard({
       </button>
       <button
         type="button"
-        onClick={() => navigate(state === 'disabled' ? '/support' : '/tariffs')}
+        onClick={() =>
+          navigate(state === 'disabled' ? '/support' : tariffsUrl(canRenew ? tariffId : null))
+        }
         className="mt-2 flex min-h-11 w-full items-center justify-center text-sm font-semibold text-muted transition-colors hover:text-ink"
       >
         {state === 'disabled'

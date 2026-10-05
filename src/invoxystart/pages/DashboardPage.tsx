@@ -426,6 +426,7 @@ export function DashboardPage() {
               <AccessEndedCard
                 state={accountState}
                 tariffName={current?.tariff_name}
+                tariffId={current?.tariff_id}
                 endDate={endDate}
                 renewal={
                   defaultTerm ? { price: defaultTerm.price, label: defaultTerm.label } : null

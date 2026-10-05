@@ -22,10 +22,12 @@ import {
   formatDate,
 } from '@/invoxystart/components/account/AccountPrimitives';
 import { RenewalCard } from '@/invoxystart/components/dashboard/RenewalCard';
+import { useRenewalBreakdown } from '@/invoxystart/lib/useRenewalBreakdown';
 import { DevicesCard } from '@/invoxystart/components/dashboard/DevicesCard';
 
 type Detail = {
   id: number;
+  tariff_id?: number | null;
   tariff_name?: string | null;
   status?: string | null;
   is_trial?: boolean;
@@ -92,6 +94,7 @@ export default function SubscriptionManagePage() {
   const [deviceModalOpen, setDeviceModalOpen] = useState(false);
   const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
   const lastStatusRefreshAtRef = useRef(0);
+  const renewalBreakdown = useRenewalBreakdown(detail?.tariff_id ?? null, id);
   const load = useCallback(async () => {
     if (!Number.isInteger(id) || id < 1) {
       setError('Некорректный идентификатор подписки');
@@ -458,6 +461,8 @@ export default function SubscriptionManagePage() {
               title={detail.tariff_name || 'Подписка'}
               subtitle={`${detail.traffic_limit_gb ?? '∞'} ГБ · ${detail.whitelist_traffic_limit_gb ?? 0} ГБ LTE · до ${detail.device_limit ?? '—'} устройств`}
               showTariffs={false}
+              breakdown={renewalBreakdown}
+              subscriptionId={id}
               terms={renewalOptions.map((option) => ({
                 id: String(option.period_days),
                 label: `${option.period_days} дней`,

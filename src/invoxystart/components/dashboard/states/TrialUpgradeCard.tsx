@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Sparkles } from '@/invoxystart/components/ui/RuneIcon';
+import { tariffsUrl } from '@/invoxystart/lib/usePurchaseIntent';
 
 /** Заметный переход с пробного периода на платный тариф. */
 export function TrialUpgradeCard({ daysLeft }: { daysLeft: number }) {
@@ -21,7 +22,7 @@ export function TrialUpgradeCard({ daysLeft }: { daysLeft: number }) {
       </div>
       <button
         type="button"
-        onClick={() => navigate('/tariffs')}
+        onClick={() => navigate(tariffsUrl('recommended'))}
         className="button-lift flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg"
       >
         {t('invoxy.trial.upgradeCta')} <ArrowRight size={16} />

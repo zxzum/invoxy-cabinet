@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronRight,
   Globe2,
@@ -8,101 +9,30 @@ import {
   Plus,
   ShieldCheck,
   Smartphone,
-  WifiOff,
+  Sparkles,
 } from '@/invoxystart/components/ui/RuneIcon';
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { PaymentMethods, usePayment } from '@/invoxystart/components/payments/PaymentFlow';
-import type { LoyaltyTiersResponse } from '@/invoxystart/api';
+import type { LoyaltyTiersResponse, TrialInfo } from '@/invoxystart/api';
 import { AddonsCard } from '@/invoxystart/components/dashboard/AddonsCard';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { promoApi, subscriptionApi } from '@/invoxystart/api';
 import { TariffSwitchModal } from '@/invoxystart/components/tariffs/TariffSwitchModal';
-
-type PlanPeriod = {
-  days: number;
-  months: number;
-  price: number;
-  basePrice: number;
-  discount: number;
-};
-type Plan = {
-  id: string;
-  name: string;
-  price: number;
-  mainTraffic: number;
-  lteTraffic: number | null;
-  devices: number;
-  maxDevices: number;
-  devicePrice: number;
-  icon: typeof ShieldCheck;
-  recommended?: boolean;
-  periods: PlanPeriod[];
-};
-
-function adaptPlan(value: Record<string, unknown>): Plan {
-  const periods = Array.isArray(value.periods)
-    ? (value.periods as Array<Record<string, unknown>>)
-    : [];
-
-  // Determine base 1-month rate to accurately evaluate period length discounts
-  const oneMonthRaw =
-    periods.find((period) => Number(period.days) === 30 || Number(period.months) === 1) ??
-    periods[0];
-  const baseMonthlyPriceKopeks = Number(
-    oneMonthRaw?.original_price_kopeks ?? oneMonthRaw?.price_kopeks ?? 0,
-  );
-
-  const adaptedPeriods = periods.map((period) => {
-    const days = Number(period.days ?? 30);
-    const months = Number(period.months ?? Math.max(1, Math.round(days / 30)));
-    const priceKopeks = Number(period.price_kopeks ?? 0);
-    const originalPriceKopeks = Number(
-      period.original_price_kopeks ?? baseMonthlyPriceKopeks * months,
-    );
-
-    const explicitDiscount = Number(period.discount_percent ?? 0);
-    const relativeDiscount =
-      originalPriceKopeks > priceKopeks && originalPriceKopeks > 0
-        ? Math.round((1 - priceKopeks / originalPriceKopeks) * 100)
-        : 0;
-    const discount = Math.max(explicitDiscount, relativeDiscount);
-
-    return {
-      days,
-      months,
-      price: priceKopeks / 100,
-      basePrice: Math.max(priceKopeks, originalPriceKopeks) / 100,
-      discount,
-    };
-  });
-  const month = adaptedPeriods.find((period) => period.days === 30) ??
-    adaptedPeriods[0] ?? { days: 30, months: 1, price: 0, discount: 0 };
-  const lteTraffic = Number(value.whitelist_traffic_limit_gb ?? 0) || null;
-  const rawName = String(value.name ?? 'Тариф').trim();
-  const baseDevices = Math.max(1, Number(value.device_limit ?? value.base_device_limit ?? 1));
-  const rawMax = Number(value.max_device_limit ?? 0);
-  const maxDevices = rawMax > 0 ? Math.max(baseDevices, rawMax) : Math.max(baseDevices, 10);
-  return {
-    id: String(value.id),
-    name: lteTraffic && !/\blte\b/i.test(rawName) ? `${rawName} LTE` : rawName,
-    price: month.price,
-    mainTraffic: Number(value.traffic_limit_gb ?? 0),
-    lteTraffic,
-    devices: baseDevices,
-    maxDevices,
-    devicePrice: Number(value.device_price_kopeks ?? 0) / 100,
-    icon: Number(value.whitelist_traffic_limit_gb ?? 0) > 0 ? Globe2 : ShieldCheck,
-    recommended: Boolean(value.is_highlighted),
-    periods: adaptedPeriods,
-  };
-}
+import { useToast } from '@/invoxystart/components/layout/ToastProvider';
+import { adaptPlan, configuratorTotal, orderPlans, type Plan } from '@/invoxystart/lib/tariffPlans';
+import { usePurchaseIntent } from '@/invoxystart/lib/usePurchaseIntent';
 
 const formatRubles = (value: number) => `${value.toLocaleString('ru-RU')} ₽`;
+const planIcon = (plan: Plan) => (plan.lteTraffic ? Globe2 : ShieldCheck);
 
 export default function TariffsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
   const [searchParams] = useSearchParams();
+  const [intent, clearIntent] = usePurchaseIntent();
   const addingSubscription = searchParams.get('mode') === 'add';
   const { pay, topUp } = usePayment();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -112,6 +42,7 @@ export default function TariffsPage() {
   const [devices, setDevices] = useState(5);
   const [switchPlan, setSwitchPlan] = useState<Plan | null>(null);
   const [switchModalOpen, setSwitchModalOpen] = useState(false);
+  const [activatingTrial, setActivatingTrial] = useState(false);
 
   const { data: tariffsData, isLoading: tariffsLoading } = useQuery({
     queryKey: ['invoxy-tariffs-page-data'],
@@ -145,14 +76,23 @@ export default function TariffsPage() {
         activeId: currentTariffId == null ? null : String(currentTariffId),
         activeSubscriptionId: activeSubscription?.id ?? null,
         activeSubscription: activeSubscription ?? null,
+        hasSubscriptions: subscriptions.length > 0,
         loyalty,
       };
     },
     staleTime: 60_000,
   });
 
-  const plans = tariffsData?.plans ?? [];
+  const hasSubscriptions = tariffsData?.hasSubscriptions ?? true;
+  const { data: trialInfo } = useQuery<TrialInfo | null>({
+    queryKey: ['invoxy-trial-info'],
+    queryFn: () => subscriptionApi.getTrialInfo().catch(() => null),
+    enabled: Boolean(tariffsData) && !hasSubscriptions,
+    staleTime: 60_000,
+  });
+
   const activeId = tariffsData?.activeId ?? null;
+  const plans = orderPlans(tariffsData?.plans ?? [], activeId);
   const activeSubscriptionId = tariffsData?.activeSubscriptionId ?? null;
   const activeSubscription = tariffsData?.activeSubscription ?? null;
   const activePlan = plans.find((plan) => plan.id === activeId);
@@ -161,151 +101,201 @@ export default function TariffsPage() {
   const selected = plans.find((plan) => plan.id === selectedId);
   const selectedPeriod =
     selected?.periods.find((period) => period.months === months) ?? selected?.periods[0];
-  const subtotal =
-    selected && selectedPeriod
-      ? (selectedPeriod.basePrice ?? selectedPeriod.price) +
-        Math.max(0, devices - selected.devices) * selected.devicePrice * selectedPeriod.months
-      : 0;
-  const total =
-    selected && selectedPeriod
-      ? Math.round(
-          selectedPeriod.price +
-            Math.max(0, devices - selected.devices) * selected.devicePrice * selectedPeriod.months,
-        )
-      : 0;
+  const totals =
+    selected && selectedPeriod ? configuratorTotal(selected, selectedPeriod, devices) : null;
 
-  function selectPlan(id: string, baseDevices: number) {
+  function selectPlan(id: string, periodDays?: number | null) {
     if (selectedId === id && dialogOpen) {
       setDialogOpen(false);
       return;
     }
     const targetPlan = plans.find((plan) => plan.id === id);
-    const initialDevices = targetPlan
-      ? Math.max(targetPlan.devices, Math.min(targetPlan.maxDevices, baseDevices))
-      : baseDevices;
+    if (!targetPlan) return;
+    // Для текущего тарифа предлагаем сохранить нынешний лимит устройств, но не
+    // выше максимума тарифа: devices — итоговый лимит после оплаты.
+    const currentDevices =
+      targetPlan.id === activeId ? targetPlan.devices + targetPlan.extraDevicesCount : 0;
+    const initialDevices = Math.max(
+      targetPlan.devices,
+      Math.min(targetPlan.maxDevices, currentDevices),
+    );
+    const initialPeriod =
+      targetPlan.periods.find((period) => period.days === periodDays) ??
+      targetPlan.periods.find((period) => period.days === 30) ??
+      targetPlan.periods[0];
     setSelectedId(id);
     setDevices(initialDevices);
-    setMonths(targetPlan?.periods[0]?.months ?? 1);
+    setMonths(initialPeriod?.months ?? 1);
     setTariffStep('options');
     setDialogOpen(true);
   }
 
-  function activate() {
-    if (!selected) return;
-    setTariffStep('payment');
+  function openPlan(plan: Plan, periodDays?: number | null) {
+    if (activeId && !addingSubscription && plan.id !== activeId) {
+      setSwitchPlan(plan);
+      setSwitchModalOpen(true);
+    } else {
+      selectPlan(plan.id, periodDays);
+    }
+  }
+
+  // Переход с предвыбранным тарифом (?plan=…&period=…) открывает его настройку.
+  const intentHandled = useRef(false);
+  useEffect(() => {
+    if (!intent || intentHandled.current || plans.length === 0) return;
+    const target =
+      intent.plan === 'recommended'
+        ? (plans.find((plan) => plan.recommended) ?? plans[0])
+        : plans.find((plan) => plan.id === intent.plan);
+    intentHandled.current = true;
+    if (target) openPlan(target, intent.periodDays);
+  });
+  // URL чистим только после закрытия: смена search перемонтирует страницу
+  // (ключ маршрута в AppShell), и открытая настройка пропала бы.
+  const closeAndClearIntent = () => {
+    if (intent) clearIntent();
+  };
+
+  async function activateTrial() {
+    setActivatingTrial(true);
+    try {
+      await subscriptionApi.activateTrial();
+      showToast(t('invoxy.start.trialActivated'), 'success');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['invoxy-trial-info'] }),
+      ]);
+      navigate('/dashboard');
+    } catch {
+      showToast(t('invoxy.start.trialFailed'), 'error');
+    } finally {
+      setActivatingTrial(false);
+    }
   }
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <PageHeader title="Тарифы" subtitle="Выберите подходящий план" />
+      <PageHeader title={t('invoxy.tariffs.title')} subtitle={t('invoxy.tariffs.subtitle')} />
       {addingSubscription && (
-        <section className="glass-panel rounded-[24px] border border-mint/25 bg-mint/[.06] px-5 py-4">
-          <p className="text-sm font-bold text-mint">Подключение дополнительной подписки</p>
-          <p className="mt-1 text-xs text-muted">
-            Новая подписка будет отдельной: со своим ключом, трафиком, устройствами и сроком.
-          </p>
+        <section className="glass-panel rounded-[22px] border border-mint/25 bg-mint/[.06] px-5 py-4">
+          <p className="text-sm font-bold text-mint">{t('invoxy.tariffs.addTitle')}</p>
+          <p className="mt-1 text-xs text-muted">{t('invoxy.tariffs.addSubtitle')}</p>
         </section>
       )}
-      {loading ? (
-        <div
-          className="glass-panel h-32 animate-pulse rounded-[30px]"
-          aria-label="Загрузка тарифов"
-        />
-      ) : (
-        <PromoGroup loyalty={tariffsData?.loyalty} />
+
+      {trialInfo?.is_available && !hasSubscriptions && (
+        <section className="glass-panel flex flex-col gap-3 rounded-[22px] border border-mint/30 bg-mint/[.06] p-4 sm:flex-row sm:items-center">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-mint/15 text-mint">
+            <Sparkles size={18} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-ink">
+              {t('invoxy.start.tryFree', { count: trialInfo.duration_days })}
+            </p>
+            <p className="mt-0.5 text-xs text-muted">{t('invoxy.tariffs.trialHint')}</p>
+          </div>
+          <button
+            type="button"
+            disabled={activatingTrial}
+            onClick={() => void activateTrial()}
+            className="button-lift h-11 shrink-0 rounded-full border border-mint/50 px-5 text-sm font-bold text-mint disabled:opacity-60"
+          >
+            {activatingTrial ? t('invoxy.start.activating') : t('invoxy.tariffs.activateTrial')}
+          </button>
+        </section>
       )}
 
-      <div className="motion-grid grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {loading && (
+        <div
+          className="glass-panel h-32 animate-pulse rounded-[28px]"
+          aria-label={t('invoxy.tariffs.loading')}
+        />
+      )}
+
+      <div className="motion-grid grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
-          const Icon = plan.icon;
+          const Icon = planIcon(plan);
           const active = plan.id === activeId;
           const expanded = plan.id === selectedId && dialogOpen;
+          // Одна primary-кнопка на экране: «Продлить» у текущего тарифа, а без
+          // подписки — «Выбрать» у рекомендованного.
+          const primary = active || (!activeId && plan.recommended);
           return (
             <article
               key={plan.id}
-              className={`glass-panel motion-card relative overflow-hidden rounded-[30px] p-5 ${plan.recommended ? 'border-mint/45 shadow-[0_0_34px_rgba(165,232,196,.08)]' : ''} ${expanded ? 'ring-1 ring-mint/70' : ''}`}
+              className={`glass-panel motion-card relative overflow-hidden rounded-[24px] p-4 sm:p-5 ${
+                active
+                  ? 'border-mint/60 shadow-[0_0_34px_rgba(165,232,196,.1)]'
+                  : plan.recommended
+                    ? 'border-mint/35'
+                    : ''
+              } ${expanded ? 'ring-1 ring-mint/70' : ''}`}
             >
-              <div className="tariff-card-head flex items-center gap-3">
-                <div className="glass-control flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-mint">
-                  <Icon size={21} strokeWidth={1.6} />
+              <div className="flex items-start gap-3">
+                <div className="glass-control flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-mint">
+                  <Icon size={20} strokeWidth={1.6} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-xl font-medium tracking-[-0.04em]">{plan.name}</h2>
-                  <p className="mt-0.5 text-[28px] font-light tracking-[-0.05em]">
-                    ₽{plan.price}
-                    <span className="ml-1 text-xs text-muted">/мес</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <h2 className="text-lg font-medium leading-tight tracking-[-0.03em]">
+                      {plan.name}
+                    </h2>
+                    {active ? (
+                      <span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-bold text-bg">
+                        {t('invoxy.tariffs.yourPlan')}
+                      </span>
+                    ) : plan.recommended ? (
+                      <span className="rounded-full border border-mint/45 px-2 py-0.5 text-[10px] font-bold text-mint">
+                        {t('invoxy.tariffs.recommended')}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 text-2xl font-light tracking-[-0.04em]">
+                    {formatRubles(plan.price)}
+                    <span className="ml-1 text-xs text-muted">{t('invoxy.tariffs.perMonth')}</span>
                   </p>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  {active && (
-                    <span className="rounded-full bg-mint px-2 py-1 text-[8px] font-bold text-bg">
-                      ВАШ ТАРИФ
-                    </span>
-                  )}
-                  <span
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[9px] font-bold ${plan.lteTraffic ? 'bg-mint text-bg' : 'bg-white/7 text-muted'}`}
-                  >
-                    {plan.lteTraffic ? <Globe2 size={11} /> : <WifiOff size={11} />}
-                    {plan.lteTraffic ? 'LTE ВКЛЮЧЁН' : 'БЕЗ LTE'}
-                  </span>
                 </div>
               </div>
-              {plan.recommended && !active && (
-                <span className="absolute right-5 top-5 rounded-full border border-mint/45 bg-bg/70 px-2.5 py-1.5 text-[8px] font-bold text-mint shadow-[0_0_18px_rgba(165,232,196,.12)]">
-                  РЕКОМЕНДУЕМ
-                </span>
-              )}
-              <div className="mt-5 grid grid-cols-2 gap-2">
-                <div className="flex flex-col justify-between rounded-[20px] bg-white/[.055] p-3.5">
-                  <p className="text-[9px] font-bold tracking-[.11em] text-muted">
-                    ОСНОВНОЙ ТРАФИК
-                  </p>
-                  <strong className="mt-auto block text-2xl font-medium">
-                    {plan.mainTraffic}
-                    <span className="ml-1 text-xs text-muted">ГБ</span>
-                  </strong>
-                </div>
-                <div
-                  className={`flex flex-col justify-between rounded-[20px] p-3.5 ${plan.lteTraffic ? 'bg-mint/10 ring-1 ring-mint/25' : 'bg-white/[.025]'}`}
+
+              <ul className="mt-3 flex flex-wrap gap-1.5 text-xs">
+                <li className="rounded-full bg-white/[.06] px-2.5 py-1.5 text-ink">
+                  {t('invoxy.tariffs.traffic', { count: plan.mainTraffic })}
+                </li>
+                <li
+                  className={`rounded-full px-2.5 py-1.5 ${plan.lteTraffic ? 'bg-mint/12 text-mint' : 'bg-white/[.04] text-muted'}`}
                 >
-                  <p
-                    className={`text-[9px] font-bold tracking-[.11em] ${plan.lteTraffic ? 'text-mint' : 'text-muted'}`}
-                  >
-                    LTE-ТРАФИК
-                  </p>
-                  {plan.lteTraffic ? (
-                    <strong className="mt-auto block text-2xl font-medium text-mint">
-                      {plan.lteTraffic}
-                      <span className="ml-1 text-xs">ГБ</span>
-                    </strong>
-                  ) : (
-                    <span className="mt-auto block text-xs font-medium text-muted/70 leading-snug">
-                      Нет в тарифе
-                    </span>
-                  )}
-                </div>
-              </div>
-              <p className="mt-3 flex items-center gap-2 text-xs text-muted">
-                <Smartphone size={14} className="text-mint" /> До {plan.devices} устройств
-              </p>
+                  {plan.lteTraffic
+                    ? t('invoxy.tariffs.lte', { count: plan.lteTraffic })
+                    : t('invoxy.tariffs.noLte')}
+                </li>
+                <li className="flex items-center gap-1 rounded-full bg-white/[.06] px-2.5 py-1.5 text-ink">
+                  <Smartphone size={12} className="text-mint" />
+                  {t('invoxy.tariffs.devices', { count: plan.devices })}
+                </li>
+              </ul>
+
+              {active && plan.extraDevicesCount > 0 && (
+                <p className="mt-2.5 text-xs text-amber-200">
+                  {t('invoxy.tariffs.extraDevicesNote', {
+                    count: plan.extraDevicesCount,
+                    cost: formatRubles(plan.extraDevicesCount * plan.devicePrice),
+                  })}
+                </p>
+              )}
+
               <button
                 type="button"
                 aria-expanded={expanded}
-                onClick={() => {
-                  if (activeId && !addingSubscription && !active) {
-                    setSwitchPlan(plan);
-                    setSwitchModalOpen(true);
-                  } else {
-                    selectPlan(plan.id, plan.devices);
-                  }
-                }}
-                className={`button-lift mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold active:scale-[.98] ${expanded || active ? 'glass-control text-ink' : 'bg-ink text-bg'}`}
+                onClick={() => openPlan(plan)}
+                className={`button-lift mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold active:scale-[.98] ${
+                  primary ? 'bg-mint text-bg' : 'glass-control text-ink'
+                }`}
               >
                 {active
-                  ? 'Продлить'
+                  ? t('invoxy.tariffs.renew')
                   : activeId && !addingSubscription
-                    ? 'Сменить тариф'
-                    : 'Выбрать'}
+                    ? t('invoxy.tariffs.switch')
+                    : t('invoxy.tariffs.choose')}
                 <ChevronRight size={16} />
               </button>
             </article>
@@ -340,7 +330,9 @@ export default function TariffsPage() {
         </section>
       )}
 
-      {selected && (
+      {!loading && <PromoGroup loyalty={tariffsData?.loyalty} />}
+
+      {selected && selectedPeriod && totals && (
         <TariffConfiguratorDialog
           open={dialogOpen}
           plan={selected}
@@ -348,14 +340,17 @@ export default function TariffsPage() {
           subscriptionId={activeSubscriptionId ?? undefined}
           months={months}
           devices={devices}
-          subtotal={subtotal}
-          total={total}
+          totals={totals}
+          discount={selectedPeriod.discount}
           tariffStep={tariffStep}
           onBack={() => setTariffStep('options')}
-          onClose={() => setDialogOpen(false)}
+          onClose={() => {
+            setDialogOpen(false);
+            closeAndClearIntent();
+          }}
           setMonths={setMonths}
           setDevices={setDevices}
-          activate={activate}
+          activate={() => setTariffStep('payment')}
           onPay={(method, request) => pay(method, request)}
           onTopUp={topUp}
           onComplete={() => {
@@ -368,15 +363,18 @@ export default function TariffsPage() {
       {switchPlan && (
         <TariffSwitchModal
           open={switchModalOpen}
-          plan={switchPlan}
-          currentPlan={plans.find((p) => p.id === activeId)}
+          plan={{ ...switchPlan, icon: planIcon(switchPlan) }}
+          currentPlan={activePlan ? { ...activePlan, icon: planIcon(activePlan) } : undefined}
           subscriptionId={activeSubscriptionId ? Number(activeSubscriptionId) : undefined}
-          onClose={() => setSwitchModalOpen(false)}
+          onClose={() => {
+            setSwitchModalOpen(false);
+            closeAndClearIntent();
+          }}
           onFallbackToPurchase={() => {
             const planToBuy = switchPlan;
             setSwitchModalOpen(false);
             if (planToBuy) {
-              selectPlan(planToBuy.id, planToBuy.devices);
+              selectPlan(planToBuy.id);
             }
           }}
           onTopUp={topUp}
@@ -386,7 +384,9 @@ export default function TariffsPage() {
   );
 }
 
+/** Уровень лояльности — компактной полосой под тарифами, а не первым экраном. */
 function PromoGroup({ loyalty: initialLoyalty }: { loyalty?: LoyaltyTiersResponse | null }) {
+  const { t } = useTranslation();
   const [loyalty, setLoyalty] = useState<LoyaltyTiersResponse | null>(initialLoyalty ?? null);
   useEffect(() => {
     if (initialLoyalty) {
@@ -398,91 +398,50 @@ function PromoGroup({ loyalty: initialLoyalty }: { loyalty?: LoyaltyTiersRespons
       .then(setLoyalty)
       .catch(() => undefined);
   }, [initialLoyalty]);
-  const apiTiers = loyalty?.tiers ?? [];
-  const baseTier = {
-    id: 0,
-    name: 'Invoxy Base',
-    threshold_rubles: 0,
-    server_discount_percent: 0,
-    traffic_discount_percent: 0,
-    device_discount_percent: 0,
-    period_discounts: { '30': 0 },
-    is_current: !apiTiers.some((tier) => tier.is_current),
-    is_achieved: true,
-  };
-  const tiers = [baseTier, ...apiTiers];
-  const current = tiers.find((tier) => tier.is_current) ?? baseTier;
+  const tiers = loyalty?.tiers ?? [];
+  if (tiers.length === 0) return null;
+  const current = tiers.find((tier) => tier.is_current);
   const next = tiers.find(
     (tier) => !tier.is_achieved && tier.threshold_rubles > (loyalty?.current_spent_rubles ?? 0),
   );
   const currentDiscount =
     current?.period_discounts?.['30'] ?? current?.traffic_discount_percent ?? 0;
-  const currentLabel = `${current?.name || 'Base'} · скидка ${currentDiscount}%`;
-  const nextText = next
-    ? `До ${next.name} осталось ${formatRubles(Math.max(0, next.threshold_rubles - (loyalty?.current_spent_rubles ?? 0)))}`
-    : 'Максимальный уровень уже достигнут';
-
-  const rawProgress = loyalty?.progress_percent ?? 0;
-  const progressPercent = Math.min(100, Math.max(0, Math.round(rawProgress * 10) / 10));
+  const progressPercent = Math.min(
+    100,
+    Math.max(0, Math.round((loyalty?.progress_percent ?? 0) * 10) / 10),
+  );
 
   return (
-    <section className="glass-panel motion-card relative overflow-hidden rounded-[30px] p-4 lg:p-8">
-      <img
-        src="/images/promo-group-bg.webp"
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-80"
-        loading="eager"
-        decoding="async"
-        // @ts-expect-error React 18 fetchPriority support
-        fetchpriority="high"
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-bg/65 via-bg/45 to-bg/20 lg:from-bg/90 lg:via-bg/75 lg:to-bg/60" />
-      <div className="relative z-10 grid gap-4 lg:grid-cols-[minmax(0,.85fr)_minmax(360px,1.15fr)] lg:items-center lg:gap-12">
-        <div>
-          <p className="text-[11px] font-bold tracking-[0.16em] text-mint">ПРОМО-ГРУППА</p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-medium tracking-[-0.035em]">{currentLabel}</h2>
-            <span className="rounded-full bg-mint px-3 py-1 text-[10px] font-bold text-bg">
-              АКТИВЕН
-            </span>
-          </div>
-          <p className="mt-2 text-sm text-muted">
-            Потрачено {formatRubles(loyalty?.current_spent_rubles ?? 0)} · {nextText}
-          </p>
-        </div>
-        <div>
-          <div className="flex items-center justify-between text-xs text-muted">
-            <span>{next ? `Прогресс до ${next.name}` : 'Прогресс'}</span>
-            <strong className="text-mint">{progressPercent}%</strong>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-mint transition-[width] duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-1 lg:mt-4 lg:gap-2">
-            {tiers.slice(0, 3).map((tier) => (
-              <div
-                key={tier.id}
-                className={`min-w-0 rounded-xl border p-2 lg:rounded-2xl lg:p-3 ${tier.is_achieved || tier.is_current ? 'border-mint/25 bg-mint/10' : 'border-white/8 bg-white/5'}`}
-              >
-                <p
-                  className={`truncate text-[10px] font-bold lg:text-xs ${tier.is_achieved || tier.is_current ? 'text-mint' : 'text-muted'}`}
-                >
-                  {tier.name} · {tier.period_discounts?.['30'] ?? tier.traffic_discount_percent}%
-                </p>
-                <p className="mt-1 truncate text-[9px] text-muted lg:text-[10px]">
-                  от {formatRubles(tier.threshold_rubles)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+    <section id="loyalty" className="glass-panel rounded-[22px] p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm font-bold text-ink">
+          {t('invoxy.tariffs.loyaltyLevel', {
+            name: current?.name ?? 'Base',
+            discount: currentDiscount,
+          })}
+        </p>
+        <p className="text-xs text-muted">
+          {next
+            ? t('invoxy.tariffs.loyaltyNext', {
+                name: next.name,
+                amount: formatRubles(
+                  Math.max(0, next.threshold_rubles - (loyalty?.current_spent_rubles ?? 0)),
+                ),
+              })
+            : t('invoxy.tariffs.loyaltyMax')}
+        </p>
+      </div>
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-mint transition-[width] duration-500"
+          style={{ width: `${progressPercent}%` }}
+        />
       </div>
     </section>
   );
 }
+
+type Totals = ReturnType<typeof configuratorTotal>;
 
 function TariffConfiguratorDialog({
   open,
@@ -491,8 +450,8 @@ function TariffConfiguratorDialog({
   subscriptionId,
   months,
   devices,
-  subtotal,
-  total,
+  totals,
+  discount,
   tariffStep,
   onBack,
   onClose,
@@ -509,8 +468,8 @@ function TariffConfiguratorDialog({
   subscriptionId?: number;
   months: number;
   devices: number;
-  subtotal: number;
-  total: number;
+  totals: Totals;
+  discount: number;
   tariffStep: 'options' | 'payment';
   onBack: () => void;
   onClose: () => void;
@@ -532,8 +491,18 @@ function TariffConfiguratorDialog({
   onTopUp: () => void;
   onComplete: () => void;
 }) {
-  const purpose = `Тариф ${plan.name} · ${months} мес.`;
+  const { t } = useTranslation();
+  const purpose = t('invoxy.tariffs.purpose', { name: plan.name, months });
   const periodDays = plan.periods.find((period) => period.months === months)?.days ?? months * 30;
+  const request = {
+    amount: totals.total,
+    purpose,
+    onComplete,
+    tariffId: Number(plan.id),
+    periodDays,
+    subscriptionId,
+    devices,
+  };
   return (
     <AdaptiveDialog
       open={open}
@@ -553,39 +522,29 @@ function TariffConfiguratorDialog({
             transition={{ duration: 0.2 }}
           >
             <div className="pr-12">
-              <p className="text-[10px] font-bold tracking-[.14em] text-mint">ОПЛАТА ТАРИФА</p>
+              <p className="text-[10px] font-bold tracking-[.14em] text-mint">
+                {t('invoxy.tariffs.paymentEyebrow')}
+              </p>
               <h2 id="tariff-dialog-title" className="mt-2 text-3xl font-medium">
                 {plan.name}
               </h2>
             </div>
-            <button type="button" onClick={onBack} className="mt-4 text-xs font-bold text-mint">
-              ← Вернуться к настройке тарифа
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-2 min-h-11 text-xs font-bold text-mint"
+            >
+              {t('invoxy.tariffs.backToOptions')}
             </button>
-            <div className="mt-4 rounded-2xl bg-white/5 p-4 text-center">
+            <div className="mt-2 rounded-2xl bg-white/5 p-4 text-center">
               <p className="text-sm text-muted">{purpose}</p>
-              <strong className="mt-2 block text-3xl font-medium">{formatRubles(total)}</strong>
+              <strong className="mt-2 block text-3xl font-medium">
+                {formatRubles(totals.total)}
+              </strong>
             </div>
             <PaymentMethods
-              request={{
-                amount: total,
-                purpose,
-                onComplete,
-                tariffId: Number(plan.id),
-                periodDays,
-                subscriptionId,
-                devices,
-              }}
-              onPay={(method) =>
-                onPay(method, {
-                  amount: total,
-                  purpose,
-                  onComplete,
-                  tariffId: Number(plan.id),
-                  periodDays,
-                  subscriptionId,
-                  devices,
-                })
-              }
+              request={request}
+              onPay={(method) => onPay(method, request)}
               onTopUp={onTopUp}
             />
           </m.div>
@@ -602,8 +561,8 @@ function TariffConfiguratorDialog({
               active={active}
               months={months}
               devices={devices}
-              subtotal={subtotal}
-              total={total}
+              totals={totals}
+              discount={discount}
               setMonths={setMonths}
               setDevices={setDevices}
               activate={activate}
@@ -620,8 +579,8 @@ function TariffConfigurator({
   active,
   months,
   devices,
-  subtotal,
-  total,
+  totals,
+  discount,
   setMonths,
   setDevices,
   activate,
@@ -630,33 +589,33 @@ function TariffConfigurator({
   active: boolean;
   months: number;
   devices: number;
-  subtotal: number;
-  total: number;
+  totals: Totals;
+  discount: number;
   setMonths: (value: number) => void;
   setDevices: React.Dispatch<React.SetStateAction<number>>;
   activate: () => void;
 }) {
-  const extraDevicePrice = Math.max(0, devices - plan.devices) * plan.devicePrice;
-  const saving = Math.max(0, subtotal - total);
-  const savingPercent = subtotal > 0 && saving > 0 ? Math.round((saving / subtotal) * 100) : 0;
+  const { t } = useTranslation();
   const prevDevicesRef = useRef(devices);
   const counterDirection = devices >= prevDevicesRef.current ? 1 : -1;
+  const extraDevices = Math.max(0, devices - plan.devices);
+  const currentLimit = active ? plan.devices + plan.extraDevicesCount : null;
 
   return (
     <div className="mx-auto w-full max-w-xl">
       <div className="pr-12">
-        <p className="text-[10px] font-bold tracking-[.14em] text-mint">НАСТРОЙКА ТАРИФА</p>
+        <p className="text-[10px] font-bold tracking-[.14em] text-mint">
+          {t('invoxy.tariffs.configEyebrow')}
+        </p>
         <h2 id="tariff-dialog-title" className="mt-2 text-3xl font-medium">
           {plan.name}
         </h2>
-        <p className="mt-1 text-sm text-muted">Выберите срок и количество устройств</p>
       </div>
-      <div className="mt-7">
-        <p className="text-xs font-semibold text-muted">Срок подписки</p>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-5">
+        <p className="text-xs font-semibold text-muted">{t('invoxy.tariffs.term')}</p>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {plan.periods.map((period) => {
-            const price = Math.round(period.price + extraDevicePrice * period.months);
-            const label = period.days === 30 ? `${period.months} мес` : `${period.days} дней`;
+            const price = configuratorTotal(plan, period, devices).total;
             const isSelected = months === period.months;
             return (
               <button
@@ -664,7 +623,7 @@ function TariffConfigurator({
                 key={period.days}
                 aria-pressed={isSelected}
                 onClick={() => setMonths(period.months)}
-                className={`relative button-lift flex min-h-[66px] min-w-0 flex-col items-center justify-center rounded-2xl px-2 text-xs transition-colors cursor-pointer ${
+                className={`relative button-lift flex min-h-[60px] min-w-0 flex-col items-center justify-center rounded-2xl px-2 text-xs transition-colors cursor-pointer ${
                   isSelected ? 'text-bg font-bold' : 'glass-control text-muted hover:text-ink'
                 }`}
               >
@@ -676,14 +635,16 @@ function TariffConfigurator({
                   />
                 )}
                 <span className="relative z-10">
-                  {label}{' '}
+                  {t('invoxy.dashboard.periodDays', { count: period.days })}
                   {period.discount > 0 && (
                     <span
                       className={
-                        isSelected ? 'text-bg/75 font-semibold' : 'text-mint font-semibold'
+                        isSelected
+                          ? 'ml-1 text-bg/75 font-semibold'
+                          : 'ml-1 text-mint font-semibold'
                       }
                     >
-                      · −{period.discount}%
+                      −{period.discount}%
                     </span>
                   )}
                 </span>
@@ -693,25 +654,29 @@ function TariffConfigurator({
           })}
         </div>
       </div>
-      <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl bg-white/[.035] p-4">
+      <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl bg-white/[.035] p-4">
         <div>
-          <p className="text-xs font-semibold text-muted">Устройства</p>
+          <p className="text-xs font-semibold text-muted">{t('invoxy.tariffs.devicesLabel')}</p>
           <p className="mt-1 text-[11px] text-muted">
             {plan.maxDevices > plan.devices
-              ? `От ${plan.devices} до ${plan.maxDevices} · +${formatRubles(plan.devicePrice)} за дополнительное`
-              : `${plan.devices} шт. (максимум для тарифа)`}
+              ? t('invoxy.tariffs.devicesRange', {
+                  min: plan.devices,
+                  max: plan.maxDevices,
+                  price: formatRubles(plan.devicePrice),
+                })
+              : t('invoxy.tariffs.devicesFixed', { count: plan.devices })}
           </p>
         </div>
         <div className="glass-control flex items-center rounded-full p-1">
           <button
             type="button"
-            aria-label="Уменьшить"
+            aria-label={t('invoxy.tariffs.decrease')}
             disabled={devices <= plan.devices}
             onClick={() => {
               prevDevicesRef.current = devices;
               setDevices((value) => Math.max(plan.devices, value - 1));
             }}
-            className="button-lift grid h-9 w-9 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-30"
+            className="button-lift grid h-11 w-11 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Minus size={15} />
           </button>
@@ -732,48 +697,68 @@ function TariffConfigurator({
           </div>
           <button
             type="button"
-            aria-label="Увеличить"
+            aria-label={t('invoxy.tariffs.increase')}
             disabled={devices >= plan.maxDevices}
             onClick={() => {
               prevDevicesRef.current = devices;
               setDevices((value) => Math.min(plan.maxDevices, value + 1));
             }}
-            className="button-lift grid h-9 w-9 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-30"
+            className="button-lift grid h-11 w-11 place-items-center rounded-full disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Plus size={15} />
           </button>
         </div>
       </div>
-      <div className="mt-5 rounded-2xl border border-mint/15 bg-mint/[.06] p-4 text-center overflow-hidden">
-        <span className="block text-lg font-medium text-muted">Итого</span>
-        <AnimatePresence mode="popLayout" initial={false}>
-          <m.div
-            key={`${months}-${devices}-${total}`}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {saving > 0 && (
-              <span className="mt-1 block text-sm text-muted line-through">
-                {formatRubles(subtotal)}
+      {currentLimit !== null && currentLimit !== devices && (
+        <p className="mt-2 rounded-2xl border border-amber-300/25 bg-amber-300/[.07] p-3 text-xs text-amber-100">
+          {t('invoxy.tariffs.limitChangeNote', { current: currentLimit, next: devices })}
+        </p>
+      )}
+      <div className="mt-4 overflow-hidden rounded-2xl border border-mint/15 bg-mint/[.06] p-4">
+        <div className="flex flex-col gap-1.5 text-xs text-muted">
+          <div className="flex justify-between gap-3">
+            <span>{t('invoxy.renewal.tariffLine')}</span>
+            <span className="tabular-nums text-ink">{formatRubles(totals.tariffBase)}</span>
+          </div>
+          {extraDevices > 0 && (
+            <div className="flex justify-between gap-3">
+              <span>
+                {t('invoxy.renewal.extraLine', {
+                  count: extraDevices,
+                  price: formatRubles(plan.devicePrice),
+                })}
               </span>
-            )}
-            <strong className="block text-4xl font-medium">{formatRubles(total)}</strong>
-            {saving > 0 && (
-              <span className="mt-1 block text-xs font-medium text-mint">
-                Выгода {formatRubles(saving)} {savingPercent > 0 ? `(−${savingPercent}%) ` : ''}к
-                помесячной оплате
-              </span>
-            )}
-          </m.div>
-        </AnimatePresence>
+              <span className="tabular-nums text-ink">{formatRubles(totals.extra)}</span>
+            </div>
+          )}
+          {totals.saving > 0 && (
+            <div className="flex justify-between gap-3 text-mint">
+              <span>{t('invoxy.tariffs.tariffDiscount', { percent: discount })}</span>
+              <span className="tabular-nums">−{formatRubles(totals.saving)}</span>
+            </div>
+          )}
+        </div>
+        <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-white/10 pt-3">
+          <span className="text-sm text-muted">{t('invoxy.tariffs.total')}</span>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <m.strong
+              key={`${months}-${devices}-${totals.total}`}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="text-3xl font-medium"
+            >
+              {formatRubles(totals.total)}
+            </m.strong>
+          </AnimatePresence>
+        </div>
         <button
           type="button"
           onClick={activate}
-          className="button-lift mt-4 h-12 w-full rounded-full bg-mint px-6 text-sm font-bold text-bg transition-transform active:scale-[0.99] cursor-pointer"
+          className="button-lift mt-4 h-12 w-full cursor-pointer rounded-full bg-mint px-6 text-sm font-bold text-bg transition-transform active:scale-[0.99]"
         >
-          {active ? 'Продлить тариф' : 'Подключить тариф'}
+          {active ? t('invoxy.tariffs.renewPlan') : t('invoxy.tariffs.connectPlan')}
         </button>
       </div>
     </div>
