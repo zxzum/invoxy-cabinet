@@ -12,11 +12,14 @@ import { Spinner } from '@/components/ui/Spinner';
 import { AnimatedCheckmark } from '@/components/ui/AnimatedCheckmark';
 import { AnimatedCrossmark } from '@/components/ui/AnimatedCrossmark';
 import { loadTopUpPendingInfo, clearTopUpPendingInfo } from '../utils/topUpStorage';
-import { isPaidStatus, isFailedStatus } from '../utils/paymentStatus';
-
-// ── Constants ────────────────────────────────────────────────
-const MAX_POLL_MS = 10 * 60 * 1000; // 10 minutes
-const POLL_INTERVAL_MS = 3_000;
+import { isFailedStatus } from '../utils/paymentStatus';
+import { resolvePaymentView } from '../utils/paymentResolution';
+import {
+  PAYMENT_MAX_POLL_MS,
+  PAYMENT_POLL_INTERVAL_MS,
+  usePaymentStatus,
+  useRefreshOnPaymentChange,
+} from '../hooks/usePaymentStatus';
 
 // ── Sub-components ───────────────────────────────────────────
 
@@ -137,6 +140,35 @@ function FailedState({ amountKopeks }: { amountKopeks: number | null }) {
   );
 }
 
+function VerifyingState({ amountKopeks }: { amountKopeks: number | null }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center gap-6 text-center"
+    >
+      <Spinner className="h-16 w-16 border-[3px]" />
+      <div>
+        <h1 className="text-xl font-bold text-dark-50">{t('invoxy.payment.verifying')}</h1>
+        <p className="mt-2 text-sm text-dark-400">{t('invoxy.payment.verifyingDesc')}</p>
+      </div>
+      {amountKopeks != null && amountKopeks > 0 && (
+        <AmountDisplay amountKopeks={amountKopeks} label={t('balance.topUpResult.topUpAmount')} />
+      )}
+      <button
+        type="button"
+        onClick={() => navigate('/dashboard', { replace: true })}
+        className="text-xs text-dark-400 underline hover:text-dark-200 transition-colors"
+      >
+        {t('invoxy.payment.toDashboard')}
+      </button>
+    </motion.div>
+  );
+}
+
 function TimeoutState({ onRetry, onGoBack }: { onRetry: () => void; onGoBack: () => void }) {
   const { t } = useTranslation();
 
@@ -194,8 +226,6 @@ export default function TopUpResult() {
   const queryClient = useQueryClient();
   const refreshUser = useAuthStore((state) => state.refreshUser);
   const haptic = useHaptic();
-  const pollStart = useRef(Date.now());
-  const [pollTimedOut, setPollTimedOut] = useState(false);
   const hapticFiredRef = useRef(false);
   const cleanedUpRef = useRef(false);
 
@@ -208,114 +238,64 @@ export default function TopUpResult() {
   const { method: methodFromPath } = useParams<{ method?: string }>();
   const methodFromUrl = searchParams.get('method') || methodFromPath || null;
 
-  // Detect if user arrived via redirect with success param (no polling needed)
-  const redirectStatus = searchParams.get('status') || searchParams.get('payment');
-  const isRedirectSuccess = redirectStatus
-    ? isPaidStatus(redirectStatus)
-    : searchParams.get('success') === 'true';
+  // INVOXY: ?status=success is only a hint from the provider and arrives before the
+  // webhook; the backend payment status stays the source of truth (polling continues).
+  const redirectStatus =
+    searchParams.get('status') ||
+    searchParams.get('payment') ||
+    (searchParams.get('success') === 'true' ? 'success' : null);
   const isRedirectFailed = redirectStatus ? isFailedStatus(redirectStatus) : false;
 
-  // Determine if we can poll by specific payment_id (need method + numeric payment_id)
   const parsedPaymentId = pendingInfo?.payment_id ? parseInt(pendingInfo.payment_id, 10) : NaN;
-  const canPollById =
-    !!(pendingInfo?.method_id && !Number.isNaN(parsedPaymentId)) &&
-    !isRedirectSuccess &&
-    !isRedirectFailed;
+  const hasStoredPayment = !!(pendingInfo?.method_id && !Number.isNaN(parsedPaymentId));
+  const pollMethod = hasStoredPayment ? pendingInfo?.method_id : methodFromUrl;
 
-  // Fallback: poll by method via /latest endpoint when no sessionStorage data
-  const canPollByMethod =
-    !canPollById && !!methodFromUrl && !isRedirectSuccess && !isRedirectFailed;
-
-  // Poll payment status by specific ID (primary path — sessionStorage available)
-  const { data: paymentStatus, refetch } = useQuery({
-    queryKey: ['topup-status', pendingInfo?.method_id, parsedPaymentId],
-    queryFn: () => balanceApi.getPendingPayment(pendingInfo?.method_id ?? '', parsedPaymentId),
-    enabled: canPollById && !pollTimedOut,
-    refetchInterval: (query) => {
-      const payment = query.state.data;
-      if (!payment) return POLL_INTERVAL_MS;
-
-      if (payment.is_paid || isPaidStatus(payment.status) || isFailedStatus(payment.status)) {
-        return false;
-      }
-
-      if (Date.now() - pollStart.current > MAX_POLL_MS) {
-        setPollTimedOut(true);
-        return false;
-      }
-
-      return POLL_INTERVAL_MS;
-    },
-    retry: 2,
+  // Poll the stored payment by id, or the latest payment of the method from the URL.
+  const tracked = usePaymentStatus({
+    method: pollMethod,
+    paymentId: hasStoredPayment ? parsedPaymentId : null,
+    enabled: !isRedirectFailed,
+    redirectStatus,
   });
 
-  // Poll payment status by method latest (fallback — external browser, no sessionStorage)
-  const { data: latestPayment, refetch: refetchLatest } = useQuery({
-    queryKey: ['topup-status-latest', methodFromUrl],
-    queryFn: () => balanceApi.getLatestPayment(methodFromUrl || ''),
-    enabled: canPollByMethod && !pollTimedOut,
-    refetchInterval: (query) => {
-      const payment = query.state.data;
-      if (!payment) return POLL_INTERVAL_MS;
-
-      if (payment.is_paid || isPaidStatus(payment.status) || isFailedStatus(payment.status)) {
-        return false;
-      }
-
-      if (Date.now() - pollStart.current > MAX_POLL_MS) {
-        setPollTimedOut(true);
-        return false;
-      }
-
-      return POLL_INTERVAL_MS;
-    },
-    retry: 2,
-  });
-
-  // Fallback 3: query active invoice from /pending-payments if no sessionStorage data and no URL method
-  const canPollActiveFromApi =
-    !canPollById && !canPollByMethod && !isRedirectSuccess && !isRedirectFailed;
+  // No stored payment and no method: watch the user's pending payments list instead of
+  // trusting the redirect (no split-brain between sessionStorage and the URL).
+  const canPollActiveFromApi = !pollMethod && !isRedirectFailed;
+  const [listTimedOut, setListTimedOut] = useState(false);
+  useEffect(() => {
+    if (!canPollActiveFromApi) return;
+    const timer = window.setTimeout(() => setListTimedOut(true), PAYMENT_MAX_POLL_MS);
+    return () => window.clearTimeout(timer);
+  }, [canPollActiveFromApi]);
+  const isActivePending = (p: { is_active?: boolean; is_paid?: boolean; status?: string }) =>
+    Boolean(
+      p.is_active ||
+        (!p.is_paid &&
+          !['canceled', 'cancelled', 'fail', 'failed', 'declined', 'expired'].includes(
+            (p.status || '').toLowerCase(),
+          )),
+    );
   const { data: activePendingData, isLoading: isActivePendingLoading } = useQuery({
     queryKey: ['pendingPayments'],
     queryFn: () => balanceApi.getPendingPayments({ per_page: 5 }),
-    enabled: canPollActiveFromApi && !pollTimedOut,
-    refetchInterval: (query) => {
-      const items = query.state.data?.items ?? [];
-      const active = items.find(
-        (p) =>
-          p.is_active ||
-          (!p.is_paid &&
-            !['canceled', 'cancelled', 'fail', 'failed', 'declined', 'expired'].includes(
-              (p.status || '').toLowerCase(),
-            )),
-      );
-      if (!active) return false;
-      return POLL_INTERVAL_MS;
-    },
+    enabled: canPollActiveFromApi && !listTimedOut,
+    refetchInterval: (query) =>
+      (query.state.data?.items ?? []).some(isActivePending) || redirectStatus
+        ? PAYMENT_POLL_INTERVAL_MS
+        : false,
     retry: 2,
   });
+  const activePaymentFromApi = activePendingData?.items?.find(isActivePending);
 
-  const activePaymentFromApi = activePendingData?.items?.find(
-    (p) =>
-      p.is_active ||
-      (!p.is_paid &&
-        !['canceled', 'cancelled', 'fail', 'failed', 'declined', 'expired'].includes(
-          (p.status || '').toLowerCase(),
-        )),
-  );
-
-  // Merge all polling sources
-  const effectivePayment = paymentStatus ?? latestPayment ?? activePaymentFromApi;
+  const effectivePayment = tracked.payment ?? activePaymentFromApi ?? null;
+  const view = pollMethod
+    ? tracked.view
+    : resolvePaymentView({ payment: effectivePayment, redirectStatus, timedOut: listTimedOut });
 
   const handleRetryPoll = useCallback(() => {
-    pollStart.current = Date.now();
-    setPollTimedOut(false);
-    if (canPollById) {
-      refetch();
-    } else {
-      refetchLatest();
-    }
-  }, [canPollById, refetch, refetchLatest]);
+    setListTimedOut(false);
+    tracked.retry();
+  }, [tracked]);
 
   const handleGoBack = useCallback(() => {
     clearTopUpPendingInfo();
@@ -342,36 +322,34 @@ export default function TopUpResult() {
     navigate,
   ]);
 
-  // Determine current visual state
   const amountKopeks = effectivePayment?.amount_kopeks ?? pendingInfo?.amount_kopeks ?? null;
+  const resolvedPaid = view === 'paid';
+  const resolvedFailed = view === 'failed';
 
-  const resolvedPaid =
-    isRedirectSuccess ||
-    effectivePayment?.is_paid ||
-    (effectivePayment && isPaidStatus(effectivePayment.status));
+  // Balance, transactions and subscriptions are refreshed on every status change and
+  // again after 3 s and 10 s: crediting and the cart auto-purchase finish after the webhook.
+  useRefreshOnPaymentChange(view, () => {
+    queryClient.invalidateQueries({ queryKey: ['balance'] });
+    queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    queryClient.invalidateQueries({
+      predicate: (query) =>
+        Array.isArray(query.queryKey) &&
+        typeof query.queryKey[0] === 'string' &&
+        (query.queryKey[0] === 'subscription' || query.queryKey[0].startsWith('invoxy-')),
+    });
+    queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+    queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
+    if (view === 'paid') void refreshUser();
+  });
 
-  const resolvedFailed =
-    isRedirectFailed || (effectivePayment && isFailedStatus(effectivePayment.status));
-
-  // Clean up sessionStorage and invalidate queries when payment resolves
+  // Clean up sessionStorage when payment resolves
   useEffect(() => {
     if (cleanedUpRef.current) return;
-    if (resolvedPaid) {
-      cleanedUpRef.current = true;
-      clearTopUpPendingInfo();
-      queryClient.invalidateQueries({ queryKey: ['balance'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({
-        predicate: (query) => Array.isArray(query.queryKey) && query.queryKey[0] === 'subscription',
-      });
-      queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
-      queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
-      refreshUser();
-    } else if (resolvedFailed) {
+    if (resolvedPaid || resolvedFailed) {
       cleanedUpRef.current = true;
       clearTopUpPendingInfo();
     }
-  }, [resolvedPaid, resolvedFailed, queryClient, refreshUser]);
+  }, [resolvedPaid, resolvedFailed]);
 
   // Haptic feedback on status resolution (fire once)
   useEffect(() => {
@@ -396,8 +374,10 @@ export default function TopUpResult() {
           <SuccessState amountKopeks={amountKopeks} />
         ) : resolvedFailed ? (
           <FailedState amountKopeks={amountKopeks} />
-        ) : pollTimedOut ? (
+        ) : view === 'timeout' ? (
           <TimeoutState onRetry={handleRetryPoll} onGoBack={handleGoBack} />
+        ) : view === 'verifying' ? (
+          <VerifyingState amountKopeks={amountKopeks} />
         ) : (
           <PendingState amountKopeks={amountKopeks} />
         )}

@@ -6244,6 +6244,16 @@
       "total": "合计",
       "renewPlan": "续订方案",
       "connectPlan": "开通方案"
+    },
+    "payment": {
+      "verifying": "正在确认付款…",
+      "verifyingDesc": "支付方已接受付款，正在等待确认。通常需要一分钟以内，余额和订阅会自动更新。",
+      "toDashboard": "返回首页",
+      "sheetFailed": "付款失败",
+      "sheetFailedDesc": "付款被拒绝或账单已过期。未扣款，请重试。",
+      "sheetTimeout": "尚未收到确认",
+      "sheetTimeoutDesc": "如果您已付款，确认后订阅将自动激活。账单状态可在个人资料中查看。",
+      "activating": "已收到付款，正在激活订阅…"
     }
   }
 }

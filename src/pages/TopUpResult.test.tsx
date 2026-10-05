@@ -9,6 +9,7 @@ import { loadTopUpPendingInfo, saveTopUpPendingInfo } from '../utils/topUpStorag
 const mocks = vi.hoisted(() => ({
   getPendingPayment: vi.fn(),
   getLatestPayment: vi.fn(),
+  getPendingPayments: vi.fn(),
   refreshUser: vi.fn(),
   notification: vi.fn(),
 }));
@@ -17,6 +18,7 @@ vi.mock('../api/balance', () => ({
   balanceApi: {
     getPendingPayment: mocks.getPendingPayment,
     getLatestPayment: mocks.getLatestPayment,
+    getPendingPayments: mocks.getPendingPayments,
   },
 }));
 vi.mock('../store/auth', () => ({
@@ -75,6 +77,7 @@ beforeEach(() => {
   mocks.refreshUser.mockResolvedValue(undefined);
   mocks.getPendingPayment.mockResolvedValue(pendingPayment());
   mocks.getLatestPayment.mockResolvedValue(pendingPayment());
+  mocks.getPendingPayments.mockResolvedValue({ items: [], total: 0 });
 });
 
 afterEach(() => {
@@ -113,4 +116,69 @@ describe('TopUpResult', () => {
     expect(mocks.notification).toHaveBeenCalledWith('error');
     expect(mocks.getPendingPayment).not.toHaveBeenCalled();
   });
+
+  it('keeps verifying after a success redirect until the backend confirms', async () => {
+    saveStored();
+    renderPage('/balance/top-up/result?status=success');
+
+    expect(await screen.findByText('invoxy.payment.verifying')).toBeTruthy();
+    await waitFor(() => expect(mocks.getPendingPayment).toHaveBeenCalledWith('acquiring', 77));
+    expect(screen.queryByText('balance.topUpResult.success')).toBeNull();
+    expect(loadTopUpPendingInfo()).not.toBeNull();
+  });
+
+  it('shows success once a late webhook marks the payment paid', async () => {
+    saveStored();
+    mocks.getPendingPayment
+      .mockResolvedValueOnce(pendingPayment())
+      .mockResolvedValue({ ...pendingPayment('succeeded'), is_paid: true });
+    renderPage('/balance/top-up/result?status=success');
+
+    expect(await screen.findByText('invoxy.payment.verifying')).toBeTruthy();
+    expect(
+      await screen.findByText('balance.topUpResult.success', {}, { timeout: 5_000 }),
+    ).toBeTruthy();
+    await waitFor(() => expect(mocks.refreshUser).toHaveBeenCalled());
+    expect(loadTopUpPendingInfo()).toBeNull();
+  });
+
+  it('shows failure reported by the backend', async () => {
+    saveStored();
+    mocks.getPendingPayment.mockResolvedValue(pendingPayment('canceled'));
+    renderPage('/balance/top-up/result');
+
+    expect(await screen.findByText('balance.topUpResult.failed')).toBeTruthy();
+    expect(mocks.notification).toHaveBeenCalledWith('error');
+  });
+
+  it('times out after 10 minutes without confirmation', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      saveStored();
+      renderPage('/balance/top-up/result?status=success');
+      expect(await screen.findByText('invoxy.payment.verifying')).toBeTruthy();
+      await vi.advanceTimersByTimeAsync(10 * 60 * 1000 + 1);
+      expect(await screen.findByText('balance.topUpResult.timeout')).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not claim success after a redirect without any stored payment', async () => {
+    renderPage('/balance/top-up/result?status=success');
+
+    expect(await screen.findByText('invoxy.payment.verifying')).toBeTruthy();
+    await waitFor(() => expect(mocks.getPendingPayments).toHaveBeenCalled());
+    expect(screen.queryByText('balance.topUpResult.success')).toBeNull();
+  });
 });
+
+function saveStored() {
+  saveTopUpPendingInfo({
+    amount_kopeks: 12345,
+    method_id: 'acquiring',
+    method_name: 'API acquiring',
+    payment_id: '77',
+    created_at: Date.now(),
+  });
+}

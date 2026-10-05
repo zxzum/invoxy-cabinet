@@ -6990,6 +6990,16 @@
       "total": "Total",
       "renewPlan": "Renew plan",
       "connectPlan": "Get this plan"
+    },
+    "payment": {
+      "verifying": "Checking your payment…",
+      "verifyingDesc": "The provider accepted the payment; we are waiting for confirmation. This usually takes up to a minute — balance and subscription update automatically.",
+      "toDashboard": "Go to dashboard",
+      "sheetFailed": "Payment failed",
+      "sheetFailedDesc": "The payment was declined or the invoice expired. You were not charged — please try again.",
+      "sheetTimeout": "No confirmation yet",
+      "sheetTimeoutDesc": "If you paid, the subscription activates automatically once confirmed. The invoice status is in your profile.",
+      "activating": "Payment received, activating your subscription…"
     }
   }
 }
