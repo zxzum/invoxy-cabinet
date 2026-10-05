@@ -310,6 +310,34 @@ export default function ProfilePage() {
               )}
             </div>
           </section>
+
+          <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[.13em] text-mint">
+                  Сотрудничество
+                </p>
+                <h2 className="mt-1 text-lg font-medium">Партнёрская программа</h2>
+              </div>
+              <span className="rounded-full bg-mint/10 px-3 py-1 text-[10px] font-bold text-mint">
+                ДО 50%
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              Зарабатывайте на рекомендациях InvoxyVPN. Индивидуальные промокоды, повышенная ставка
+              отчислений и регулярные выплаты.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/partner')}
+              className="button-lift mt-4 flex h-13 w-full items-center justify-between rounded-2xl bg-white/5 px-4 text-sm active:scale-[.99]"
+            >
+              <span className="flex items-center gap-3">
+                <Sparkles size={18} className="text-mint" /> Подать заявку на партнерство
+              </span>
+              <ChevronRight size={16} />
+            </button>
+          </section>
         </div>
 
         <div className="flex w-full min-w-0 flex-col gap-5">
@@ -400,34 +428,6 @@ export default function ProfilePage() {
               actionLabel={telegramLinked ? undefined : 'Привязать Telegram'}
               onAction={() => setTelegramDialogOpen(true)}
             />
-          </section>
-
-          <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[.13em] text-mint">
-                  Сотрудничество
-                </p>
-                <h2 className="mt-1 text-lg font-medium">Партнёрская программа</h2>
-              </div>
-              <span className="rounded-full bg-mint/10 px-3 py-1 text-[10px] font-bold text-mint">
-                ДО 50%
-              </span>
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-muted">
-              Зарабатывайте на рекомендациях InvoxyVPN. Индивидуальные промокоды, повышенная ставка
-              отчислений и регулярные выплаты.
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate('/partner')}
-              className="button-lift mt-4 flex h-13 w-full items-center justify-between rounded-2xl bg-white/5 px-4 text-sm active:scale-[.99]"
-            >
-              <span className="flex items-center gap-3">
-                <Sparkles size={18} className="text-mint" /> Подать заявку на партнерство
-              </span>
-              <ChevronRight size={16} />
-            </button>
           </section>
 
           <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
