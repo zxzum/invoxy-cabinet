@@ -93,6 +93,8 @@ export default function TariffsPage() {
 
   const activeId = tariffsData?.activeId ?? null;
   const plans = orderPlans(tariffsData?.plans ?? [], activeId);
+  const recommendedPlanId =
+    plans.find((plan) => plan.recommended)?.id ?? plans.find((plan) => plan.lteTraffic)?.id ?? null;
   const activeSubscriptionId = tariffsData?.activeSubscriptionId ?? null;
   const activeSubscription = tariffsData?.activeSubscription ?? null;
   const activePlan = plans.find((plan) => plan.id === activeId);
@@ -216,18 +218,19 @@ export default function TariffsPage() {
         {plans.map((plan) => {
           const Icon = planIcon(plan);
           const active = plan.id === activeId;
+          const recommended = plan.id === recommendedPlanId;
           const expanded = plan.id === selectedId && dialogOpen;
           // Одна primary-кнопка на экране: «Продлить» у текущего тарифа, а без
           // подписки — «Выбрать» у рекомендованного.
-          const primary = active || (!activeId && plan.recommended);
+          const primary = active || (!activeId && recommended);
           return (
             <article
               key={plan.id}
-              className={`glass-panel motion-card relative overflow-hidden rounded-[24px] p-4 sm:p-5 ${
+              className={`glass-panel motion-card relative flex h-full flex-col overflow-hidden rounded-[24px] p-4 sm:p-5 ${
                 active
                   ? 'border-mint/60 shadow-[0_0_34px_rgba(165,232,196,.1)]'
-                  : plan.recommended
-                    ? 'border-mint/35'
+                  : recommended
+                    ? 'border-mint/70 bg-mint/[.06] shadow-[0_0_40px_rgba(165,232,196,.16)] ring-1 ring-mint/35'
                     : ''
               } ${expanded ? 'ring-1 ring-mint/70' : ''}`}
             >
@@ -244,8 +247,8 @@ export default function TariffsPage() {
                       <span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-bold text-bg">
                         {t('invoxy.tariffs.yourPlan')}
                       </span>
-                    ) : plan.recommended ? (
-                      <span className="rounded-full border border-mint/45 px-2 py-0.5 text-[10px] font-bold text-mint">
+                    ) : recommended ? (
+                      <span className="rounded-full bg-mint px-2.5 py-1 text-[10px] font-bold text-bg shadow-[0_0_16px_rgba(165,232,196,.25)]">
                         {t('invoxy.tariffs.recommended')}
                       </span>
                     ) : null}
@@ -283,21 +286,23 @@ export default function TariffsPage() {
                 </p>
               )}
 
-              <button
-                type="button"
-                aria-expanded={expanded}
-                onClick={() => openPlan(plan)}
-                className={`button-lift mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold active:scale-[.98] ${
-                  primary ? 'bg-mint text-bg' : 'glass-control text-ink'
-                }`}
-              >
-                {active
-                  ? t('invoxy.tariffs.renew')
-                  : activeId && !addingSubscription
-                    ? t('invoxy.tariffs.switch')
-                    : t('invoxy.tariffs.choose')}
-                <ChevronRight size={16} />
-              </button>
+              <div className="mt-auto pt-4">
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  onClick={() => openPlan(plan)}
+                  className={`button-lift flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold active:scale-[.98] ${
+                    primary ? 'bg-mint text-bg' : 'glass-control text-ink'
+                  }`}
+                >
+                  {active
+                    ? t('invoxy.tariffs.renew')
+                    : activeId && !addingSubscription
+                      ? t('invoxy.tariffs.switch')
+                      : t('invoxy.tariffs.choose')}
+                  <ChevronRight size={16} />
+                </button>
+              </div>
             </article>
           );
         })}

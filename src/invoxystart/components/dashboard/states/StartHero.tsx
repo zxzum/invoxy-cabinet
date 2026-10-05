@@ -45,7 +45,7 @@ export function StartHero({
           aria-hidden="true"
           width="200"
           height="200"
-          className="pointer-events-none absolute -top-14 -right-8 z-0 hidden w-[270px] select-none drop-shadow-[0_20px_30px_rgba(0,0,0,.35)] min-[1450px]:block 2xl:-right-12 2xl:w-[330px]"
+          className="pointer-events-none absolute -top-3 -right-8 z-0 hidden w-[230px] select-none drop-shadow-[0_20px_30px_rgba(0,0,0,.35)] min-[1450px]:block 2xl:-top-4 2xl:-right-12 2xl:w-[300px]"
         />
       )}
       <div className="relative z-10 max-w-[560px]">
