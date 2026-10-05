@@ -6941,7 +6941,16 @@
       "chooseTariff": "Choose a plan",
       "orChooseTariff": "or choose a plan now",
       "trialActivated": "Free trial activated",
-      "trialFailed": "Could not activate the trial"
+      "trialFailed": "Could not activate the trial",
+      "guideTitle": "How to get connected",
+      "guideSubtitle": "After activation, your connection link and instructions will appear in your dashboard.",
+      "stepAccess": "Activate access",
+      "stepAccessTrial": "Start with a free trial. No card needed.",
+      "stepAccessTariff": "Choose a plan and duration.",
+      "stepInstall": "Install an app",
+      "stepInstallText": "Choose a client for iOS, Android, or Windows.",
+      "stepConnect": "Turn on the VPN",
+      "stepConnectText": "Import your subscription and enable the VPN in the app."
     },
     "ended": {
       "eyebrow": {

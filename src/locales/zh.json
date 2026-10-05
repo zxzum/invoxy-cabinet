@@ -6172,7 +6172,16 @@
       "chooseTariff": "选择方案",
       "orChooseTariff": "或直接选择方案",
       "trialActivated": "试用已激活",
-      "trialFailed": "无法激活试用"
+      "trialFailed": "无法激活试用",
+      "guideTitle": "如何开始连接",
+      "guideSubtitle": "激活后，连接链接和操作说明会显示在您的控制台中。",
+      "stepAccess": "激活访问权限",
+      "stepAccessTrial": "先免费试用，无需绑定银行卡。",
+      "stepAccessTariff": "选择合适的方案和时长。",
+      "stepInstall": "安装应用",
+      "stepInstallText": "选择适用于 iOS、Android 或 Windows 的客户端。",
+      "stepConnect": "开启 VPN",
+      "stepConnectText": "导入订阅，然后在应用中开启 VPN。"
     },
     "ended": {
       "eyebrow": {

@@ -8,6 +8,7 @@ import { ConnectPanel } from '@/invoxystart/components/dashboard/ConnectPanel';
 import { RenewalCard, defaultTermId } from '@/invoxystart/components/dashboard/RenewalCard';
 import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
 import { StartHero } from '@/invoxystart/components/dashboard/states/StartHero';
+import { StartSteps } from '@/invoxystart/components/dashboard/states/StartSteps';
 import { AccessEndedCard } from '@/invoxystart/components/dashboard/states/AccessEndedCard';
 import { TrialUpgradeCard } from '@/invoxystart/components/dashboard/states/TrialUpgradeCard';
 import { MoreSection } from '@/invoxystart/components/dashboard/states/MoreSection';
@@ -376,11 +377,14 @@ export function DashboardPage() {
 
           {isOnboarding ? (
             <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,.75fr)]">
-              <StartHero
-                trialInfo={trialInfo}
-                activating={activatingTrial}
-                onActivateTrial={() => void activateTrial()}
-              />
+              <div className="flex min-w-0 flex-col gap-5">
+                <StartHero
+                  trialInfo={trialInfo}
+                  activating={activatingTrial}
+                  onActivateTrial={() => void activateTrial()}
+                />
+                <StartSteps trialAvailable={Boolean(trialInfo?.is_available)} />
+              </div>
               <MoreSection />
             </div>
           ) : accountState === 'trial_expired' ||

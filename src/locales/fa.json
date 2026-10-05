@@ -6206,7 +6206,16 @@
       "chooseTariff": "انتخاب تعرفه",
       "orChooseTariff": "یا همین حالا تعرفه انتخاب کنید",
       "trialActivated": "دوره آزمایشی فعال شد",
-      "trialFailed": "فعال‌سازی دوره آزمایشی ممکن نشد"
+      "trialFailed": "فعال‌سازی دوره آزمایشی ممکن نشد",
+      "guideTitle": "چطور متصل شوید",
+      "guideSubtitle": "پس از فعال‌سازی، لینک اتصال و راهنما در پنل شما نمایش داده می‌شود.",
+      "stepAccess": "دسترسی را فعال کنید",
+      "stepAccessTrial": "با دوره آزمایشی رایگان و بدون کارت شروع کنید.",
+      "stepAccessTariff": "تعرفه و مدت دلخواه را انتخاب کنید.",
+      "stepInstall": "برنامه را نصب کنید",
+      "stepInstallText": "برنامه مناسب iOS، Android یا Windows را انتخاب کنید.",
+      "stepConnect": "VPN را روشن کنید",
+      "stepConnectText": "اشتراک را وارد کنید و VPN را در برنامه روشن کنید."
     },
     "ended": {
       "eyebrow": {
