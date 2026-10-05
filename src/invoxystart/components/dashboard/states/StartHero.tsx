@@ -36,22 +36,16 @@ export function StartHero({
         ];
 
   return (
-    <section className="glass-panel motion-card relative w-full overflow-hidden rounded-[28px] border border-mint/25 p-5 shadow-[0_0_38px_rgba(165,232,196,.06)] sm:p-7">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(165,232,196,.16),transparent_45%)]" />
-      <img
-        src="/images/trial-ribbon.png"
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-14 -top-6 w-[150px] opacity-40 mix-blend-screen sm:-right-6 sm:w-[220px] sm:opacity-60"
-      />
+    <section className="glass-panel motion-card relative w-full overflow-hidden rounded-[24px] border border-mint/25 p-5 shadow-[0_0_32px_rgba(165,232,196,.05)] sm:p-6">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_12%,rgba(165,232,196,.12),transparent_38%)]" />
       <div className="relative z-10 max-w-[560px]">
         <p className="text-[11px] font-bold tracking-[.16em] text-mint">
           {trialAvailable ? t('invoxy.start.trialEyebrow') : t('invoxy.start.eyebrow')}
         </p>
-        <h2 className="mt-2 max-w-[80%] text-[26px] font-medium leading-tight tracking-[-.04em] sm:text-4xl">
+        <h2 className="mt-2 max-w-[24ch] text-[26px] font-medium leading-tight tracking-[-.04em] sm:text-4xl">
           {trialAvailable ? t('invoxy.start.trialTitle') : t('invoxy.start.title')}
         </h2>
-        <p className="mt-2 max-w-[88%] text-sm leading-relaxed text-muted">
+        <p className="mt-2 max-w-[48ch] text-sm leading-relaxed text-muted">
           {trialAvailable ? t('invoxy.start.trialSubtitle') : t('invoxy.start.subtitle')}
         </p>
         <ul className="mt-4 flex flex-wrap gap-1.5">

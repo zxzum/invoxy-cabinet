@@ -21,9 +21,9 @@ export function MoreSection({ showReferral = true }: { showReferral?: boolean })
   ];
 
   return (
-    <section className="w-full">
+    <section className="mx-auto w-full max-w-4xl">
       <h2 className="mb-3 text-base font-bold text-ink">{t('invoxy.dashboard.opportunities')}</h2>
-      <div className="grid w-full max-w-xl gap-2">
+      <div className="grid w-full gap-2">
         {links.map(({ to, icon: Icon, title, description }) => (
           <Link
             key={to}

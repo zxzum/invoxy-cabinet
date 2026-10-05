@@ -265,6 +265,7 @@ export function DashboardPage() {
     });
 
   const isTrial = accountState === 'trial_active';
+  const isOnboarding = accountState === 'none' || accountState === 'trial_available';
   const showMigrationBanner =
     Boolean(migrationData?.eligible && migrationData?.candidate) &&
     !isMigrationModalOpen &&
@@ -373,12 +374,15 @@ export function DashboardPage() {
             </div>
           )}
 
-          {accountState === 'none' || accountState === 'trial_available' ? (
-            <StartHero
-              trialInfo={trialInfo}
-              activating={activatingTrial}
-              onActivateTrial={() => void activateTrial()}
-            />
+          {isOnboarding ? (
+            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,.75fr)]">
+              <StartHero
+                trialInfo={trialInfo}
+                activating={activatingTrial}
+                onActivateTrial={() => void activateTrial()}
+              />
+              <MoreSection />
+            </div>
           ) : accountState === 'trial_expired' ||
             accountState === 'paid_expired' ||
             accountState === 'disabled' ? (
@@ -437,7 +441,7 @@ export function DashboardPage() {
             </div>
           )}
 
-          <MoreSection />
+          {!isOnboarding && <MoreSection />}
         </div>
       )}
 
