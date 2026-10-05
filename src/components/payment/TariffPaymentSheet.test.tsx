@@ -312,4 +312,49 @@ describe('TariffPaymentSheet', () => {
       expect(screen.getByText('Способ оплаты')).toBeTruthy();
     });
   });
+
+  it('does not report success just because the balance grew', async () => {
+    const { balanceApi } = await import('@/api/balance');
+    vi.mocked(balanceApi.getBalance).mockResolvedValue({
+      balance_kopeks: 50_000,
+      balance_rubles: 500,
+    } as never);
+    vi.mocked(balanceApi.getLatestPayment).mockResolvedValue({
+      status: 'pending',
+      is_paid: false,
+    } as never);
+    const { onPaid } = renderSheet();
+
+    fireEvent.click(await screen.findByText('Банковская карта'));
+    await waitFor(() => expect(balanceApi.getLatestPayment).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.queryByText(resolveRu('payment.tariffSheet.successTitle') ?? '§')).toBeNull();
+    expect(onPaid).not.toHaveBeenCalled();
+  });
+
+  it('shows a failure when the provider rejects the invoice', async () => {
+    const { balanceApi } = await import('@/api/balance');
+    vi.mocked(balanceApi.getLatestPayment).mockResolvedValue({
+      status: 'failed',
+      is_paid: false,
+    } as never);
+    renderSheet();
+
+    fireEvent.click(await screen.findByText('Банковская карта'));
+    expect(await screen.findByText(resolveRu('invoxy.payment.sheetFailed') ?? '§')).toBeTruthy();
+  });
+
+  it('finishes only when the provider marks the invoice paid', async () => {
+    const { balanceApi } = await import('@/api/balance');
+    vi.mocked(balanceApi.getLatestPayment).mockResolvedValue({
+      status: 'succeeded',
+      is_paid: true,
+    } as never);
+    renderSheet();
+
+    fireEvent.click(await screen.findByText('Банковская карта'));
+    expect(
+      await screen.findByText(resolveRu('payment.tariffSheet.successText') ?? '§'),
+    ).toBeTruthy();
+  });
 });

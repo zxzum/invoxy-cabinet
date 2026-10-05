@@ -12,6 +12,7 @@ import { openPaymentUrl } from '@/utils/openPaymentUrl';
 import { getErrorMessage } from '@/utils/subscriptionHelpers';
 import { AnimatedNumber, staggerEntrance, SuccessBurst } from '@/components/motion';
 import { useCurrency } from '@/hooks/useCurrency';
+import { usePaymentStatus, useRefreshOnPaymentChange } from '@/hooks/usePaymentStatus';
 import { ActiveInvoiceCard } from '@/components/balance/ActiveInvoiceCard';
 
 // ──────────────────────────────────────────────────────────────────
@@ -22,7 +23,7 @@ import { ActiveInvoiceCard } from '@/components/balance/ActiveInvoiceCard';
 // платёж только на разницу. Состояния:
 //   methods  — выбор способа оплаты (только доступные)
 //   creating — создание invoice
-//   waiting  — ссылка открыта, поллим getLatestPayment + getBalance
+//   waiting  — ссылка открыта, поллим статус платежа (usePaymentStatus)
 //   success  — SuccessBurst, затем onPaid (родитель уходит на подписку)
 // ──────────────────────────────────────────────────────────────────
 
@@ -51,8 +52,6 @@ interface CreatedInvoice {
   paymentUrl: string;
   priceKopeks: number;
 }
-
-const POLL_INTERVAL_MS = 3000;
 
 // Бэк (purchase-tariff/invoice) на 400 кладёт в detail структурированный dict:
 // { code: 'balance_sufficient', message, price_kopeks, balance_kopeks } —
@@ -118,41 +117,26 @@ export function TariffPaymentSheet({
     };
   }, [open, t]);
 
-  // Поллинг: провайдер отметил оплату ИЛИ баланс дотянулся до цены
-  // (вебхук зачислил — корзина активирует тариф на бэке независимо от UI).
-  // Шит закрыт — поллинг не стартует: иначе запросы молотили бы бесконечно,
-  // а поздний onPaid увёл бы юзера со страницы без предупреждения.
+  // INVOXY: success only from the provider's payment status. A grown balance is not proof
+  // (referral bonus or promo credit), and failed/expired/timeout must be shown, not spun forever.
+  const { view: paymentView, retry: retryPaymentCheck } = usePaymentStatus({
+    method: invoice?.method,
+    enabled: stage === 'waiting' && open && Boolean(invoice),
+  });
   useEffect(() => {
-    if (stage !== 'waiting' || !invoice || !open) return;
-    let cancelled = false;
-    const tick = async () => {
-      try {
-        const [latest, balance] = await Promise.all([
-          balanceApi.getLatestPayment(invoice.method).catch(() => null),
-          balanceApi.getBalance().catch(() => null),
-        ]);
-        if (cancelled || !aliveRef.current || paidRef.current) return;
-        const paidByProvider = latest?.is_paid === true;
-        const paidByBalance = balance ? balance.balance_kopeks >= invoice.priceKopeks : false;
-        if (paidByProvider || paidByBalance) {
-          paidRef.current = true;
-          setStage('success');
-          queryClient.invalidateQueries({ queryKey: ['subscription'] });
-          queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
-          queryClient.invalidateQueries({ queryKey: ['balance'] });
-          queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
-        }
-      } catch {
-        // следующий тик повторит
-      }
-    };
-    const timer = window.setInterval(tick, POLL_INTERVAL_MS);
-    tick();
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
-  }, [stage, invoice, open, queryClient]);
+    if (stage !== 'waiting' || paymentView !== 'paid' || paidRef.current || !aliveRef.current) {
+      return;
+    }
+    paidRef.current = true;
+    setStage('success');
+  }, [stage, paymentView]);
+  // Тариф активируется из корзины после зачисления — обновляем подписку повторно.
+  useRefreshOnPaymentChange(stage === 'success' ? 'paid' : 'pending', () => {
+    queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] });
+    queryClient.invalidateQueries({ queryKey: ['balance'] });
+    queryClient.invalidateQueries({ queryKey: ['purchase-options'] });
+  });
 
   // Успех: короткая пауза на анимацию галки — и уходим к подписке.
   useEffect(() => {
@@ -319,7 +303,42 @@ export function TariffPaymentSheet({
             </div>
           </div>
 
-          {stage === 'waiting' ? (
+          {stage === 'waiting' && (paymentView === 'failed' || paymentView === 'timeout') ? (
+            <div className="space-y-3 py-2 text-center">
+              <p className="text-sm font-semibold text-dark-100">
+                {t(
+                  paymentView === 'failed'
+                    ? 'invoxy.payment.sheetFailed'
+                    : 'invoxy.payment.sheetTimeout',
+                )}
+              </p>
+              <p className="text-xs text-dark-400">
+                {t(
+                  paymentView === 'failed'
+                    ? 'invoxy.payment.sheetFailedDesc'
+                    : 'invoxy.payment.sheetTimeoutDesc',
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (paymentView === 'timeout') {
+                    retryPaymentCheck();
+                    return;
+                  }
+                  setActiveInvoice(null);
+                  setInvoice(null);
+                  setStage('methods');
+                  queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
+                }}
+                className="w-full rounded-xl bg-accent-500 px-6 py-3 text-sm font-medium text-on-accent"
+              >
+                {t(paymentView === 'timeout' ? 'common.retry' : 'payment.tariffSheet.title', {
+                  tariff: tariffName,
+                })}
+              </button>
+            </div>
+          ) : stage === 'waiting' ? (
             <div className="space-y-4 py-2">
               <div className="flex items-center justify-center gap-3 py-2">
                 <span className="h-5 w-5 animate-spin rounded-full border-2 border-accent-500/30 border-t-accent-400" />
