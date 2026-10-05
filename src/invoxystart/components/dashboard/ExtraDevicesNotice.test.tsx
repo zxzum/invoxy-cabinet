@@ -53,3 +53,42 @@ it('explains disconnections and requires explicit confirmation before reducing t
   fireEvent.click(screen.getByRole('button', { name: /limitConfirmAction/ }));
   await waitFor(() => expect(reduceDevices).toHaveBeenCalledWith(100, 7));
 });
+
+it('does not show a reduction action when the server says it is unavailable', async () => {
+  getDeviceReductionInfo.mockResolvedValue({
+    available: false,
+    reason_code: 'at_minimum',
+    current_device_limit: 15,
+    min_device_limit: 15,
+    can_reduce: 0,
+    connected_devices_count: 0,
+  });
+
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <ExtraDevicesNotice extraCount={10} monthlyCost={300} baseLimit={15} subscriptionId={7} />
+    </QueryClientProvider>,
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: /limitReview/ }));
+
+  expect(await screen.findByRole('alert')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /limitConfirmAction/ })).toBeNull();
+});
+
+it('prevents overlapping reduction availability checks', async () => {
+  getDeviceReductionInfo.mockReturnValue(new Promise(() => {}));
+
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <ExtraDevicesNotice extraCount={10} monthlyCost={300} baseLimit={15} subscriptionId={7} />
+    </QueryClientProvider>,
+  );
+
+  const reviewButton = screen.getByRole('button', { name: /limitReview/ });
+  fireEvent.click(reviewButton);
+
+  expect(reviewButton.hasAttribute('disabled')).toBe(true);
+  fireEvent.click(reviewButton);
+  expect(getDeviceReductionInfo).toHaveBeenCalledTimes(1);
+});

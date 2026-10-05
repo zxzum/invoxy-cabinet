@@ -33,6 +33,13 @@ export function ExtraDevicesNotice({
 
   if (extraCount <= 0) return null;
 
+  const canReduce = Boolean(
+    !infoError &&
+      info?.available &&
+      info.current_device_limit > baseLimit &&
+      baseLimit >= info.min_device_limit,
+  );
+
   async function review() {
     setOpen(true);
     setLoadingInfo(true);
@@ -48,13 +55,7 @@ export function ExtraDevicesNotice({
   }
 
   async function reduce() {
-    if (
-      !info?.available ||
-      info.current_device_limit <= baseLimit ||
-      baseLimit < info.min_device_limit ||
-      busy
-    )
-      return;
+    if (!canReduce || busy) return;
     setBusy(true);
     try {
       await subscriptionApi.reduceDevices(baseLimit, subscriptionId ?? undefined);
@@ -89,7 +90,8 @@ export function ExtraDevicesNotice({
         <button
           type="button"
           onClick={() => void review()}
-          className="mt-2 flex min-h-11 cursor-pointer items-center font-semibold underline underline-offset-4"
+          disabled={loadingInfo || busy}
+          className="mt-2 flex min-h-11 cursor-pointer items-center font-semibold underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t('invoxy.renewal.limitReview')}
         </button>
@@ -108,10 +110,7 @@ export function ExtraDevicesNotice({
           </p>
           {loadingInfo ? (
             <p className="text-sm text-muted">{t('invoxy.renewal.limitChecking')}</p>
-          ) : infoError ||
-            !info?.available ||
-            info.current_device_limit <= baseLimit ||
-            baseLimit < info.min_device_limit ? (
+          ) : !canReduce ? (
             <p role="alert" className="text-sm text-amber-200">
               {t('invoxy.renewal.limitUnavailable')}
             </p>
@@ -126,20 +125,16 @@ export function ExtraDevicesNotice({
             </>
           )}
           <div className="flex flex-col gap-2 sm:flex-row-reverse">
-            <button
-              type="button"
-              onClick={() => void reduce()}
-              disabled={
-                busy ||
-                loadingInfo ||
-                !info?.available ||
-                info.current_device_limit <= baseLimit ||
-                baseLimit < info.min_device_limit
-              }
-              className="min-h-12 rounded-2xl bg-amber-200 px-5 text-sm font-bold text-bg disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t('invoxy.renewal.limitConfirmAction', { count: baseLimit })}
-            </button>
+            {canReduce && (
+              <button
+                type="button"
+                onClick={() => void reduce()}
+                disabled={busy}
+                className="min-h-12 rounded-2xl bg-amber-200 px-5 text-sm font-bold text-bg disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('invoxy.renewal.limitConfirmAction', { count: baseLimit })}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setOpen(false)}
