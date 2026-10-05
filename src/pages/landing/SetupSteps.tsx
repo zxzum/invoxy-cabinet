@@ -5,7 +5,7 @@ import type { NetworkNode } from '@/data/networkSnapshot';
 const BOT_USERNAME = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'invoxy_bot').replace(/^@/, '');
 const TELEGRAM_BOT_URL = `https://t.me/${BOT_USERNAME}`;
 
-type DeviceType = 'ios' | 'android' | 'windows' | 'mac';
+type DeviceType = 'ios' | 'android' | 'windows' | 'mac' | 'tv';
 
 interface DeviceInfo {
   id: DeviceType;
@@ -15,38 +15,41 @@ interface DeviceInfo {
   step3Text: string;
 }
 
-const APP_ICON = '/images/apps/invoxy.png';
-const LOGIN_STEP =
-  'Откройте Invoxy VPN, нажмите «Войти через Telegram» и подтвердите вход в боте. Ключ вводить не нужно.';
-
 const DEVICES: DeviceInfo[] = [
   {
     id: 'ios',
     label: 'iPhone / iPad',
-    clientName: 'Invoxy VPN',
-    clientIcon: APP_ICON,
-    step3Text: LOGIN_STEP,
+    clientName: 'Happ',
+    clientIcon: '/images/apps/happ.png',
+    step3Text: 'Нажмите «Подключить» в боте — ключ сам откроется в Happ. Один тап.',
   },
   {
     id: 'android',
     label: 'Android',
-    clientName: 'Invoxy VPN',
-    clientIcon: APP_ICON,
-    step3Text: LOGIN_STEP,
+    clientName: 'Happ',
+    clientIcon: '/images/apps/happ.png',
+    step3Text: 'Скопируйте ключ из бота и вставьте в Happ. Соединение поднимется мгновенно.',
   },
   {
     id: 'windows',
     label: 'Windows',
-    clientName: 'Invoxy VPN',
-    clientIcon: APP_ICON,
-    step3Text: LOGIN_STEP,
+    clientName: 'Incy',
+    clientIcon: '/images/apps/incy.png',
+    step3Text: 'Откройте Incy на ПК, нажмите «Импорт ключа» из Telegram и активируйте туннель.',
   },
   {
     id: 'mac',
     label: 'macOS',
-    clientName: 'Invoxy VPN',
-    clientIcon: APP_ICON,
-    step3Text: LOGIN_STEP,
+    clientName: 'Incy',
+    clientIcon: '/images/apps/incy.png',
+    step3Text: 'Импортируйте ссылку подписки в Incy в один клик. Работает бесшовно.',
+  },
+  {
+    id: 'tv',
+    label: 'Android TV',
+    clientName: 'Happ / v2rayNG',
+    clientIcon: '/images/apps/happ.png',
+    step3Text: 'Отсканируйте QR-код ключа камерой или передайте ссылку через ТВ-браузер.',
   },
 ];
 
@@ -161,7 +164,7 @@ export function SetupSteps({ selectedNode }: SetupStepsProps) {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base sm:text-lg font-bold text-ink">
-                    Войдите в {device.clientName}
+                    Вставьте в {device.clientName}
                   </h3>
                   <img
                     src={device.clientIcon}

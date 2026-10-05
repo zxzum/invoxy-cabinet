@@ -7,7 +7,12 @@ import { CalendarDays, Link2, Smartphone, X } from '@/invoxystart/components/ui/
 import { subscriptionApi } from '@/invoxystart/api';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
+import { openDeepLink } from '@/utils/openDeepLink';
 import { formatTraffic } from '@/utils/formatTraffic';
+import {
+  ConnectDeviceModal,
+  type PlatformKey,
+} from '@/invoxystart/components/connection/ConnectDeviceModal';
 import {
   AccountPage,
   AccountPanel,
@@ -42,6 +47,11 @@ type Detail = {
 type Connection = {
   subscription_url?: string | null;
   display_link?: string | null;
+  happ_redirect_link?: string | null;
+  happ_scheme_link?: string | null;
+  happ_link?: string | null;
+  happ_cryptolink?: string | null;
+  happ_crypto_link?: string | null;
   instructions?: { steps?: string[] };
 };
 
@@ -79,6 +89,8 @@ export default function SubscriptionManagePage() {
   const [autopay, setAutopay] = useState(false);
   const [hasMultiple, setHasMultiple] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [deviceModalOpen, setDeviceModalOpen] = useState(false);
+  const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
   const lastStatusRefreshAtRef = useRef(0);
   const load = useCallback(async () => {
     if (!Number.isInteger(id) || id < 1) {
@@ -149,6 +161,21 @@ export default function SubscriptionManagePage() {
       connection?.subscription_url || connection?.display_link || detail?.subscription_url || '',
     [connection, detail],
   );
+
+  const happLink = useMemo(() => {
+    return (
+      connection?.happ_redirect_link ||
+      connection?.happ_scheme_link ||
+      connection?.happ_link ||
+      connection?.happ_cryptolink ||
+      connection?.happ_crypto_link ||
+      (accessLink ? `happ://add/${accessLink}` : null)
+    );
+  }, [connection, accessLink]);
+
+  const incyLink = useMemo(() => {
+    return accessLink ? `incy://import/${accessLink}` : null;
+  }, [accessLink]);
 
   async function toggleAutopay(value: boolean) {
     setBusy('autopay');
@@ -283,7 +310,7 @@ export default function SubscriptionManagePage() {
 
           <AccountPanel
             title="Ключ доступа"
-            description="Ключ можно вставить в приложение Invoxy VPN вручную"
+            description="Добавьте эту ссылку в приложение для подключения"
           >
             <div className="mt-5 flex items-center gap-2">
               <div className="glass-control flex h-12 min-w-0 flex-1 items-center truncate rounded-2xl px-4 font-mono text-xs leading-none text-muted">
@@ -298,12 +325,46 @@ export default function SubscriptionManagePage() {
                 onCopied={() => showToast('Ссылка скопирована')}
               />
             </div>
+            <div className="mt-3 glass-panel motion-card grid gap-2 rounded-[26px] p-3 2xl:grid-cols-2">
+              {happLink ? (
+                <button
+                  type="button"
+                  onClick={() => openDeepLink(happLink)}
+                  className="glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98]"
+                >
+                  <span className="flex h-5 shrink-0 items-center">
+                    <img
+                      src="/images/apps/happ.png"
+                      alt=""
+                      className="h-4 w-auto max-w-12 object-contain"
+                    />
+                  </span>
+                  Подключить в HAPP
+                </button>
+              ) : null}
+              {incyLink ? (
+                <button
+                  type="button"
+                  onClick={() => openDeepLink(incyLink)}
+                  className="glass-control flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-3 text-center text-xs font-semibold text-ink transition-colors hover:border-mint/30 hover:bg-white/[.06] active:scale-[0.98]"
+                >
+                  <span className="flex h-5 shrink-0 items-center">
+                    <img
+                      src="/images/apps/incy.png"
+                      alt=""
+                      className="h-4 w-auto max-w-12 object-contain"
+                    />
+                  </span>
+                  Подключить в INCY
+                </button>
+              ) : null}
+            </div>
             <button
               type="button"
-              onClick={() => navigate('/app')}
+              onClick={() => setDeviceModalOpen(true)}
               className="mt-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white/[0.04] px-4 text-center text-xs font-bold text-mint hover:bg-white/[0.08] transition-colors"
             >
-              <Smartphone size={15} /> Приложение Invoxy VPN и вход без ключа →
+              <Smartphone size={15} /> Инструкция и подключение других устройств →
             </button>
             <button
               type="button"
@@ -360,7 +421,10 @@ export default function SubscriptionManagePage() {
             }))}
             deviceLimit={detail.device_limit}
             onRemove={(device) => removeDevice(device.id)}
-            onConnect={() => navigate('/app')}
+            onConnect={(platform) => {
+              setConnectPlatform(platform as PlatformKey | undefined);
+              setDeviceModalOpen(true);
+            }}
           />
         </div>
 
@@ -418,6 +482,15 @@ export default function SubscriptionManagePage() {
           </AccountPanel>
         </div>
       </div>
+
+      <ConnectDeviceModal
+        open={deviceModalOpen}
+        onClose={() => setDeviceModalOpen(false)}
+        accessLink={accessLink}
+        happLink={happLink}
+        incyLink={incyLink}
+        initialPlatform={connectPlatform}
+      />
     </AccountPage>
   );
 }

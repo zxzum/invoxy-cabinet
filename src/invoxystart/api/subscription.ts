@@ -28,6 +28,11 @@ export interface DeviceListResponse {
 export interface ConnectionLinkResponse {
   subscription_url: string | null;
   display_link: string | null;
+  happ_redirect_link: string | null;
+  happ_scheme_link: string | null;
+  happ_cryptolink?: string | null;
+  happ_crypto_link?: string | null;
+  happ_link?: string | null;
   connect_mode: string;
   hide_link: boolean;
   instructions: { steps: string[] };
@@ -326,6 +331,12 @@ export const subscriptionApi = {
 
   getConnectionLink: (subscriptionId?: number): Promise<ConnectionLinkResponse> =>
     apiClient.get('/cabinet/subscription/connection-link', query(subscriptionId)),
+
+  getHappDownloads: () =>
+    apiClient.get<{
+      platforms: Record<string, { name: string; icon: string; link: string }>;
+      happ_enabled: boolean;
+    }>('/cabinet/subscription/happ-downloads'),
 
   getAppConfig: (subscriptionId?: number): Promise<AppConfig> =>
     apiClient.get('/cabinet/subscription/app-config', query(subscriptionId)),

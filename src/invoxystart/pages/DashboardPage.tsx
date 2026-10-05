@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/invoxystart/components/dashboard/Header';
@@ -21,8 +21,12 @@ import {
   SupportStrip,
   TrialCard,
 } from '@/invoxystart/components/dashboard/WelcomeCards';
-import { Bell, Zap } from '@/invoxystart/components/ui/RuneIcon';
+import { Bell, Laptop, Smartphone, Zap } from '@/invoxystart/components/ui/RuneIcon';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
+import {
+  ConnectDeviceModal,
+  type PlatformKey,
+} from '@/invoxystart/components/connection/ConnectDeviceModal';
 import { subscriptionApi, type TrialInfo } from '@/invoxystart/api';
 import { useAuth } from '@/invoxystart/auth';
 import { useTranslation } from 'react-i18next';
@@ -101,6 +105,8 @@ export function DashboardPage() {
   });
 
   const [selectedSubscription, setSelectedSubscription] = useState<number | null>(null);
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [connectPlatform, setConnectPlatform] = useState<PlatformKey | undefined>(undefined);
 
   const activeSubId =
     selectedSubscription && subscriptions.some((s) => s.id === selectedSubscription)
@@ -232,7 +238,23 @@ export function DashboardPage() {
   const accessLink =
     connection?.subscription_url || connection?.display_link || current?.subscription_url || null;
 
-  const handleOpenConnect = () => navigate('/app');
+  const happLink =
+    connection?.happ_redirect_link ||
+    connection?.happ_scheme_link ||
+    connection?.happ_link ||
+    connection?.happ_cryptolink ||
+    connection?.happ_crypto_link ||
+    null;
+
+  const incyLink = useMemo(() => {
+    if (!accessLink) return null;
+    return `incy://import/${accessLink}`;
+  }, [accessLink]);
+
+  const handleOpenConnect = (platform?: string) => {
+    setConnectPlatform(platform as PlatformKey | undefined);
+    setConnectModalOpen(true);
+  };
   const hasLoadedDetails = Boolean(detailsData);
   const managedDevices = devices.map((device) => ({
     id: device.hwid,
@@ -445,7 +467,7 @@ export function DashboardPage() {
                 </div>
 
                 {/* Mobile single column: for an active subscription the connect
-                    actions (access key + Invoxy VPN app) come right after the
+                    actions (access key + Happ/InCy) come right after the
                     subscription card, above traffic/devices/renewal, so they are
                     reachable without deep scrolling. Expired subscriptions keep
                     renewal at the top instead. Desktop order is DOM order
@@ -565,7 +587,7 @@ export function DashboardPage() {
                   delay={0.2}
                   className={`min-w-0 lg:order-none ${isExpired ? 'order-6' : 'order-3'}`}
                 >
-                  <QuickConnect />
+                  <QuickConnect connection={connection} />
                 </Reveal>
 
                 <Reveal delay={0.25} className="order-7 min-w-0 lg:order-none">
@@ -581,6 +603,15 @@ export function DashboardPage() {
           </m.div>
         )}
       </AnimatePresence>
+
+      <ConnectDeviceModal
+        open={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+        accessLink={accessLink}
+        happLink={happLink}
+        incyLink={incyLink}
+        initialPlatform={connectPlatform}
+      />
 
       {migrationData?.candidate && (
         <LazeikaMigrationModal
@@ -599,7 +630,7 @@ function ZeroDevicesHeroBanner({
   onConnect,
 }: {
   accessLink: string | null;
-  onConnect: () => void;
+  onConnect: (platform?: PlatformKey) => void;
 }) {
   return (
     <Reveal>
@@ -622,8 +653,8 @@ function ZeroDevicesHeroBanner({
             </h3>
 
             <p className="text-xs text-muted leading-relaxed sm:text-sm">
-              Установите приложение Invoxy VPN и войдите через этот кабинет или Telegram — ключ
-              вводить не нужно.
+              Ваш персональный скоростной профиль с защитой от блокировок сгенерирован. Подключите
+              смартфон, ноутбук или ТВ прямо сейчас, чтобы пользоваться свободным интернетом.
             </p>
           </div>
 
@@ -634,7 +665,7 @@ function ZeroDevicesHeroBanner({
               className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-mint px-5 font-bold text-xs text-bg shadow-[0_4px_16px_rgba(6,214,160,0.25)] transition-all hover:bg-mint/90 hover:shadow-[0_6px_22px_rgba(6,214,160,0.4)] active:scale-[0.98]"
             >
               <Zap size={15} />
-              <span>Подключить устройство</span>
+              <span>Подключить в 1 клик</span>
             </button>
 
             {accessLink && (
@@ -647,6 +678,29 @@ function ZeroDevicesHeroBanner({
               />
             )}
           </div>
+        </div>
+
+        <div className="relative z-10 mt-5 flex flex-wrap items-center gap-2 border-t border-white/8 pt-4">
+          <span className="text-[11px] font-medium text-muted mr-1">Инструкция для:</span>
+          {(
+            [
+              { key: 'ios', label: 'iOS / iPhone', icon: Smartphone },
+              { key: 'android', label: 'Android', icon: Smartphone },
+              { key: 'windows', label: 'Windows', icon: Laptop },
+              { key: 'macos', label: 'macOS', icon: Laptop },
+              { key: 'tv', label: 'Android TV', icon: Laptop },
+            ] as const
+          ).map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => onConnect(p.key)}
+              className="group flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-ink/80 transition-all hover:border-mint/40 hover:bg-mint/10 hover:text-mint active:scale-95"
+            >
+              <p.icon size={13} className="text-muted/70 transition-colors group-hover:text-mint" />
+              <span>{p.label}</span>
+            </button>
+          ))}
         </div>
       </div>
     </Reveal>
