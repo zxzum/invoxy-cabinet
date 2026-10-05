@@ -6253,7 +6253,8 @@
       "sheetFailedDesc": "付款被拒绝或账单已过期。未扣款，请重试。",
       "sheetTimeout": "尚未收到确认",
       "sheetTimeoutDesc": "如果您已付款，确认后订阅将自动激活。账单状态可在个人资料中查看。",
-      "activating": "已收到付款，正在激活订阅…"
+      "activating": "已收到付款，正在激活订阅…",
+      "cancelled": "账单已取消。如果您已付款，款项将自动存入余额。"
     }
   }
 }

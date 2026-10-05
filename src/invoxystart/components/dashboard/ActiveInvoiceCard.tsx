@@ -8,6 +8,8 @@ import { balanceApi, type PendingPayment } from '@/invoxystart/api';
 import { useAuth } from '@/invoxystart/auth';
 import { clearResponseCache } from '@/invoxystart/api/client';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { useTranslation } from 'react-i18next';
+import { schedulePaymentRefresh } from '@/utils/paymentResolution';
 
 const CANCELLED_STATUSES = new Set([
   'canceled',
@@ -43,6 +45,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const { refreshUser } = useAuth();
+  const { t } = useTranslation();
   const previousInvoiceIdRef = useRef<number | null>(null);
 
   const { data: pendingData } = useQuery({
@@ -61,6 +64,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
     void refreshUser();
     for (const queryKey of [
       ['balance'],
+      ['transactions'],
       ['invoxy-subscriptions'],
       ['invoxy-subscription-details'],
       ['invoxy-subscription-status'],
@@ -71,8 +75,11 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
 
   useEffect(() => {
     const nextId = activeInvoice?.id ?? null;
-    if (previousInvoiceIdRef.current !== null && nextId === null) refreshPurchasedData();
+    const disappeared = previousInvoiceIdRef.current !== null && nextId === null;
     previousInvoiceIdRef.current = nextId;
+    // Счёт ушёл из списка ожидающих: зачисление и автопокупка тарифа из корзины
+    // завершаются позже — обновляем сразу и ещё через 3 и 10 секунд.
+    if (disappeared) return schedulePaymentRefresh(refreshPurchasedData);
   }, [activeInvoice?.id, refreshPurchasedData]);
 
   const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
@@ -139,7 +146,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
       );
       if (isPaid) {
         showToast('Платёж подтверждён.');
-        refreshPurchasedData();
+        schedulePaymentRefresh(refreshPurchasedData);
         void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
       } else {
         showToast('Платёж ещё не поступил. Попробуйте через пару секунд.');
@@ -158,7 +165,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
     setCancelling(true);
     try {
       await balanceApi.cancelPendingPayment(activeInvoice.method, activeInvoice.id);
-      showToast('Счёт успешно отменён');
+      showToast(t('invoxy.payment.cancelled'));
       void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
     } catch (err: unknown) {
       const msg = getApiErrorMessage(err, 'Не удалось отменить счёт');

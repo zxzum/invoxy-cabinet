@@ -6999,7 +6999,8 @@
       "sheetFailedDesc": "The payment was declined or the invoice expired. You were not charged — please try again.",
       "sheetTimeout": "No confirmation yet",
       "sheetTimeoutDesc": "If you paid, the subscription activates automatically once confirmed. The invoice status is in your profile.",
-      "activating": "Payment received, activating your subscription…"
+      "activating": "Payment received, activating your subscription…",
+      "cancelled": "Invoice cancelled. If you had already paid, the money will be credited to your balance automatically."
     }
   }
 }
