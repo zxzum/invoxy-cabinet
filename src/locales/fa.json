@@ -6311,7 +6311,15 @@
       "minTopUp": "حداقل مبلغ شارژ ۱۰ ₽ است",
       "topUpPurpose": "شارژ موجودی",
       "loyaltyLine": "سطح {{name}} · {{discount}}٪ تخفیف — جزئیات در صفحه تعرفه‌ها",
-      "loyaltyFallback": "سطح وفاداری و تخفیف‌ها — در صفحه تعرفه‌ها"
+      "loyaltyFallback": "سطح شما",
+      "loyaltyProgram": "برنامه امتیازات",
+      "loyaltyLoading": "در حال بررسی سطح و تخفیف‌های شما…",
+      "loyaltyDetails": "مشاهده سطح‌ها و تخفیف‌ها",
+      "loyaltySpent": "پرداخت برای اشتراک‌ها: {{amount}}",
+      "loyaltySpentLabel": "پرداخت برای اشتراک‌ها",
+      "loyaltyNext": "تا {{name}}، {{amount}} باقی مانده است",
+      "loyaltyRule": "فقط اشتراک‌های پرداخت‌شده برای سطح شما حساب می‌شوند. شارژ موجودی و خرید هدیه حساب نمی‌شوند.",
+      "loyaltyRetry": "تلاش دوباره"
     },
     "referrals": {
       "share": "اشتراک‌گذاری لینک",

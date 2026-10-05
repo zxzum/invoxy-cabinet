@@ -6275,7 +6275,15 @@
       "minTopUp": "最低充值金额为 10 ₽",
       "topUpPurpose": "余额充值",
       "loyaltyLine": "等级 {{name}} · 折扣 {{discount}}% — 详情见方案页面",
-      "loyaltyFallback": "忠诚等级与折扣——见方案页面"
+      "loyaltyFallback": "您的等级",
+      "loyaltyProgram": "会员权益计划",
+      "loyaltyLoading": "正在查询您的等级和折扣…",
+      "loyaltyDetails": "查看等级和折扣",
+      "loyaltySpent": "已支付订阅：{{amount}}",
+      "loyaltySpentLabel": "已支付的订阅金额",
+      "loyaltyNext": "距离 {{name}} 还差 {{amount}}",
+      "loyaltyRule": "只有已支付的订阅计入等级。余额充值和购买礼物不计入。",
+      "loyaltyRetry": "重试"
     },
     "referrals": {
       "share": "分享链接",

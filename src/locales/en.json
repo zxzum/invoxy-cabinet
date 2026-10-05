@@ -7051,7 +7051,12 @@
       "loyaltyBenefit": "Discount on a 30-day subscription",
       "loyaltyBaseBenefit": "See the available levels and discounts.",
       "loyaltyLoading": "Checking your level and discounts…",
-      "loyaltyDetails": "Levels and terms"
+      "loyaltyDetails": "View levels and discounts",
+      "loyaltySpent": "Spent on subscriptions: {{amount}}",
+      "loyaltySpentLabel": "Spent on subscriptions",
+      "loyaltyNext": "{{amount}} until {{name}}",
+      "loyaltyRule": "Paid subscriptions count toward your level. Balance top-ups and gift purchases do not.",
+      "loyaltyRetry": "Try again"
     },
     "referrals": {
       "share": "Share link",

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { usePlatform } from '@/platform';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronRight,
@@ -16,6 +16,7 @@ import {
 import { PageHeader } from '@/invoxystart/components/layout/PageHeader';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { HistoryModal } from '@/invoxystart/components/profile/HistoryModal';
+import { LoyaltyCard } from '@/invoxystart/components/profile/LoyaltyCard';
 import { EmailLinkDialog } from '@/invoxystart/components/profile/EmailLinkDialog';
 import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
 import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
@@ -178,21 +179,6 @@ export default function ProfilePage() {
     });
   }
 
-  const apiTiers = loyalty?.tiers ?? [];
-  const baseTier = {
-    id: 0,
-    name: 'Invoxy Base',
-    threshold_rubles: 0,
-    server_discount_percent: 0,
-    traffic_discount_percent: 0,
-    device_discount_percent: 0,
-    period_discounts: { '30': 0 },
-    is_current: !apiTiers.some((tier) => tier.is_current),
-    is_achieved: true,
-  };
-  const tiers = [baseTier, ...apiTiers];
-  const currentTier = tiers.find((tier) => tier.is_current) ?? baseTier;
-  const currentDiscount = currentTier?.period_discounts?.['30'] ?? 0;
   return (
     <div className="flex w-full min-w-0 flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
       <PageHeader title={t('nav.profile')} subtitle={t('invoxy.profile.subtitle')} notifications />
@@ -341,35 +327,20 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex w-full min-w-0 flex-col gap-5">
-          <Link
-            to="/tariffs#loyalty"
-            className="glass-panel motion-card group flex flex-col gap-3 rounded-[26px] border-mint/20 bg-[radial-gradient(circle_at_90%_10%,rgba(165,232,196,.12),transparent_48%)] p-5 transition-colors hover:border-mint/40"
-          >
-            <span className="flex items-center gap-2 text-xs font-semibold text-mint">
-              <Sparkles size={16} /> {t('invoxy.profile.loyaltyProgram')}
-            </span>
-            <span className="flex items-end justify-between gap-3">
-              <strong className="min-w-0 text-xl font-bold tracking-tight text-ink">
-                {loyaltyStatus === 'ready' ? currentTier.name : t('invoxy.profile.loyaltyFallback')}
-              </strong>
-              {loyaltyStatus === 'ready' && currentDiscount > 0 && (
-                <strong className="shrink-0 text-4xl font-semibold leading-none tracking-tight text-mint">
-                  {currentDiscount}%
-                </strong>
-              )}
-            </span>
-            <span className="text-sm leading-relaxed text-muted">
-              {loyaltyStatus === 'ready'
-                ? currentDiscount > 0
-                  ? t('invoxy.profile.loyaltyBenefit')
-                  : t('invoxy.profile.loyaltyBaseBenefit')
-                : t('invoxy.profile.loyaltyLoading')}
-            </span>
-            <span className="flex min-h-11 items-center gap-1 text-sm font-semibold text-mint">
-              {t('invoxy.profile.loyaltyDetails')}
-              <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
-            </span>
-          </Link>
+          <LoyaltyCard
+            loyalty={loyalty}
+            status={loyaltyStatus}
+            onRetry={() => {
+              setLoyaltyStatus('loading');
+              void promoApi
+                .getLoyaltyTiers()
+                .then((data) => {
+                  setLoyalty(data);
+                  setLoyaltyStatus('ready');
+                })
+                .catch(() => setLoyaltyStatus('error'));
+            }}
+          />
 
           <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <h2 className="text-lg font-medium">Данные аккаунта</h2>
