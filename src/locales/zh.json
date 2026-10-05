@@ -6255,6 +6255,38 @@
       "sheetTimeoutDesc": "如果您已付款，确认后订阅将自动激活。账单状态可在个人资料中查看。",
       "activating": "已收到付款，正在激活订阅…",
       "cancelled": "账单已取消。如果您已付款，款项将自动存入余额。"
+    },
+    "profile": {
+      "subtitle": "余额、账户与支持",
+      "adminPanel": "管理面板",
+      "balance": "余额",
+      "topUp": "充值",
+      "topUpAmount": "充值金额",
+      "otherAmount": "其他金额，₽",
+      "minTopUp": "最低充值金额为 10 ₽",
+      "topUpPurpose": "余额充值",
+      "loyaltyLine": "等级 {{name}} · 折扣 {{discount}}% — 详情见方案页面",
+      "loyaltyFallback": "忠诚等级与折扣——见方案页面"
+    },
+    "referrals": {
+      "share": "分享链接",
+      "empty": "还没有人。分享您的链接——邀请的好友和奖励会显示在这里。"
+    },
+    "subCard": {
+      "eyebrow": "您的订阅",
+      "trialEyebrow": "试用期",
+      "renew": "续订访问 →",
+      "manage": "管理 →",
+      "expired": "已过期",
+      "awaiting": "等待连接",
+      "active": "有效",
+      "trial": "试用期",
+      "expiredLong": "订阅已过期",
+      "awaitingLong": "订阅有效 · 等待首次连接",
+      "activeLong": "订阅有效",
+      "timeLeft": "剩余时间",
+      "expiredOn": "已过期：{{date}}",
+      "activeUntil": "有效期至：{{date}}"
     }
   }
 }

@@ -1,10 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { usePlatform } from '@/platform';
-import { useNavigate, useLocation } from 'react-router';
+import { Link, useNavigate, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronRight,
-  CreditCard,
   Headphones,
   LogOut,
   Mail,
@@ -39,6 +39,7 @@ const TelegramLinkWidget = lazy(() =>
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { openPayment } = usePayment();
   const { user, logout, refreshUser, isAdmin } = useAuth();
@@ -165,11 +166,16 @@ export default function ProfilePage() {
   function topUp() {
     const amount = Number(topUpAmount);
     if (!Number.isFinite(amount) || amount < 10) {
-      setTopUpError('Минимальная сумма пополнения — 10 ₽');
+      setTopUpError(t('invoxy.profile.minTopUp'));
       return;
     }
     setTopUpError('');
-    openPayment({ amount, purpose: 'Пополнение баланса', allowBalance: false, topUp: true });
+    openPayment({
+      amount,
+      purpose: t('invoxy.profile.topUpPurpose'),
+      allowBalance: false,
+      topUp: true,
+    });
   }
 
   const apiTiers = loyalty?.tiers ?? [];
@@ -188,85 +194,43 @@ export default function ProfilePage() {
   const currentTier = tiers.find((tier) => tier.is_current) ?? baseTier;
   const currentDiscount =
     currentTier?.period_discounts?.['30'] ?? currentTier?.traffic_discount_percent ?? 0;
-  const spent = loyalty?.current_spent_rubles ?? 0;
-  const nextTier = tiers.find((tier) => !tier.is_achieved && tier.threshold_rubles > spent);
   return (
     <div className="flex w-full min-w-0 flex-col gap-5 pb-28 lg:gap-6 lg:pb-0">
-      <PageHeader title="Профиль" subtitle="Баланс, данные и поддержка" notifications />
+      <PageHeader title={t('nav.profile')} subtitle={t('invoxy.profile.subtitle')} notifications />
 
       {isAdmin && (
         <button
           type="button"
           onClick={() => navigate('/admin')}
-          className="glass-panel motion-card flex w-full items-center justify-between rounded-[24px] border border-amber-400/30 bg-amber-400/5 p-4 text-left transition hover:border-amber-400/50 hover:bg-amber-400/10 active:scale-[0.99] sm:p-5"
+          className="glass-panel flex min-h-12 w-full items-center gap-3 rounded-[22px] border border-amber-400/30 bg-amber-400/5 px-4 py-2.5 text-left transition hover:border-amber-400/50 active:scale-[0.99]"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
-              <ShieldCheck size={22} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[15px] font-bold text-ink">Панель администратора</span>
-                <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
-                  Admin
-                </span>
-              </div>
-              <p className="mt-0.5 text-xs text-muted">
-                Управление пользователями, тарифами, серверами и платежами
-              </p>
-            </div>
-          </div>
-          <ChevronRight size={18} className="shrink-0 text-amber-400/70" />
+          <ShieldCheck size={18} className="shrink-0 text-amber-400" />
+          <span className="flex-1 text-sm font-bold text-ink">
+            {t('invoxy.profile.adminPanel')}
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-amber-400/70" />
         </button>
       )}
 
       <div className="grid w-full min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-2">
         <div className="flex w-full min-w-0 flex-col gap-5">
-          <section className="glass-panel motion-card relative overflow-hidden rounded-[32px] p-5 sm:p-6 lg:p-8">
-            <img
-              src="/images/profile-balance-bg.webp"
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-              decoding="async"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-bg/70 via-bg/20 to-transparent" />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between">
-                <div className="glass-control grid h-12 w-12 place-items-center rounded-full text-mint">
-                  <CreditCard size={20} />
-                </div>
-                <span className="text-xs text-muted">Баланс Invoxy</span>
-              </div>
-              <div className="mt-8 text-[44px] font-light tracking-[-0.055em]">
-                <AnimatedBalance value={balance} />
-              </div>
-              <div className="mt-6 flex items-center justify-between rounded-2xl bg-black/25 px-4 py-3 text-sm">
-                <span className="text-muted">•••• 4821</span>
-                <span className="font-bold tracking-[.18em]">VOXY</span>
-              </div>
-            </div>
-          </section>
-
-          <ActiveInvoiceCard />
-
+          {/* INVOXY: честный блок баланса вместо декоративной «карты» с выдуманным номером. */}
           <section
             id="top-up"
-            className={`glass-panel motion-card scroll-mt-6 rounded-[30px] p-5 lg:p-7 transition-all duration-500 ${
+            className={`glass-panel motion-card scroll-mt-6 rounded-[28px] p-5 transition-all duration-500 lg:p-7 ${
               highlightTopUp ? 'topup-highlight' : ''
             }`}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-medium">Пополнить баланс</h2>
-                <p className="mt-1 text-sm text-muted">Выберите или укажите сумму</p>
-              </div>
-              <CreditCard size={20} className="text-mint" />
+            <p className="text-xs font-semibold text-muted">{t('invoxy.profile.balance')}</p>
+            <div className="mt-1 text-[40px] font-light leading-tight tracking-[-0.05em]">
+              <AnimatedBalance value={balance} />
             </div>
-            <div className="mt-5 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid grid-cols-3 gap-2">
               {[500, 1000, 2500].map((amount) => (
                 <button
                   type="button"
                   key={amount}
+                  aria-pressed={topUpAmount === String(amount)}
                   onClick={() => {
                     setTopUpAmount(String(amount));
                     setTopUpError('');
@@ -277,11 +241,12 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
-            <label className="mt-3 block">
-              <span className="sr-only">Сумма пополнения</span>
+            <label className="mt-2 block">
+              <span className="sr-only">{t('invoxy.profile.topUpAmount')}</span>
               <input
                 inputMode="numeric"
                 value={topUpAmount}
+                placeholder={t('invoxy.profile.otherAmount')}
                 onChange={(event) => {
                   setTopUpAmount(event.target.value.replace(/\D/g, ''));
                   setTopUpError('');
@@ -297,11 +262,13 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={topUp}
-              className="button-lift mt-4 h-12 w-full rounded-full bg-ink text-sm font-bold text-bg"
+              className="button-lift mt-3 h-12 w-full rounded-full bg-mint text-sm font-bold text-bg"
             >
-              Пополнить
+              {t('invoxy.profile.topUp')}
             </button>
           </section>
+
+          <ActiveInvoiceCard />
 
           <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <div className="flex items-center justify-between gap-3">
@@ -347,67 +314,20 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex w-full min-w-0 flex-col gap-5">
-          <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
-            {loyaltyStatus === 'ready' ? (
-              <>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-bold tracking-[0.14em] text-mint">
-                      УРОВЕНЬ ЛОЯЛЬНОСТИ
-                    </p>
-                    <h2 className="mt-3 text-xl font-medium">
-                      {currentTier?.name || 'Base'} · скидка {currentDiscount}%
-                    </h2>
-                  </div>
-                  <span className="rounded-full bg-mint px-3 py-1.5 text-[10px] font-bold text-bg">
-                    АКТИВЕН
-                  </span>
-                </div>
-                <p className="mt-3 text-sm text-muted">
-                  Потрачено {spent.toLocaleString('ru-RU')} ₽ ·{' '}
-                  {nextTier
-                    ? `до ${nextTier.name} осталось ${Math.max(0, nextTier.threshold_rubles - spent).toLocaleString('ru-RU')} ₽`
-                    : 'максимальный уровень достигнут'}
-                </p>
-                <div className="mt-5 h-2 rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-mint transition-[width] duration-500"
-                    style={{
-                      width: `${Math.min(100, Math.max(0, Math.round((loyalty?.progress_percent ?? 0) * 10) / 10))}%`,
-                    }}
-                  />
-                </div>
-                <div className="relative mt-5 grid grid-cols-3 text-center before:absolute before:left-[16%] before:right-[16%] before:top-2 before:h-px before:bg-white/12">
-                  {tiers.slice(0, 3).map((tier) => (
-                    <Milestone
-                      key={tier.id}
-                      done={tier.is_achieved && !tier.is_current}
-                      current={tier.is_current}
-                      label={`${tier.name} · ${tier.period_discounts?.['30'] ?? tier.traffic_discount_percent}%`}
-                      detail={`от ${tier.threshold_rubles.toLocaleString('ru-RU')} ₽`}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div
-                role={loyaltyStatus === 'loading' ? 'status' : 'alert'}
-                className="flex min-h-36 flex-col justify-center"
-              >
-                <p className="text-[11px] font-bold tracking-[0.14em] text-mint">
-                  УРОВЕНЬ ЛОЯЛЬНОСТИ
-                </p>
-                <p className="mt-3 text-sm text-muted">
-                  {loyaltyStatus === 'loading'
-                    ? 'Загружаем уровни лояльности…'
-                    : 'Не удалось загрузить уровни лояльности'}
-                </p>
-                {loyaltyStatus === 'loading' && (
-                  <div className="mt-5 h-2 rounded-full bg-white/10" aria-hidden="true" />
-                )}
-              </div>
-            )}
-          </section>
+          <Link
+            to="/tariffs#loyalty"
+            className="glass-panel flex min-h-12 items-center gap-3 rounded-[22px] px-4 py-3 text-sm transition-colors hover:border-mint/30"
+          >
+            <span className="flex-1">
+              {loyaltyStatus === 'ready'
+                ? t('invoxy.profile.loyaltyLine', {
+                    name: currentTier?.name || 'Base',
+                    discount: currentDiscount,
+                  })
+                : t('invoxy.profile.loyaltyFallback')}
+            </span>
+            <ChevronRight size={16} className="text-mint" />
+          </Link>
 
           <section className="glass-panel motion-card rounded-[30px] p-5 lg:p-7">
             <h2 className="text-lg font-medium">Данные аккаунта</h2>
@@ -692,30 +612,4 @@ function validateProfileName(name: string) {
     }
   }
   return '';
-}
-
-function Milestone({
-  label,
-  detail,
-  done,
-  current,
-}: {
-  label: string;
-  detail: string;
-  done?: boolean;
-  current?: boolean;
-}) {
-  return (
-    <div className="relative z-10 min-w-0 px-1">
-      <span
-        className={`mx-auto block h-4 w-4 rounded-full border-2 ${done || current ? 'border-mint bg-mint' : 'border-line bg-surface'} ${current ? 'shadow-[0_0_0_5px_rgba(165,232,196,.12)]' : ''}`}
-      />
-      <p
-        className={`mt-2 text-[10px] font-bold break-words leading-tight ${current ? 'text-mint' : 'text-muted'}`}
-      >
-        {label}
-      </p>
-      <p className="mt-1 truncate text-[9px] text-muted">{detail}</p>
-    </div>
-  );
 }

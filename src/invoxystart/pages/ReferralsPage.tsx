@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Check,
   Link2,
@@ -18,6 +19,7 @@ import { CountUp } from '@/invoxystart/components/ui/CountUp';
 import { copyToClipboard } from '@/utils/clipboard';
 
 export default function ReferralsPage() {
+  const { t } = useTranslation();
   const { showToast } = useToast();
 
   const { data: referralData, isLoading: referralLoading } = useQuery({
@@ -161,9 +163,9 @@ export default function ReferralsPage() {
           <button
             type="button"
             onClick={share}
-            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-bold text-bg active:scale-[.98]"
+            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-mint text-sm font-bold text-bg active:scale-[.98]"
           >
-            <Share2 size={17} /> Поделиться
+            <Share2 size={17} /> {t('invoxy.referrals.share')}
           </button>
         </section>
       </div>
@@ -241,34 +243,44 @@ export default function ReferralsPage() {
         </div>
       </div>
 
-      <div className="grid min-w-0 max-w-full gap-5 xl:grid-cols-2">
-        <ListCard
-          title="Приглашённые"
-          icon={<Send size={17} />}
-          rows={invited.map((item) => ({
-            title:
-              item.first_name || (item.username ? `@${item.username}` : `Пользователь #${item.id}`),
-            detail: item.has_paid
-              ? 'Оплата получена'
-              : item.has_subscription
-                ? 'Есть подписка'
-                : 'Новый пользователь',
-            value: item.has_paid ? 'Активен' : '—',
-          }))}
-        />
-        <ListCard
-          title="История начислений"
-          icon={<Check size={17} />}
-          rows={income.map((item) => ({
-            title: item.reason || item.tariff_name || 'Начисление',
-            detail: formatDate(item.created_at),
-            value:
-              item.reward_type === 'days'
-                ? `+${item.days_granted} дн.`
-                : `+${formatMoney(item.amount_kopeks)}`,
-          }))}
-        />
-      </div>
+      {invited.length === 0 && income.length === 0 ? (
+        <section className="glass-panel flex min-w-0 items-center gap-3 rounded-[22px] p-4 text-sm text-muted">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-mint/10 text-mint">
+            <Send size={17} />
+          </span>
+          <p className="min-w-0 flex-1">{t('invoxy.referrals.empty')}</p>
+        </section>
+      ) : (
+        <div className="grid min-w-0 max-w-full gap-5 xl:grid-cols-2">
+          <ListCard
+            title="Приглашённые"
+            icon={<Send size={17} />}
+            rows={invited.map((item) => ({
+              title:
+                item.first_name ||
+                (item.username ? `@${item.username}` : `Пользователь #${item.id}`),
+              detail: item.has_paid
+                ? 'Оплата получена'
+                : item.has_subscription
+                  ? 'Есть подписка'
+                  : 'Новый пользователь',
+              value: item.has_paid ? 'Активен' : '—',
+            }))}
+          />
+          <ListCard
+            title="История начислений"
+            icon={<Check size={17} />}
+            rows={income.map((item) => ({
+              title: item.reason || item.tariff_name || 'Начисление',
+              detail: formatDate(item.created_at),
+              value:
+                item.reward_type === 'days'
+                  ? `+${item.days_granted} дн.`
+                  : `+${formatMoney(item.amount_kopeks)}`,
+            }))}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -7001,6 +7001,38 @@
       "sheetTimeoutDesc": "If you paid, the subscription activates automatically once confirmed. The invoice status is in your profile.",
       "activating": "Payment received, activating your subscription…",
       "cancelled": "Invoice cancelled. If you had already paid, the money will be credited to your balance automatically."
+    },
+    "profile": {
+      "subtitle": "Balance, account and support",
+      "adminPanel": "Admin panel",
+      "balance": "Balance",
+      "topUp": "Top up",
+      "topUpAmount": "Top-up amount",
+      "otherAmount": "Other amount, ₽",
+      "minTopUp": "The minimum top-up is 10 ₽",
+      "topUpPurpose": "Balance top-up",
+      "loyaltyLine": "Level {{name}} · {{discount}}% off — details on the plans page",
+      "loyaltyFallback": "Loyalty level and discounts — on the plans page"
+    },
+    "referrals": {
+      "share": "Share link",
+      "empty": "Nobody yet. Share your link — invited friends and rewards will show up here."
+    },
+    "subCard": {
+      "eyebrow": "YOUR SUBSCRIPTION",
+      "trialEyebrow": "FREE TRIAL",
+      "renew": "Renew access →",
+      "manage": "Manage →",
+      "expired": "Expired",
+      "awaiting": "Awaiting connection",
+      "active": "Active",
+      "trial": "Free trial",
+      "expiredLong": "Subscription expired",
+      "awaitingLong": "Active · waiting for the first connection",
+      "activeLong": "Subscription active",
+      "timeLeft": "Time left",
+      "expiredOn": "Expired: {{date}}",
+      "activeUntil": "Active until: {{date}}"
     }
   }
 }
