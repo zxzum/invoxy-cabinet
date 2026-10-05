@@ -38,6 +38,16 @@ export function StartHero({
   return (
     <section className="glass-panel motion-card relative w-full overflow-hidden rounded-[24px] border border-mint/25 p-5 shadow-[0_0_32px_rgba(165,232,196,.05)] sm:p-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_12%,rgba(165,232,196,.12),transparent_38%)]" />
+      {trialAvailable && (
+        <img
+          src="/images/trial-ribbon-compact.webp"
+          alt=""
+          aria-hidden="true"
+          width="200"
+          height="200"
+          className="pointer-events-none absolute right-3 top-3 hidden w-[150px] select-none min-[1450px]:block 2xl:w-[200px]"
+        />
+      )}
       <div className="relative z-10 max-w-[560px]">
         <p className="text-[11px] font-bold tracking-[.16em] text-mint">
           {trialAvailable ? t('invoxy.start.trialEyebrow') : t('invoxy.start.eyebrow')}
