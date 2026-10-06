@@ -232,6 +232,9 @@ vi.mock('./pages/ModernSubscriptionManage', () => ({
 vi.mock('./invoxystart/pages/SubscriptionManagePage', () => ({
   default: () => <div data-testid="modern-subscription-page">modern subscription</div>,
 }));
+vi.mock('./pages/RenewSubscription', () => ({
+  default: () => <div data-testid="renew-subscription-page">renew</div>,
+}));
 vi.mock('./pages/SavedCards', () => ({
   default: () => <div data-testid="saved-cards-page">saved cards</div>,
 }));
@@ -527,6 +530,25 @@ describe('cabinet route boundary', () => {
 
     expect(await screen.findByTestId('dashboard-page')).toBeTruthy();
     expect(screen.getAllByRole('navigation').length).toBeGreaterThan(0);
+  });
+
+  it('opens the Telegram bot renewal deep link directly on the renewal screen', async () => {
+    auth.state.isAuthenticated = true;
+
+    await renderApp('/subscriptions/42/renew');
+
+    expect(await screen.findByTestId('renew-subscription-page')).toBeTruthy();
+    expect(screen.getByTestId('location').textContent).toContain('/subscriptions/42/renew');
+    expect(screen.getByTestId('location').textContent).not.toContain('[REPLACE]');
+  });
+
+  it('keeps the renewal deep link behind login and remembers it as the return path', async () => {
+    await renderApp('/subscriptions/42/renew');
+
+    expect(await screen.findByLabelText('auth.email')).toBeTruthy();
+    expect(screen.getByTestId('location').getAttribute('data-from')).toBe(
+      '/subscriptions/42/renew',
+    );
   });
 
   it('renders the protected /news list route inside the authenticated shell', async () => {
