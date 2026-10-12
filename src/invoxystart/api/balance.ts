@@ -65,8 +65,19 @@ export const balanceApi = {
   getPendingPayments: (params?: {
     page?: number;
     per_page?: number;
+    active_only?: boolean;
   }): Promise<PaginatedResponse<PendingPayment>> =>
     apiClient.get('/cabinet/balance/pending-payments', { params, cache: 'no-store' }),
+
+  getActivePayments: async (): Promise<PaginatedResponse<PendingPayment>> => {
+    const first = await balanceApi.getPendingPayments({ per_page: 50, active_only: true });
+    const items = [...first.items];
+    for (let page = 2; page <= first.pages; page += 1) {
+      const next = await balanceApi.getPendingPayments({ page, per_page: 50, active_only: true });
+      items.push(...next.items);
+    }
+    return { ...first, items };
+  },
 
   getPendingPayment: (method: string, paymentId: number): Promise<PendingPayment> =>
     apiClient.get(

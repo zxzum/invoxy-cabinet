@@ -47,18 +47,26 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
   const queryClient = useQueryClient();
   const { refreshUser } = useAuth();
   const { t } = useTranslation();
-  const previousInvoiceIdRef = useRef<number | null>(null);
+  const previousInvoiceKeysRef = useRef<string[]>([]);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const { data: pendingData } = useQuery({
-    queryKey: ['pendingPayments'],
-    queryFn: () => balanceApi.getPendingPayments({ per_page: 5 }),
-    refetchInterval: (query) => (query.state.data?.items.some(isInvoiceActive) ? 6_000 : false),
+    queryKey: ['pendingPayments', 'active'],
+    queryFn: () => balanceApi.getActivePayments(),
+    refetchInterval: 6_000,
   });
 
-  const activeInvoice = useMemo(() => {
-    const items = pendingData?.items ?? [];
-    return items.find(isInvoiceActive) ?? null;
-  }, [pendingData]);
+  const invoices = useMemo(() => (pendingData?.items ?? []).filter(isInvoiceActive), [pendingData]);
+  const selectedIndex = Math.max(
+    0,
+    invoices.findIndex((invoice) => `${invoice.method}:${invoice.id}` === selectedKey),
+  );
+  const activeInvoice = invoices[selectedIndex] ?? null;
+
+  function selectInvoice(index: number) {
+    const invoice = invoices[index];
+    if (invoice) setSelectedKey(`${invoice.method}:${invoice.id}`);
+  }
 
   const refreshPurchasedData = useCallback(() => {
     clearResponseCache();
@@ -75,13 +83,11 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
   }, [queryClient, refreshUser]);
 
   useEffect(() => {
-    const nextId = activeInvoice?.id ?? null;
-    const disappeared = previousInvoiceIdRef.current !== null && nextId === null;
-    previousInvoiceIdRef.current = nextId;
-    // Счёт ушёл из списка ожидающих: зачисление и автопокупка тарифа из корзины
-    // завершаются позже — обновляем сразу и ещё через 3 и 10 секунд.
+    const nextKeys = invoices.map((invoice) => `${invoice.method}:${invoice.id}`);
+    const disappeared = previousInvoiceKeysRef.current.some((key) => !nextKeys.includes(key));
+    previousInvoiceKeysRef.current = nextKeys;
     if (disappeared) return schedulePaymentRefresh(refreshPurchasedData);
-  }, [activeInvoice?.id, refreshPurchasedData]);
+  }, [invoices, refreshPurchasedData]);
 
   const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
   const [checking, setChecking] = useState(false);
@@ -165,8 +171,13 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
     if (cancelling || !activeInvoice) return;
     setCancelling(true);
     try {
-      await balanceApi.cancelPendingPayment(activeInvoice.method, activeInvoice.id);
-      showToast(t('invoxy.payment.cancelled'));
+      const result = await balanceApi.cancelPendingPayment(activeInvoice.method, activeInvoice.id);
+      if (result.is_paid) {
+        showToast('Платёж уже подтверждён. Баланс пополнен.');
+        schedulePaymentRefresh(refreshPurchasedData);
+      } else {
+        showToast(t('invoxy.payment.cancelled'));
+      }
       void queryClient.invalidateQueries({ queryKey: ['pendingPayments'] });
     } catch (err: unknown) {
       const msg = getApiErrorMessage(err, 'Не удалось отменить счёт');
@@ -192,6 +203,38 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
         </div>
       </div>
 
+      {invoices.length > 1 && (
+        <nav
+          aria-label="Неоплаченные счета"
+          className="mt-4 flex items-center justify-between gap-2"
+        >
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={selectedIndex === 0 || checking || cancelling}
+            onClick={() => selectInvoice(selectedIndex - 1)}
+            aria-label="Предыдущий счёт"
+            className="h-11 px-3"
+          >
+            <span aria-hidden="true">←</span>
+            <span className="hidden sm:inline">Предыдущий</span>
+          </Button>
+          <span role="status" className="text-xs text-muted tabular-nums">
+            Счёт {selectedIndex + 1} из {invoices.length}
+          </span>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={selectedIndex === invoices.length - 1 || checking || cancelling}
+            onClick={() => selectInvoice(selectedIndex + 1)}
+            aria-label="Следующий счёт"
+            className="h-11 px-3"
+          >
+            <span className="hidden sm:inline">Следующий</span>
+            <span aria-hidden="true">→</span>
+          </Button>
+        </nav>
+      )}
       <div className="mt-5 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/[.05] text-muted">
@@ -211,6 +254,10 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
         </div>
       </div>
       <p className="mt-2 break-words text-sm leading-relaxed text-muted">{purposeText}</p>
+      <p className="mt-2 text-xs leading-relaxed text-muted">
+        Чтобы создать новый счёт, оплатите или отмените неоплаченные. Возврат в меню не отменяет
+        счёт.
+      </p>
 
       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
         {activeInvoice.payment_url && (
@@ -224,7 +271,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
           <Button
             type="button"
             variant="secondary"
-            disabled={checking}
+            disabled={checking || cancelling}
             onClick={handleCheck}
             className="h-11 min-w-0 gap-1.5 px-3 text-xs font-medium sm:h-12"
           >
@@ -235,7 +282,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
           <Button
             type="button"
             variant="ghost"
-            disabled={cancelling}
+            disabled={checking || cancelling}
             onClick={handleCancel}
             className="h-11 px-3 text-xs font-medium text-muted hover:text-red-300 sm:h-12"
           >
