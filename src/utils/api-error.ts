@@ -1,4 +1,23 @@
 import axios from 'axios';
+import { ApiError } from '@/invoxystart/api/client';
+
+function errorDetail(err: unknown): unknown {
+  const data =
+    err instanceof ApiError ? err.data : axios.isAxiosError(err) ? err.response?.data : null;
+  return data && typeof data === 'object' && 'detail' in data ? data.detail : undefined;
+}
+
+export function shouldUseTariffPurchaseFlow(err: unknown): boolean {
+  const detail = errorDetail(err);
+  if (!detail || typeof detail !== 'object') return false;
+  const values = detail as { code?: string; error_code?: string; use_purchase_flow?: boolean };
+  return (
+    values.use_purchase_flow === true &&
+    ['subscription_expired', 'trial_cannot_switch', 'free_tariff_cannot_switch'].includes(
+      values.code ?? values.error_code ?? '',
+    )
+  );
+}
 
 /**
  * True when the backend answered 404 on the route itself — for cabinet
@@ -19,8 +38,8 @@ export function isRateLimitedError(err: unknown): boolean {
 }
 
 export function getApiErrorMessage(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err)) {
-    const detail = err.response?.data?.detail;
+  if (err instanceof ApiError || axios.isAxiosError(err)) {
+    const detail = errorDetail(err);
     if (typeof detail === 'string') return detail;
     // Pydantic V2 validation errors: [{type, loc, msg, input, ctx}]
     if (Array.isArray(detail) && detail.length > 0) {

@@ -168,8 +168,29 @@ export const authApi = {
       { code, state, device_id: deviceId },
     ),
 
+  verifyEmailMerge: (code: string) =>
+    apiClient.post<{ message: string; merge_required?: boolean; merge_token?: string }>(
+      '/cabinet/auth/email/merge/verify',
+      { code },
+    ),
+
   linkTelegram: (data: { init_data: string } | { id_token: string } | TelegramWidgetData) =>
     apiClient.post<{ success: boolean }>('/cabinet/auth/account/link/telegram', data),
+
+  requestTelegramLinkDeepLink: () =>
+    apiClient.post<{
+      token: string;
+      bot_username: string;
+      bot_link: string;
+      expires_in: number;
+    }>('/cabinet/auth/account/link/telegram/deeplink/request'),
+
+  pollTelegramLinkDeepLink: (token: string) =>
+    apiClient.post<{
+      status: 'pending' | 'linked' | 'merge_required';
+      merge_token?: string;
+      message?: string;
+    }>('/cabinet/auth/account/link/telegram/deeplink/poll', { token }),
 
   unlinkProvider: (provider: string) =>
     apiClient.post<{ success: boolean }>(

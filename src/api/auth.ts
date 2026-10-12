@@ -310,6 +310,43 @@ export const authApi = {
     return response.data;
   },
 
+  requestTelegramLinkDeepLink: async (): Promise<{
+    token: string;
+    bot_username: string;
+    bot_link: string;
+    expires_in: number;
+  }> => {
+    const response = await apiClient.post<{
+      token: string;
+      bot_username: string;
+      bot_link: string;
+      expires_in: number;
+    }>('/cabinet/auth/account/link/telegram/deeplink/request');
+    return response.data;
+  },
+
+  pollTelegramLinkDeepLink: async (
+    token: string,
+  ): Promise<{
+    status: 'pending' | 'linked' | 'merge_required';
+    merge_token?: string;
+    message?: string;
+  }> => {
+    const response = await apiClient.post<{
+      status: 'pending' | 'linked' | 'merge_required';
+      merge_token?: string;
+      message?: string;
+    }>(
+      '/cabinet/auth/account/link/telegram/deeplink/poll',
+      { token },
+      { validateStatus: (status) => status === 200 || status === 202 },
+    );
+    if (response.status === 202) {
+      return { status: 'pending' };
+    }
+    return response.data;
+  },
+
   linkServerComplete: async (
     code: string,
     state: string,

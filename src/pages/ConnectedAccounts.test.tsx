@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   showToast: vi.fn(),
   setUser: vi.fn(),
   openLink: vi.fn(),
+  requestTelegramLinkDeepLink: vi.fn(),
+  pollTelegramLinkDeepLink: vi.fn(),
 }));
 
 vi.mock('../api/auth', () => ({
@@ -28,6 +30,8 @@ vi.mock('../api/auth', () => ({
     verifyEmailMerge: mocks.verifyEmailMerge,
     getMe: mocks.getMe,
     linkTelegram: vi.fn(),
+    requestTelegramLinkDeepLink: mocks.requestTelegramLinkDeepLink,
+    pollTelegramLinkDeepLink: mocks.pollTelegramLinkDeepLink,
   },
 }));
 vi.mock('../api/branding', () => ({
@@ -130,5 +134,40 @@ describe('ConnectedAccounts', () => {
       type: 'info',
       message: 'profile.accounts.continueInBrowser',
     });
+  });
+
+  it('renders TelegramLinkWidget deep link button on widget failure', async () => {
+    mocks.getTelegramWidgetConfig.mockResolvedValue({
+      bot_username: 'test_bot',
+      oidc_enabled: false,
+      oidc_client_id: null,
+    });
+    mocks.requestTelegramLinkDeepLink.mockResolvedValue({
+      token: 'test_token',
+      bot_username: 'test_bot',
+      bot_link: 'https://t.me/test_bot?start=linktg_test_token',
+      expires_in: 300,
+    });
+    mocks.pollTelegramLinkDeepLink.mockResolvedValue({ status: 'pending' });
+
+    const { TelegramLinkWidget } = await import('./ConnectedAccounts');
+    render(
+      <MemoryRouter>
+        <QueryClientProvider
+          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+        >
+          <TelegramLinkWidget />
+        </QueryClientProvider>
+      </MemoryRouter>,
+    );
+
+    // After timeout, script fails and deep link is requested
+    await waitFor(
+      () => {
+        expect(mocks.requestTelegramLinkDeepLink).toHaveBeenCalled();
+        expect(screen.getByText('Открыть в Telegram')).toBeTruthy();
+      },
+      { timeout: 4000 },
+    );
   });
 });

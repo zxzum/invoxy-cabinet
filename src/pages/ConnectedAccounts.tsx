@@ -18,6 +18,7 @@ import { useAuthStore } from '../store/auth';
 import { isValidEmail } from '../utils/validation';
 import type { LinkedProvider } from '../types';
 import { Skeleton, SkeletonGroup } from '@/components/ui/skeleton';
+import { QRCodeSVG } from 'qrcode.react';
 
 const OAUTH_PROVIDERS = ['google', 'yandex', 'discord', 'vk'];
 
@@ -29,7 +30,7 @@ const isLinkableProvider = (provider: string): boolean =>
 // SessionStorage key for Telegram link CSRF state
 export const LINK_TELEGRAM_STATE_KEY = 'link_telegram_state';
 
-const LINK_SCRIPT_LOAD_TIMEOUT_MS = 8000;
+const LINK_SCRIPT_LOAD_TIMEOUT_MS = 2500;
 
 /** Telegram account linking widget (browser only). Supports OIDC popup and legacy widget. */
 export function TelegramLinkWidget({ onLinked }: { onLinked?: () => void } = {}) {
@@ -96,6 +97,69 @@ export function TelegramLinkWidget({ onLinked }: { onLinked?: () => void } = {})
     if (!mountedRef.current || scriptLoaded) return;
     setScriptFailed(true);
   }, [scriptLoaded]);
+
+  // Deep link state & polling
+  const [deepLinkData, setDeepLinkData] = useState<{
+    token: string;
+    bot_link: string;
+  } | null>(null);
+  const [deepLinkLoading, setDeepLinkLoading] = useState(false);
+  const [deepLinkError, setDeepLinkError] = useState<string | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startDeepLink = useCallback(async () => {
+    if (deepLinkLoading) return;
+    setDeepLinkLoading(true);
+    setDeepLinkError(null);
+    try {
+      const data = await authApi.requestTelegramLinkDeepLink();
+      if (!mountedRef.current) return;
+      setDeepLinkData({ token: data.token, bot_link: data.bot_link });
+
+      const poll = async () => {
+        if (!mountedRef.current) return;
+        try {
+          const res = await authApi.pollTelegramLinkDeepLink(data.token);
+          if (!mountedRef.current) return;
+          if (res.status === 'linked') {
+            queryClient.invalidateQueries({ queryKey: ['linked-providers'] });
+            onLinked?.();
+            showToast({ type: 'success', message: t('profile.accounts.linkSuccess') });
+            return;
+          }
+          if (res.status === 'merge_required' && res.merge_token) {
+            navigate(`/merge/${res.merge_token}`, { replace: true });
+            return;
+          }
+          pollTimerRef.current = setTimeout(poll, 2000);
+        } catch {
+          if (mountedRef.current) {
+            pollTimerRef.current = setTimeout(poll, 3000);
+          }
+        }
+      };
+
+      pollTimerRef.current = setTimeout(poll, 2000);
+    } catch (err: unknown) {
+      if (mountedRef.current) {
+        setDeepLinkError(getErrorDetail(err) || t('profile.accounts.linkError'));
+      }
+    } finally {
+      if (mountedRef.current) setDeepLinkLoading(false);
+    }
+  }, [deepLinkLoading, navigate, onLinked, queryClient, showToast, t]);
+
+  useEffect(() => {
+    if (scriptFailed && !deepLinkData && !deepLinkLoading) {
+      void startDeepLink();
+    }
+  }, [scriptFailed, deepLinkData, deepLinkLoading, startDeepLink]);
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    };
+  }, []);
 
   // OIDC callback handler (ref pattern to avoid stale closures)
   const handleOIDCCallbackRef =
@@ -274,21 +338,49 @@ export function TelegramLinkWidget({ onLinked }: { onLinked?: () => void } = {})
     return null;
   }
 
-  // Script failed to load - show unavailable message with bot link
+  // Script failed to load - show deep link auth flow
   if (scriptFailed) {
     return (
-      <div className="flex max-w-[200px] flex-col items-center gap-1.5">
-        <p className="break-words text-center text-xs text-dark-400">
-          {t('profile.accounts.telegramLinkUnavailable')}
-        </p>
-        <a
-          href={`https://t.me/${botUsername}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="break-all text-sm text-accent-400 transition-colors hover:text-accent-300"
-        >
-          @{botUsername}
-        </a>
+      <div className="flex w-full flex-col items-center gap-4 py-2 text-center">
+        {deepLinkData?.bot_link ? (
+          <>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <QRCodeSVG value={deepLinkData.bot_link} size={140} level="M" />
+            </div>
+            <div className="space-y-1.5">
+              <a
+                href={deepLinkData.bot_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="button-lift inline-flex items-center justify-center gap-2 rounded-full bg-mint px-5 py-2.5 text-xs font-bold text-bg transition hover:bg-mint/90 active:scale-[0.98]"
+              >
+                <span>Открыть в Telegram</span>
+              </a>
+              <p className="max-w-[240px] text-xs text-muted">
+                Откройте бота и подтвердите привязку. Страница обновится автоматически.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-muted">
+              <span className="h-2 w-2 rounded-full bg-mint animate-pulse" />
+              <span>Ожидание подтверждения в боте…</span>
+            </div>
+          </>
+        ) : deepLinkLoading ? (
+          <span className="text-sm text-muted">Подготовка ссылки…</span>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-red-200">
+              {deepLinkError || t('profile.accounts.telegramLinkUnavailable')}
+            </p>
+            <button
+              type="button"
+              onClick={() => void startDeepLink()}
+              className="button-lift rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-ink hover:bg-white/15"
+            >
+              Попробовать снова
+            </button>
+          </div>
+        )}
       </div>
     );
   }

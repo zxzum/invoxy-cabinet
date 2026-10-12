@@ -1,6 +1,11 @@
 import { AxiosError, AxiosHeaders } from 'axios';
 import { describe, expect, it } from 'vitest';
-import { getApiErrorMessage, isEndpointMissingError } from './api-error';
+import {
+  getApiErrorMessage,
+  isEndpointMissingError,
+  shouldUseTariffPurchaseFlow,
+} from './api-error';
+import { ApiError } from '@/invoxystart/api/client';
 
 function axiosErrorWithStatus(status: number, detail?: unknown): AxiosError {
   const headers = new AxiosHeaders();
@@ -38,6 +43,14 @@ describe('isEndpointMissingError', () => {
 });
 
 describe('getApiErrorMessage', () => {
+  it('reads structured errors from the fetch cabinet client', () => {
+    expect(
+      getApiErrorMessage(new ApiError(400, { detail: { message: 'Purchase a plan' } }), 'fb'),
+    ).toBe('Purchase a plan');
+    expect(getApiErrorMessage(new ApiError(400, { detail: 'Invalid period' }), 'fb')).toBe(
+      'Invalid period',
+    );
+  });
   it('returns string detail from an axios error', () => {
     expect(getApiErrorMessage(axiosErrorWithStatus(400, 'Code must not be empty'), 'fb')).toBe(
       'Code must not be empty',
@@ -75,5 +88,27 @@ describe('getApiErrorMessage', () => {
   it('falls back for a structured detail without a string message', () => {
     expect(getApiErrorMessage(axiosErrorWithStatus(400, { code: 'x' }), 'fb')).toBe('fb');
     expect(getApiErrorMessage(axiosErrorWithStatus(400, { message: 7 }), 'fb')).toBe('fb');
+  });
+});
+
+describe('shouldUseTariffPurchaseFlow', () => {
+  it.each(['trial_cannot_switch', 'subscription_expired', 'free_tariff_cannot_switch'])(
+    'handles %s with both API clients',
+    (code) => {
+      const detail = { code, use_purchase_flow: true };
+      expect(shouldUseTariffPurchaseFlow(new ApiError(400, { detail }))).toBe(true);
+      expect(shouldUseTariffPurchaseFlow(axiosErrorWithStatus(400, detail))).toBe(true);
+    },
+  );
+  it('does not bypass restrictions or turn a network failure into a purchase', () => {
+    expect(
+      shouldUseTariffPurchaseFlow(
+        new ApiError(403, { detail: { code: 'account_restricted', use_purchase_flow: true } }),
+      ),
+    ).toBe(false);
+    expect(
+      shouldUseTariffPurchaseFlow(new ApiError(400, { detail: { code: 'trial_cannot_switch' } })),
+    ).toBe(false);
+    expect(shouldUseTariffPurchaseFlow(new Error('Network error'))).toBe(false);
   });
 });
