@@ -25,6 +25,7 @@ export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () =
   const navItems = [
     { to: '/dashboard', label: t('nav.dashboard'), icon: House },
     { to: '/tariffs', label: t('nav.tariffs'), icon: Layers, accent: true },
+    { to: '/support', label: t('nav.support', 'Поддержка'), icon: Info },
     { to: '/referrals', label: t('nav.referral'), icon: Users },
     { to: '/info', label: t('nav.info'), icon: Info },
     { to: '/news', label: t('invoxy.nav.news'), icon: Bell },

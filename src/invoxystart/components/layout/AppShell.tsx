@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, type ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { Sidebar } from '@/invoxystart/components/layout/Sidebar';
 import { MobileNav, isMobileNavHidden } from '@/invoxystart/components/layout/MobileNav';
 import { BackgroundShapes } from '@/invoxystart/components/layout/BackgroundShapes';
 import { PaymentProvider } from '@/invoxystart/components/payments/PaymentFlow';
+import { useTranslation } from 'react-i18next';
 import { useTelegramSDK } from '@/hooks/useTelegramSDK';
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -17,6 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 function ShellLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const { isTelegramWebApp, isFullscreen, platform, safeAreaInset, contentSafeAreaInset } =
     useTelegramSDK();
@@ -112,6 +114,16 @@ function ShellLayout({ children }: { children: ReactNode }) {
         <Sidebar onTopUp={() => navigate('/profile#top-up')} onHelp={() => navigate('/support')} />
 
         <main className="mx-auto flex min-w-0 w-full max-w-[560px] flex-1 flex-col pb-[calc(var(--mobile-nav-h)+16px)] lg:pb-[1.1vw] lg:mx-0 lg:max-w-none lg:pt-[1.1vw]">
+          {!isMobileNavHidden(location.pathname) && (
+            <div className="mb-3 flex justify-end lg:hidden">
+              <Link
+                to="/support"
+                className="glass-control inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-mint"
+              >
+                {t('nav.support', 'Поддержка')}
+              </Link>
+            </div>
+          )}
           <div className="min-h-full w-full min-w-0">{children}</div>
         </main>
       </div>
