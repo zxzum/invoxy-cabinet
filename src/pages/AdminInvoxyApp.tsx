@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../api/client';
 import { usePlatform } from '../platform/hooks/usePlatform';
+import { useNativeDialog } from '../platform/hooks/useNativeDialog';
 import { usePermissionStore } from '@/store/permissions';
 import { BackIcon } from '@/components/icons';
 
@@ -19,7 +20,11 @@ interface AppDeviceRow {
   id: number;
   platform: string;
   os_version: string | null;
+  device_model: string | null;
   app_version: string | null;
+  last_ip: string | null;
+  first_seen_at: string | null;
+  revoked_at: string | null;
   last_seen_at: string | null;
   last_connect_ok: boolean | null;
   last_error_code: string | null;
@@ -40,7 +45,10 @@ const fetchJson = async <T,>(url: string, params?: Record<string, unknown>) =>
 export default function AdminInvoxyApp() {
   const navigate = useNavigate();
   const { capabilities } = usePlatform();
+  const dialog = useNativeDialog();
+  const queryClient = useQueryClient();
   const canEdit = usePermissionStore((s) => s.hasPermission('settings:edit'));
+  const canKick = usePermissionStore((s) => s.hasPermission('users:edit'));
   const [search, setSearch] = useState('');
   const [platform, setPlatform] = useState('');
   const [failing, setFailing] = useState(false);
@@ -58,6 +66,22 @@ export default function AdminInvoxyApp() {
         failing,
       }),
   });
+
+  const revoke = useMutation({
+    mutationFn: async (id: number) =>
+      (await apiClient.post(`/cabinet/admin/app/devices/${id}/revoke`)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-invoxy-app-devices'] }),
+  });
+  const kick = async (d: AppDeviceRow) => {
+    const who = d.user ? (d.user.username ? `@${d.user.username}` : `#${d.user.id}`) : 'ключ';
+    if (
+      await dialog.confirm(
+        `Выкинуть «${d.device_model ?? d.platform}» (${who}) из аккаунта? Приложение выйдет из аккаунта и попросит войти заново.`,
+      )
+    ) {
+      revoke.mutate(d.id);
+    }
+  };
 
   const s = stats.data;
   const attempts = (s?.connect_ok ?? 0) + (s?.connect_failed ?? 0);
@@ -132,7 +156,15 @@ export default function AdminInvoxyApp() {
           </label>
         </div>
         <SimpleTable
-          headers={['Пользователь', 'Платформа', 'Версия', 'Активность', 'Последнее подключение']}
+          headers={[
+            'Пользователь',
+            'Устройство',
+            'Версия',
+            'IP',
+            'Активность',
+            'Последнее подключение',
+            '',
+          ]}
           rows={(devices.data?.items ?? []).map((d) => [
             d.user ? (
               <Link
@@ -145,21 +177,55 @@ export default function AdminInvoxyApp() {
             ) : (
               'только ключ'
             ),
-            `${d.platform} ${d.os_version ?? ''}`.trim(),
+            <div key="m">
+              <div>{d.device_model ?? d.platform}</div>
+              <div className="text-xs text-dark-500">
+                {`${d.device_model ? `${d.platform} ` : ''}${d.os_version ?? ''}`.trim()}
+              </div>
+            </div>,
             d.app_version ?? '—',
-            d.last_seen_at ? new Date(d.last_seen_at).toLocaleString('ru-RU') : '—',
+            d.last_ip ?? '—',
+            <div key="a">
+              <div>{d.last_seen_at ? new Date(d.last_seen_at).toLocaleString('ru-RU') : '—'}</div>
+              {d.first_seen_at && (
+                <div className="text-xs text-dark-500">
+                  с {new Date(d.first_seen_at).toLocaleDateString('ru-RU')}
+                </div>
+              )}
+            </div>,
             d.last_connect_ok === null
               ? '—'
               : d.last_connect_ok
                 ? 'успешно'
                 : `ошибка: ${d.last_error_code ?? 'unknown'}`,
+            d.revoked_at ? (
+              <span key="r" className="text-xs text-warning-400">
+                выкинут {new Date(d.revoked_at).toLocaleDateString('ru-RU')}
+              </span>
+            ) : canKick && d.user ? (
+              <button
+                key="k"
+                type="button"
+                disabled={revoke.isPending}
+                onClick={() => kick(d)}
+                className="text-xs text-error-400 hover:underline"
+              >
+                Выкинуть
+              </button>
+            ) : (
+              ''
+            ),
           ])}
         />
         <p className="text-xs text-dark-500">
-          Всего: {devices.data?.total ?? 0}. ID устройства хранится в виде хэша, IP и адреса сайтов
-          не собираются; события подключений хранятся 30 дней.
+          Всего: {devices.data?.total ?? 0}. ID устройства хранится в виде хэша; IP — адрес, с
+          которого приложение последний раз отчиталось (адреса сайтов не собираются); события
+          подключений хранятся 30 дней. «Выкинуть» выводит устройство из аккаунта: приложение
+          попросит войти заново.
         </p>
       </div>
+
+      <SubscriptionDomainsEditor canEdit={canEdit} />
 
       <RoutingEditor canEdit={canEdit} />
     </div>
@@ -228,6 +294,67 @@ function RoutingEditor({ canEdit }: { canEdit: boolean }) {
         <button
           type="button"
           disabled={!Object.keys(draft).length || save.isPending}
+          onClick={() => save.mutate()}
+          className="btn-primary"
+        >
+          {save.isPending ? 'Сохраняем…' : 'Сохранить'}
+        </button>
+      )}
+      {save.isError && <p className="text-sm text-error-400">Не удалось сохранить.</p>}
+    </div>
+  );
+}
+
+interface AppSubscriptionDomains {
+  domains: string[];
+  defaults: string[];
+}
+
+/** Hosts the app may fetch subscriptions from: it sends the device headers to the link's host, so a key on any other
+ * domain is refused by the app itself. A subdomain of a listed domain is allowed. */
+function SubscriptionDomainsEditor({ canEdit }: { canEdit: boolean }) {
+  const queryClient = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ['admin-invoxy-app-subscription-domains'],
+    queryFn: () => fetchJson<AppSubscriptionDomains>('/cabinet/admin/app/subscription-domains'),
+  });
+  const [draft, setDraft] = useState<string | null>(null);
+  const text = draft ?? data?.domains.join('\n') ?? '';
+  const save = useMutation({
+    mutationFn: async () =>
+      (
+        await apiClient.put<AppSubscriptionDomains>('/cabinet/admin/app/subscription-domains', {
+          domains: splitList(text),
+        })
+      ).data,
+    onSuccess: (saved) => {
+      queryClient.setQueryData(['admin-invoxy-app-subscription-domains'], saved);
+      setDraft(null);
+    },
+  });
+
+  return (
+    <div className="card space-y-3 p-4">
+      <div>
+        <h2 className="font-semibold text-dark-100">Домены подписки</h2>
+        <p className="text-sm text-dark-400">
+          Ключ с любого другого домена приложение отклонит. Поддомены перечисленных доменов
+          разрешены. По умолчанию: {(data?.defaults ?? []).join(', ') || '—'}. Пустой список
+          возвращает значения по умолчанию.
+        </p>
+      </div>
+      <textarea
+        value={text}
+        disabled={!canEdit}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={4}
+        className="input w-full font-mono text-xs"
+        placeholder="lazeika.xyz"
+      />
+      {canEdit && (
+        <button
+          type="button"
+          disabled={draft === null || save.isPending}
           onClick={() => save.mutate()}
           className="btn-primary"
         >
