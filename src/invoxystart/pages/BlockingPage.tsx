@@ -218,7 +218,7 @@ export default function BlockingPage({
             )}
             {type === 'blacklisted' && (
               <a
-                href="https://t.me/invoxyvpn"
+                href="https://t.me/invoxy_support_bot"
                 target="_blank"
                 rel="noreferrer"
                 className="glass-control flex h-13 items-center justify-center rounded-full text-sm font-bold"

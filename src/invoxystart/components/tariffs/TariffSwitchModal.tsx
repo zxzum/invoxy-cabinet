@@ -1,8 +1,9 @@
+import { shouldUseTariffPurchaseFlow } from '@/utils/api-error';
 import { useState, useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { AxiosError } from 'axios';
+import { getApiErrorMessage } from '@/utils/api-error';
 import {
   ArrowRight,
   Check,
@@ -44,21 +45,6 @@ interface TariffSwitchModalProps {
   onClose: () => void;
   onFallbackToPurchase: () => void;
   onTopUp: () => void;
-}
-
-function shouldUsePurchaseFlow(error: unknown): boolean {
-  if (!(error instanceof AxiosError)) return false;
-  const detail = error.response?.data?.detail as
-    | { code?: string; error_code?: string; use_purchase_flow?: boolean }
-    | undefined;
-  if (!detail || typeof detail !== 'object') return false;
-  const code = detail.code ?? detail.error_code;
-  return (
-    (code === 'subscription_expired' ||
-      code === 'trial_cannot_switch' ||
-      code === 'free_tariff_cannot_switch') &&
-    detail.use_purchase_flow === true
-  );
 }
 
 export function TariffSwitchModal({
@@ -141,15 +127,15 @@ export function TariffSwitchModal({
       );
     },
     onError: (err: unknown) => {
-      if (shouldUsePurchaseFlow(err)) {
+      if (shouldUseTariffPurchaseFlow(err)) {
         onClose();
         onFallbackToPurchase();
         return;
       }
-      const message =
-        err instanceof AxiosError && typeof err.response?.data?.detail === 'string'
-          ? err.response.data.detail
-          : 'Не удалось сменить тариф. Проверьте баланс или обратитесь в поддержку.';
+      const message = getApiErrorMessage(
+        err,
+        'Не удалось сменить тариф. Проверьте баланс или обратитесь в поддержку.',
+      );
       showToast(message, 'error');
     },
   });
@@ -316,7 +302,7 @@ export function TariffSwitchModal({
             {/* Fallback error if trial or expired */}
             {!previewLoading && previewError && (
               <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center">
-                {shouldUsePurchaseFlow(previewError) ? (
+                {shouldUseTariffPurchaseFlow(previewError) ? (
                   <>
                     <p className="text-sm font-semibold text-ink">
                       Для этой подписки требуется оформление тарифа
@@ -342,10 +328,10 @@ export function TariffSwitchModal({
                       Не удалось рассчитать смету перехода
                     </p>
                     <p className="mt-1.5 text-xs text-muted">
-                      {previewError instanceof AxiosError &&
-                      typeof previewError.response?.data?.detail === 'string'
-                        ? previewError.response.data.detail
-                        : 'Произошла ошибка при обращении к серверу.'}
+                      {getApiErrorMessage(
+                        previewError,
+                        'Произошла ошибка при обращении к серверу.',
+                      )}
                     </p>
                     <button
                       type="button"

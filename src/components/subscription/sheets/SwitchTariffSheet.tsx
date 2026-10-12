@@ -1,8 +1,8 @@
+import { shouldUseTariffPurchaseFlow } from '@/utils/api-error';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
 import { subscriptionApi } from '../../../api/subscription';
 import { getErrorMessage } from '../../../utils/subscriptionHelpers';
 import { useCurrency } from '../../../hooks/useCurrency';
@@ -37,20 +37,6 @@ import { Skeleton, SkeletonGroup } from '../../ui/skeleton';
 // (`free_tariff_cannot_switch`, TARIFF_SWITCH_RESET_FREE_DAYS). All arrive as
 // detail.code + use_purchase_flow=true; some payloads use the legacy
 // `error_code` key, so we accept either.
-function shouldUsePurchaseFlow(error: unknown): boolean {
-  if (!(error instanceof AxiosError)) return false;
-  const detail = error.response?.data?.detail as
-    | { code?: string; error_code?: string; use_purchase_flow?: boolean }
-    | undefined;
-  if (!detail || typeof detail !== 'object') return false;
-  const code = detail.code ?? detail.error_code;
-  return (
-    (code === 'subscription_expired' ||
-      code === 'trial_cannot_switch' ||
-      code === 'free_tariff_cannot_switch') &&
-    detail.use_purchase_flow === true
-  );
-}
 
 export interface SwitchTariffSheetProps {
   open: boolean;
@@ -99,7 +85,7 @@ export function SwitchTariffSheet({
       // Backend signal: this subscription can't be switched (it lapsed, or it's
       // a trial). Hand the selected tariff back to the parent so it opens the
       // regular purchase form instead.
-      if (shouldUsePurchaseFlow(error)) {
+      if (shouldUseTariffPurchaseFlow(error)) {
         const targetTariff = tariffs.find((tariff) => tariff.id === tariffId);
         if (targetTariff) {
           onClose();
@@ -239,7 +225,7 @@ export function SwitchTariffSheet({
                   // Suppress the toast when the purchase-flow fallback already
                   // triggered (expired / trial): the parent is now showing the
                   // regular purchase form, so the raw axios message would mislead.
-                  if (shouldUsePurchaseFlow(switchMutation.error)) {
+                  if (shouldUseTariffPurchaseFlow(switchMutation.error)) {
                     return null;
                   }
                   return (

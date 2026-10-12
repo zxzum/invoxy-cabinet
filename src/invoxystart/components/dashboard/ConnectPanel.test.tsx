@@ -22,3 +22,22 @@ it('gives a new subscriber one clear setup action', () => {
   expect(onOpenGuide).toHaveBeenCalledOnce();
   expect(screen.queryByRole('button', { name: 'invoxy.connect.happ' })).toBeNull();
 });
+
+it.each([true, false])(
+  'shows the manual link without expanding anything (first=%s)',
+  (firstConnection) => {
+    render(
+      <ConnectPanel
+        accessLink="https://example.com/sub"
+        firstConnection={firstConnection}
+        onOpenGuide={vi.fn()}
+      />,
+    );
+    const input = screen.getByRole('textbox', {
+      name: 'invoxy.connect.manualKey',
+    }) as HTMLInputElement;
+    expect(input.value).toBe('https://example.com/sub');
+    expect(input.readOnly).toBe(true);
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+  },
+);

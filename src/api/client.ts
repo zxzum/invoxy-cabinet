@@ -73,6 +73,7 @@ const AUTH_ENDPOINTS = [
   '/cabinet/auth/deeplink/',
   '/cabinet/auth/login/auto',
   '/cabinet/landing/',
+  '/cabinet/public/',
 ];
 
 function isAuthEndpoint(url: string | undefined): boolean {

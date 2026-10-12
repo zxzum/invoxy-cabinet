@@ -4,7 +4,8 @@ const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL).replace(/\/
 const UNAUTH_PATHS = [
   '/cabinet/auth/telegram',
   '/cabinet/auth/email/login',
-  '/cabinet/auth/email/register',
+  '/cabinet/auth/email/register/standalone',
+  '/cabinet/auth/email/register/resend',
   '/cabinet/auth/email/verify',
   '/cabinet/auth/refresh',
   '/cabinet/auth/password/',

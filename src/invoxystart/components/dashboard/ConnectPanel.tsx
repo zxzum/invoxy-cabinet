@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
 import { Smartphone } from '@/invoxystart/components/ui/RuneIcon';
@@ -17,6 +18,7 @@ export function ConnectPanel({
   onOpenGuide: () => void;
 }) {
   const { t } = useTranslation();
+  const manualLinkId = useId();
   return (
     <section
       className={`glass-panel motion-card flex w-full flex-col gap-3.5 rounded-[28px] p-4 sm:p-5 ${
@@ -43,13 +45,19 @@ export function ConnectPanel({
         {firstConnection ? t('invoxy.connect.setupFirst') : t('invoxy.connect.setupAnother')}
       </button>
 
-      {accessLink && !firstConnection && (
-        <details className="border-t border-white/8 pt-2">
-          <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-muted">
+      {accessLink && (
+        <div className="border-t border-white/8 pt-3">
+          <label htmlFor={manualLinkId} className="mb-3 block text-sm font-semibold text-muted">
             {t('invoxy.connect.manualKey')}
-          </summary>
+          </label>
           <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate text-xs text-muted">{accessLink}</p>
+            <input
+              id={manualLinkId}
+              readOnly
+              value={accessLink}
+              onFocus={(event) => event.currentTarget.select()}
+              className="glass-control min-h-11 min-w-0 flex-1 rounded-xl px-3 text-xs text-ink"
+            />
             <LivelyCopyButton
               variant="glass"
               text={accessLink}
@@ -58,7 +66,7 @@ export function ConnectPanel({
               className="!w-auto shrink-0 px-4"
             />
           </div>
-        </details>
+        </div>
       )}
     </section>
   );

@@ -5,7 +5,7 @@ import { SubscriptionCard } from '@/invoxystart/components/dashboard/Subscriptio
 import { TrafficCards } from '@/invoxystart/components/dashboard/TrafficCards';
 import { DevicesCard } from '@/invoxystart/components/dashboard/DevicesCard';
 import { ConnectPanel } from '@/invoxystart/components/dashboard/ConnectPanel';
-import { RenewalCard, defaultTermId } from '@/invoxystart/components/dashboard/RenewalCard';
+import { RenewalCard } from '@/invoxystart/components/dashboard/RenewalCard';
 import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
 import { StartHero } from '@/invoxystart/components/dashboard/states/StartHero';
 import { StartSteps } from '@/invoxystart/components/dashboard/states/StartSteps';
@@ -28,7 +28,7 @@ import { LazeikaMigrationModal } from '@/components/migration/LazeikaMigrationMo
 import { safeSession } from '@/utils/safeStorage';
 import { PiSparkleFill, PiArrowRightBold } from 'react-icons/pi';
 import { deriveAccountState } from '@/invoxystart/lib/accountState';
-import { useRenewalBreakdown } from '@/invoxystart/lib/useRenewalBreakdown';
+import { apiErrorMessage, useRenewalBreakdown } from '@/invoxystart/lib/useRenewalBreakdown';
 
 const DEVICE_PREVIEW_COUNT = 3;
 
@@ -243,6 +243,7 @@ export function DashboardPage() {
     name: device.local_name || device.device_model || t('invoxy.dashboard.deviceFallback'),
     status: `${device.platform || t('invoxy.dashboard.platformUnknown')}${device.created_at ? ` · ${formatDate(device.created_at)}` : ''}`,
     platform: device.platform,
+    details: device,
   }));
   const renewalTerms = renewalOptions.map((option) => ({
     id: String(option.period_days),
@@ -252,9 +253,6 @@ export function DashboardPage() {
   }));
   const highlightedTermId =
     renewalOptions.find((option) => option.is_highlighted)?.period_days?.toString() ?? null;
-  const defaultTerm = renewalTerms.find(
-    (term) => term.id === defaultTermId(renewalTerms, highlightedTermId),
-  );
   const breakdown = useRenewalBreakdown(current?.tariff_id ?? null, activeSubId);
 
   const payRenewal = (price: number, term: string, period: string) =>
@@ -390,62 +388,81 @@ export function DashboardPage() {
           ) : accountState === 'trial_expired' ||
             accountState === 'paid_expired' ||
             accountState === 'disabled' ? (
-            <AccessEndedCard
-              state={accountState}
-              tariffName={current?.tariff_name}
-              tariffId={current?.tariff_id}
-              endDate={endDate}
-              renewal={defaultTerm ? { price: defaultTerm.price, label: defaultTerm.label } : null}
-              onRenew={() =>
-                defaultTerm && payRenewal(defaultTerm.price, defaultTerm.label, defaultTerm.id)
-              }
-            />
-          ) : (
-            // Порядок блоков задаёт DOM: на телефоне одна колонка, на десктопе
-            // CSS-колонки раскладывают тот же поток без order-N.
-            <div className="flex flex-col gap-5 lg:block lg:columns-2 lg:gap-[1.1vw] lg:[&>*]:mb-[1.1vw] [&>*]:break-inside-avoid">
-              <SubscriptionCard
-                trial={isTrial}
-                name={current?.tariff_name || t('invoxy.dashboard.subscription')}
-                timeLeft={timeLeft}
+            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+              <AccessEndedCard
+                state={accountState}
+                tariffName={current?.tariff_name}
+                tariffId={current?.tariff_id}
                 endDate={endDate}
-                hasLte={Boolean(current?.whitelist_traffic_limit_gb)}
-                trialTrafficGb={current?.traffic_limit_gb ?? null}
-                progress={progress}
-                devicesCount={hasLoadedDevices ? managedDevices.length : undefined}
-                onManage={() =>
-                  navigate(activeSubId ? `/subscriptions/${activeSubId}` : '/subscriptions')
-                }
+                subscriptionId={activeSubId}
               />
-
-              {accountState === 'paid_expiring' && renewalCard}
-
-              <ConnectPanel
-                accessLink={accessLink}
-                firstConnection={hasLoadedDevices && managedDevices.length === 0}
-                onOpenGuide={() => handleOpenConnect()}
-              />
-
-              {isTrial && <TrialUpgradeCard daysLeft={daysLeft} />}
-
-              <div className="deferred-section">
-                <TrafficCards subscription={current} />
-              </div>
-
-              {managedDevices.length > 0 && (
-                <DevicesCard
-                  devices={managedDevices}
-                  deviceLimit={subscription?.device_limit ?? selected?.device_limit}
-                  previewCount={DEVICE_PREVIEW_COUNT}
-                  onManage={() => navigate(`/subscriptions/${activeSubId}`)}
+              <MoreSection />
+            </div>
+          ) : (
+            <div className="grid items-start gap-5 lg:grid-cols-2 lg:gap-[1.1vw]">
+              <div className="flex min-w-0 flex-col gap-5 lg:gap-[1.1vw]">
+                <SubscriptionCard
+                  trial={isTrial}
+                  name={current?.tariff_name || t('invoxy.dashboard.subscription')}
+                  timeLeft={timeLeft}
+                  endDate={endDate}
+                  hasLte={Boolean(current?.whitelist_traffic_limit_gb)}
+                  trialTrafficGb={current?.traffic_limit_gb ?? null}
+                  progress={progress}
+                  devicesCount={hasLoadedDevices ? managedDevices.length : undefined}
+                  onManage={() =>
+                    navigate(activeSubId ? `/subscriptions/${activeSubId}` : '/subscriptions')
+                  }
                 />
-              )}
 
-              {accountState === 'paid_active' && renewalCard}
+                <ConnectPanel
+                  accessLink={accessLink}
+                  firstConnection={hasLoadedDevices && managedDevices.length === 0}
+                  onOpenGuide={() => handleOpenConnect()}
+                />
+
+                {isTrial && <TrialUpgradeCard daysLeft={daysLeft} />}
+
+                <div className="deferred-section">
+                  <TrafficCards subscription={current} />
+                </div>
+
+                <MoreSection />
+              </div>
+              <div className="flex min-w-0 flex-col gap-5 lg:gap-[1.1vw]">
+                {managedDevices.length > 0 && (
+                  <DevicesCard
+                    devices={managedDevices}
+                    deviceLimit={subscription?.device_limit ?? selected?.device_limit}
+                    previewCount={DEVICE_PREVIEW_COUNT}
+                    onRemove={async (device) => {
+                      try {
+                        await subscriptionApi.deleteDevice(device.id, activeSubId ?? undefined);
+                        await queryClient.invalidateQueries({
+                          queryKey: ['invoxy-subscription-details', activeSubId],
+                        });
+                        showToast('Устройство отключено', 'success');
+                      } catch (error) {
+                        showToast(
+                          apiErrorMessage(error, 'Не удалось отключить устройство'),
+                          'error',
+                        );
+                      }
+                    }}
+                    onRename={async (device, name) => {
+                      await subscriptionApi.renameDevice(device.id, name, activeSubId ?? undefined);
+                      await queryClient.invalidateQueries({
+                        queryKey: ['invoxy-subscription-details', activeSubId],
+                      });
+                    }}
+                  />
+                )}
+
+                {(accountState === 'paid_active' || accountState === 'paid_expiring') &&
+                  renewalCard}
+              </div>
             </div>
           )}
-
-          {!isOnboarding && <MoreSection />}
         </div>
       )}
 

@@ -6876,6 +6876,7 @@
       "title": "Renewal · {{name}}",
       "subscription": "subscription",
       "chooseTerm": "Choose a term",
+      "bestValue": "Best value",
       "allTariffs": "All plans",
       "tariffLine": "Plan",
       "extraLine_one": "{{count}} extra device × {{price}}/mo",
@@ -6913,7 +6914,7 @@
       "firstSubtitle": "Install an app, add your subscription, and turn on VPN step by step.",
       "setupFirst": "Set up your first device",
       "setupAnother": "Connect another device",
-      "manualKey": "Key for manual setup",
+      "manualKey": "Link for manual setup",
       "allDevices": "Guides for all devices",
       "accessKey": "Access key",
       "keyUnavailable": "Link not available yet",
@@ -6959,12 +6960,12 @@
         "disabled": "Subscription disabled"
       },
       "title": {
-        "trial_expired": "Liked it? Continue on a plan",
-        "paid_expired": "Your access has ended",
+        "trial_expired": "Keep going with a plan",
+        "paid_expired": "Back online",
         "disabled": "Access is suspended"
       },
       "subtitle": {
-        "trial_expired": "Pick a plan — your connected devices will keep working.",
+        "trial_expired": "Choose a plan and a term. Checkout is just a couple of taps away.",
         "paid_expired": "Renew to use the VPN again.",
         "disabled": "Contact support or get a new plan."
       },
@@ -6973,6 +6974,15 @@
       "chooseTariff": "Choose a plan",
       "contactSupport": "Contact support",
       "otherTariffs": "Another plan or term",
+      "checkout": "Continue to payment",
+      "total": "Total for the selected term",
+      "loadError": "Could not load plans. Please try again.",
+      "retry": "Try again",
+      "noPlans": "No plans are available right now. Contact support.",
+      "lte": "{{count}} GB LTE",
+      "keptDevices": "The price includes your {{count}} extra devices.",
+      "devices_one": "{{count}} device",
+      "devices_other": "{{count}} devices",
       "compareTariffs": "Compare plans"
     },
     "trial": {
@@ -6996,6 +7006,7 @@
       "loading": "Loading plans",
       "yourPlan": "Your plan",
       "recommended": "Recommended",
+      "lowPrice": "Low price",
       "perMonth": "/mo",
       "traffic": "{{count}} GB",
       "lte": "Whitelist traffic · LTE {{count}} GB",

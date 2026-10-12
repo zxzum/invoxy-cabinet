@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PiPencilSimple } from 'react-icons/pi';
 import { Smartphone, Laptop, Check, X, Zap } from '@/invoxystart/components/ui/RuneIcon';
+
+import { AdaptiveDialog } from '@/invoxystart/components/ui/AdaptiveDialog';
+import type { Device } from '@/invoxystart/api/types';
+import { devicePresentation } from '@/invoxystart/lib/devicePresentation';
 
 export interface ManagedDevice {
   id: string;
@@ -8,6 +13,7 @@ export interface ManagedDevice {
   status: string;
   platform?: string;
   timestamp?: string;
+  details?: Device;
 }
 
 const initialDevices: ManagedDevice[] = [];
@@ -20,9 +26,11 @@ type DevicesCardProps = {
   onConnect?: (platform?: string) => void;
   isExpired?: boolean;
   isLoading?: boolean;
-  /** Dashboard preview; the full list lives on the subscription page. */
+  /** Short dashboard preview with the full list in an adaptive dialog. */
   previewCount?: number;
   onManage?: () => void;
+  onRename?: (device: ManagedDevice, name: string | null) => Promise<void>;
+  showDetails?: boolean;
 };
 
 export function DevicesCard({
@@ -35,21 +43,27 @@ export function DevicesCard({
   isLoading = false,
   previewCount,
   onManage,
+  onRename,
+  showDetails = false,
 }: DevicesCardProps) {
   const { t } = useTranslation();
-  const [localDevices, setLocalDevices] = useState(initialDevices);
+  const titleId = useId();
+  const [managementOpen, setManagementOpen] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  const devices = controlledDevices ?? initialDevices;
   const [search, setSearch] = useState('');
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
-  const devices = controlledDevices ?? localDevices;
   const visibleDevices = previewCount
     ? devices.slice(0, previewCount)
     : devices.filter((device) =>
-        `${device.name} ${device.platform || ''}`
+        `${device.name} ${device.platform || ''} ${device.id} ${device.details?.user_agent || ''}`
           .toLocaleLowerCase()
           .includes(search.trim().toLocaleLowerCase()),
       );
-  const hiddenCount = previewCount ? devices.length - visibleDevices.length : 0;
 
   useEffect(() => {
     if (!pendingRemoval) return;
@@ -59,15 +73,25 @@ export function DevicesCard({
   }, [pendingRemoval]);
 
   return (
-    <div className="glass-panel motion-card flex w-full flex-col rounded-[28px] p-4 lg:rounded-[clamp(22px,1.1vw,26px)] lg:p-[clamp(20px,1.3vw,26px)]">
-      <div className="flex w-full items-center justify-between pb-3.5 lg:pb-[clamp(14px,0.9vw,18px)]">
-        <h3 className="text-[17px] font-bold text-ink lg:text-[clamp(17px,1.1vw,22px)]">{title}</h3>
-        <span className="text-xs text-muted lg:text-[clamp(12px,0.8vw,16px)]">
-          {isLoading ? 'Загрузка…' : `${devices.length} из ${deviceLimit ?? '—'}`}
-        </span>
-      </div>
+    <div
+      className={
+        showDetails
+          ? 'flex w-full flex-col'
+          : 'glass-panel motion-card flex w-full flex-col rounded-[28px] p-4 lg:rounded-[clamp(22px,1.1vw,26px)] lg:p-[clamp(20px,1.3vw,26px)]'
+      }
+    >
+      {title && (
+        <div className="flex w-full items-center justify-between pb-3.5 lg:pb-[clamp(14px,0.9vw,18px)]">
+          <h3 className="text-[17px] font-bold text-ink lg:text-[clamp(17px,1.1vw,22px)]">
+            <span id={titleId}>{title}</span>
+          </h3>
+          <span className="text-xs text-muted lg:text-[clamp(12px,0.8vw,16px)]">
+            {isLoading ? 'Загрузка…' : `${devices.length} из ${deviceLimit ?? '—'}`}
+          </span>
+        </div>
+      )}
 
-      {!previewCount && devices.length >= 10 && (
+      {!previewCount && (showDetails || devices.length >= 10) && (
         <input
           type="search"
           aria-label={t('invoxy.dashboard.devicesSearch')}
@@ -99,15 +123,20 @@ export function DevicesCard({
         <div>
           {visibleDevices.map((device, i) => {
             const isPendingRemoval = pendingRemoval === device.id;
+            const { client, isInvoxy, os, lastSeen } = devicePresentation(
+              device.details ?? { platform: device.platform },
+            );
 
             return (
               <div
                 key={device.id}
-                className={`flex items-center gap-3 overflow-hidden ${
+                className={`flex flex-col overflow-hidden ${
                   i < visibleDevices.length - 1 ? 'border-b border-line/60' : ''
                 }`}
               >
-                <div className="flex h-[68px] w-full items-center gap-3 lg:h-[clamp(54px,3.6vw,72px)] lg:gap-[clamp(12px,0.8vw,16px)]">
+                <div
+                  className={`flex w-full items-center gap-3 ${showDetails ? 'min-h-[68px] py-3' : 'h-[68px] lg:h-[clamp(54px,3.6vw,72px)]'} lg:gap-[clamp(12px,0.8vw,16px)]`}
+                >
                   <div className="glass-control flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:h-[clamp(36px,2.3vw,46px)] lg:w-[clamp(36px,2.3vw,46px)]">
                     {device.platform?.toLowerCase().includes('ios') ||
                     device.platform?.toLowerCase().includes('android') ? (
@@ -117,19 +146,50 @@ export function DevicesCard({
                     )}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-                    <p className="truncate text-sm font-bold text-ink lg:text-[clamp(13px,0.85vw,17px)]">
+                    <p
+                      title={device.name}
+                      className={`text-sm font-semibold text-ink ${showDetails ? 'break-words [overflow-wrap:anywhere]' : 'truncate lg:text-[clamp(13px,0.85vw,17px)]'}`}
+                    >
                       {device.name}
                     </p>
-                    <p className="truncate text-[11px] text-muted lg:text-[clamp(11px,0.7vw,14px)]">
-                      {device.status}
-                    </p>
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                      <span>{showDetails ? os : device.status}</span>
+                      {showDetails && <span aria-hidden="true">·</span>}
+                      {(showDetails || isInvoxy) && (
+                        <span className={isInvoxy ? 'font-medium text-mint' : ''}>{client}</span>
+                      )}
+                    </div>
+                    {showDetails && (
+                      <p
+                        className="text-[11px] leading-relaxed text-muted"
+                        title="Последний запрос клиента к подписке"
+                      >
+                        {lastSeen ? `Был в сети ${lastSeen}` : 'Последняя активность неизвестна'}
+                      </p>
+                    )}
                   </div>
-                  {device.timestamp ? (
+                  {device.timestamp && !showDetails ? (
                     <span className="hidden shrink-0 text-[11px] text-muted sm:block lg:text-[clamp(11px,0.7vw,14px)]">
                       {device.timestamp}
                     </span>
                   ) : null}
-                  {onRemove && (
+                  {showDetails && onRename && (
+                    <button
+                      type="button"
+                      aria-label={`Переименовать ${device.name}`}
+                      title="Переименовать"
+                      disabled={saving}
+                      onClick={() => {
+                        setEditing(device.id);
+                        setName(device.details?.local_name || '');
+                        setEditError('');
+                      }}
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted transition-colors hover:bg-white/[.05] hover:text-mint disabled:opacity-50"
+                    >
+                      <PiPencilSimple size={18} />
+                    </button>
+                  )}
+                  {onRemove && !previewCount && (
                     <button
                       type="button"
                       aria-label={`Отключить ${device.name}${isPendingRemoval ? ' — нажмите ещё раз для подтверждения' : ''}`}
@@ -143,10 +203,9 @@ export function DevicesCard({
                         if (isPendingRemoval) {
                           setPendingRemoval(null);
                           setRemoving(device.id);
-                          const removal = onRemove
-                            ? onRemove(device)
-                            : setLocalDevices((prev) => prev.filter((d) => d.id !== device.id));
-                          void Promise.resolve(removal).finally(() => setRemoving(null));
+                          void Promise.resolve(onRemove(device))
+                            .catch(() => {})
+                            .finally(() => setRemoving(null));
                           return;
                         }
 
@@ -155,7 +214,7 @@ export function DevicesCard({
                       className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border text-red-200 transition active:scale-90 ${
                         isPendingRemoval
                           ? 'border-red-300/75 bg-red-300/35 text-red-50'
-                          : 'border-red-300/25 bg-red-300/8 hover:border-red-300/50 hover:bg-red-300/15'
+                          : 'border-transparent text-muted hover:border-red-300/25 hover:bg-red-300/10 hover:text-red-200'
                       }`}
                     >
                       {isPendingRemoval ? (
@@ -166,13 +225,64 @@ export function DevicesCard({
                     </button>
                   )}
                 </div>
+                {showDetails && editing === device.id && (
+                  <div className="pb-2 sm:pl-[52px]">
+                    {onRename && editing === device.id && (
+                      <form
+                        className="flex flex-wrap gap-2"
+                        onSubmit={async (event) => {
+                          event.preventDefault();
+                          if (saving) return;
+                          setSaving(true);
+                          setEditError('');
+                          try {
+                            await onRename(device, name.trim() || null);
+                            setEditing(null);
+                          } catch {
+                            setEditError('Не удалось переименовать устройство');
+                          } finally {
+                            setSaving(false);
+                          }
+                        }}
+                      >
+                        <input
+                          aria-label="Имя устройства"
+                          maxLength={64}
+                          value={name}
+                          onChange={(event) => setName(event.target.value)}
+                          className="glass-control min-h-11 min-w-0 flex-1 rounded-xl px-3 text-sm text-ink"
+                        />
+                        <button
+                          type="submit"
+                          disabled={saving}
+                          className="min-h-11 rounded-xl bg-mint px-3 text-sm font-bold text-bg disabled:opacity-50"
+                        >
+                          Сохранить
+                        </button>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => setEditing(null)}
+                          className="min-h-11 px-3 text-sm text-muted"
+                        >
+                          Отмена
+                        </button>
+                        {editError && (
+                          <p role="alert" className="w-full text-sm text-red-200">
+                            {editError}
+                          </p>
+                        )}
+                      </form>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
-          {hiddenCount > 0 && onManage && (
+          {previewCount && devices.length > 0 && (
             <button
               type="button"
-              onClick={onManage}
+              onClick={() => (onManage ? onManage() : setManagementOpen(true))}
               className="mt-2 flex min-h-11 w-full cursor-pointer items-center justify-center rounded-2xl text-sm font-semibold text-mint transition-colors hover:bg-white/[.04]"
             >
               {t('invoxy.dashboard.devicesManageAll', { count: devices.length })}
@@ -276,6 +386,29 @@ export function DevicesCard({
             <span>Все {deviceLimit ?? 5} слотов свободны</span>
           </div>
         </div>
+      )}
+      {previewCount && (
+        <AdaptiveDialog
+          open={managementOpen}
+          onClose={() => setManagementOpen(false)}
+          titleId={`${titleId}-management`}
+          maxWidth="max-w-2xl"
+        >
+          <h2 id={`${titleId}-management`} className="pr-12 text-lg font-semibold text-ink">
+            Управление устройствами
+          </h2>
+          <p className="mb-4 mt-1 text-xs text-muted">
+            {devices.length} из {deviceLimit ?? '—'} устройств
+          </p>
+          <DevicesCard
+            title=""
+            devices={devices}
+            deviceLimit={deviceLimit}
+            onRemove={onRemove}
+            onRename={onRename}
+            showDetails
+          />
+        </AdaptiveDialog>
       )}
     </div>
   );

@@ -66,7 +66,7 @@ export function extractRenewalBreakdown(
   return {
     tariffId,
     tariffName: String(tariff.name ?? ''),
-    baseDeviceLimit: Number(tariff.device_limit ?? 0),
+    baseDeviceLimit: Number(tariff.base_device_limit ?? tariff.device_limit ?? 0),
     devicePrice: rub(tariff.device_price_kopeks),
     periods,
   };

@@ -262,10 +262,12 @@ export default function SupportPage() {
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-medium">Связаться с поддержкой</h2>
-          <p className="mt-0.5 text-xs text-muted">@invoxyvpn · обычно отвечаем за 5 минут</p>
+          <p className="mt-0.5 text-xs text-muted">
+            @invoxy_support_bot · обычно отвечаем за 5 минут
+          </p>
         </div>
         <a
-          href="https://t.me/invoxyvpn"
+          href="https://t.me/invoxy_support_bot"
           target="_blank"
           rel="noreferrer"
           className="button-lift w-full rounded-xl border border-white/10 px-4 py-2.5 text-center text-sm font-semibold hover:border-mint/30 lg:w-auto"

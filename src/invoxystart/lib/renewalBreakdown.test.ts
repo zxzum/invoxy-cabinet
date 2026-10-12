@@ -41,6 +41,22 @@ describe('extractRenewalBreakdown', () => {
     });
   });
 
+  it('uses the tariff base rather than the purchased device limit', () => {
+    const breakdown = extractRenewalBreakdown(
+      {
+        tariffs: [
+          {
+            ...options.tariffs[0],
+            device_limit: 15,
+            base_device_limit: 5,
+          },
+        ],
+      },
+      1,
+    );
+    expect(breakdown?.baseDeviceLimit).toBe(5);
+  });
+
   it('treats a period without extras as the plain tariff price', () => {
     const period = periodBreakdown(extractRenewalBreakdown(options, 1), 90);
     expect(period).toMatchObject({

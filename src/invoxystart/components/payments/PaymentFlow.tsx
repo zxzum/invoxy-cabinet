@@ -71,6 +71,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
     void queryClient.invalidateQueries({ queryKey: ['invoxy-subscriptions'] });
     void queryClient.invalidateQueries({ queryKey: ['invoxy-subscription-details'] });
     void queryClient.invalidateQueries({ queryKey: ['invoxy-subscription-status'] });
+    void queryClient.invalidateQueries({ queryKey: ['invoxy-tariffs-page-data'] });
   }
 
   async function pay(method: string, payment = request ?? undefined, paymentOption?: string) {

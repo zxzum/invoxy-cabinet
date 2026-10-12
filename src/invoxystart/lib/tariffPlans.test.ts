@@ -49,9 +49,65 @@ describe('adaptPlan', () => {
     expect(plan).toMatchObject({ price: 350, extraDevicesCount: 0, recommended: true });
     expect(plan.maxDevices).toBe(10);
   });
+
+  it('keeps an explicit user discount when original prices are omitted', () => {
+    const plan = adaptPlan({
+      id: 2,
+      periods: [{ days: 30, price_kopeks: 9000, discount_percent: 10 }],
+    });
+    expect(plan.periods[0]).toMatchObject({ price: 90, basePrice: 100, discount: 10 });
+    expect(configuratorTotal(plan, plan.periods[0], plan.devices).total).toBe(90);
+  });
+
+  it('derives duration savings from final prices without changing checkout or device fees', () => {
+    const plan = adaptPlan({
+      id: 2,
+      device_limit: 5,
+      device_price_kopeks: 2000,
+      periods: [
+        { days: 30, months: 1, price_kopeks: 10000, original_price_kopeks: 10000 },
+        {
+          days: 360,
+          months: 12,
+          price_kopeks: 96000,
+          original_price_kopeks: 96000,
+          discount_percent: 0,
+        },
+      ],
+    });
+    expect(plan.price).toBe(100);
+    expect(plan.periods[1]).toMatchObject({ price: 960, basePrice: 1200, discount: 20 });
+    expect(configuratorTotal(plan, plan.periods[1], 6)).toEqual({
+      tariff: 960,
+      tariffBase: 1200,
+      extra: 240,
+      saving: 240,
+      total: 1200,
+    });
+  });
+
+  it('sorts periods by duration and keeps the cheapest entry price', () => {
+    const plan = adaptPlan({
+      id: 1,
+      periods: [
+        { days: 360, months: 12, price_kopeks: 90000, discount_percent: 25 },
+        { days: 30, months: 1, price_kopeks: 10000 },
+      ],
+    });
+    expect(plan.periods[0].days).toBe(30);
+    expect(plan.price).toBe(100);
+  });
 });
 
 describe('configuratorTotal', () => {
+  it('keeps kopek precision in the server quote', () => {
+    const plan = adaptPlan({
+      id: 1,
+      device_limit: 5,
+      periods: [{ days: 90, price_kopeks: 53010 }],
+    });
+    expect(configuratorTotal(plan, plan.periods[0], 5).total).toBe(530.1);
+  });
   it('adds extra devices on top of the tariff price for each month', () => {
     const plan = adaptPlan(current);
     expect(configuratorTotal(plan, plan.periods[1], 5)).toEqual({
@@ -66,13 +122,13 @@ describe('configuratorTotal', () => {
 });
 
 describe('orderPlans', () => {
-  it('puts the current plan first, then the recommended one', () => {
+  it('puts the current plan first, then the cheapest regardless of highlighting', () => {
     const plans = [
-      adaptPlan({ id: 1, periods: [] }),
-      adaptPlan({ id: 2, periods: [], is_highlighted: true }),
-      adaptPlan({ id: 3, periods: [] }),
+      adaptPlan({ id: 1, periods: [{ days: 30, price_kopeks: 10000 }] }),
+      adaptPlan({ id: 2, periods: [{ days: 30, price_kopeks: 26000 }], is_highlighted: true }),
+      adaptPlan({ id: 3, periods: [{ days: 30, price_kopeks: 40000 }] }),
     ];
-    expect(orderPlans(plans, null).map((p) => p.id)).toEqual(['2', '1', '3']);
-    expect(orderPlans(plans, '3').map((p) => p.id)).toEqual(['3', '2', '1']);
+    expect(orderPlans(plans, null).map((p) => p.id)).toEqual(['1', '2', '3']);
+    expect(orderPlans(plans, '3').map((p) => p.id)).toEqual(['3', '1', '2']);
   });
 });

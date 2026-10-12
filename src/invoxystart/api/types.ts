@@ -137,6 +137,10 @@ export interface Device {
   device_model: string;
   created_at: string | null;
   local_name?: string | null;
+  registered_at?: string | null;
+  last_seen_at?: string | null;
+  os_version?: string | null;
+  user_agent?: string | null;
 }
 
 export interface RenewalOption {

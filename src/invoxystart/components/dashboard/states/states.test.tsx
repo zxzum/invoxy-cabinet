@@ -3,13 +3,20 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { RenewalCard } from '../RenewalCard';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defaultTermId, RenewalCard } from '../RenewalCard';
 import { StartHero } from './StartHero';
 import { AccessEndedCard } from './AccessEndedCard';
 import type { RenewalBreakdown } from '@/invoxystart/lib/renewalBreakdown';
 
 const navigate = vi.hoisted(() => vi.fn());
+const mocks = vi.hoisted(() => ({ getPurchaseOptions: vi.fn(), openPayment: vi.fn() }));
+vi.mock('@/invoxystart/api', () => ({
+  subscriptionApi: { getPurchaseOptions: mocks.getPurchaseOptions },
+}));
+vi.mock('@/invoxystart/components/payments/PaymentFlow', () => ({
+  usePayment: () => ({ openPayment: mocks.openPayment }),
+}));
 
 vi.mock('react-router', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-router')>()),
@@ -26,12 +33,14 @@ vi.mock('@/invoxystart/components/layout/ToastProvider', () => ({
 }));
 vi.mock('@/invoxystart/components/ui/RuneIcon', () => {
   const Icon = () => <svg />;
-  return { ArrowRight: Icon, ArrowUpRight: Icon, CalendarDays: Icon };
+  return { ArrowRight: Icon, ArrowUpRight: Icon, CalendarDays: Icon, ShieldCheck: Icon };
 });
 
 function wrap(node: ReactNode) {
   return render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
       <MemoryRouter>{node}</MemoryRouter>
     </QueryClientProvider>,
   );
@@ -40,6 +49,29 @@ function wrap(node: ReactNode) {
 afterEach(() => {
   cleanup();
   navigate.mockReset();
+});
+beforeEach(() => {
+  mocks.getPurchaseOptions.mockReset();
+  mocks.openPayment.mockReset();
+  mocks.getPurchaseOptions.mockResolvedValue({
+    tariffs: [
+      {
+        id: 2,
+        name: 'Стандарт',
+        device_limit: 5,
+        periods: [{ days: 30, months: 1, price_kopeks: 20000 }],
+      },
+      {
+        id: 1,
+        name: 'Базовый',
+        device_limit: 5,
+        periods: [
+          { days: 360, months: 12, price_kopeks: 96000 },
+          { days: 30, months: 1, price_kopeks: 10000 },
+        ],
+      },
+    ],
+  });
 });
 
 const terms = [
@@ -63,9 +95,23 @@ describe('RenewalCard', () => {
       </QueryClientProvider>,
     );
     const pay = screen.getByRole('button', { name: /invoxy\.renewal\.pay/ });
-    expect(pay.textContent).toContain('8');
+    expect(pay.textContent?.replace(/\s/g, '')).toContain('3040');
     fireEvent.click(pay);
-    expect(onPay).toHaveBeenCalledWith(8800, '90 дней', '90');
+    expect(onPay).toHaveBeenCalledWith(3040, '30 дней', '30');
+    expect(screen.getByText('−5%')).toBeTruthy();
+    expect(screen.queryByText('invoxy.renewal.bestValue')).toBeNull();
+    expect(screen.getByRole('button', { name: /90 дней/ }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: /90 дней/ }));
+    fireEvent.click(pay);
+    expect(onPay).toHaveBeenLastCalledWith(8800, '90 дней', '90');
+  });
+
+  it('uses the lowest upfront price regardless of order, including the expired access offer', () => {
+    expect(defaultTermId([...terms].reverse())).toBe('30');
+    expect(defaultTermId([{ ...terms[1], price: 100 }, terms[0]])).toBe('90');
+    expect(defaultTermId([])).toBe('');
   });
 
   it('explains extra devices in the renewal price', () => {
@@ -118,23 +164,66 @@ describe('StartHero', () => {
 });
 
 describe('AccessEndedCard', () => {
-  it('renews an expired paid subscription with its price', () => {
-    const onRenew = vi.fn();
-    wrap(
-      <AccessEndedCard
-        state="paid_expired"
-        tariffName="Стандарт"
-        renewal={{ price: 200, label: '30 дней' }}
-        onRenew={onRenew}
-      />,
+  it('opens the cheapest purchase directly after the trial ends', async () => {
+    wrap(<AccessEndedCard state="trial_expired" tariffId={2} subscriptionId={7} />);
+    fireEvent.click(await screen.findByRole('button', { name: /invoxy\.ended\.checkout/ }));
+    expect(mocks.openPayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 100,
+        tariffId: 1,
+        periodDays: 30,
+        subscriptionId: 7,
+        devices: 5,
+      }),
     );
-    fireEvent.click(screen.getByRole('button', { name: /invoxy\.ended\.renew/ }));
-    expect(onRenew).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: /invoxy\.dashboard\.periodDays.*360/ }));
+    fireEvent.click(screen.getByRole('button', { name: /invoxy\.ended\.checkout/ }));
+    expect(mocks.openPayment).toHaveBeenLastCalledWith(
+      expect.objectContaining({ amount: 960, periodDays: 360 }),
+    );
   });
 
-  it('routes an ended trial to tariffs', () => {
-    wrap(<AccessEndedCard state="trial_expired" onRenew={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /invoxy\.ended\.chooseTariff/ }));
+  it('keeps comparison available', () => {
+    wrap(<AccessEndedCard state="trial_expired" />);
+    fireEvent.click(screen.getByRole('button', { name: /invoxy\.ended\.compareTariffs/ }));
     expect(navigate).toHaveBeenCalledWith('/tariffs');
+  });
+
+  it('keeps extra devices and the exact renewal price for the current paid plan', async () => {
+    mocks.getPurchaseOptions.mockResolvedValue({
+      tariffs: [
+        {
+          id: 1,
+          name: 'Базовый',
+          device_limit: 5,
+          periods: [
+            {
+              days: 30,
+              months: 1,
+              price_kopeks: 16000,
+              base_tariff_price_kopeks: 10000,
+              extra_devices_count: 3,
+              extra_devices_cost_kopeks: 6000,
+            },
+          ],
+        },
+      ],
+    });
+    wrap(<AccessEndedCard state="paid_expired" tariffId={1} subscriptionId={7} />);
+    fireEvent.click(await screen.findByRole('button', { name: /invoxy\.ended\.checkout/ }));
+    expect(mocks.openPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 160, tariffId: 1, subscriptionId: 7, devices: undefined }),
+    );
+  });
+
+  it('recovers from a catalog error without enabling checkout', async () => {
+    mocks.getPurchaseOptions
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ tariffs: [] });
+    wrap(<AccessEndedCard state="trial_expired" />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /invoxy\.ended\.checkout/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /invoxy\.ended\.retry/ }));
+    expect(await screen.findByText('invoxy.ended.noPlans')).toBeTruthy();
   });
 });

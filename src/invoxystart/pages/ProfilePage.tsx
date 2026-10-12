@@ -102,6 +102,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     let mounted = true;
+    void refreshUser();
     void Promise.allSettled([
       balanceApi.getBalance(),
       balanceApi.getTransactions({ per_page: 4 }),
@@ -159,7 +160,10 @@ export default function ProfilePage() {
   }, [location.hash]);
 
   function openSupport() {
-    const target = supportTarget ?? { kind: 'telegram' as const, url: 'https://t.me/fpobetby' };
+    const target = supportTarget ?? {
+      kind: 'telegram' as const,
+      url: 'https://t.me/invoxy_support_bot',
+    };
     if (target.kind === 'telegram') openTelegramLink(target.url);
     else openLink(target.url);
   }
@@ -376,13 +380,15 @@ export default function ProfilePage() {
                     : undefined
               }
               actionLabel={
-                !user?.email
-                  ? 'Привязать Email'
-                  : !user.email_verified
-                    ? emailResending
-                      ? 'Отправка…'
-                      : 'Повторить отправку'
-                    : undefined
+                !user
+                  ? undefined
+                  : !user.email
+                    ? 'Привязать Email'
+                    : !user.email_verified
+                      ? emailResending
+                        ? 'Отправка…'
+                        : 'Повторить отправку'
+                      : undefined
               }
               actionDisabled={emailResending}
               onAction={() => {
@@ -396,7 +402,9 @@ export default function ProfilePage() {
               value={
                 user?.telegram_id ? String(user.telegram_id) : telegramLinked ? 'Привязан' : ''
               }
-              actionLabel={telegramLinked ? undefined : 'Привязать Telegram'}
+              actionLabel={
+                !user || user.telegram_id || telegramLinked ? undefined : 'Привязать Telegram'
+              }
               onAction={() => setTelegramDialogOpen(true)}
             />
           </section>
@@ -508,6 +516,7 @@ export default function ProfilePage() {
             <TelegramLinkWidget
               onLinked={() => {
                 setTelegramLinked(true);
+                void refreshUser();
                 setTelegramDialogOpen(false);
               }}
             />

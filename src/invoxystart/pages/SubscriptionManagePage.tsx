@@ -5,6 +5,7 @@ import { AnimatePresence, m } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { CalendarDays, Link2, Smartphone, X } from '@/invoxystart/components/ui/RuneIcon';
 import { subscriptionApi } from '@/invoxystart/api';
+import type { Device } from '@/invoxystart/api/types';
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { LivelyCopyButton } from '@/invoxystart/components/ui/LivelyCopyButton';
 import { openDeepLink } from '@/utils/openDeepLink';
@@ -57,13 +58,6 @@ type Connection = {
   instructions?: { steps?: string[] };
 };
 
-type Device = {
-  hwid: string;
-  platform?: string;
-  device_model?: string;
-  local_name?: string | null;
-  created_at?: string | null;
-};
 type RenewalOption = {
   period_days: number;
   price_kopeks?: number;
@@ -467,8 +461,18 @@ export default function SubscriptionManagePage() {
               status: device.platform || 'Неизвестная платформа',
               platform: device.platform,
               timestamp: formatDate(device.created_at),
+              details: device,
             }))}
             deviceLimit={detail.device_limit}
+            showDetails
+            onRename={async (device, name) => {
+              const result = await subscriptionApi.renameDevice(device.id, name, id);
+              setDevices((current) =>
+                current.map((item) =>
+                  item.hwid === device.id ? { ...item, local_name: result.local_name } : item,
+                ),
+              );
+            }}
             onRemove={(device) => removeDevice(device.id)}
             onConnect={(platform) => {
               setConnectPlatform(platform as PlatformKey | undefined);

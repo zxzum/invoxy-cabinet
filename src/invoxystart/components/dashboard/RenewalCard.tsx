@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowUpRight, CalendarDays } from '@/invoxystart/components/ui/RuneIcon';
 import { periodBreakdown, type RenewalBreakdown } from '@/invoxystart/lib/renewalBreakdown';
 import { ExtraDevicesNotice } from './ExtraDevicesNotice';
+import { durationSavings } from '@/utils/durationSavings';
 
 const formatPrice = (price: number) => `${price.toLocaleString('ru-RU')} ₽`;
 
@@ -14,10 +15,14 @@ export interface RenewalTerm {
   discount?: number;
 }
 
-/** Срок по умолчанию: выделенный оператором, иначе первый. */
-export function defaultTermId(terms: RenewalTerm[], highlightedId?: string | null): string {
-  if (highlightedId && terms.some((term) => term.id === highlightedId)) return highlightedId;
-  return terms[0]?.id ?? '';
+/** Срок по умолчанию — с наименьшей суммой к оплате. */
+export function defaultTermId(terms: RenewalTerm[]): string {
+  return (
+    terms.reduce<RenewalTerm | null>(
+      (cheapest, term) => (!cheapest || term.price < cheapest.price ? term : cheapest),
+      null,
+    )?.id ?? ''
+  );
 }
 
 export function RenewalCard({
@@ -25,7 +30,6 @@ export function RenewalCard({
   title,
   subtitle,
   terms = [],
-  highlightedId,
   showTariffs = true,
   breakdown,
   subscriptionId,
@@ -45,7 +49,10 @@ export function RenewalCard({
   // фиксируется в useState, иначе кнопка навсегда остаётся «Оплатить · —».
   const activeTerm =
     terms.find((term) => term.id === selected) ??
-    terms.find((term) => term.id === defaultTermId(terms, highlightedId));
+    terms.find((term) => term.id === defaultTermId(terms));
+  const reference = [...terms].sort((a, b) => Number(a.id) - Number(b.id))[0];
+  const monthlyBase =
+    reference && Number(reference.id) > 0 ? (reference.price * 30) / Number(reference.id) : 0;
   const details = activeTerm ? periodBreakdown(breakdown, Number(activeTerm.id)) : null;
   const heading = t('invoxy.renewal.title', { name: title || t('invoxy.renewal.subscription') });
 
@@ -80,36 +87,45 @@ export function RenewalCard({
         )}
 
         <div className="mt-1 grid gap-2">
-          {terms.map((term) => {
-            const isActive = term.id === activeTerm?.id;
-            return (
-              <button
-                type="button"
-                key={term.id}
-                aria-pressed={isActive}
-                onClick={() => setSelected(term.id)}
-                className={`grid min-h-[50px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl px-4 py-2 text-left text-sm transition-colors lg:min-h-[clamp(50px,2.9vw,58px)] lg:rounded-[clamp(12px,0.8vw,16px)] lg:px-[clamp(16px,1vw,20px)] lg:text-[clamp(14px,0.9vw,17px)] ${
-                  isActive
-                    ? 'border border-mint bg-ink font-bold text-bg'
-                    : 'glass-control font-normal text-ink hover:border-line'
-                } active:scale-[0.99]`}
-              >
-                <span className="flex min-w-0 flex-col items-start justify-center leading-none">
-                  <span className="block whitespace-nowrap">{term.label}</span>
-                  {term.discount ? (
-                    <span
-                      className={`mt-1.5 block text-xs font-medium leading-none ${isActive ? 'text-bg/60' : 'text-mint'}`}
-                    >
-                      −{term.discount}%
-                    </span>
-                  ) : null}
-                </span>
-                <span className="min-w-[5.5rem] whitespace-nowrap text-right font-bold leading-none tabular-nums">
-                  {formatPrice(term.price)}
-                </span>
-              </button>
-            );
-          })}
+          {[...terms]
+            .sort((a, b) => Number(a.id) - Number(b.id))
+            .map((term) => {
+              const isActive = term.id === activeTerm?.id;
+              const savings = durationSavings(term.price, Number(term.id) / 30, monthlyBase);
+              const discount = term.discount || savings.discount;
+              return (
+                <button
+                  type="button"
+                  key={term.id}
+                  aria-pressed={isActive}
+                  onClick={() => setSelected(term.id)}
+                  className={`grid min-h-[50px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl px-4 py-2 text-left text-sm transition-colors lg:min-h-[clamp(50px,2.9vw,58px)] lg:rounded-[clamp(12px,0.8vw,16px)] lg:px-[clamp(16px,1vw,20px)] lg:text-[clamp(14px,0.9vw,17px)] ${
+                    isActive
+                      ? 'border border-mint bg-ink font-bold text-bg'
+                      : 'glass-control font-normal text-ink hover:border-line'
+                  } active:scale-[0.99]`}
+                >
+                  <span className="flex min-w-0 flex-col items-start justify-center leading-none">
+                    <span className="block whitespace-nowrap">{term.label}</span>
+                    {discount > 0 ? (
+                      <span
+                        className={`mt-1.5 block text-xs font-medium leading-none ${isActive ? 'text-bg/60' : 'text-mint'}`}
+                      >
+                        −{discount}%
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="min-w-[5.5rem] whitespace-nowrap text-right font-bold leading-none tabular-nums">
+                    {savings.saving > 0 && (
+                      <s className="mr-2 text-xs font-normal opacity-60">
+                        {formatPrice(savings.basePrice)}
+                      </s>
+                    )}
+                    {formatPrice(term.price)}
+                  </span>
+                </button>
+              );
+            })}
         </div>
 
         {details && details.extraDevicesCount > 0 && (

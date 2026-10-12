@@ -22,6 +22,8 @@ import { TariffSwitchModal } from '@/invoxystart/components/tariffs/TariffSwitch
 import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { adaptPlan, configuratorTotal, orderPlans, type Plan } from '@/invoxystart/lib/tariffPlans';
 import { usePurchaseIntent } from '@/invoxystart/lib/usePurchaseIntent';
+import { deriveAccountState } from '@/invoxystart/lib/accountState';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 const formatRubles = (value: number) => `${value.toLocaleString('ru-RU')} ₽`;
 const planIcon = (plan: Plan) => (plan.lteTraffic ? Globe2 : ShieldCheck);
@@ -44,7 +46,12 @@ export default function TariffsPage() {
   const [switchModalOpen, setSwitchModalOpen] = useState(false);
   const [activatingTrial, setActivatingTrial] = useState(false);
 
-  const { data: tariffsData, isLoading: tariffsLoading } = useQuery({
+  const {
+    data: tariffsData,
+    isLoading: tariffsLoading,
+    error: tariffsError,
+    refetch,
+  } = useQuery({
     queryKey: ['invoxy-tariffs-page-data'],
     queryFn: async () => {
       const [optionsResult, subscriptionsResult, loyaltyResult] = await Promise.allSettled([
@@ -52,6 +59,7 @@ export default function TariffsPage() {
         subscriptionApi.getSubscriptions(),
         promoApi.getLoyaltyTiers(),
       ]);
+      if (optionsResult.status === 'rejected') throw optionsResult.reason;
       const optionsVal =
         optionsResult.status === 'fulfilled'
           ? (optionsResult.value as {
@@ -93,11 +101,16 @@ export default function TariffsPage() {
 
   const activeId = tariffsData?.activeId ?? null;
   const plans = orderPlans(tariffsData?.plans ?? [], activeId);
-  const recommendedPlanId =
-    plans.find((plan) => plan.recommended)?.id ?? plans.find((plan) => plan.lteTraffic)?.id ?? null;
+  const recommendedPlanId = [...plans].sort((a, b) => a.price - b.price)[0]?.id ?? null;
   const activeSubscriptionId = tariffsData?.activeSubscriptionId ?? null;
   const activeSubscription = tariffsData?.activeSubscription ?? null;
   const activePlan = plans.find((plan) => plan.id === activeId);
+  const canSwitch = Boolean(
+    activeSubscription &&
+      activePlan &&
+      activePlan.price > 0 &&
+      ['paid_active', 'paid_expiring'].includes(deriveAccountState([activeSubscription])),
+  );
   const loading = tariffsLoading && !tariffsData;
 
   const selected = plans.find((plan) => plan.id === selectedId);
@@ -123,8 +136,7 @@ export default function TariffsPage() {
     );
     const initialPeriod =
       targetPlan.periods.find((period) => period.days === periodDays) ??
-      targetPlan.periods.find((period) => period.days === 30) ??
-      targetPlan.periods[0];
+      [...targetPlan.periods].sort((a, b) => a.price - b.price || a.days - b.days)[0];
     setSelectedId(id);
     setDevices(initialDevices);
     setMonths(initialPeriod?.months ?? 1);
@@ -133,7 +145,7 @@ export default function TariffsPage() {
   }
 
   function openPlan(plan: Plan, periodDays?: number | null) {
-    if (activeId && !addingSubscription && plan.id !== activeId) {
+    if (canSwitch && !addingSubscription && plan.id !== activeId) {
       setSwitchPlan(plan);
       setSwitchModalOpen(true);
     } else {
@@ -147,7 +159,7 @@ export default function TariffsPage() {
     if (!intent || intentHandled.current || plans.length === 0) return;
     const target =
       intent.plan === 'recommended'
-        ? (plans.find((plan) => plan.recommended) ?? plans[0])
+        ? (plans.find((plan) => plan.id === recommendedPlanId) ?? plans[0])
         : plans.find((plan) => plan.id === intent.plan);
     intentHandled.current = true;
     if (target) openPlan(target, intent.periodDays);
@@ -213,16 +225,30 @@ export default function TariffsPage() {
           aria-label={t('invoxy.tariffs.loading')}
         />
       )}
+      {tariffsError && !tariffsData && (
+        <div className="glass-panel rounded-[24px] p-5" role="alert">
+          <p className="text-sm text-muted">
+            {getApiErrorMessage(tariffsError, t('invoxy.ended.loadError'))}
+          </p>
+          <button
+            type="button"
+            className="mt-3 min-h-11 text-sm font-semibold text-mint"
+            onClick={() => void refetch()}
+          >
+            {t('invoxy.ended.retry')}
+          </button>
+        </div>
+      )}
 
       <div className="motion-grid grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
           const Icon = planIcon(plan);
-          const active = plan.id === activeId;
+          const active = plan.id === activeId && !activeSubscription?.is_trial;
           const recommended = plan.id === recommendedPlanId;
           const expanded = plan.id === selectedId && dialogOpen;
           // Одна primary-кнопка на экране: «Продлить» у текущего тарифа, а без
           // подписки — «Выбрать» у рекомендованного.
-          const primary = active || (!activeId && recommended);
+          const primary = active || (!canSwitch && recommended);
           return (
             <article
               key={plan.id}
@@ -249,7 +275,7 @@ export default function TariffsPage() {
                       </span>
                     ) : recommended ? (
                       <span className="rounded-full bg-mint px-2.5 py-1 text-[10px] font-bold text-bg shadow-[0_0_16px_rgba(165,232,196,.25)]">
-                        {t('invoxy.tariffs.recommended')}
+                        {t('invoxy.tariffs.lowPrice')}
                       </span>
                     ) : null}
                   </div>
@@ -297,7 +323,7 @@ export default function TariffsPage() {
                 >
                   {active
                     ? t('invoxy.tariffs.renew')
-                    : activeId && !addingSubscription
+                    : canSwitch && !addingSubscription
                       ? t('invoxy.tariffs.switch')
                       : t('invoxy.tariffs.choose')}
                   <ChevronRight size={16} />
@@ -308,7 +334,7 @@ export default function TariffsPage() {
         })}
       </div>
 
-      {activeId && (
+      {canSwitch && (
         <section>
           <AddonsCard
             subscriptionId={activeSubscriptionId}
@@ -341,7 +367,7 @@ export default function TariffsPage() {
         <TariffConfiguratorDialog
           open={dialogOpen}
           plan={selected}
-          active={selected.id === activeId}
+          active={selected.id === activeId && !activeSubscription?.is_trial}
           subscriptionId={activeSubscriptionId ?? undefined}
           months={months}
           devices={devices}
@@ -745,6 +771,11 @@ function TariffConfigurator({
         </div>
         <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-white/10 pt-3">
           <span className="text-sm text-muted">{t('invoxy.tariffs.total')}</span>
+          {totals.saving > 0 && (
+            <s className="ml-auto text-sm text-muted tabular-nums">
+              {formatRubles(totals.total + totals.saving)}
+            </s>
+          )}
           <AnimatePresence mode="popLayout" initial={false}>
             <m.strong
               key={`${months}-${devices}-${totals.total}`}
