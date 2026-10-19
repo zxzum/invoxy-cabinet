@@ -39,7 +39,7 @@ export function TrialCard({
   return (
     <section className="glass-panel motion-card relative min-h-[292px] w-full overflow-hidden rounded-[30px] border border-mint/25 p-5 shadow-[0_0_38px_rgba(165,232,196,.06)] sm:p-6 lg:min-h-[300px] lg:rounded-[clamp(24px,1.2vw,30px)] lg:p-[clamp(22px,1.45vw,30px)]">
       <img
-        src="/images/trial-card-bg.png"
+        src="/images/trial-card-bg.webp"
         alt=""
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover opacity-80 lg:block"
@@ -47,7 +47,7 @@ export function TrialCard({
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_36%,rgba(165,232,196,.2),transparent_34%),linear-gradient(120deg,rgba(15,18,20,.95),rgba(15,18,20,.58))] lg:bg-gradient-to-r lg:from-bg/90 lg:via-bg/45 lg:to-bg/10" />
       <img
-        src="/images/trial-ribbon.png"
+        src="/images/trial-ribbon.webp"
         alt=""
         aria-hidden="true"
         className="pointer-events-none absolute -right-14 top-5 w-[190px] opacity-95 mix-blend-screen drop-shadow-[0_0_20px_rgba(243,241,236,.16)] sm:-right-8 sm:top-4 sm:w-[285px] lg:hidden"
@@ -300,7 +300,7 @@ export function ReferralPromoCard() {
   return (
     <section className="glass-panel motion-card relative overflow-hidden rounded-[30px] border border-white/12 p-5 sm:p-7 lg:rounded-[clamp(24px,1.2vw,30px)] lg:p-[clamp(24px,1.7vw,34px)]">
       <img
-        src="/images/referral-network-bg.png"
+        src="/images/referral-network-bg.webp"
         alt=""
         aria-hidden="true"
         className="absolute inset-0 h-full w-full object-cover opacity-80"
@@ -360,7 +360,7 @@ export function PartnerPromoCard() {
   return (
     <section className="glass-panel motion-card relative overflow-hidden rounded-[26px] border border-mint/20 p-4 transition-all hover:border-mint/35 sm:p-5">
       <img
-        src="/images/referral-network-bg.png"
+        src="/images/referral-network-bg.webp"
         alt=""
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"

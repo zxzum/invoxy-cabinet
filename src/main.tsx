@@ -134,20 +134,9 @@ void useAuthStore.getState().initialize();
 // the /login page first.
 void checkBackendOnStartup();
 
-const PRELOAD_ASSETS = [
-  LOCAL_LOGO_URL,
-  '/images/promo-group-bg.webp',
-  '/images/subscription-bg-desktop.webp',
-  '/images/subscription-orb.webp',
-  '/images/subscription-status-bg.webp',
-];
-
-if (typeof window !== 'undefined') {
-  PRELOAD_ASSETS.forEach((src) => {
-    const img = new Image();
-    img.src = src;
-  });
-}
+// Cabinet-only imagery is warmed after sign-in (see useWarmCustomerRoutes), so
+// anonymous landing visitors don't pay for it.
+new Image().src = LOCAL_LOGO_URL;
 
 if ('requestIdleCallback' in window) {
   requestIdleCallback(() => initLogoPreload());

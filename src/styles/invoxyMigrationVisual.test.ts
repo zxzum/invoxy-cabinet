@@ -49,25 +49,25 @@ describe('Invoxy visual migration', () => {
     const lunaCss = start >= 0 && end > start ? css.slice(start, end) : '';
 
     expect(lunaCss).toContain(
-      `.light .luna-dashboard article[style*="trial-card-bg.png"] {
+      `.light .luna-dashboard article[style*="trial-card-bg.webp"] {
     background-image:
       linear-gradient(
         115deg,
         rgba(var(--color-champagne-50), 0.96),
         rgba(var(--color-champagne-100), 0.86)
       ),
-      url("/images/trial-card-bg.png") !important;
+      url("/images/trial-card-bg.webp") !important;
   }`,
     );
     expect(lunaCss).toContain(
-      `.light .luna-dashboard article[style*="referral-network-bg.png"] {
+      `.light .luna-dashboard article[style*="referral-network-bg.webp"] {
     background-image:
       linear-gradient(
         110deg,
         rgba(var(--color-champagne-50), 0.96),
         rgba(var(--color-champagne-100), 0.86)
       ),
-      url("/images/referral-network-bg.png") !important;
+      url("/images/referral-network-bg.webp") !important;
   }`,
     );
   });

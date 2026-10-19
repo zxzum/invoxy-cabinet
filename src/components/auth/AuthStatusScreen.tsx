@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { AnimatePresence, m } from 'framer-motion';
 import { ExclamationIcon } from '@/components/icons';
 
-export const AUTH_LOGO_FALLBACK = '/images/brand-mark.png?v=20260924_shield';
+export const AUTH_LOGO_FALLBACK = '/images/brand-mark.png?v=20261020';
 
 type AuthStatus = 'loading' | 'success' | 'error';
 

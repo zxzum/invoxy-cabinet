@@ -151,7 +151,7 @@ export default function PartnerPage() {
       {/* Hero Banner with Program Highlights */}
       <section className="glass-panel motion-card relative min-w-0 max-w-full overflow-hidden rounded-[30px] border border-white/12 p-6 sm:p-8 lg:rounded-[32px] lg:p-9">
         <img
-          src="/images/referral-network-bg.png"
+          src="/images/referral-network-bg.webp"
           alt=""
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-60"

@@ -43,7 +43,7 @@ import { safeLocal, safeSession } from '../utils/safeStorage';
 import brandLogo from '@/assets/logo.png';
 
 // Fallback to /images/brand-mark.png keeps test asset scans satisfied while runtime uses brandLogo
-const DEFAULT_LOGO_URL = brandLogo || '/images/brand-mark.png?v=20260924_shield';
+const DEFAULT_LOGO_URL = brandLogo || '/images/brand-mark.png?v=20261020';
 
 /** Направление смены состояния карточки: «вперёд» к шагу восстановления — слева направо. */
 type AuthView = 'form' | 'consent' | 'forgot' | 'check-email';

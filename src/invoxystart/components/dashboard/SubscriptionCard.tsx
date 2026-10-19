@@ -37,7 +37,7 @@ export function SubscriptionCard({
       <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-t from-bg/70 via-bg/10 to-transparent lg:block" />
 
       <img
-        src={trial ? '/images/trial-ribbon.png' : '/images/subscription-orb.webp'}
+        src={trial ? '/images/trial-ribbon.webp' : '/images/subscription-orb.webp'}
         alt=""
         className={`pointer-events-none absolute -right-4 top-4 w-[150px] opacity-70 lg:hidden ${trial ? 'mix-blend-screen' : ''}`}
         style={{ top: '80px', scale: trial ? '1.35' : '1.5' }}

@@ -88,9 +88,9 @@ describe('Luna welcome surfaces', () => {
       expect(screen.getByText(value)).toBeTruthy();
     }
 
-    expect(container.innerHTML).toContain('/images/trial-card-bg.png');
-    expect(container.innerHTML).toContain('/images/trial-ribbon.png');
-    expect(container.innerHTML).toContain('/images/referral-network-bg.png');
+    expect(container.innerHTML).toContain('/images/trial-card-bg.webp');
+    expect(container.innerHTML).toContain('/images/trial-ribbon.webp');
+    expect(container.innerHTML).toContain('/images/referral-network-bg.webp');
 
     fireEvent.click(screen.getByRole('button', { name: 'Activate trial' }));
     expect(onActivate).toHaveBeenCalledTimes(1);

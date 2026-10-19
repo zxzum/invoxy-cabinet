@@ -39,7 +39,7 @@ export function TrialHero({
       className={`relative isolate overflow-hidden rounded-[var(--bento-radius)] border border-accent-500/25 bg-dark-950/85 p-5 shadow-xl sm:p-7 ${className}`}
       style={{
         backgroundImage:
-          "linear-gradient(115deg, rgba(10, 20, 34, 0.94), rgba(8, 14, 28, 0.64)), url('/images/trial-card-bg.png')",
+          "linear-gradient(115deg, rgba(10, 20, 34, 0.94), rgba(8, 14, 28, 0.64)), url('/images/trial-card-bg.webp')",
         backgroundPosition: 'center',
         backgroundSize: 'cover',
       }}
@@ -47,7 +47,7 @@ export function TrialHero({
       aria-label={typeof title === 'string' ? title : undefined}
     >
       <img
-        src="/images/trial-ribbon.png"
+        src="/images/trial-ribbon.webp"
         alt=""
         aria-hidden="true"
         className="pointer-events-none absolute right-0 top-0 w-28 max-w-[28%] opacity-90 sm:w-40"

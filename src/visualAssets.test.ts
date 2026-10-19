@@ -6,9 +6,9 @@ import { describe, expect, it } from 'vitest';
 const LUNA_ASSETS = [
   'subscription-bg-desktop.webp',
   'subscription-orb.webp',
-  'trial-card-bg.png',
-  'trial-ribbon.png',
-  'referral-network-bg.png',
+  'trial-card-bg.webp',
+  'trial-ribbon.webp',
+  'referral-network-bg.webp',
   'apps/happ.png',
   'apps/incy.png',
 ] as const;
@@ -52,9 +52,9 @@ const LUNA_SOURCE_SHA256: Record<(typeof LUNA_ASSETS)[number], string> = {
   'subscription-bg-desktop.webp':
     '7834283926ccff1e9b28b2d40016fa6a5a9e29099e95ab96aa2fa5f70d978fdc',
   'subscription-orb.webp': '8deb20279d7944c7ff58ce41923560347e853cab7ffb462b28ca1808201d6ac7',
-  'trial-card-bg.png': 'bbe183143a818bae92f52e12a8766266b4f31706903cda651e809a1a2ca100cd',
-  'trial-ribbon.png': '12ff1303620ecc5f0c3ad6f6008798500321ff2d79bd461d027710306d4e5e1b',
-  'referral-network-bg.png': 'ee30617e55f2d75fc56de5e4ec7a56c7a521d5aa31b58ce6c1e7db41fe51de9b',
+  'trial-card-bg.webp': 'c10839e56c67ca9c8a872af94033e49859c8b70f3f83b04885b546063a270088',
+  'trial-ribbon.webp': '8e6fe988879a633108364136477929a62204eda5bddd3e0e1205edbcc6490dcc',
+  'referral-network-bg.webp': '87568ac98816bbef6f194f57a2ef4c45b30fb151a97ebdfb3654d9b59fa4569a',
   'apps/happ.png': 'fb6d72b89ad0a72dd0fcc99f4d98543016e0d8c084cde3933ed581b22bf1bd3f',
   'apps/incy.png': '729a2c7cf04ca2f194f958550f38bfe18099a6f8d5a041552f6dbd935c7904eb',
 };
@@ -106,7 +106,8 @@ describe('migrated visual assets', () => {
     }
   });
 
-  it('copies Luna dashboard assets byte-for-byte from InvoxyStart', () => {
+  // Re-encoded to WebP at display resolution (the PNG originals were ~1.5 MB each).
+  it('pins the Luna dashboard assets byte-for-byte', () => {
     const targetRoot = new URL('../public/images/', import.meta.url);
 
     for (const asset of LUNA_ASSETS) {

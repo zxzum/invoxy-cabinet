@@ -9,7 +9,7 @@ import brandLogo from '@/assets/logo.png';
 export type { AnimationConfig };
 
 // Bundled asset provides content hashing; fallback URL prevents Telegram/WebView caching.
-export const LOCAL_LOGO_URL = brandLogo || '/images/brand-mark.png?v=20260924_shield';
+export const LOCAL_LOGO_URL = brandLogo || '/images/brand-mark.png?v=20261020';
 
 export interface BrandingInfo {
   name: string;

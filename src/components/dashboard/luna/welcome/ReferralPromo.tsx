@@ -29,7 +29,7 @@ export function ReferralPromo({
       className={`relative isolate overflow-hidden rounded-[var(--bento-radius)] border border-accent-500/20 bg-dark-900/80 p-5 sm:p-6 ${className}`}
       style={{
         backgroundImage:
-          "linear-gradient(110deg, rgba(10, 16, 28, 0.96), rgba(10, 18, 30, 0.68)), url('/images/referral-network-bg.png')",
+          "linear-gradient(110deg, rgba(10, 16, 28, 0.96), rgba(10, 18, 30, 0.68)), url('/images/referral-network-bg.webp')",
         backgroundPosition: 'center',
         backgroundSize: 'cover',
       }}

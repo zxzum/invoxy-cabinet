@@ -16,7 +16,7 @@ export function BrandLogo({
         alt=""
         className={iconClassName}
         onError={(e) => {
-          (e.currentTarget as HTMLImageElement).src = '/images/brand-mark.png?v=20260924_shield';
+          (e.currentTarget as HTMLImageElement).src = '/images/brand-mark.png?v=20261020';
         }}
       />
       <span className={textClassName}>
