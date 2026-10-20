@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { AnimatePresence, m } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { CalendarDays, Link2, Smartphone, X } from '@/invoxystart/components/ui/RuneIcon';
@@ -524,16 +524,16 @@ export default function SubscriptionManagePage() {
           ) : null}
 
           <AccountPanel title="Опасная зона">
-            <button
-              type="button"
-              onClick={() => showToast('Удаление подписки доступно через поддержку')}
-              className="mt-4 flex w-full items-center justify-between rounded-2xl border border-red-300/20 bg-red-300/5 px-4 py-3 text-left text-sm text-red-200 transition-[color,background-color,border-color,transform] hover:border-red-300/40 hover:bg-red-300/10 active:scale-[.99]"
+            {/* Deletion is handled by support; say so up front instead of a button that only toasts. */}
+            <Link
+              to="/support"
+              className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-red-300/20 bg-red-300/5 px-4 py-3 text-left text-sm text-red-200 transition-[color,background-color,border-color,transform] hover:border-red-300/40 hover:bg-red-300/10 active:scale-[.99]"
             >
               <span className="flex items-center gap-2">
                 <X size={16} /> Удалить подписку
               </span>
-              <span className="text-xs text-red-200/60">Обратитесь в поддержку</span>
-            </button>
+              <span className="shrink-0 text-xs text-red-200/70">Через поддержку →</span>
+            </Link>
           </AccountPanel>
         </div>
       </div>

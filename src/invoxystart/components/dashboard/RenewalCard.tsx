@@ -91,7 +91,9 @@ export function RenewalCard({
             .sort((a, b) => Number(a.id) - Number(b.id))
             .map((term) => {
               const isActive = term.id === activeTerm?.id;
-              const savings = durationSavings(term.price, Number(term.id) / 30, monthlyBase);
+              // Whole months, as on the tariffs page: 365 days compares with 12 × monthly, not 12.17 ×.
+              const months = Math.max(1, Math.round(Number(term.id) / 30));
+              const savings = durationSavings(term.price, months, monthlyBase);
               const discount = term.discount || savings.discount;
               return (
                 <button

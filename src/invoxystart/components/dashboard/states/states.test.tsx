@@ -80,6 +80,20 @@ const terms = [
 ];
 
 describe('RenewalCard', () => {
+  it('compares a yearly term with twelve whole months', () => {
+    wrap(
+      <RenewalCard
+        terms={[
+          { id: '30', label: '30 дней', price: 249 },
+          { id: '365', label: '365 дней', price: 2390 },
+        ]}
+        onPay={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/2\s988\s₽/)).toBeTruthy();
+    expect(screen.queryByText(/3\s029/)).toBeNull();
+  });
+
   it('preselects a term when terms arrive after mount', () => {
     const onPay = vi.fn();
     const view = wrap(<RenewalCard terms={[]} onPay={onPay} />);
