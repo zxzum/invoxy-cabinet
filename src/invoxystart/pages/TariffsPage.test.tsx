@@ -170,6 +170,13 @@ describe('tariff purchase routing', () => {
   });
 });
 
+it('labels an unlimited plan instead of showing 0 GB', async () => {
+  mocks.getSubscriptions.mockResolvedValue({ subscriptions: [] });
+  mount();
+  expect((await screen.findAllByText('subscription.unlimited')).length).toBe(tariffs.length);
+  expect(screen.queryByText('invoxy.tariffs.traffic')).toBeNull();
+});
+
 it('shows an inferred annual discount and still charges the server total', async () => {
   mocks.getSubscriptions.mockResolvedValue({ subscriptions: [] });
   mocks.getPurchaseOptions.mockResolvedValue({

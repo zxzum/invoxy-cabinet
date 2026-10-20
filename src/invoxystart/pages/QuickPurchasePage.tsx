@@ -239,7 +239,7 @@ export default function QuickPurchasePage({
                     <p className="mt-1 text-xs text-muted">{item.description}</p>
                   )}
                   <p className="mt-3 text-xs text-muted">
-                    До {item.device_limit} устройств · {item.traffic_limit_gb} ГБ
+                    До {item.device_limit} устройств · {item.traffic_limit_gb || '∞'} ГБ
                   </p>
                 </m.button>
               ))}

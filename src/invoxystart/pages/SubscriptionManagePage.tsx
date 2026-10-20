@@ -509,7 +509,7 @@ export default function SubscriptionManagePage() {
           {renewalOptions.length ? (
             <RenewalCard
               title={detail.tariff_name || 'Подписка'}
-              subtitle={`${detail.traffic_limit_gb ?? '∞'} ГБ · ${detail.whitelist_traffic_limit_gb ?? 0} ГБ LTE · до ${detail.device_limit ?? '—'} устройств`}
+              subtitle={`${detail.traffic_limit_gb || '∞'} ГБ · ${detail.whitelist_traffic_limit_gb ?? 0} ГБ LTE · до ${detail.device_limit ?? '—'} устройств`}
               showTariffs={false}
               breakdown={renewalBreakdown}
               subscriptionId={id}

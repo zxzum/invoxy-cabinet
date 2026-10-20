@@ -240,8 +240,8 @@ export function TariffSwitchModal({
               <div className="border-t border-white/10 pt-3 flex items-center justify-between text-xs">
                 <span className="text-muted">Лимиты тарифа</span>
                 <span className="font-medium text-ink">
-                  {plan.mainTraffic} ГБ {plan.lteTraffic ? `+ ${plan.lteTraffic} ГБ LTE` : ''} · до{' '}
-                  {plan.devices} устр.
+                  {plan.mainTraffic || '∞'} ГБ{' '}
+                  {plan.lteTraffic ? `+ ${plan.lteTraffic} ГБ LTE` : ''} · до {plan.devices} устр.
                 </span>
               </div>
             </div>
@@ -359,7 +359,7 @@ export function TariffSwitchModal({
                       {preview.current_tariff_name || currentPlan?.name || 'Текущий план'}
                     </span>
                     <span className="mt-1 text-[11px] text-muted">
-                      {currentPlan ? `${currentPlan.mainTraffic} ГБ` : '—'}
+                      {currentPlan ? `${currentPlan.mainTraffic || '∞'} ГБ` : '—'}
                       {currentPlan?.lteTraffic ? ` + ${currentPlan.lteTraffic} ГБ LTE` : ''}
                     </span>
                   </div>
@@ -378,7 +378,8 @@ export function TariffSwitchModal({
                       {preview.new_tariff_name || plan.name}
                     </span>
                     <span className="mt-1 text-[11px] font-medium text-mint/90">
-                      {plan.mainTraffic} ГБ {plan.lteTraffic ? `+ ${plan.lteTraffic} ГБ LTE` : ''}
+                      {plan.mainTraffic || '∞'} ГБ{' '}
+                      {plan.lteTraffic ? `+ ${plan.lteTraffic} ГБ LTE` : ''}
                     </span>
                   </div>
                 </div>

@@ -288,7 +288,9 @@ export default function TariffsPage() {
 
               <ul className="mt-3 flex flex-wrap gap-1.5 text-xs">
                 <li className="rounded-full bg-white/[.06] px-2.5 py-1.5 text-ink">
-                  {t('invoxy.tariffs.traffic', { count: plan.mainTraffic })}
+                  {plan.mainTraffic === 0
+                    ? t('subscription.unlimited')
+                    : t('invoxy.tariffs.traffic', { count: plan.mainTraffic })}
                 </li>
                 <li
                   className={`rounded-full px-2.5 py-1.5 ${plan.lteTraffic ? 'bg-mint/12 text-mint' : 'bg-white/[.04] text-muted'}`}
