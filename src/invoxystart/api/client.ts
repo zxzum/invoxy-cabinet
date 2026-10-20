@@ -1,4 +1,6 @@
 import { resolveApiBaseUrl } from '../../config/apiUrl';
+import { markBackendReached, reportPossibleBackendDown } from '../../api/health';
+import { useBlockingStore } from '../../store/blocking';
 
 const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL).replace(/\/$/, '');
 const UNAUTH_PATHS = [
@@ -35,25 +37,47 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Feeds account-level blocks into the same global store the legacy API client
+ * uses, so BlockingOverlay renders maintenance / ban / channel screens for
+ * cabinet requests too (they used to be dispatched to a listener nobody mounted).
+ */
 function reportBlocking(status: number, data: unknown) {
-  if (typeof window === 'undefined') return;
   const detail =
     data && typeof data === 'object' && 'detail' in data
       ? (data as { detail?: unknown }).detail
       : data;
   if (!detail || typeof detail !== 'object') return;
-  const code = (detail as { code?: string }).code;
-  const type = code === 'channel_subscription_required' ? 'channel_subscription' : code;
-  if (
-    status === 503 ||
-    ['maintenance', 'channel_subscription', 'blacklisted', 'account_deleted'].includes(type || '')
-  ) {
-    window.dispatchEvent(
-      new CustomEvent('invoxy:block', {
-        detail: { type: status === 503 && !type ? 'maintenance' : type, info: detail },
-      }),
-    );
+  const info = detail as { code?: string; message: string };
+  const { code } = info;
+  const store = useBlockingStore.getState();
+  if (status === 503 && code === 'maintenance') store.setMaintenance(info);
+  else if (status === 403 && code === 'channel_subscription_required')
+    store.setChannelSubscription(info);
+  else if (status === 403 && code === 'blacklisted') store.setBlacklisted(info);
+  else if (status === 403 && code === 'account_deleted') store.setAccountDeleted(info);
+}
+
+const FALLBACK_ERROR_MESSAGE = 'Не удалось выполнить запрос. Попробуйте ещё раз.';
+const SERVER_ERROR_MESSAGE = 'Сервис временно недоступен. Попробуйте чуть позже.';
+
+/** Human-readable text from a FastAPI error body (string, {message} or validation list). */
+export function apiErrorMessage(status: number, data: unknown): string {
+  if (status >= 500) return SERVER_ERROR_MESSAGE;
+  const detail =
+    data && typeof data === 'object' && 'detail' in data
+      ? (data as { detail?: unknown }).detail
+      : undefined;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (Array.isArray(detail)) {
+    const first = detail[0] as { msg?: unknown } | undefined;
+    if (typeof first?.msg === 'string') return first.msg;
   }
+  if (detail && typeof detail === 'object') {
+    const message = (detail as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  return FALLBACK_ERROR_MESSAGE;
 }
 
 let memoryAccessToken: string | null = null;
@@ -284,12 +308,13 @@ export async function request<T>(
           : JSON.stringify(options.body),
     });
   } catch (error) {
-    if (typeof window !== 'undefined')
-      window.dispatchEvent(
-        new CustomEvent('invoxy:block', { detail: { type: 'backend_unavailable' } }),
-      );
+    // Confirmed with a liveness probe first, so one network blip (e.g. returning
+    // from a bank app) does not blank a working session. Aborts are not outages.
+    if (!(error instanceof DOMException && error.name === 'AbortError'))
+      void reportPossibleBackendDown();
     throw error;
   }
+  markBackendReached();
   const data = await readResponse(response);
 
   if (response.status === 401 && !retried && !isAuthPath(path)) {
@@ -299,11 +324,7 @@ export async function request<T>(
 
   if (!response.ok) {
     reportBlocking(response.status, data);
-    const message =
-      typeof data === 'object' && data && 'detail' in data
-        ? String((data as { detail?: unknown }).detail)
-        : undefined;
-    throw new ApiError(response.status, data, message);
+    throw new ApiError(response.status, data, apiErrorMessage(response.status, data));
   }
   if (cacheKey) {
     responseCache.set(cacheKey, { value: data, expiresAt: Date.now() + GET_CACHE_TTL_MS });
