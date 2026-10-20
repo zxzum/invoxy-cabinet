@@ -6305,5 +6305,13 @@
       "expiredOn": "已过期：{{date}}",
       "activeUntil": "有效期至：{{date}}"
     }
+  },
+  "errorBoundary": {
+    "title": "出了点问题",
+    "description": "发生了意外错误。刷新页面通常可以解决。",
+    "updated": "应用已更新，正在重新加载…",
+    "reload": "刷新页面",
+    "section": "此部分加载失败",
+    "retry": "重试"
   }
 }

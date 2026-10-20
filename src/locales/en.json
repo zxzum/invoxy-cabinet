@@ -7089,5 +7089,13 @@
       "expiredOn": "Expired: {{date}}",
       "activeUntil": "Active until: {{date}}"
     }
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred. Reloading the page usually helps.",
+    "updated": "The app was updated. Reloading…",
+    "reload": "Reload page",
+    "section": "This section failed to load",
+    "retry": "Try again"
   }
 }

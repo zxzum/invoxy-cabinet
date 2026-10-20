@@ -1,5 +1,10 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import i18n from '../i18n';
 import { safeSession } from '../utils/safeStorage';
+
+// Class component: read strings through i18n directly. Raw error text stays in
+// the console — users only get a localized explanation.
+const copy = (key: string, fallback: string) => i18n.t(`errorBoundary.${key}`, fallback);
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -70,15 +75,20 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div className="min-h-viewport flex items-center justify-center bg-dark-900 p-4">
           <div className="max-w-md text-center">
             <div className="mb-4 text-4xl">⚠️</div>
-            <h1 className="mb-2 text-xl font-bold text-dark-50">Something went wrong</h1>
+            <h1 className="mb-2 text-xl font-bold text-dark-50">
+              {copy('title', 'Something went wrong')}
+            </h1>
             <p className="mb-6 text-dark-400">
-              An unexpected error occurred. Please try reloading the page.
+              {copy(
+                'description',
+                'An unexpected error occurred. Reloading the page usually helps.',
+              )}
             </p>
             <button
               onClick={() => window.location.reload()}
               className="rounded-xl bg-accent-500 px-6 py-3 font-medium text-on-accent transition-colors hover:bg-accent-600"
             >
-              Reload page
+              {copy('reload', 'Reload page')}
             </button>
           </div>
         </div>
@@ -88,12 +98,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (level === 'widget') {
       return (
         <div className="alert-error p-4 text-center">
-          <p className="text-sm text-error-400">Failed to load this section</p>
+          <p className="text-sm text-error-400">{copy('section', 'This section failed to load')}</p>
           <button
             onClick={this.handleReset}
             className="mt-2 text-sm text-accent-400 hover:text-accent-300"
           >
-            Try again
+            {copy('retry', 'Try again')}
           </button>
         </div>
       );
@@ -104,17 +114,22 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       <div className="flex min-h-[50vh] items-center justify-center p-4">
         <div className="max-w-md text-center">
           <div className="mb-4 text-4xl">⚠️</div>
-          <h1 className="mb-2 text-xl font-bold text-dark-50">Something went wrong</h1>
+          <h1 className="mb-2 text-xl font-bold text-dark-50">
+            {copy('title', 'Something went wrong')}
+          </h1>
           <p className="mb-6 text-sm text-dark-400">
             {isChunk
-              ? 'App was updated. Reloading...'
-              : this.state.error?.message || 'An unexpected error occurred'}
+              ? copy('updated', 'The app was updated. Reloading…')
+              : copy(
+                  'description',
+                  'An unexpected error occurred. Reloading the page usually helps.',
+                )}
           </p>
           <button
             onClick={() => window.location.reload()}
             className="rounded-xl bg-accent-500 px-6 py-3 font-medium text-on-accent transition-colors hover:bg-accent-600"
           >
-            {isChunk ? 'Reload' : 'Try again'}
+            {copy('reload', 'Reload page')}
           </button>
         </div>
       </div>
