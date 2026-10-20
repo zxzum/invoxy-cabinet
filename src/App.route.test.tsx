@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from 'react-router';
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useNavigationType,
+} from 'react-router';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -281,6 +288,15 @@ async function renderApp(
   );
 }
 
+function NavigateButton({ to }: { to: string }) {
+  const navigate = useNavigate();
+  return (
+    <button type="button" data-testid="navigate" onClick={() => navigate(to)}>
+      go
+    </button>
+  );
+}
+
 function renderPage(element: ReactNode, initialEntry: string) {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
@@ -530,6 +546,29 @@ describe('cabinet route boundary', () => {
 
     expect(await screen.findByTestId('dashboard-page')).toBeTruthy();
     expect(screen.getAllByRole('navigation').length).toBeGreaterThan(0);
+  });
+
+  it('keeps one shell mounted when moving between customer sections', async () => {
+    auth.state.isAuthenticated = true;
+    const { default: App } = await import('./App');
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <App />
+          <NavigateButton to="/subscriptions" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await screen.findByTestId('dashboard-page');
+    const shell = container.querySelector('.invoxystart-shell');
+    expect(shell).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId('navigate'));
+
+    expect(await screen.findByTestId('subscriptions-page')).toBeTruthy();
+    expect(container.querySelector('.invoxystart-shell')).toBe(shell);
   });
 
   it('opens the Telegram bot renewal deep link directly on the renewal screen', async () => {

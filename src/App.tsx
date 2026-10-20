@@ -1,5 +1,5 @@
 import { safeSession } from './utils/safeStorage';
-import { lazy, Suspense, type ComponentType } from 'react';
+import { lazy, Suspense, useEffect, type ComponentType } from 'react';
 import { Routes, Route, Navigate, useLocation, useParams, useOutlet } from 'react-router';
 import { useAuthStore } from './store/auth';
 
@@ -7,7 +7,8 @@ import { useAuthStore } from './store/auth';
  * Wrapper around React.lazy that auto-reloads the page when a chunk fails to load
  * (e.g. after a new deploy with different chunk hashes).
  */
-function lazyWithRetry<T extends ComponentType<unknown>>(factory: () => Promise<{ default: T }>) {
+// biome-ignore lint/suspicious/noExplicitAny: mirrors React.lazy's own constraint
+function lazyWithRetry<T extends ComponentType<any>>(factory: () => Promise<{ default: T }>) {
   return lazy(() =>
     factory().catch(() => {
       const key = 'chunk_reload_ts';
@@ -35,6 +36,7 @@ import { captureReferralFromUrl, isValidReferralCode } from './utils/referral';
 import Layout from './components/layout/Layout';
 import { MainPagesReady } from './components/layout/MainPagesReady';
 import PageLoader from './components/common/PageLoader';
+import { LoadingState as ShellPageFallback } from './invoxystart/components/account/AccountPrimitives';
 import {
   MaintenanceScreen,
   ChannelSubscriptionScreen,
@@ -51,33 +53,89 @@ import { useSiteVerification } from './hooks/useSiteVerification';
 import { useDoneKey } from './hooks/useDoneKey';
 import { getTelegramInitData, isInTelegramWebApp } from './hooks/useTelegramSDK';
 import { InvoxyStartShell } from './invoxystart/InvoxyStartShell';
-import { DashboardPage as InvoxyDashboardPage } from './invoxystart/pages/DashboardPage';
-import InvoxyTariffsPage from './invoxystart/pages/TariffsPage';
-import InvoxyReferralsPage from './invoxystart/pages/ReferralsPage';
-import InvoxyProfilePage from './invoxystart/pages/ProfilePage';
-import InvoxySubscriptionsPage from './invoxystart/pages/SubscriptionsPage';
-import InvoxySubscriptionManagePage from './invoxystart/pages/SubscriptionManagePage';
-import InvoxySupportPage from './invoxystart/pages/SupportPage';
-import InvoxyInfoPage from './invoxystart/pages/InfoPage';
-import InvoxyNewsPage, {
-  NewsArticlePage as InvoxyNewsArticlePage,
-} from './invoxystart/pages/NewsPage';
-import InvoxyActivitiesPage from './invoxystart/pages/ActivitiesPage';
-import InvoxyPartnerPage from './invoxystart/pages/PartnerPage';
-import InvoxyAccountSecurityPage from './invoxystart/pages/AccountSecurityPage';
-import InvoxySavedCardsPage from './invoxystart/pages/SavedCardsPage';
-// Auth pages - load immediately (small)
-import Login from './pages/Login';
-import TelegramCallback from './pages/TelegramCallback';
-import TelegramRedirect from './pages/TelegramRedirect';
-import DeepLinkRedirect from './pages/DeepLinkRedirect';
-import VerifyEmail from './pages/VerifyEmail';
-import ResetPassword from './pages/ResetPassword';
-import PublicLegal from './pages/PublicLegal';
-import OAuthCallback from './pages/OAuthCallback';
-import Landing from './invoxystart/pages/LandingPage';
 
-// Legacy connection page remains available from the customer dashboard.
+// Auth and redirect screens are lazy too: signed-in users and landing visitors
+// never render them, and Login alone pulls in the Telegram widget and QR code.
+const loadLogin = () => import('./pages/Login');
+const Login = lazyWithRetry(loadLogin);
+const TelegramCallback = lazyWithRetry(() => import('./pages/TelegramCallback'));
+const TelegramRedirect = lazyWithRetry(() => import('./pages/TelegramRedirect'));
+const DeepLinkRedirect = lazyWithRetry(() => import('./pages/DeepLinkRedirect'));
+const VerifyEmail = lazyWithRetry(() => import('./pages/VerifyEmail'));
+const ResetPassword = lazyWithRetry(() => import('./pages/ResetPassword'));
+const PublicLegal = lazyWithRetry(() => import('./pages/PublicLegal'));
+const OAuthCallback = lazyWithRetry(() => import('./pages/OAuthCallback'));
+
+// Customer pages are split per route so anonymous visitors never download the
+// cabinet and signed-in users never download the landing (and its GSAP).
+const customerPageLoaders = {
+  dashboard: () => import('./invoxystart/pages/DashboardPage'),
+  tariffs: () => import('./invoxystart/pages/TariffsPage'),
+  referrals: () => import('./invoxystart/pages/ReferralsPage'),
+  profile: () => import('./invoxystart/pages/ProfilePage'),
+  subscriptions: () => import('./invoxystart/pages/SubscriptionsPage'),
+  subscriptionManage: () => import('./invoxystart/pages/SubscriptionManagePage'),
+  support: () => import('./invoxystart/pages/SupportPage'),
+  info: () => import('./invoxystart/pages/InfoPage'),
+  news: () => import('./invoxystart/pages/NewsPage'),
+  activities: () => import('./invoxystart/pages/ActivitiesPage'),
+  partner: () => import('./invoxystart/pages/PartnerPage'),
+  accountSecurity: () => import('./invoxystart/pages/AccountSecurityPage'),
+  savedCards: () => import('./invoxystart/pages/SavedCardsPage'),
+};
+const loadLanding = () => import('./invoxystart/pages/LandingPage');
+
+const InvoxyDashboardPage = lazyWithRetry(() =>
+  customerPageLoaders.dashboard().then((m) => ({ default: m.DashboardPage })),
+);
+const InvoxyTariffsPage = lazyWithRetry(customerPageLoaders.tariffs);
+const InvoxyReferralsPage = lazyWithRetry(customerPageLoaders.referrals);
+const InvoxyProfilePage = lazyWithRetry(customerPageLoaders.profile);
+const InvoxySubscriptionsPage = lazyWithRetry(customerPageLoaders.subscriptions);
+const InvoxySubscriptionManagePage = lazyWithRetry(customerPageLoaders.subscriptionManage);
+const InvoxySupportPage = lazyWithRetry(customerPageLoaders.support);
+const InvoxyInfoPage = lazyWithRetry(customerPageLoaders.info);
+const InvoxyNewsPage = lazyWithRetry(customerPageLoaders.news);
+const InvoxyNewsArticlePage = lazyWithRetry(() =>
+  customerPageLoaders.news().then((m) => ({ default: m.NewsArticlePage })),
+);
+const InvoxyActivitiesPage = lazyWithRetry(customerPageLoaders.activities);
+const InvoxyPartnerPage = lazyWithRetry(customerPageLoaders.partner);
+const InvoxyAccountSecurityPage = lazyWithRetry(customerPageLoaders.accountSecurity);
+const InvoxySavedCardsPage = lazyWithRetry(customerPageLoaders.savedCards);
+const Landing = lazyWithRetry(loadLanding);
+
+const CABINET_IMAGES = [
+  '/images/subscription-bg-desktop.webp',
+  '/images/subscription-orb.webp',
+  '/images/subscription-status-bg.webp',
+];
+
+let customerRoutesWarmed = false;
+
+/** Fetches every customer page chunk and its imagery once the browser is idle. */
+function warmCustomerRoutes() {
+  if (customerRoutesWarmed) return;
+  customerRoutesWarmed = true;
+  const warm = () => {
+    for (const load of Object.values(customerPageLoaders)) void load().catch(() => {});
+    for (const src of CABINET_IMAGES) new Image().src = src;
+  };
+  if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 3000 });
+  else setTimeout(warm, 1200);
+}
+
+// Start the chunk for the page being opened in parallel with the i18n bootstrap
+// instead of after the first render.
+if (typeof window !== 'undefined') {
+  const { pathname, hash, search } = window.location;
+  // Telegram opens the mini app at "/" with launch params; that root renders Login.
+  const telegramLaunch = `${hash}${search}`.includes('tgWebApp');
+  if (pathname === '/login' || pathname === '/register' || (pathname === '/' && telegramLaunch))
+    void loadLogin().catch(() => {});
+  else if (pathname === '/') void loadLanding().catch(() => {});
+  else if (isInvoxyStartCustomerPath(pathname)) warmCustomerRoutes();
+}
 
 // Secondary user pages - lazy load
 const InvoxyAppPage = lazyWithRetry(() => import('./invoxystart/pages/AppPage'));
@@ -264,9 +322,17 @@ function MainTabsRoute() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoading = useAuthStore((state) => state.isLoading);
 
+  useEffect(() => {
+    if (isAuthenticated) warmCustomerRoutes();
+  }, [isAuthenticated]);
+
   if (location.pathname === '/') {
     if (isInTelegramWebApp() && getTelegramInitData()) {
-      return <Login />;
+      return (
+        <LazyPage>
+          <Login />
+        </LazyPage>
+      );
     }
 
     const searchParams = new URLSearchParams(location.search);
@@ -282,7 +348,11 @@ function MainTabsRoute() {
       return <Navigate to="/dashboard" replace />;
     }
 
-    return <Landing />;
+    return (
+      <LazyPage>
+        <Landing />
+      </LazyPage>
+    );
   }
 
   return <ProtectedRoute>{outlet}</ProtectedRoute>;
@@ -392,19 +462,110 @@ function App() {
       <BlockingOverlay />
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Login />} />
-        <Route path="/auth/telegram/callback" element={<TelegramCallback />} />
-        <Route path="/auth/telegram" element={<TelegramRedirect />} />
-        <Route path="/tg" element={<TelegramRedirect />} />
-        <Route path="/connect" element={<DeepLinkRedirect />} />
-        <Route path="/add" element={<DeepLinkRedirect />} />
-        <Route path="/auth/oauth/callback" element={<OAuthCallback />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/offer" element={<PublicLegal doc="offer" />} />
-        <Route path="/privacy" element={<PublicLegal doc="privacy" />} />
-        <Route path="/recurrent-payments" element={<PublicLegal doc="recurrent" />} />
+        <Route
+          path="/login"
+          element={
+            <LazyPage>
+              <Login />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <LazyPage>
+              <Login />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/auth/telegram/callback"
+          element={
+            <LazyPage>
+              <TelegramCallback />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/auth/telegram"
+          element={
+            <LazyPage>
+              <TelegramRedirect />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/tg"
+          element={
+            <LazyPage>
+              <TelegramRedirect />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/connect"
+          element={
+            <LazyPage>
+              <DeepLinkRedirect />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/add"
+          element={
+            <LazyPage>
+              <DeepLinkRedirect />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/auth/oauth/callback"
+          element={
+            <LazyPage>
+              <OAuthCallback />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <LazyPage>
+              <VerifyEmail />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <LazyPage>
+              <ResetPassword />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/offer"
+          element={
+            <LazyPage>
+              <PublicLegal doc="offer" />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <LazyPage>
+              <PublicLegal doc="privacy" />
+            </LazyPage>
+          }
+        />
+        <Route
+          path="/recurrent-payments"
+          element={
+            <LazyPage>
+              <PublicLegal doc="recurrent" />
+            </LazyPage>
+          }
+        />
         <Route
           path="/app"
           element={
@@ -489,7 +650,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <LazyPage fallback={null}>
+              <LazyPage fallback={<ShellPageFallback />}>
                 <InvoxyDashboardPage />
               </LazyPage>
             }
@@ -498,7 +659,7 @@ function App() {
           <Route
             path="/tariffs"
             element={
-              <LazyPage fallback={null}>
+              <LazyPage fallback={<ShellPageFallback />}>
                 <InvoxyTariffsPage />
               </LazyPage>
             }
@@ -506,7 +667,7 @@ function App() {
           <Route
             path="/referrals"
             element={
-              <LazyPage fallback={null}>
+              <LazyPage fallback={<ShellPageFallback />}>
                 <InvoxyReferralsPage />
               </LazyPage>
             }
@@ -515,106 +676,206 @@ function App() {
           <Route
             path="/profile"
             element={
-              <LazyPage fallback={null}>
+              <LazyPage fallback={<ShellPageFallback />}>
                 <InvoxyProfilePage />
               </LazyPage>
             }
           />
-        </Route>
-        <Route
-          path="/partner"
-          element={
-            <ProtectedRoute>
-              <InvoxyPartnerPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/account/security"
-          element={
-            <ProtectedRoute>
-              <InvoxyAccountSecurityPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/saved-cards"
-          element={
-            <ProtectedRoute>
-              <LegacyRedirect to="/balance/saved-cards" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/saved-cards"
-          element={
-            <ProtectedRoute>
-              <LegacyRedirect to="/balance/saved-cards" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/subscriptions"
-          element={
-            <ProtectedRoute>
-              <InvoxySubscriptionsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/subscriptions/:subscriptionId"
-          element={
-            <ProtectedRoute>
-              <InvoxySubscriptionManagePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/subscriptions/:subscriptionId/renew"
-          element={
-            <ProtectedRoute>
+          <Route
+            path="/partner"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyPartnerPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/account/security"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyAccountSecurityPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/profile/saved-cards"
+            element={<LegacyRedirect to="/balance/saved-cards" />}
+          />
+          <Route path="/saved-cards" element={<LegacyRedirect to="/balance/saved-cards" />} />
+          <Route
+            path="/subscriptions"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxySubscriptionsPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/subscriptions/:subscriptionId"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxySubscriptionManagePage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/subscriptions/:subscriptionId/renew"
+            element={
               <LazyPage>
                 <RenewSubscription />
               </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        {/* Legacy redirects for backward compatibility */}
-        <Route path="/subscription/:subscriptionId" element={<LegacySubscriptionRedirect />} />
-        <Route
-          path="/subscription"
-          element={
-            <ProtectedRoute>
-              <LegacyRedirect to="/subscriptions" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/balance"
-          element={
-            <ProtectedRoute>
-              <Navigate to="/profile#top-up" replace />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/balance/saved-cards"
-          element={
-            <ProtectedRoute>
-              <InvoxySavedCardsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/balance/top-up"
-          element={
-            <ProtectedRoute>
+            }
+          />
+          <Route path="/subscription" element={<LegacyRedirect to="/subscriptions" />} />
+          <Route path="/balance" element={<Navigate to="/profile#top-up" replace />} />
+          <Route
+            path="/balance/saved-cards"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxySavedCardsPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/balance/top-up"
+            element={
               <LazyPage>
                 <TopUpMethodSelect />
               </LazyPage>
-            </ProtectedRoute>
-          }
-        />
+            }
+          />
+          <Route
+            path="/balance/top-up/:methodId"
+            element={
+              <LazyPage>
+                <TopUpAmount />
+              </LazyPage>
+            }
+          />
+          <Route path="/referral" element={<Navigate to="/referrals" replace />} />
+          <Route
+            path="/referral/partner/apply"
+            element={
+              <LazyPage>
+                <ReferralPartnerApply />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/referral/withdrawal/request"
+            element={
+              <LazyPage>
+                <ReferralWithdrawalRequest />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/support"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxySupportPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/profile/accounts"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <ConnectedAccountsPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/auth/link/telegram/callback"
+            element={
+              <LazyPage>
+                <LinkTelegramCallback />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/contests"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyActivitiesPage mode="contests" />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/polls"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyActivitiesPage mode="polls" />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/info"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyInfoPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/wheel"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyActivitiesPage mode="wheel" />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/gift"
+            element={
+              <LazyPage>
+                <GiftSubscription />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/gift/result"
+            element={
+              <LazyPage>
+                <GiftResult />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/connection/qr"
+            element={
+              <LazyPage>
+                <ConnectionQR />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/news"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyNewsPage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/news/:slug"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyNewsArticlePage />
+              </LazyPage>
+            }
+          />
+          <Route
+            path="/info/:slug"
+            element={
+              <LazyPage fallback={<ShellPageFallback />}>
+                <InvoxyInfoPage />
+              </LazyPage>
+            }
+          />
+        </Route>
+        {/* Legacy redirects for backward compatibility */}
+        <Route path="/subscription/:subscriptionId" element={<LegacySubscriptionRedirect />} />
         <Route
           path="/balance/top-up/result"
           element={
@@ -634,158 +895,6 @@ function App() {
               <LazyPage>
                 <TopUpResult />
               </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/balance/top-up/:methodId"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <TopUpAmount />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/referral"
-          element={
-            <ProtectedRoute>
-              <Navigate to="/referrals" replace />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/referral/partner/apply"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <ReferralPartnerApply />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/referral/withdrawal/request"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <ReferralWithdrawalRequest />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/support"
-          element={
-            <ProtectedRoute>
-              <InvoxySupportPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/accounts"
-          element={
-            <ProtectedRoute>
-              <LazyPage fallback={null}>
-                <ConnectedAccountsPage />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/auth/link/telegram/callback"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <LinkTelegramCallback />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/contests"
-          element={
-            <ProtectedRoute>
-              <InvoxyActivitiesPage mode="contests" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/polls"
-          element={
-            <ProtectedRoute>
-              <InvoxyActivitiesPage mode="polls" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/info"
-          element={
-            <ProtectedRoute>
-              <InvoxyInfoPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/wheel"
-          element={
-            <ProtectedRoute>
-              <InvoxyActivitiesPage mode="wheel" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/gift"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <GiftSubscription />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/gift/result"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <GiftResult />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/connection/qr"
-          element={
-            <ProtectedRoute>
-              <LazyPage>
-                <ConnectionQR />
-              </LazyPage>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/news"
-          element={
-            <ProtectedRoute>
-              <InvoxyNewsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/news/:slug"
-          element={
-            <ProtectedRoute>
-              <InvoxyNewsArticlePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/info/:slug"
-          element={
-            <ProtectedRoute>
-              <InvoxyInfoPage />
             </ProtectedRoute>
           }
         />
