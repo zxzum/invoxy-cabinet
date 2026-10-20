@@ -109,7 +109,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
         className="relative z-10 mx-auto grid w-full max-w-[2000px] grid-cols-1 gap-5 px-4 pt-[var(--app-shell-pt,1.5rem)] pb-6 lg:mx-0 lg:max-w-none lg:grid-cols-[clamp(240px,14.5vw,290px)_minmax(0,1fr)] lg:gap-[1.4vw] lg:pr-[4vw] lg:pl-0 lg:py-0"
         style={{ '--app-shell-pt': topPadding } as React.CSSProperties}
       >
-        <Sidebar onTopUp={() => navigate('/profile#top-up')} onHelp={() => navigate('/support')} />
+        <Sidebar onTopUp={() => navigate('/profile#top-up')} />
 
         <main className="mx-auto flex min-w-0 w-full max-w-[560px] flex-1 flex-col pb-[calc(var(--mobile-nav-h)+16px)] lg:pb-[1.1vw] lg:mx-0 lg:max-w-none lg:pt-[1.1vw]">
           <div className="min-h-full w-full min-w-0">{children}</div>

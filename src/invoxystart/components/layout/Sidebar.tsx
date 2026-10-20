@@ -17,7 +17,7 @@ import { AnimatedBalance } from '@/invoxystart/components/ui/AnimatedBalance';
 import { useAccountState } from '@/invoxystart/lib/useAccountState';
 import { tariffsNudge } from './MobileNav';
 
-export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () => void }) {
+export function Sidebar({ onTopUp }: { onTopUp: () => void }) {
   const { t } = useTranslation();
   const { user, isAdmin } = useAuth();
   const { state } = useAccountState();
@@ -93,24 +93,6 @@ export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () =
       </nav>
 
       <div className="flex-1" />
-
-      <button
-        type="button"
-        aria-label={t('invoxy.nav.openSupport')}
-        onClick={onHelp}
-        className="help-button glass-control group flex flex-col gap-2 rounded-2xl p-3.5 text-left lg:gap-[clamp(8px,0.5vw,10px)] lg:rounded-[clamp(16px,1vw,20px)] lg:p-[clamp(14px,1.2vw,24px)]"
-      >
-        <Info
-          size={18}
-          className="text-mint transition-transform duration-500 group-hover:rotate-6 group-hover:scale-110"
-        />
-        <p className="text-xs font-bold text-ink lg:text-[clamp(12px,0.8vw,16px)]">
-          {t('invoxy.nav.helpTitle')}
-        </p>
-        <p className="text-[11px] text-muted lg:text-[clamp(11px,0.7vw,14px)]">
-          {t('invoxy.nav.helpSubtitle')}
-        </p>
-      </button>
 
       <div className="glass-control flex flex-col gap-2 rounded-2xl p-4 lg:gap-[clamp(8px,0.5vw,10px)] lg:rounded-[clamp(16px,1vw,20px)] lg:p-[clamp(16px,1.2vw,24px)]">
         <p className="text-[11px] font-bold tracking-[0.6px] text-muted lg:text-[clamp(11px,0.7vw,14px)]">
