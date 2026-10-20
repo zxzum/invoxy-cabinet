@@ -141,6 +141,14 @@ export function AddonsCard({
     }));
   }, [trafficPackagesData]);
 
+  const cheapestPackage = useMemo(
+    () =>
+      mainPackages
+        .filter((pkg) => pkg.is_available !== false)
+        .reduce<Package | null>((min, pkg) => (!min || pkg.price < min.price ? pkg : min), null),
+    [mainPackages],
+  );
+
   const devicePrice = useMemo(() => {
     if (extraDevices === 0) {
       return 0;
@@ -227,16 +235,18 @@ export function AddonsCard({
         id: 'lte_reset' as const,
         icon: Globe2,
         title: 'Сброс LTE',
-        desc: 'Списание 50 ГБ израсходованного трафика',
-        price: '150 ₽',
+        // Teaser values come from the preloaded reset quote; the literals are only
+        // a placeholder until it arrives.
+        desc: `Списание ${trafficReset?.chunk_gb ?? 50} ГБ израсходованного трафика`,
+        price: `${trafficReset?.price_rubles ?? 150} ₽`,
       });
     } else if (effectiveSub && !effectiveSub?.is_trial) {
       list.push({
         id: 'traffic' as const,
         icon: Gauge,
         title: 'Основной трафик',
-        desc: 'Пакет 100 ГБ',
-        price: '50 ₽',
+        desc: `Пакет ${cheapestPackage?.gb ?? 100} ГБ`,
+        price: `${cheapestPackage ? `от ${cheapestPackage.price}` : 50} ₽`,
       });
     }
 
@@ -257,7 +267,15 @@ export function AddonsCard({
     }
 
     return list;
-  }, [hasLte, effectiveSub, showMainReset, mainTrafficReset, usedMainGb]);
+  }, [
+    hasLte,
+    effectiveSub,
+    showMainReset,
+    mainTrafficReset,
+    usedMainGb,
+    trafficReset,
+    cheapestPackage,
+  ]);
 
   const amount =
     selected === 'devices'
@@ -550,8 +568,8 @@ export function AddonsCard({
                     <p className="font-semibold text-ink">Как работает сброс LTE:</p>
                     <p className="mt-1">
                       Лимит тарифа не увеличивается. Вы обнуляете уже потраченные гигабайты Белого
-                      интернета — максимум 50 ГБ за одну оплату (150 ₽). Неизрасходованные гигабайты
-                      не копятся.
+                      интернета — максимум {trafficReset.chunk_gb} ГБ за одну оплату (
+                      {trafficReset.price_rubles} ₽). Неизрасходованные гигабайты не копятся.
                     </p>
                   </div>
 
