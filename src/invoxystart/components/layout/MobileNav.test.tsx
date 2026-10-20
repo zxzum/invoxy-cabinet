@@ -66,6 +66,18 @@ describe('MobileNav', () => {
     expect(screen.getByText('Продлить')).toBeTruthy();
   });
 
+  it('accents the tariffs tab only when there is a reason to visit it', () => {
+    accountState.value = 'none';
+    renderNav();
+    const tariffsTab = () => screen.getByRole('link', { name: 'Тарифы' }).firstElementChild;
+    expect(tariffsTab()?.className).toContain('text-mint');
+
+    cleanup();
+    accountState.value = 'paid_active';
+    renderNav();
+    expect(tariffsTab()?.className).not.toContain('text-mint');
+  });
+
   it('is hidden in the admin panel', () => {
     renderNav('/admin/tariffs');
     expect(screen.queryByRole('navigation')).toBeNull();

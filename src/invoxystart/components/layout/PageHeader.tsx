@@ -50,7 +50,7 @@ export function PageHeader({
             onClick={() => navigate('/profile#top-up')}
             className="glass-panel flex h-auto shrink-0 whitespace-nowrap items-center gap-2 rounded-full px-3 py-2.5 text-[13px] font-bold active:scale-[.96] lg:hidden"
           >
-            <Wallet size={18} className="text-mint" /> ₽ {balance.toLocaleString('ru-RU')}
+            <Wallet size={18} className="text-mint" /> {balance.toLocaleString('ru-RU')} ₽
           </button>
         )}
       </div>

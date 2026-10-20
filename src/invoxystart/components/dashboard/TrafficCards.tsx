@@ -5,9 +5,15 @@ interface TrafficItem {
   amount: string;
   percent: number;
   disabled?: boolean;
+  unlimited?: boolean;
 }
 
+/** From this share of the quota the card warns that traffic is running out. */
+const TRAFFIC_WARNING_PERCENT = 90;
+
 function TrafficCard({ item }: { item: TrafficItem }) {
+  const low = !item.disabled && !item.unlimited && item.percent >= TRAFFIC_WARNING_PERCENT;
+  const accent = low ? 'text-warning-400' : 'text-mint';
   return (
     <div className="glass-panel motion-card flex min-w-0 w-full flex-1 flex-col gap-3 rounded-2xl p-4 lg:h-[clamp(128px,8.5vw,166px)] lg:gap-[clamp(16px,1.1vw,22px)] lg:rounded-[clamp(20px,1vw,24px)] lg:p-[clamp(20px,1.4vw,28px)]">
       <p className="truncate text-[14px] leading-5 text-muted lg:text-[clamp(14px,0.9vw,18px)]">
@@ -25,18 +31,24 @@ function TrafficCard({ item }: { item: TrafficItem }) {
         </span>
         <span
           className={`shrink-0 text-[clamp(12px,3.4vw,15px)] font-bold leading-6 lg:text-[clamp(16px,1vw,20px)] ${
-            item.disabled ? 'text-muted/30 font-normal' : 'text-mint'
+            item.disabled ? 'text-muted/30 font-normal' : accent
           }`}
         >
-          {item.disabled ? '—' : `${Math.round(item.percent)}%`}
+          {item.disabled ? '—' : item.unlimited ? 'Безлимит' : `${Math.round(item.percent)}%`}
         </span>
       </div>
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2/60 lg:h-[clamp(8px,0.5vw,10px)]">
         <div
           className={`h-full rounded-full transition-[width] duration-700 ease-out ${
-            item.disabled ? 'bg-white/5' : 'bg-mint'
+            item.disabled
+              ? 'bg-white/5'
+              : item.unlimited
+                ? 'bg-mint/25'
+                : low
+                  ? 'bg-warning-400'
+                  : 'bg-mint'
           }`}
-          style={{ width: `${item.disabled ? 0 : item.percent}%` }}
+          style={{ width: `${item.disabled ? 0 : item.unlimited ? 100 : item.percent}%` }}
         />
       </div>
     </div>
@@ -45,7 +57,7 @@ function TrafficCard({ item }: { item: TrafficItem }) {
 
 function formatNumber(val: number): string {
   const fixed = val.toFixed(1);
-  return fixed.endsWith('.0') ? fixed.slice(0, -2) : fixed;
+  return (fixed.endsWith('.0') ? fixed.slice(0, -2) : fixed).replace('.', ',');
 }
 
 function formatTraffic(used: number | null | undefined, limit: number | null | undefined) {
@@ -80,6 +92,7 @@ export function TrafficCards({
     {
       label: 'Основной трафик',
       amount: formatTraffic(subscription?.traffic_used_gb, subscription?.traffic_limit_gb),
+      unlimited: !subscription?.traffic_limit_gb,
       percent: Math.min(
         100,
         Math.max(

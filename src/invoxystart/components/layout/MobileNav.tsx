@@ -32,8 +32,9 @@ export function isMobileNavHidden(pathname: string): boolean {
 }
 
 /**
- * Нижний док: у каждой вкладки всегда видна подпись, «Тарифы» выделены mint-цветом,
- * пульсируют без подписки и показывают бейдж «Продлить», когда доступ кончается.
+ * Нижний док: у каждой вкладки всегда видна подпись. «Тарифы» выделены mint-цветом
+ * только когда есть повод (нет подписки или доступ кончается) — иначе при активной
+ * подписке выделение читалось как вторая выбранная вкладка.
  */
 export function MobileNav() {
   const { haptic } = usePlatform();
@@ -69,7 +70,7 @@ export function MobileNav() {
                   className={`nav-button relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-[22px] px-1 py-1.5 active:scale-[0.96] ${
                     isActive
                       ? 'bg-ink text-bg shadow-[0_6px_18px_rgba(255,255,255,0.16)]'
-                      : accent
+                      : accent && nudge
                         ? 'bg-mint/15 text-mint ring-1 ring-inset ring-mint/40'
                         : 'text-muted hover:text-ink'
                   }`}

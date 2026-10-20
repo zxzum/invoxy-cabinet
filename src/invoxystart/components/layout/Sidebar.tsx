@@ -51,7 +51,7 @@ export function Sidebar({ onTopUp, onHelp }: { onTopUp: () => void; onHelp: () =
               `relative flex h-11 items-center gap-3 rounded-xl px-3.5 text-sm transition-colors lg:h-[clamp(44px,2.9vw,58px)] lg:gap-[clamp(12px,0.8vw,16px)] lg:rounded-[clamp(12px,0.8vw,16px)] lg:px-[clamp(14px,0.9vw,18px)] lg:text-[clamp(14px,0.8vw,16px)] ${
                 isActive
                   ? 'text-bg font-bold'
-                  : item.accent
+                  : item.accent && nudge
                     ? 'bg-mint/10 font-semibold text-mint ring-1 ring-inset ring-mint/30 hover:bg-mint/15'
                     : 'text-muted font-normal hover:text-ink'
               }`
