@@ -21,6 +21,7 @@ import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { ApiError, balanceApi, subscriptionApi, type PaymentMethod } from '@/invoxystart/api';
 import { ActiveInvoiceCard } from '@/invoxystart/components/dashboard/ActiveInvoiceCard';
 import { useSuccessNotification } from '@/store/successNotification';
+import { trackCabinetEvent } from '@/hooks/useUmamiAnalytics';
 
 export interface PaymentRequest {
   amount: number;
@@ -57,6 +58,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
   const [payingMethod, setPayingMethod] = useState<string | null>(null);
 
   function openPayment(nextRequest: PaymentRequest) {
+    trackCabinetEvent('checkout_opened');
     setRequest(nextRequest);
     setOpen(true);
   }
@@ -76,6 +78,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
 
   async function pay(method: string, payment = request ?? undefined, paymentOption?: string) {
     if (!payment || busy) return;
+    trackCabinetEvent('payment_method_selected');
     setBusy(true);
     setPayingMethod(method);
     try {

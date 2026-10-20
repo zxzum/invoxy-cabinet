@@ -82,6 +82,9 @@ function isAuthEndpoint(url: string | undefined): boolean {
 }
 
 apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  config.headers['X-Client-Source'] = window.Telegram?.WebApp?.initData
+    ? 'telegram_miniapp'
+    : 'cabinet';
   // Let axios set the correct multipart/form-data header with boundary for FormData
   if (config.data instanceof FormData && config.headers) {
     delete config.headers['Content-Type'];

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/invoxystart/components/dashboard/Header';
+import { AccountAccessReminder } from '@/components/dashboard/AccountAccessReminder';
 import { SubscriptionCard } from '@/invoxystart/components/dashboard/SubscriptionCard';
 import { TrafficCards } from '@/invoxystart/components/dashboard/TrafficCards';
 import { DevicesCard } from '@/invoxystart/components/dashboard/DevicesCard';
@@ -297,6 +298,8 @@ export function DashboardPage() {
         userName={user?.first_name || user?.username}
         onWalletClick={() => navigate('/profile#top-up')}
       />
+
+      <AccountAccessReminder userId={user?.id} />
 
       {showMigrationBanner && migrationData?.candidate && (
         <div className="relative flex items-center gap-3 overflow-hidden rounded-[22px] border border-accent-500/40 bg-gradient-to-r from-accent-600/20 via-purple-600/15 to-accent-500/10 p-3 pr-2 backdrop-blur-xl">

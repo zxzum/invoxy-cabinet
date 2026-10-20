@@ -57,6 +57,7 @@ export interface AnalyticsCounters {
   yandex_metrika_id: string;
   google_ads_id: string;
   google_ads_label: string;
+  umami_website_id?: string;
   offline_conv_enabled?: boolean;
   offline_conv_counter_id?: string;
   offline_conv_measurement_secret_masked?: string;

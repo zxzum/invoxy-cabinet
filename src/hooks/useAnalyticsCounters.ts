@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { brandingApi } from '../api/branding';
 import { setYandexCid } from '../utils/yandexCid';
+import { useUmamiAnalytics } from './useUmamiAnalytics';
 
 const YM_SCRIPT_ID = 'ym-counter-script';
 const GTAG_LOADER_ID = 'gtag-loader-script';
@@ -72,11 +73,13 @@ export function useAnalyticsCounters() {
     staleTime: 5 * 60 * 1000, // 5 min
   });
 
+  useUmamiAnalytics(data?.umami_website_id);
+
   useEffect(() => {
     if (!data) return;
 
     // Yandex Metrika
-    if (data.yandex_metrika_id) {
+    if (data.yandex_metrika_id && !data.umami_website_id) {
       injectYandexMetrika(data.yandex_metrika_id);
       cacheYandexCid(data.yandex_metrika_id);
       syncYandexCid(data.yandex_metrika_id);

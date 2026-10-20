@@ -276,6 +276,7 @@ export async function request<T>(
     }
   }
   const headers = new Headers(options.headers);
+  headers.set('X-Client-Source', window.Telegram?.WebApp?.initData ? 'telegram_miniapp' : 'cabinet');
   headers.set('Accept', 'application/json');
 
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;

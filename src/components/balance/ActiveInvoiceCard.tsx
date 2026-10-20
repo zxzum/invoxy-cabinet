@@ -17,6 +17,7 @@ import { balanceApi } from '@/api/balance';
 import type { PendingPayment } from '@/types';
 import { cn } from '@/lib/utils';
 import { isFailedStatus, isPaidStatus } from '@/utils/paymentStatus';
+import { trackCabinetEvent } from '@/hooks/useUmamiAnalytics';
 
 export interface ActiveInvoiceCardProps {
   invoice?: PendingPayment;
@@ -154,6 +155,7 @@ export function ActiveInvoiceCard({
 
   const handleOpen = () => {
     if (!safePaymentUrl) return;
+    trackCabinetEvent('invoice_pay_clicked');
     setPopupBlocked(false);
     const opened = openPaymentUrl(safePaymentUrl, platform, openLink);
     if (!opened) {
@@ -218,6 +220,7 @@ export function ActiveInvoiceCard({
   };
 
   const handleCancel = async () => {
+    trackCabinetEvent('invoice_cancel_clicked');
     if (!confirmCancel) {
       setConfirmCancel(true);
       if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);

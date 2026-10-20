@@ -16,6 +16,7 @@ export function AnalyticsTab() {
   const [yandexValue, setYandexValue] = useState('');
   const [googleIdValue, setGoogleIdValue] = useState('');
   const [googleLabelValue, setGoogleLabelValue] = useState('');
+  const [umamiValue, setUmamiValue] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Query
@@ -68,6 +69,33 @@ export function AnalyticsTab() {
           {error}
         </div>
       )}
+
+      <div className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6">
+        <h3 className="font-semibold text-dark-100">Umami Cloud</h3>
+        <p className="mt-2 text-sm text-dark-400">{t('admin.analytics.umamiDescription', 'Посещения и действия без записи экрана. Данные хранятся в Umami, вне VPN-сервера.')}</p>
+        <label htmlFor="umami-website-id" className="mt-4 block text-sm text-dark-300">Website ID</label>
+        <div className="mt-2 flex gap-2">
+          <input
+            id="umami-website-id"
+            value={umamiValue ?? analytics?.umami_website_id ?? ''}
+            onChange={(event) => setUmamiValue(event.target.value)}
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            className="min-w-0 flex-1 rounded-xl border border-dark-600 bg-dark-700 px-3 py-2 text-dark-100"
+          />
+          <button
+            type="button"
+            disabled={updateMutation.isPending || umamiValue === null}
+            onClick={() => updateMutation.mutate(
+              { umami_website_id: (umamiValue ?? '').trim() },
+              { onSuccess: () => setUmamiValue(null) },
+            )}
+            className="min-h-11 rounded-xl bg-accent-500 px-4 py-2 text-on-accent disabled:opacity-50"
+          >{t('common.save')}</button>
+        </div>
+        <a href="https://cloud.umami.is" target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm text-accent-400">
+          {t('admin.analytics.openUmami', 'Открыть Umami')}
+        </a>
+      </div>
 
       {/* Yandex Metrika */}
       <div className="rounded-2xl border border-dark-700/50 bg-dark-800/50 p-6">

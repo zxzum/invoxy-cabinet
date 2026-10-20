@@ -8,6 +8,7 @@ import { useToast } from '@/invoxystart/components/layout/ToastProvider';
 import { balanceApi, type PendingPayment } from '@/invoxystart/api';
 import { useAuth } from '@/invoxystart/auth';
 import { clearResponseCache } from '@/invoxystart/api/client';
+import { trackCabinetEvent } from '@/hooks/useUmamiAnalytics';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useTranslation } from 'react-i18next';
 import { schedulePaymentRefresh } from '@/utils/paymentResolution';
@@ -135,6 +136,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
 
   function handleOpen() {
     if (!activeInvoice?.payment_url) return;
+    trackCabinetEvent('invoice_pay_clicked');
     openLink(activeInvoice.payment_url);
   }
 
@@ -169,6 +171,7 @@ export function ActiveInvoiceCard({ className }: { className?: string }) {
 
   async function handleCancel() {
     if (cancelling || !activeInvoice) return;
+    trackCabinetEvent('invoice_cancel_clicked');
     setCancelling(true);
     try {
       const result = await balanceApi.cancelPendingPayment(activeInvoice.method, activeInvoice.id);
