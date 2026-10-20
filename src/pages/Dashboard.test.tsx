@@ -377,8 +377,8 @@ describe('Dashboard target states', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Fixture dashboard тариф' }));
     expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
     const traffic = screen.getByRole('region', { name: 'Traffic' });
-    expect(traffic.textContent).toContain('18.0');
-    expect(traffic.textContent).toContain('100.0');
+    expect(traffic.textContent).toContain('18 GB');
+    expect(traffic.textContent).toContain('100 GB');
   });
 
   it('matches the source pill bar and supports keyboard subscription selection', async () => {
@@ -533,7 +533,7 @@ describe('Dashboard target states', () => {
     expect(
       await screen.findByRole('heading', { name: 'Fixture second active tariff' }),
     ).toBeTruthy();
-    expect(screen.getByText('7.0 GB / 100.0 GB')).toBeTruthy();
+    expect(screen.getByText('7 GB / 100 GB')).toBeTruthy();
 
     refreshA.resolve({
       traffic_used_gb: 90,
@@ -542,8 +542,8 @@ describe('Dashboard target states', () => {
       rate_limited: true,
       retry_after_seconds: 9,
     });
-    await vi.waitFor(() => expect(screen.queryByText('90.0 GB / 100.0 GB')).toBeNull());
-    expect(screen.getByText('7.0 GB / 100.0 GB')).toBeTruthy();
+    await vi.waitFor(() => expect(screen.queryByText('90 GB / 100 GB')).toBeNull());
+    expect(screen.getByText('7 GB / 100 GB')).toBeTruthy();
 
     refreshB.resolve({
       traffic_used_gb: 8,
@@ -556,7 +556,7 @@ describe('Dashboard target states', () => {
 
     fireEvent.click(screen.getByRole('radio', { name: 'Fixture dashboard тариф' }));
     expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
-    expect(screen.getByText('90.0 GB / 100.0 GB')).toBeTruthy();
+    expect(screen.getByText('90 GB / 100 GB')).toBeTruthy();
     const firstRefreshButton = await screen.findByRole('button', {
       name: /Обновить трафик \(\d+s\)/,
     });
@@ -813,8 +813,8 @@ describe('Dashboard target states', () => {
     await firstRefresh.promise;
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-    expect(screen.getByText('18.0 GB / 100.0 GB')).toBeTruthy();
-    expect(screen.queryByText('12.0 GB / 100.0 GB')).toBeNull();
+    expect(screen.getByText('18 GB / 100 GB')).toBeTruthy();
+    expect(screen.queryByText('12 GB / 100 GB')).toBeNull();
     expect(screen.getByRole('button', { name: 'Обновляем трафик…' })).toBeTruthy();
 
     secondRefresh.resolve({
@@ -823,7 +823,7 @@ describe('Dashboard target states', () => {
       is_unlimited: false,
       rate_limited: false,
     });
-    expect(await screen.findByText('19.0 GB / 100.0 GB')).toBeTruthy();
+    expect(await screen.findByText('19 GB / 100 GB')).toBeTruthy();
     expect(await screen.findByRole('button', { name: /Обновить трафик \(\d+s\)/ })).toBeTruthy();
   });
 
@@ -969,7 +969,7 @@ describe('Dashboard target states', () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { name: 'Fixture active tariff' })).toBeTruthy();
-    expect(screen.getByText('18.0 GB / 100.0 GB')).toBeTruthy();
+    expect(screen.getByText('18 GB / 100 GB')).toBeTruthy();
     expect(screen.getByText('Fixture device')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Быстрое продление' })).toBeTruthy();
     const connection = screen.getByRole('region', { name: 'Ключ доступа' });
@@ -1129,8 +1129,8 @@ describe('Dashboard target states', () => {
     ).toBeTruthy();
 
     // Основной и whitelist-трафик — раздельно, из своих полей.
-    expect(await screen.findByText('18.0 GB / 100.0 GB')).toBeTruthy();
-    expect(screen.getByText('12.0 GB / 50.0 GB')).toBeTruthy();
+    expect(await screen.findByText('18 GB / 100 GB')).toBeTruthy();
+    expect(screen.getByText('12 GB / 50 GB')).toBeTruthy();
 
     // Ссылка доступа из connection-link, устройства из devices-запроса.
     expect(screen.getByText('https://example.test/subscription')).toBeTruthy();

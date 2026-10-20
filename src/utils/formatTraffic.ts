@@ -6,7 +6,10 @@ import i18n from '../i18n';
  * (templates previously mixed latin "GB" with localized «ГБ» on one screen).
  */
 export function formatTraffic(gb: number): string {
-  if (gb >= 1000) return `${(gb / 1000).toFixed(1)} ${i18n.t('common.units.tb', 'TB')}`;
-  if (gb >= 1) return `${gb.toFixed(1)} ${i18n.t('common.units.gb', 'GB')}`;
-  return `${(gb * 1024).toFixed(0)} ${i18n.t('common.units.mb', 'MB')}`;
+  // Locale-aware and without a trailing ".0": «12,2 ГБ», «30 ГБ» in RU.
+  const number = (value: number, digits: number) =>
+    value.toLocaleString(i18n.language, { maximumFractionDigits: digits });
+  if (gb >= 1000) return `${number(gb / 1000, 1)} ${i18n.t('common.units.tb', 'TB')}`;
+  if (gb >= 1) return `${number(gb, 1)} ${i18n.t('common.units.gb', 'GB')}`;
+  return `${number(gb * 1024, 0)} ${i18n.t('common.units.mb', 'MB')}`;
 }
