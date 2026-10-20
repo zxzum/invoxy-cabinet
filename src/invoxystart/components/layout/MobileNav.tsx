@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { House, Layers, Users, UserRound } from '@/invoxystart/components/ui/RuneIcon';
+import { Headphones, House, Layers, Users, UserRound } from '@/invoxystart/components/ui/RuneIcon';
 import { usePlatform } from '@/platform';
 import type { AccountState } from '@/invoxystart/lib/accountState';
 import { useAccountState } from '@/invoxystart/lib/useAccountState';
@@ -10,6 +10,9 @@ const navItems = [
   { to: '/tariffs', labelKey: 'nav.tariffs', icon: Layers, end: false, accent: true },
   { to: '/referrals', labelKey: 'nav.referral', icon: Users, end: false },
   { to: '/profile', labelKey: 'nav.profile', icon: UserRound, end: false },
+  // Support lives in the dock so it is one tap away on every page without a
+  // dedicated row above each page header.
+  { to: '/support', labelKey: 'nav.support', icon: Headphones, end: false },
 ] as const;
 
 /** Подсказка на вкладке «Тарифы» в зависимости от состояния аккаунта. */
@@ -53,7 +56,7 @@ export function MobileNav() {
       />
       <nav
         aria-label={t('nav.navigation')}
-        className="glass-panel mobile-nav-safe fixed left-1/2 z-40 grid w-[min(calc(100%-24px),420px)] -translate-x-1/2 grid-cols-4 gap-1 rounded-[28px] p-1.5 lg:hidden"
+        className="glass-panel mobile-nav-safe fixed left-1/2 z-40 grid w-[min(calc(100%-16px),440px)] -translate-x-1/2 grid-cols-5 gap-1 rounded-[28px] p-1.5 lg:hidden"
       >
         {navItems.map((item) => {
           const accent = 'accent' in item && item.accent;
