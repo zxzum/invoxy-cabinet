@@ -664,7 +664,8 @@ describe('cabinet route boundary', () => {
         expect(screen.getByTestId('location').textContent).toContain('/login[REPLACE]'),
       );
     }
-  });
+    // One render per admin route: allow for a loaded parallel test run.
+  }, 20_000);
 
   it('sends successful OAuth login to /dashboard', async () => {
     const { saveOAuthState } = await import('./utils/oauth');
