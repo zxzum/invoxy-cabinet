@@ -6107,7 +6107,8 @@
       "helpTitle": "需要帮助？",
       "helpSubtitle": "全天候为您服务",
       "balance": "余额",
-      "topUp": "充值"
+      "topUp": "充值",
+      "help": "帮助"
     },
     "dashboard": {
       "devicesCollapse": "收起",

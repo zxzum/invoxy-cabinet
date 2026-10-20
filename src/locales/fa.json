@@ -6135,7 +6135,8 @@
       "helpTitle": "کمک لازم دارید؟",
       "helpSubtitle": "۲۴/۷ در کنار شما هستیم",
       "balance": "موجودی",
-      "topUp": "شارژ"
+      "topUp": "شارژ",
+      "help": "راهنما"
     },
     "dashboard": {
       "devicesCollapse": "بستن",

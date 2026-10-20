@@ -15,7 +15,7 @@ vi.mock('react-i18next', () => ({
         'nav.tariffs': 'Тарифы',
         'nav.referral': 'Рефералы',
         'nav.profile': 'Профиль',
-        'nav.support': 'Поддержка',
+        'invoxy.nav.help': 'Помощь',
         'nav.navigation': 'Навигация',
         'invoxy.nav.renewBadge': 'Продлить',
       })[key] ?? key,
@@ -27,7 +27,7 @@ vi.mock('@/invoxystart/lib/useAccountState', () => ({
 }));
 vi.mock('@/invoxystart/components/ui/RuneIcon', () => {
   const Icon = () => <svg />;
-  return { Headphones: Icon, House: Icon, Layers: Icon, Users: Icon, UserRound: Icon };
+  return { House: Icon, Layers: Icon, MessageCircle: Icon, Users: Icon, UserRound: Icon };
 });
 
 function renderNav(path = '/dashboard') {
@@ -46,7 +46,7 @@ afterEach(() => {
 describe('MobileNav', () => {
   it('shows a visible label for every tab', () => {
     renderNav();
-    for (const label of ['Кабинет', 'Тарифы', 'Рефералы', 'Профиль', 'Поддержка']) {
+    for (const label of ['Кабинет', 'Тарифы', 'Рефералы', 'Профиль', 'Помощь']) {
       expect(screen.getByRole('link', { name: label })).toBeTruthy();
     }
   });

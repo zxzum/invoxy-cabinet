@@ -6845,7 +6845,8 @@
       "helpTitle": "Need help?",
       "helpSubtitle": "We're here 24/7",
       "balance": "Balance",
-      "topUp": "Top up"
+      "topUp": "Top up",
+      "help": "Help"
     },
     "dashboard": {
       "devicesCollapse": "Collapse",

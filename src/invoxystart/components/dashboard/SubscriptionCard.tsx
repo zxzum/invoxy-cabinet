@@ -39,7 +39,7 @@ export function SubscriptionCard({
       <img
         src={trial ? '/images/trial-ribbon.webp' : '/images/subscription-orb.webp'}
         alt=""
-        className={`pointer-events-none absolute -right-4 top-4 w-[150px] opacity-70 lg:hidden ${trial ? 'mix-blend-screen' : ''}`}
+        className={`pointer-events-none absolute -right-4 top-4 w-[150px] opacity-70 max-[359px]:w-[110px] max-[359px]:opacity-40 lg:hidden ${trial ? 'mix-blend-screen' : ''}`}
         style={{ top: '80px', scale: trial ? '1.35' : '1.5' }}
       />
 
@@ -102,7 +102,7 @@ export function SubscriptionCard({
 
       <div className="relative z-10 flex items-baseline gap-2">
         <span
-          className={`text-[clamp(48px,4.2vw,64px)] font-normal leading-none tracking-[-2px] lg:text-[clamp(64px,4.2vw,84px)] lg:tracking-[clamp(-2px,-0.1vw,-1.5px)] ${
+          className={`text-[clamp(48px,4.2vw,64px)] font-normal leading-none max-[359px]:text-[40px] tracking-[-2px] lg:text-[clamp(64px,4.2vw,84px)] lg:tracking-[clamp(-2px,-0.1vw,-1.5px)] ${
             isExpired ? 'text-rose-300/80' : 'text-ink'
           }`}
         >

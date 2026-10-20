@@ -62,14 +62,15 @@ function formatNumber(val: number): string {
 
 function formatTraffic(used: number | null | undefined, limit: number | null | undefined) {
   const u = typeof used === 'number' && Number.isFinite(used) ? Math.max(0, used) : 0;
-  const lStr = limit && Number.isFinite(limit) ? formatNumber(limit) : '∞';
+  const lStr = limit && Number.isFinite(limit) ? formatNumber(limit) : null;
 
   if (u >= 1 || u === 0) {
     const uStr = formatNumber(u);
-    return `${uStr} / ${lStr} ГБ`;
+    // Unlimited: the card already says «Безлимит», so only the usage is shown.
+    return lStr ? `${uStr} / ${lStr} ГБ` : `${uStr} ГБ`;
   }
   const usedLabel = formatTrafficAmount(u);
-  return `${usedLabel} / ${lStr} ГБ`;
+  return lStr ? `${usedLabel} / ${lStr} ГБ` : usedLabel;
 }
 
 export function TrafficCards({

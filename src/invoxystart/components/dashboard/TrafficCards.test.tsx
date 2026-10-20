@@ -8,7 +8,7 @@ afterEach(cleanup);
 describe('TrafficCards', () => {
   it('labels an unlimited quota instead of showing 0%', () => {
     render(<TrafficCards subscription={{ traffic_limit_gb: 0, traffic_used_gb: 37.4 }} />);
-    expect(screen.getByText('37,4 / ∞ ГБ')).toBeTruthy();
+    expect(screen.getByText('37,4 ГБ')).toBeTruthy();
     expect(screen.getByText('Безлимит')).toBeTruthy();
     expect(screen.queryByText('0%')).toBeNull();
   });

@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Headphones, House, Layers, Users, UserRound } from '@/invoxystart/components/ui/RuneIcon';
+import { House, Layers, MessageCircle, Users, UserRound } from '@/invoxystart/components/ui/RuneIcon';
 import { usePlatform } from '@/platform';
 import type { AccountState } from '@/invoxystart/lib/accountState';
 import { useAccountState } from '@/invoxystart/lib/useAccountState';
@@ -12,7 +12,7 @@ const navItems = [
   { to: '/profile', labelKey: 'nav.profile', icon: UserRound, end: false },
   // Support lives in the dock so it is one tap away on every page without a
   // dedicated row above each page header.
-  { to: '/support', labelKey: 'nav.support', icon: Headphones, end: false },
+  { to: '/support', labelKey: 'invoxy.nav.help', icon: MessageCircle, end: false },
 ] as const;
 
 /** Подсказка на вкладке «Тарифы» в зависимости от состояния аккаунта. */
@@ -70,7 +70,7 @@ export function MobileNav() {
             >
               {({ isActive }) => (
                 <div
-                  className={`nav-button relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-[22px] px-1 py-1.5 active:scale-[0.96] ${
+                  className={`nav-button relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-[22px] px-1 py-1.5 max-[359px]:px-0 active:scale-[0.96] ${
                     isActive
                       ? 'bg-ink text-bg shadow-[0_6px_18px_rgba(255,255,255,0.16)]'
                       : accent && nudge
@@ -88,7 +88,7 @@ export function MobileNav() {
                     }
                     className="shrink-0"
                   />
-                  <span className="max-w-full truncate text-[11px] font-semibold leading-none">
+                  <span className="max-w-full truncate text-[10.5px] font-semibold leading-none tracking-[-0.01em] max-[359px]:text-[9.5px]">
                     {t(item.labelKey)}
                   </span>
                   {accent && nudge === 'pulse' && !isActive && (

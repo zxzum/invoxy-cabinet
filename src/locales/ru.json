@@ -7429,7 +7429,8 @@
       "helpTitle": "Нужна помощь?",
       "helpSubtitle": "Мы на связи 24/7",
       "balance": "Баланс",
-      "topUp": "Пополнить"
+      "topUp": "Пополнить",
+      "help": "Помощь"
     },
     "dashboard": {
       "devicesCollapse": "Свернуть",
