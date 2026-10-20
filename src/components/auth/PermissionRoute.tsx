@@ -3,7 +3,6 @@ import { useAuthStore } from '../../store/auth';
 import { usePermissionStore } from '../../store/permissions';
 import { saveReturnUrl } from '../../utils/token';
 import PageLoader from '../common/PageLoader';
-import { InvoxyStartShell } from '@/invoxystart/InvoxyStartShell';
 
 interface PermissionRouteProps {
   children: React.ReactNode;
@@ -72,5 +71,6 @@ export function PermissionRoute({
     }
   }
 
-  return <InvoxyStartShell>{children}</InvoxyStartShell>;
+  // The admin shell is rendered once by the parent layout route in App.tsx.
+  return children;
 }

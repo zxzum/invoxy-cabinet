@@ -260,6 +260,13 @@ vi.mock('./pages/ConnectedAccounts', () => ({
   default: () => <div data-testid="accounts-page">accounts</div>,
 }));
 
+vi.mock('./pages/AdminPanel', () => ({
+  default: () => <div data-testid="admin-panel">admin</div>,
+}));
+vi.mock('./pages/AdminTickets', () => ({
+  default: () => <div data-testid="admin-tickets">tickets</div>,
+}));
+
 function LocationProbe() {
   const location = useLocation();
   const navigationType = useNavigationType();
@@ -568,6 +575,30 @@ describe('cabinet route boundary', () => {
     fireEvent.click(screen.getByTestId('navigate'));
 
     expect(await screen.findByTestId('subscriptions-page')).toBeTruthy();
+    expect(container.querySelector('.invoxystart-shell')).toBe(shell);
+  });
+
+  it('keeps one shell mounted when moving between admin pages', async () => {
+    auth.state.isAuthenticated = true;
+    auth.state.isAdmin = true;
+    const { default: App } = await import('./App');
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin']}>
+          <App />
+          <NavigateButton to="/admin/tickets" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await screen.findByTestId('admin-panel');
+    const shell = container.querySelector('.invoxystart-shell');
+    expect(shell).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId('navigate'));
+
+    expect(await screen.findByTestId('admin-tickets')).toBeTruthy();
     expect(container.querySelector('.invoxystart-shell')).toBe(shell);
   });
 
